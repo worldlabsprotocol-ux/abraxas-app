@@ -391,7 +391,10 @@ export function SolanaAccountSignInDialog({
             setPhase("connected");
             return;
           }
-          const msg = mapSignInFailure({ reason: "cancelled" });
+          const msg = mapSignInFailure({
+            reason: "cancelled",
+            signFailureCode: "signFailureCode" in result ? result.signFailureCode : undefined,
+          });
           setLocalError(msg);
           setError(msg);
           setPhase("connected");
@@ -401,6 +404,8 @@ export function SolanaAccountSignInDialog({
           reason: "failed",
           code: "code" in result ? result.code : undefined,
           message: "message" in result ? result.message : undefined,
+          signFailureCode: "signFailureCode" in result ? result.signFailureCode : undefined,
+          signFailureDetail: "signFailureDetail" in result ? result.signFailureDetail : undefined,
         });
         setLocalError(msg);
         setError(msg);

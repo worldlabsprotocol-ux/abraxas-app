@@ -2,7 +2,10 @@
 
 import { buildWalletSignInChallengeDisplay } from "@/lib/auth/ephemeralWallet/signInDisplayContext";
 import type { WalletSignInChallengeDisplay } from "@/lib/auth/ephemeralWallet/signInDisplayContext";
-import { signWalletMessageWithControls } from "@/lib/auth/ephemeralWallet/walletMessageSignAttempt";
+import {
+  signWalletMessageWithControls,
+  type WalletMessageSignFailureCode,
+} from "@/lib/auth/ephemeralWallet/walletMessageSignAttempt";
 
 export type NativeSolanaSignInChallenge = {
   challenge_id: string;
@@ -13,7 +16,14 @@ export type NativeSolanaSignInChallenge = {
 
 export type SolanaAccountSignInResult =
   | { ok: true; accountId: string; created: boolean }
-  | { ok: false; reason: "cancelled" | "failed"; code?: string; message?: string };
+  | {
+      ok: false;
+      reason: "cancelled" | "failed";
+      code?: string;
+      message?: string;
+      signFailureCode?: WalletMessageSignFailureCode;
+      signFailureDetail?: string;
+    };
 
 export function describeSolanaAccountSignInError(code: string | undefined): string {
   switch (code) {
@@ -118,12 +128,35 @@ export async function completeSolanaAccountSignInWithChallenge(input: {
         reason: "failed",
         code: "expired",
         message: describeSolanaAccountSignInError("expired"),
+        signFailureCode: signed.code,
       };
     }
-    return { ok: false, reason: "cancelled" };
+    if (signed.code === "wallet_error") {
+      return {
+        ok: false,
+        reason: "failed",
+        code: "wallet_sign_error",
+        signFailureCode: signed.code,
+        signFailureDetail: signed.detail,
+      };
+    }
+    if (signed.code === "cancelled" || signed.code === "aborted" || signed.code === "stale") {
+      return {
+        ok: false,
+        reason: "cancelled",
+        signFailureCode: signed.code,
+      };
+    }
+    return {
+      ok: false,
+      reason: "failed",
+      code: "wallet_sign_error",
+      signFailureCode: signed.code,
+      signFailureDetail: signed.detail,
+    };
   }
   if (input.isStale?.()) {
-    return { ok: false, reason: "cancelled" };
+    return { ok: false, reason: "cancelled", signFailureCode: "stale" };
   }
 
   const signature = Buffer.from(signed.signatureBytes).toString("base64");

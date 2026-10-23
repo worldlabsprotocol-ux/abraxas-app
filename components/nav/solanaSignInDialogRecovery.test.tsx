@@ -162,6 +162,30 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
     });
   });
 
+  it("shows wallet adapter detail for unknown signing failures (not dismissal copy)", async () => {
+    signMessage.mockRejectedValueOnce(new Error("Unexpected internal wallet failure"));
+
+    const setError = vi.fn();
+    render(
+      <SolanaAccountSignInDialog
+        open
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+        busy={false}
+        setBusy={vi.fn()}
+        setError={setError}
+      />,
+    );
+
+    await prepareAndSign();
+    await waitFor(() => {
+      expect(setError).toHaveBeenCalledWith(
+        expect.stringContaining("Unexpected internal wallet failure"),
+      );
+    });
+    expect(setError).not.toHaveBeenCalledWith(expect.stringMatching(/dismissed/i));
+  });
+
   it("loads native account sign-in review when ephemeral mode is off", async () => {
     vi.stubGlobal(
       "fetch",

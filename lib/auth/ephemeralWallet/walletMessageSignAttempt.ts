@@ -1,8 +1,23 @@
 // FILE: lib/auth/ephemeralWallet/walletMessageSignAttempt.ts
 
 import { WALLET_SOL_AUTH_CHALLENGE_TTL_MS } from "./contract";
+import {
+  classifyWalletSignMessageError,
+  walletSignFailureDetail,
+} from "./walletSignMessageErrorClassification";
 
-export type WalletMessageSignFailureCode = "cancelled" | "aborted" | "timeout" | "stale";
+export type WalletMessageSignFailureCode =
+  | "cancelled"
+  | "aborted"
+  | "timeout"
+  | "stale"
+  | "wallet_error";
+
+export type WalletMessageSignFailure = {
+  code: WalletMessageSignFailureCode;
+  /** Sanitized adapter detail for wallet_error (never secrets). */
+  detail?: string;
+};
 
 function waitForAbort(signal?: AbortSignal): Promise<never> {
   return new Promise((_, reject) => {
@@ -31,7 +46,7 @@ export async function signWalletMessageWithControls(input: {
   timeoutMs?: number;
 }): Promise<
   | { ok: true; signatureBytes: Uint8Array }
-  | { ok: false; code: WalletMessageSignFailureCode }
+  | { ok: false; code: WalletMessageSignFailureCode; detail?: string }
 > {
   if (input.isStale?.()) return { ok: false, code: "stale" };
 
@@ -53,6 +68,15 @@ export async function signWalletMessageWithControls(input: {
     if (error instanceof Error && error.message === "wallet_sign_timeout") {
       return { ok: false, code: "timeout" };
     }
-    return { ok: false, code: "cancelled" };
+    const code = classifyWalletSignMessageError(error);
+    const detail = code === "wallet_error" ? walletSignFailureDetail(error) : undefined;
+    if (typeof console !== "undefined" && console.info) {
+      const parsed =
+        error instanceof Error
+          ? { name: error.name, message: error.message.slice(0, 200) }
+          : { message: String(error).slice(0, 200) };
+      console.info("[abraxas wallet sign]", { outcome: code, ...parsed });
+    }
+    return { ok: false, code, detail };
   }
 }

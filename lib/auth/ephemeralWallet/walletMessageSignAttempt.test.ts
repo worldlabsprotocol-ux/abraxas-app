@@ -42,6 +42,31 @@ describe("signWalletMessageWithControls", () => {
     if (result.ok) expect(result.signatureBytes).toEqual(new Uint8Array([4, 5]));
   });
 
+  it("returns wallet_error for unknown adapter failures (not cancellation)", async () => {
+    const result = await signWalletMessageWithControls({
+      message: "hello",
+      signMessage: async () => {
+        throw new Error("Unexpected internal wallet failure");
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("wallet_error");
+      expect(result.detail).toContain("Unexpected");
+    }
+  });
+
+  it("returns cancelled for explicit user rejection", async () => {
+    const result = await signWalletMessageWithControls({
+      message: "hello",
+      signMessage: async () => {
+        throw new Error("User rejected");
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("cancelled");
+  });
+
   it("returns stale when generation advances before wallet responds", async () => {
     let stale = false;
     const result = await signWalletMessageWithControls({

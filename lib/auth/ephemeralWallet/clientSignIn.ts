@@ -2,11 +2,21 @@
 
 import { notifyEphemeralWalletSessionChanged } from "./clientSession";
 import type { WalletSignInChallengeDisplay } from "./signInDisplayContext";
-import { signWalletMessageWithControls } from "./walletMessageSignAttempt";
+import {
+  signWalletMessageWithControls,
+  type WalletMessageSignFailureCode,
+} from "./walletMessageSignAttempt";
 
 export type EphemeralWalletSignInResult =
   | { ok: true; walletAddress: string }
-  | { ok: false; reason: "cancelled" | "failed"; code?: string; message?: string };
+  | {
+      ok: false;
+      reason: "cancelled" | "failed";
+      code?: string;
+      message?: string;
+      signFailureCode?: WalletMessageSignFailureCode;
+      signFailureDetail?: string;
+    };
 
 export type EphemeralWalletSignInChallenge = {
   challenge_id: string;
@@ -112,12 +122,36 @@ export async function completeEphemeralWalletSignInWithChallenge(input: {
   });
   if (!signed.ok) {
     if (signed.code === "timeout") {
-      return { ok: false, reason: "failed", code: "expired", message: describeError("expired") };
+      return {
+        ok: false,
+        reason: "failed",
+        code: "expired",
+        message: describeError("expired"),
+        signFailureCode: signed.code,
+      };
     }
-    return { ok: false, reason: "cancelled" };
+    if (signed.code === "wallet_error") {
+      return {
+        ok: false,
+        reason: "failed",
+        code: "wallet_sign_error",
+        signFailureCode: signed.code,
+        signFailureDetail: signed.detail,
+      };
+    }
+    if (signed.code === "cancelled" || signed.code === "aborted" || signed.code === "stale") {
+      return { ok: false, reason: "cancelled", signFailureCode: signed.code };
+    }
+    return {
+      ok: false,
+      reason: "failed",
+      code: "wallet_sign_error",
+      signFailureCode: signed.code,
+      signFailureDetail: signed.detail,
+    };
   }
   if (input.isStale?.()) {
-    return { ok: false, reason: "cancelled" };
+    return { ok: false, reason: "cancelled", signFailureCode: "stale" };
   }
 
   const signature = Buffer.from(signed.signatureBytes).toString("base64");
