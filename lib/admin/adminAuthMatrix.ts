@@ -60,6 +60,7 @@ export const REQUIRE_ADMIN_ROUTE_ACCESS_APIS = [
   "/api/admin/identity/document-url",
   "/api/admin/partners",
   "/api/admin/partners/onboarding/policies",
+  "/api/admin/native-accounts/partner-membership-invite",
   "/api/credentials/revoke",
 ] as const;
 
