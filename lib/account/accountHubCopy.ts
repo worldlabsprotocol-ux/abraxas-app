@@ -6,10 +6,10 @@ export const ACCOUNT_HUB_EYEBROW = "Account" as const;
 export const ACCOUNT_HUB_TITLE = "Your Abraxas account" as const;
 
 export const ACCOUNT_HUB_SUBHEAD =
-  "One sign-in for Passport and personal credentials. Partner Launchpad uses a separate operator session scoped to your sandbox or production API key." as const;
+  "One sign-in for Passport, personal credentials, and authorized Partner Launchpad workspaces. Server API keys remain for integrations — not repeated operator login." as const;
 
 export const ACCOUNT_SESSIONS_INDEPENDENT_NOTICE =
-  "Your Abraxas sign-in does not automatically authorize Partner Launchpad. Attach an operator session only with a key you are permitted to use." as const;
+  "Launchpad operator access requires explicit partner membership on your Abraxas account. Membership is never inferred from wallet, email, or founder status." as const;
 
 export const ACCOUNT_USE_CASE_HEADING = "What do you need today?" as const;
 
@@ -71,12 +71,12 @@ export const ACCOUNT_CREDENTIALS_SUBHEAD =
 export const ACCOUNT_PARTNER_SESSION_TITLE = "Partner Launchpad session" as const;
 
 export const ACCOUNT_PARTNER_SESSION_BODY =
-  "Operator access is bound to a server-verified API key and stored in an HttpOnly cookie. Keys are never placed in URLs or browser storage." as const;
+  "When your account has partner membership, resume Launchpad with one click. Operator sessions use an HttpOnly cookie — API keys stay for server integrations only." as const;
 
-export const ACCOUNT_PARTNER_RECOVERY_TITLE = "Recover an existing application" as const;
+export const ACCOUNT_PARTNER_RECOVERY_TITLE = "First-time access to an existing application" as const;
 
 export const ACCOUNT_PARTNER_RECOVERY_BODY =
-  "Paste the sandbox API key shown once at provisioning. Abraxas does not link applications by name, email, or wallet address." as const;
+  "If membership is not yet linked, prove access once with the sandbox API key shown at provisioning. After that, your Abraxas account can resume without pasting the secret again." as const;
 
 export const ACCOUNT_HOLDER_SIGN_IN_REQUIRED =
   "Sign in to view your account hub. Passport and Launchpad operator sessions remain separate." as const;
