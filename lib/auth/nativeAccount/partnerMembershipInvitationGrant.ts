@@ -2,26 +2,38 @@
 // Admin-authorized partner membership via auditable invitation grant (no API-key proof).
 
 import type { PartnerMembershipRole } from "@/lib/auth/nativeAccount/contract";
-import { ACCOUNT_SUBJECT_PREFIX } from "@/lib/auth/nativeAccount/contract";
+import { isNativeAccountId } from "@/lib/auth/nativeAccount/subjectId";
 import {
   assertPartnerMembership,
+  getNativeAccountStatus,
+  insertPartnerMembershipIfAbsent,
   recordMembershipGrant,
-  upsertPartnerMembership,
+  revokePartnerMembership,
   NativeAccountStoreUnavailableError,
 } from "@/lib/auth/nativeAccount/store";
+import { assertPartnerMembershipInvitationEnvironment } from "@/lib/auth/nativeAccount/partnerMembershipInvitationEnvironment";
+import {
+  consumeVerifiedRecoveryAttestation,
+  verifyPartnerMembershipRecoveryAttestationToken,
+  type VerifiedRecoveryAttestation,
+} from "@/lib/auth/nativeAccount/partnerMembershipRecoveryAttestation";
 import { getLaunchpadApplicationById } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
+import { appendAuditEvent } from "@/lib/verification/audit";
 
-const ACCOUNT_ID_PATTERN = /^abx_ac_[a-f0-9]{32}$/;
+/** Minimum role for Launchpad operator session without owner privileges. */
+export const LAUNCHPAD_INVITATION_DEFAULT_ROLE: PartnerMembershipRole = "operator";
+
+export function isValidNativeAccountSubjectId(accountId: string): boolean {
+  return isNativeAccountId(accountId);
+}
 
 export type PartnerMembershipInvitationGrantInput = {
   accountId: string;
   partnerId: string;
   applicationId: string;
-  /** Launchpad console requires operator, admin, or owner — default operator. */
-  role?: PartnerMembershipRole;
   reason: string;
   approverActorId: string;
-  accountOwnershipVerified: boolean;
+  recoveryAttestationToken: string;
 };
 
 export type PartnerMembershipInvitationGrantResult =
@@ -32,15 +44,20 @@ export type PartnerMembershipInvitationGrantResult =
       accountId: string;
       role: PartnerMembershipRole;
       alreadyMember: boolean;
+      auditEventId: string | null;
     }
   | { ok: false; code: string };
 
-export function isValidNativeAccountSubjectId(accountId: string): boolean {
-  return ACCOUNT_ID_PATTERN.test(accountId.trim());
+function attestationMatchesRequest(
+  verified: VerifiedRecoveryAttestation,
+  input: { accountId: string; partnerId: string; applicationId: string },
+): boolean {
+  return (
+    verified.accountId === input.accountId
+    && verified.partnerId === input.partnerId
+    && verified.applicationId === input.applicationId
+  );
 }
-
-/** Minimum role for Launchpad operator session without owner privileges. */
-export const LAUNCHPAD_INVITATION_DEFAULT_ROLE: PartnerMembershipRole = "operator";
 
 export async function grantPartnerMembershipByInvitation(
   input: PartnerMembershipInvitationGrantInput,
@@ -49,8 +66,9 @@ export async function grantPartnerMembershipByInvitation(
   const partnerId = input.partnerId.trim();
   const applicationId = input.applicationId.trim();
   const reason = input.reason.trim();
+  const token = input.recoveryAttestationToken.trim();
 
-  if (!isValidNativeAccountSubjectId(accountId)) {
+  if (!isNativeAccountId(accountId)) {
     return { ok: false, code: "account_id_invalid" };
   }
   if (!partnerId || !applicationId) {
@@ -59,16 +77,24 @@ export async function grantPartnerMembershipByInvitation(
   if (reason.length < 8) {
     return { ok: false, code: "reason_required" };
   }
-  if (!input.accountOwnershipVerified) {
-    return { ok: false, code: "account_ownership_not_verified" };
+  if (!token) {
+    return { ok: false, code: "recovery_attestation_required" };
   }
 
-  const role = input.role ?? LAUNCHPAD_INVITATION_DEFAULT_ROLE;
-  if (role !== "operator" && role !== "admin" && role !== "owner") {
-    return { ok: false, code: "role_invalid" };
+  const verified = await verifyPartnerMembershipRecoveryAttestationToken(token);
+  if (!verified) {
+    return { ok: false, code: "recovery_attestation_invalid" };
   }
-  if (role !== LAUNCHPAD_INVITATION_DEFAULT_ROLE) {
-    return { ok: false, code: "role_must_be_operator" };
+  if (!attestationMatchesRequest(verified, { accountId, partnerId, applicationId })) {
+    return { ok: false, code: "recovery_attestation_mismatch" };
+  }
+
+  const accountStatus = await getNativeAccountStatus(accountId);
+  if (!accountStatus) {
+    return { ok: false, code: "account_not_found" };
+  }
+  if (accountStatus !== "active") {
+    return { ok: false, code: "account_not_active" };
   }
 
   const app = await getLaunchpadApplicationById(applicationId);
@@ -77,6 +103,11 @@ export async function grantPartnerMembershipByInvitation(
   }
   if (String(app.partner_id) !== partnerId) {
     return { ok: false, code: "application_partner_mismatch" };
+  }
+
+  const envGate = assertPartnerMembershipInvitationEnvironment(app);
+  if (!envGate.ok) {
+    return { ok: false, code: envGate.code };
   }
 
   const existing = await assertPartnerMembership(accountId, partnerId);
@@ -88,11 +119,56 @@ export async function grantPartnerMembershipByInvitation(
       accountId,
       role: existing.role,
       alreadyMember: true,
+      auditEventId: null,
     };
   }
 
+  const pendingAuditId = await appendAuditEvent({
+    actor_type: "admin_operator",
+    actor_id: input.approverActorId,
+    action: "admin.native_account.partner_membership_invite.pending",
+    object_type: "partner",
+    object_id: partnerId,
+    metadata: {
+      account_id: accountId,
+      application_id: applicationId,
+      attestation_id: verified.attestationId,
+      grant_method: "invitation",
+      role: LAUNCHPAD_INVITATION_DEFAULT_ROLE,
+      reason,
+    },
+  });
+  if (!pendingAuditId) {
+    return { ok: false, code: "audit_persistence_failed" };
+  }
+
+  const consumed = await consumeVerifiedRecoveryAttestation(verified);
+  if (!consumed) {
+    return { ok: false, code: "recovery_attestation_already_consumed_or_expired" };
+  }
+
   try {
-    await upsertPartnerMembership({ accountId, partnerId, role });
+    const inserted = await insertPartnerMembershipIfAbsent({
+      accountId,
+      partnerId,
+      role: LAUNCHPAD_INVITATION_DEFAULT_ROLE,
+    });
+    if (!inserted) {
+      const raced = await assertPartnerMembership(accountId, partnerId);
+      if (raced.ok) {
+        return {
+          ok: true,
+          partnerId,
+          applicationId,
+          accountId,
+          role: raced.role,
+          alreadyMember: true,
+          auditEventId: pendingAuditId,
+        };
+      }
+      return { ok: false, code: "membership_insert_failed" };
+    }
+
     await recordMembershipGrant({
       accountId,
       partnerId,
@@ -101,7 +177,9 @@ export async function grantPartnerMembershipByInvitation(
         application_id: applicationId,
         reason,
         approver_actor_id: input.approverActorId,
-        account_ownership_verified: true,
+        attestation_id: verified.attestationId,
+        pending_audit_event_id: pendingAuditId,
+        account_verification: "native_session_recovery_attestation",
       },
     });
   } catch (error) {
@@ -111,12 +189,33 @@ export async function grantPartnerMembershipByInvitation(
     throw error;
   }
 
+  const completedAuditId = await appendAuditEvent({
+    actor_type: "admin_operator",
+    actor_id: input.approverActorId,
+    action: "admin.native_account.partner_membership_invite.completed",
+    object_type: "partner",
+    object_id: partnerId,
+    metadata: {
+      account_id: accountId,
+      application_id: applicationId,
+      attestation_id: verified.attestationId,
+      pending_audit_event_id: pendingAuditId,
+      grant_method: "invitation",
+      role: LAUNCHPAD_INVITATION_DEFAULT_ROLE,
+    },
+  });
+  if (!completedAuditId) {
+    await revokePartnerMembership(accountId, partnerId);
+    return { ok: false, code: "audit_completion_failed" };
+  }
+
   return {
     ok: true,
     partnerId,
     applicationId,
     accountId,
-    role,
+    role: LAUNCHPAD_INVITATION_DEFAULT_ROLE,
     alreadyMember: false,
+    auditEventId: completedAuditId,
   };
 }

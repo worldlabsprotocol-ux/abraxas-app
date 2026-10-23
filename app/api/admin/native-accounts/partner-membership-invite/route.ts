@@ -1,10 +1,9 @@
 // FILE: app/api/admin/native-accounts/partner-membership-invite/route.ts
-// Platform operator: link a verified native account to an existing partner tenant (invitation grant).
+// Platform operator: link a native account to an existing sandbox partner (invitation grant).
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { resolveDesignPartnerAdminActorCategory } from "@/lib/admin/designPartnerAdminActor";
-import { logAdminPartnerConfigAudit } from "@/lib/admin/partnerOnboardingAudit";
 import { grantPartnerMembershipByInvitation } from "@/lib/auth/nativeAccount/partnerMembershipInvitationGrant";
 
 export const dynamic = "force-dynamic";
@@ -18,11 +17,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
+  if ("account_ownership_verified" in body) {
+    return NextResponse.json({ error: "account_ownership_verified_not_accepted" }, { status: 400 });
+  }
+
   const accountId = String(body.account_id ?? "").trim();
   const partnerId = String(body.partner_id ?? "").trim();
   const applicationId = String(body.application_id ?? "").trim();
   const reason = String(body.reason ?? "").trim();
-  const accountOwnershipVerified = body.account_ownership_verified === true;
+  const recoveryAttestationToken = String(body.recovery_attestation ?? body.recovery_attestation_token ?? "").trim();
 
   const approverActorId = await resolveDesignPartnerAdminActorCategory(req);
 
@@ -32,30 +35,21 @@ export async function POST(req: NextRequest) {
     applicationId,
     reason,
     approverActorId,
-    accountOwnershipVerified,
+    recoveryAttestationToken,
   });
 
   if (!result.ok) {
     const status =
-      result.code === "application_not_found" || result.code === "application_partner_mismatch"
+      result.code === "application_not_found"
+      || result.code === "application_partner_mismatch"
+      || result.code === "account_not_found"
         ? 404
-        : 400;
+        : result.code === "production_origin_forbidden" || result.code === "application_not_sandbox"
+          ? 403
+          : result.code === "recovery_attestation_already_consumed_or_expired"
+            ? 409
+            : 400;
     return NextResponse.json({ error: result.code }, { status });
-  }
-
-  if (!result.alreadyMember) {
-    await logAdminPartnerConfigAudit(req, {
-      action: "admin.native_account.partner_membership_invite",
-      object_type: "partner",
-      object_id: partnerId,
-      metadata: {
-        account_id: accountId,
-        application_id: applicationId,
-        role: result.role,
-        grant_method: "invitation",
-        approver_actor_id: approverActorId,
-      },
-    });
   }
 
   return NextResponse.json({
@@ -66,5 +60,6 @@ export async function POST(req: NextRequest) {
     role: result.role,
     already_member: result.alreadyMember,
     grant_method: "invitation",
+    audit_event_id: result.auditEventId,
   });
 }

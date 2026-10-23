@@ -1,34 +1,50 @@
 # Partner membership invitation grant (operational)
 
-Use when an existing Launchpad sandbox application is active but the founder’s native Abraxas account was never linked to its partner tenant.
+Recover Launchpad access to an **existing** sandbox application when the reveal-once API key is unavailable.
 
-## Preconditions
+## Security model
 
-1. **Identify the founder account (authoritative)** — while signed in on the demo/staging origin, call `GET /api/auth/native/session`. Use the returned `account_id` (`abx_ac_*`). Do not infer ownership from account creation order or database sorting.
-2. **Platform operator authorization** — caller must pass `requireAdminRouteAccess` (admin email session or `ADMIN_PIN` on non-production origins).
-3. **Explicit ownership attestation** — the admin request must set `account_ownership_verified: true` only after step 1 is confirmed with the founder.
+- **Account identity** is proven by the founder’s **native account session** minting a **server-signed, single-use recovery attestation** (15 minutes).
+- **Grant authority** is proven by **platform admin** authentication (`requireAdminRouteAccess`).
+- **`account_ownership_verified` is not accepted** on the admin endpoint.
+- Grants are **sandbox-only**, **operator** role, **insert-only** (no silent role elevation), and **blocked on Production app origins**.
 
-## Grant request
+## Founder step — mint attestation
+
+While signed in to the demo/staging origin:
+
+`POST /api/auth/native/partner-membership-recovery-attestation`
+
+```json
+{
+  "partner_id": "studio-accept-wc-1792620888278-6a4a2447dfc8",
+  "application_id": "fbea93d2-6660-428d-85c3-8c4e12d89b05"
+}
+```
+
+Response includes `account_id` and `recovery_attestation` (JWT). Provide the token to a platform administrator.
+
+Confirm identity via `GET /api/auth/native/session` if needed — use the same browser session that minted the attestation.
+
+## Administrator step — apply grant
 
 `POST /api/admin/native-accounts/partner-membership-invite`
 
 ```json
 {
-  "account_id": "abx_ac_…",
+  "account_id": "<from attestation response>",
   "partner_id": "studio-accept-wc-1792620888278-6a4a2447dfc8",
   "application_id": "fbea93d2-6660-428d-85c3-8c4e12d89b05",
-  "reason": "Founder account confirmed via native session; link existing sandbox app for Launchpad resume.",
-  "account_ownership_verified": true
+  "reason": "Founder recovery attestation verified; link existing sandbox Launchpad app.",
+  "recovery_attestation": "<JWT from founder step>"
 }
 ```
 
-Grant method recorded: `invitation` in `abraxas_account_partner_membership_grants`. Role: `operator` (Launchpad console only).
-
 ## After grant
 
-1. `POST /api/launchpad/auth/session` with `{ "application_id": "…" }` and the native account cookie — no API key.
-2. Add staging callback via Launchpad **or** admin return URL helper with `application_id` so both `partners` and `partner_launchpad_applications` allowlists stay aligned.
+1. `POST /api/launchpad/auth/session` with `{ "application_id": "…" }` and the native account cookie.
+2. Add staging callback via Launchpad return URLs or admin onboarding return URLs with `application_id`.
 
-## Metering note
+## Database
 
-Receipt metering is best-effort at completion time. If `partner_metering_events` is empty for an approved receipt, check deployment env (`SUPABASE_SERVICE_ROLE_KEY`) and whether the completion path returned `replay_status: "issued"` (metering skips idempotent replays).
+Migration `148_partner_membership_recovery_attestation.sql` must be applied on the target demo database before attestations persist.

@@ -69,6 +69,16 @@ type MemoryState = {
   memberships: Map<string, { role: PartnerMembershipRole; status: "active" | "revoked"; created_at: string }>;
   grants: Array<Record<string, unknown>>;
   enrollments: Array<Record<string, unknown>>;
+  recoveryAttestations: Map<
+    string,
+    {
+      account_id: string;
+      partner_id: string;
+      application_id: string;
+      expires_at: string;
+      consumed_at: string | null;
+    }
+  >;
 };
 
 const GLOBAL_KEY = "__abraxas_native_account_memory__";
@@ -87,6 +97,7 @@ function memoryState(): MemoryState {
       memberships: new Map(),
       grants: [],
       enrollments: [],
+      recoveryAttestations: new Map(),
     };
   }
   return g[GLOBAL_KEY]!;
@@ -141,6 +152,7 @@ export function resetNativeAccountMemory(): void {
   memberships().clear();
   grants().length = 0;
   enrollments().length = 0;
+  memoryState().recoveryAttestations.clear();
 }
 
 export const nativeAccountMemory = {
@@ -209,6 +221,53 @@ export const nativeAccountMemory = {
       status: "active",
       created_at: new Date().toISOString(),
     });
+  },
+
+  insertMembershipIfAbsent(accountId: string, partnerId: string, role: PartnerMembershipRole): boolean {
+    const key = membershipKey(accountId, partnerId);
+    if (memberships().has(key)) return false;
+    memberships().set(key, {
+      role,
+      status: "active",
+      created_at: new Date().toISOString(),
+    });
+    return true;
+  },
+
+  insertRecoveryAttestation(input: {
+    attestationId: string;
+    accountId: string;
+    partnerId: string;
+    applicationId: string;
+    expiresAt: string;
+  }): void {
+    memoryState().recoveryAttestations.set(input.attestationId, {
+      account_id: input.accountId,
+      partner_id: input.partnerId,
+      application_id: input.applicationId,
+      expires_at: input.expiresAt,
+      consumed_at: null,
+    });
+  },
+
+  consumeRecoveryAttestation(verified: {
+    attestationId: string;
+    accountId: string;
+    partnerId: string;
+    applicationId: string;
+  }): boolean {
+    const row = memoryState().recoveryAttestations.get(verified.attestationId);
+    if (!row || row.consumed_at) return false;
+    if (new Date(row.expires_at).getTime() < Date.now()) return false;
+    if (
+      row.account_id !== verified.accountId
+      || row.partner_id !== verified.partnerId
+      || row.application_id !== verified.applicationId
+    ) {
+      return false;
+    }
+    row.consumed_at = new Date().toISOString();
+    return true;
   },
 
   revokeMembership(accountId: string, partnerId: string): void {
