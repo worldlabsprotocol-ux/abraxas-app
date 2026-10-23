@@ -44,5 +44,12 @@ describe("solanaSignInDialogState", () => {
     expect(mapWalletConnectFailure(new Error("User rejected the request"))).toMatch(/dismissed/i);
     expect(mapSignInFailure({ reason: "cancelled" })).toMatch(/dismissed/i);
     expect(mapSignInFailure({ reason: "failed", code: "expired" })).toMatch(/timed out/i);
+    expect(
+      mapSignInFailure({
+        reason: "failed",
+        signFailureCode: "wallet_error",
+        signFailureDetail: "Unexpected internal wallet failure",
+      }),
+    ).toMatch(/Unexpected internal wallet failure/);
   });
 });

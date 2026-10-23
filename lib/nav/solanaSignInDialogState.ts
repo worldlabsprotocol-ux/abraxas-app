@@ -149,11 +149,27 @@ export function mapSignInFailure(input: {
   reason: "cancelled" | "failed";
   code?: string;
   message?: string;
+  signFailureCode?: "cancelled" | "aborted" | "timeout" | "stale" | "wallet_error";
+  signFailureDetail?: string;
 }): string {
   if (input.reason === "cancelled") {
-    return "Signature request dismissed. Review the request and sign in Phantom when you are ready.";
+    if (input.signFailureCode === "aborted") {
+      return "Sign-in was interrupted. Review the request and try again when ready.";
+    }
+    return "Signature request dismissed. Review the request and sign in your wallet when you are ready.";
   }
-  if (input.code === "expired") return "Sign-in request timed out. Try again.";
+  if (input.code === "expired" || input.signFailureCode === "timeout") {
+    return "Sign-in request timed out. Try again.";
+  }
+  if (input.signFailureCode === "wallet_error") {
+    if (input.signFailureDetail?.toLowerCase().includes("popup")) {
+      return "Wallet popup may be blocked. Allow popups for this site, then try signing again.";
+    }
+    if (input.signFailureDetail) {
+      return `Wallet could not complete signing: ${input.signFailureDetail}`;
+    }
+    return "Wallet could not complete signing. Unlock the extension, refresh the page, and try again.";
+  }
   if (input.message) return input.message;
   return "Could not verify signature. Try again.";
 }
