@@ -161,4 +161,41 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
       expect(verifyCount).toBe(0);
     });
   });
+
+  it("loads native account sign-in review when ephemeral mode is off", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/auth/native/enabled")) {
+          return Response.json({ enabled: true, solana_operational: true });
+        }
+        if (url.includes("/api/auth/native/solana/challenge")) {
+          challengeCount += 1;
+          const ch = mockSignInChallenge(`native_${challengeCount}`);
+          return Response.json({ ok: true, challenge: ch });
+        }
+        return Response.json({ ok: false }, { status: 404 });
+      }),
+    );
+
+    render(
+      <SolanaAccountSignInDialog
+        open
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+        busy={false}
+        setBusy={vi.fn()}
+        setError={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Review sign-in request/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Abraxas wallet sign-in/i)).toBeTruthy();
+    });
+    expect(
+      screen.queryByText(/Sign-in review is only available for wallet authentication/i),
+    ).toBeNull();
+  });
 });
