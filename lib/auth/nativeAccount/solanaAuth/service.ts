@@ -64,6 +64,7 @@ export async function issueAccountSolanaAuthChallenge(input: {
   const challengeId = createAccountSolChallengeId();
   const domain = new URL(input.origin).host;
 
+  const originNormalized = new URL(input.origin).origin;
   const message = buildAccountSolanaSignInMessage({
     domain,
     walletAddress: wallet,
@@ -73,6 +74,7 @@ export async function issueAccountSolanaAuthChallenge(input: {
     issuedAt,
     expiresAt,
     requestId,
+    origin: originNormalized,
   });
 
   try {
