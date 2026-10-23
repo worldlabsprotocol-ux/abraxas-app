@@ -1247,10 +1247,16 @@ export function PartnerLaunchpadClient({
                 <p style={bodyText}>
                   Your application already has an approved return URL and bound policy. Create a fresh hosted wallet-control request here — real Phantom signing and sharing consent still apply. Merchant integration files are only required when you embed Abraxas on your own website.
                 </p>
-                <PartnerFlowRequestPanel
-                  applicationId={activeApp.id}
-                  partnerId={workspace?.partner_id ?? activeApp.partner_id ?? ""}
-                />
+                {workspace?.partner_id ? (
+                  <PartnerFlowRequestPanel
+                    applicationId={activeApp.id}
+                    partnerId={workspace.partner_id}
+                  />
+                ) : (
+                  <p role="status" style={{ ...bodyText, color: "#f59e0b" }}>
+                    Partner session is not ready. Refresh Launchpad or sign in again before creating a hosted verification handoff.
+                  </p>
+                )}
               </ContentCard>
             )}
             <ContentCard title="Run a customer verification">
