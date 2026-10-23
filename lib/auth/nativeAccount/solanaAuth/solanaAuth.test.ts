@@ -82,7 +82,7 @@ describe("native account Solana auth", () => {
     expect(verified2.accountId).toBe(firstId);
   });
 
-  it("builds SIWS-style message with domain and nonce", () => {
+  it("builds Abraxas wallet authorization message with domain binding and nonce", () => {
     const msg = buildAccountSolanaSignInMessage({
       domain: "localhost:3010",
       walletAddress: "11111111111111111111111111111111",
@@ -92,8 +92,10 @@ describe("native account Solana auth", () => {
       issuedAt: "2026-01-01T00:00:00.000Z",
       expiresAt: "2026-01-01T00:05:00.000Z",
       requestId: "req1",
+      origin: "http://localhost:3010",
     });
-    expect(msg).toContain("wants you to sign in with your Solana account");
+    expect(msg).toContain("ABRAXAS — WALLET SIGN-IN");
     expect(msg).toContain("Nonce: abc");
+    expect(msg).not.toContain("wants you to sign in with your Solana account");
   });
 });
