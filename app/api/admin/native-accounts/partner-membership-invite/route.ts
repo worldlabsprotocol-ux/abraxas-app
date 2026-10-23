@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
   const applicationId = String(body.application_id ?? "").trim();
   const reason = String(body.reason ?? "").trim();
   const recoveryAttestationToken = String(body.recovery_attestation ?? body.recovery_attestation_token ?? "").trim();
+  const adminOwnershipApprovalToken = String(
+    body.admin_ownership_approval ?? body.admin_ownership_approval_token ?? "",
+  ).trim();
 
   const approverActorId = await resolveDesignPartnerAdminActorCategory(req);
 
@@ -36,6 +39,7 @@ export async function POST(req: NextRequest) {
     reason,
     approverActorId,
     recoveryAttestationToken,
+    adminOwnershipApprovalToken: adminOwnershipApprovalToken || undefined,
   });
 
   if (!result.ok) {
@@ -47,8 +51,12 @@ export async function POST(req: NextRequest) {
         : result.code === "production_origin_forbidden" || result.code === "application_not_sandbox"
           ? 403
           : result.code === "recovery_attestation_already_consumed_or_expired"
+            || result.code === "application_entitlement_conflict"
+            || result.code === "admin_ownership_approval_already_consumed_or_expired"
             ? 409
-            : 400;
+            : result.code === "admin_ownership_approval_required"
+              ? 403
+              : 400;
     return NextResponse.json({ error: result.code }, { status });
   }
 

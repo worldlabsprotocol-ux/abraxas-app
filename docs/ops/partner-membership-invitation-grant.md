@@ -26,6 +26,21 @@ Response includes `account_id` and `recovery_attestation` (JWT). Provide the tok
 
 Confirm identity via `GET /api/auth/native/session` if needed — use the same browser session that minted the attestation.
 
+## Administrator step — ownership review (required when app is not server-bound to account)
+
+If the application is **not** already linked via `abraxas_sandbox_enrollments` to the requesting account, an attestation alone is insufficient.
+
+`POST /api/admin/native-accounts/partner-membership-recovery-ownership-approval`
+
+```json
+{
+  "recovery_attestation": "<JWT from founder step>",
+  "ownership_review_reason": "Reviewed Launchpad provisioning audit and verified founder entitlement out of band."
+}
+```
+
+Returns `admin_ownership_approval` (short-lived, single-use). **Reject** if response is `application_entitlement_conflict` (another account is enrolled for this application).
+
 ## Administrator step — apply grant
 
 `POST /api/admin/native-accounts/partner-membership-invite`
@@ -36,7 +51,8 @@ Confirm identity via `GET /api/auth/native/session` if needed — use the same b
   "partner_id": "studio-accept-wc-1792620888278-6a4a2447dfc8",
   "application_id": "fbea93d2-6660-428d-85c3-8c4e12d89b05",
   "reason": "Founder recovery attestation verified; link existing sandbox Launchpad app.",
-  "recovery_attestation": "<JWT from founder step>"
+  "recovery_attestation": "<JWT from founder step>",
+  "admin_ownership_approval": "<JWT from ownership review when required>"
 }
 ```
 
@@ -47,4 +63,4 @@ Confirm identity via `GET /api/auth/native/session` if needed — use the same b
 
 ## Database
 
-Migration `148_partner_membership_recovery_attestation.sql` must be applied on the target demo database before attestations persist.
+Migrations **148** (attestation) and **149** (admin ownership approval) must be applied on the target demo database before recovery persists.

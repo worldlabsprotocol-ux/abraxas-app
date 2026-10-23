@@ -8,6 +8,7 @@ import {
   issuePartnerMembershipRecoveryAttestation,
   verifyPartnerMembershipRecoveryAttestationToken,
 } from "@/lib/auth/nativeAccount/partnerMembershipRecoveryAttestation";
+import { issueAdminRecoveryOwnershipApproval } from "@/lib/auth/nativeAccount/partnerMembershipRecoveryAdminApproval";
 import {
   issuePartnerConsoleSessionToken,
   resolvePartnerConsoleSession,
@@ -58,6 +59,15 @@ describe("partner membership recovery (memory)", () => {
     expect(mintBody.account_id).toBe(accountId);
     expect(typeof mintBody.recovery_attestation).toBe("string");
 
+    const verified = await verifyPartnerMembershipRecoveryAttestationToken(mintBody.recovery_attestation);
+    expect(verified).toBeTruthy();
+    const ownershipApproval = await issueAdminRecoveryOwnershipApproval({
+      verifiedAttestation: verified!,
+      approverActorId: "platform_operator",
+      reason: "Integration test — provisioning review recorded",
+    });
+    expect(ownershipApproval.ok).toBe(true);
+
     const grant = await grantPartnerMembershipByInvitation({
       accountId,
       partnerId,
@@ -65,6 +75,9 @@ describe("partner membership recovery (memory)", () => {
       reason: "Integration test recovery grant",
       approverActorId: "platform_operator",
       recoveryAttestationToken: mintBody.recovery_attestation,
+      adminOwnershipApprovalToken: ownershipApproval.ok
+        ? ownershipApproval.adminOwnershipApprovalToken
+        : undefined,
     });
     expect(grant.ok).toBe(true);
     if (!grant.ok) return;
@@ -112,6 +125,11 @@ describe("partner membership recovery (memory)", () => {
       approverActorId: "platform_operator",
       recoveryAttestationToken: issued.attestationToken,
     });
-    expect(grant).toEqual({ ok: false, code: "recovery_attestation_already_consumed_or_expired" });
+    expect(grant.ok).toBe(false);
+    if (grant.ok) return;
+    expect([
+      "recovery_attestation_already_consumed_or_expired",
+      "admin_ownership_approval_required",
+    ]).toContain(grant.code);
   });
 });

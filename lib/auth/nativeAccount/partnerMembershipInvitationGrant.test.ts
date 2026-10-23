@@ -27,6 +27,18 @@ vi.mock("@/lib/auth/nativeAccount/partnerMembershipInvitationEnvironment", () =>
   assertPartnerMembershipInvitationEnvironment: vi.fn(() => ({ ok: true })),
 }));
 
+vi.mock("@/lib/auth/nativeAccount/partnerMembershipRecoveryOwnership", () => ({
+  resolveRecoveryOwnershipEntitlement: vi.fn(async () => ({
+    kind: "server_verified_enrollment",
+    basis: "sandbox_enrollment_match",
+  })),
+}));
+
+vi.mock("@/lib/auth/nativeAccount/partnerMembershipRecoveryAdminApproval", () => ({
+  verifyAdminRecoveryOwnershipApprovalToken: vi.fn(),
+  consumeVerifiedAdminRecoveryApproval: vi.fn(),
+}));
+
 vi.mock("@/lib/verification/audit", () => ({
   appendAuditEvent: vi.fn(async () => "audit_123"),
 }));

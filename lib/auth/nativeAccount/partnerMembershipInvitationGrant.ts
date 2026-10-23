@@ -19,6 +19,11 @@ import {
 } from "@/lib/auth/nativeAccount/partnerMembershipRecoveryAttestation";
 import { getLaunchpadApplicationById } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import { resolveRecoveryOwnershipEntitlement } from "@/lib/auth/nativeAccount/partnerMembershipRecoveryOwnership";
+import {
+  consumeVerifiedAdminRecoveryApproval,
+  verifyAdminRecoveryOwnershipApprovalToken,
+} from "@/lib/auth/nativeAccount/partnerMembershipRecoveryAdminApproval";
 
 /** Minimum role for Launchpad operator session without owner privileges. */
 export const LAUNCHPAD_INVITATION_DEFAULT_ROLE: PartnerMembershipRole = "operator";
@@ -34,6 +39,7 @@ export type PartnerMembershipInvitationGrantInput = {
   reason: string;
   approverActorId: string;
   recoveryAttestationToken: string;
+  adminOwnershipApprovalToken?: string;
 };
 
 export type PartnerMembershipInvitationGrantResult =
@@ -110,6 +116,40 @@ export async function grantPartnerMembershipByInvitation(
     return { ok: false, code: envGate.code };
   }
 
+  const entitlement = await resolveRecoveryOwnershipEntitlement({
+    accountId,
+    partnerId,
+    applicationId,
+  });
+  if (entitlement.kind === "application_not_found") {
+    return { ok: false, code: "application_not_found" };
+  }
+  if (entitlement.kind === "entitlement_conflict") {
+    return { ok: false, code: "application_entitlement_conflict" };
+  }
+  if (entitlement.kind === "admin_review_required") {
+    const adminToken = input.adminOwnershipApprovalToken?.trim() ?? "";
+    if (!adminToken) {
+      return { ok: false, code: "admin_ownership_approval_required" };
+    }
+    const adminVerified = await verifyAdminRecoveryOwnershipApprovalToken(adminToken);
+    if (!adminVerified) {
+      return { ok: false, code: "admin_ownership_approval_invalid" };
+    }
+    if (
+      adminVerified.attestationId !== verified.attestationId
+      || adminVerified.accountId !== accountId
+      || adminVerified.partnerId !== partnerId
+      || adminVerified.applicationId !== applicationId
+    ) {
+      return { ok: false, code: "admin_ownership_approval_mismatch" };
+    }
+    const adminConsumed = await consumeVerifiedAdminRecoveryApproval(adminVerified);
+    if (!adminConsumed) {
+      return { ok: false, code: "admin_ownership_approval_already_consumed_or_expired" };
+    }
+  }
+
   const existing = await assertPartnerMembership(accountId, partnerId);
   if (existing.ok) {
     return {
@@ -180,6 +220,10 @@ export async function grantPartnerMembershipByInvitation(
         attestation_id: verified.attestationId,
         pending_audit_event_id: pendingAuditId,
         account_verification: "native_session_recovery_attestation",
+        ownership_basis:
+          entitlement.kind === "server_verified_enrollment"
+            ? entitlement.basis
+            : "provisioning_review",
       },
     });
   } catch (error) {
