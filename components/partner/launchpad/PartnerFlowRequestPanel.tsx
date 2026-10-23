@@ -17,6 +17,7 @@ import {
 } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import type { PartnerFlowRequestView } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import { HostedHandoffControls } from "./HostedHandoffControls";
+import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
 
 const FONT = ABRAXAS_FONT_SANS;
 const body: React.CSSProperties = {
@@ -56,20 +57,34 @@ export function PartnerFlowRequestPanel({
   const [callbackIndex, setCallbackIndex] = useState(0);
   const [displayLabel, setDisplayLabel] = useState("");
   const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [retryable, setRetryable] = useState(true);
 
   const refresh = useCallback(async () => {
     setError("");
+    setLoadState("loading");
     try {
       const res = await fetch(`/api/launchpad/applications/${applicationId}/partner-flow-request`, {
         credentials: "include",
+        cache: "no-store",
       });
-      const data = await res.json() as PartnerFlowRequestView & { error?: string };
+      const data = await res.json() as PartnerFlowRequestView & { error?: string; code?: string };
       if (!res.ok) {
-        setError("Could not load Partner Flow configuration.");
+        const message = res.status === 401
+          ? "Launchpad session expired. Sign in again from Account → Open Launchpad, then return here."
+          : res.status === 403
+            ? "This application is not available for your current partner session."
+            : res.status === 404
+              ? "Application not found for this partner session."
+              : launchpadErrorFromResponse(data, "Partner Flow configuration is temporarily unavailable.");
+        setError(message);
+        setRetryable(res.status >= 500 || res.status === 429 || res.status === 401);
         setView(null);
+        setLoadState("error");
         return;
       }
       setView(data);
+      setLoadState("ready");
       setPurpose(data.purpose ?? "");
       const allowed = partnerFlowActionsForTemplate(data.policy_template_id);
       if (data.action && allowed.includes(data.action)) setAction(data.action);
@@ -78,7 +93,9 @@ export function PartnerFlowRequestPanel({
       setDisplayLabel(data.display_label);
       setCapabilities(data.capabilities);
     } catch {
-      setError("Could not load Partner Flow configuration.");
+      setError("Network error while loading Partner Flow configuration. Check your connection and try again.");
+      setRetryable(true);
+      setLoadState("error");
     }
   }, [applicationId]);
 
@@ -128,7 +145,19 @@ export function PartnerFlowRequestPanel({
   return (
     <ContentCard title={PARTNER_FLOW_REQUEST_ENTRY}>
       <p style={{ ...body, marginBottom: "0.75rem" }}>{PARTNER_FLOW_REVIEW_NOTICE}</p>
-      {error && <p role="alert" style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{error}</p>}
+      {loadState === "loading" && !view && (
+        <p role="status" style={{ ...body, marginBottom: "0.7rem" }}>Loading Partner Flow configuration…</p>
+      )}
+      {error && (
+        <div role="alert" style={{ marginBottom: "0.7rem" }}>
+          <p style={{ ...body, color: "var(--danger, #f87171)", margin: "0 0 0.5rem" }}>{error}</p>
+          {retryable && (
+            <Btn size="sm" variant="secondary" onClick={() => void refresh()} disabled={loadState === "loading"}>
+              {loadState === "loading" ? "Retrying…" : "Try again"}
+            </Btn>
+          )}
+        </div>
+      )}
 
       <label style={{ ...body, display: "block", marginBottom: "0.75rem" }}>
         Partner display label

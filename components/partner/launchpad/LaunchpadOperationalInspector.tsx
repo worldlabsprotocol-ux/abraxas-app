@@ -136,10 +136,13 @@ export function LaunchpadOperationalInspector({
   }
 
   return (
-    <aside className="abx-launchpad-inspector" aria-label="Launchpad diagnostics">
-      <h2 className="abx-studio-inspector__header" style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 0.65rem" }}>
+    <details className="abx-launchpad-inspector abx-launchpad-inspector--collapsible" open={false}>
+      <summary
+        className="abx-studio-inspector__header"
+        style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 0.65rem", cursor: "pointer", listStyle: "none" }}
+      >
         Evidence & diagnostics
-      </h2>
+      </summary>
       {loading && <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>Refreshing…</p>}
 
       {operationsItems.length > 0 && (
@@ -260,6 +263,6 @@ export function LaunchpadOperationalInspector({
         </h3>
         <p style={{ fontFamily: MONO, fontSize: "0.62rem", margin: 0 }}>{activity.length} events loaded</p>
       </section>
-    </aside>
+    </details>
   );
 }
