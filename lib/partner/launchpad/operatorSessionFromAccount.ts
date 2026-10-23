@@ -2,11 +2,8 @@
 
 import type { NextRequest } from "next/server";
 import { resolveAccountSession } from "@/lib/auth/accountSession";
-import {
-  assertPartnerMembership,
-  listPartnerMemberships,
-  type PartnerMembershipRole,
-} from "@/lib/auth/nativeAccount/store";
+import { assertPartnerMembership, listPartnerMemberships } from "@/lib/auth/nativeAccount/store";
+import type { PartnerMembershipRole } from "@/lib/auth/nativeAccount/contract";
 import { getLaunchpadApplicationById } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import {
   attachPartnerConsoleSessionCookie,
