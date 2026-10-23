@@ -82,6 +82,11 @@ import {
   parseLaunchpadStageFromSearch,
 } from "@/lib/partner/launchpad/launchpadDeepLink";
 import { resolveLaunchpadConnectPrimaryHref } from "@/lib/partner/launchpad/launchpadConnectNavigation";
+import {
+  claimApplicationMembershipWithApiKey,
+  establishLaunchpadSessionWithAccount,
+  establishLaunchpadSessionWithApiKey,
+} from "@/lib/partner/launchpad/launchpadSessionClient";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -170,6 +175,9 @@ export function PartnerLaunchpadClient({
   const stagePanelRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
+  const [nativeAccountSignedIn, setNativeAccountSignedIn] = useState(false);
+  const [accountResumeBusy, setAccountResumeBusy] = useState(false);
+  const [showOneTimeClaim, setShowOneTimeClaim] = useState(false);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [revealedProductionKey, setRevealedProductionKey] = useState<string | null>(null);
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
@@ -387,6 +395,19 @@ export function PartnerLaunchpadClient({
       }
       if (sessionData.authenticated) {
         await refreshWorkspace();
+      } else if (typeof window !== "undefined") {
+        const nativeRes = await fetch("/api/auth/native/session", { credentials: "include" });
+        const nativeData = (await nativeRes.json()) as { authenticated?: boolean };
+        setNativeAccountSignedIn(Boolean(nativeData.authenticated));
+        if (nativeData.authenticated) {
+          const appId = parseLaunchpadApplicationIdFromSearch(window.location.search);
+          const resumed = await establishLaunchpadSessionWithAccount({ applicationId: appId });
+          if (resumed.ok) {
+            await refreshWorkspace();
+          } else if (resumed.status === 403 && appId) {
+            setShowOneTimeClaim(true);
+          }
+        }
       }
       setLoading(false);
     })();
@@ -480,18 +501,59 @@ export function PartnerLaunchpadClient({
 
   async function signInWithKey() {
     setError("");
-    const res = await fetch("/api/launchpad/auth/session", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKeyInput}` },
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "Sign in failed");
+    const result = await establishLaunchpadSessionWithApiKey(apiKeyInput);
+    if (!result.ok) {
+      setError(result.error ?? "Sign in failed");
       return;
     }
+    setApiKeyInput("");
+    setShowOneTimeClaim(false);
     setAuthenticated(true);
     await refreshWorkspace();
+  }
+
+  async function signInWithAccount() {
+    setError("");
+    setAccountResumeBusy(true);
+    try {
+      const appId =
+        typeof window !== "undefined"
+          ? parseLaunchpadApplicationIdFromSearch(window.location.search)
+          : null;
+      const result = await establishLaunchpadSessionWithAccount({ applicationId: appId });
+      if (!result.ok) {
+        if (result.status === 403 && appId) {
+          setShowOneTimeClaim(true);
+          setError("One-time API key proof is required to link this application to your account.");
+        } else {
+          setError(result.error ?? "Could not resume Launchpad");
+        }
+        return;
+      }
+      setShowOneTimeClaim(false);
+      setAuthenticated(true);
+      await refreshWorkspace();
+    } finally {
+      setAccountResumeBusy(false);
+    }
+  }
+
+  async function claimMembershipAndResume() {
+    setError("");
+    setAccountResumeBusy(true);
+    try {
+      const claim = await claimApplicationMembershipWithApiKey(apiKeyInput);
+      if (!claim.ok) {
+        setError(claim.code === "api_key_invalid" ? "API key not recognized" : "Could not link application");
+        return;
+      }
+      setApiKeyInput("");
+      setShowOneTimeClaim(false);
+      setAuthenticated(true);
+      await refreshWorkspace();
+    } finally {
+      setAccountResumeBusy(false);
+    }
   }
 
   async function signOut() {
@@ -838,19 +900,52 @@ export function PartnerLaunchpadClient({
       {!authenticated && !workspace?.applications.length ? (
         <ContentCard title="Sign in or create your first application">
           <p style={bodyText}>
-            Paste a sandbox API key to resume a workspace, or continue below to provision a new sandbox application.
+            Signed in to Abraxas? Resume your sandbox with your account. API keys are for server integrations and
+            one-time membership linking — not repeated operator login.
           </p>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            <input
-              type="password"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="abx_test_…"
-              aria-label="Sandbox API key"
-              style={inputStyle}
-            />
-            <Btn size="sm" onClick={() => void signInWithKey()}>Sign in</Btn>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+            {nativeAccountSignedIn ? (
+              <Btn size="sm" disabled={accountResumeBusy} onClick={() => void signInWithAccount()}>
+                Continue with Abraxas account
+              </Btn>
+            ) : (
+              <Btn href="/account/applications" size="sm" variant="secondary">
+                Sign in to Abraxas account
+              </Btn>
+            )}
           </div>
+          {(showOneTimeClaim || !nativeAccountSignedIn) && (
+            <>
+              <p style={{ ...bodyText, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                {showOneTimeClaim
+                  ? "Link this application once with the sandbox key shown at provisioning. After membership is granted, your account can resume without the full secret."
+                  : "Or paste a sandbox API key to sign in or provision a new workspace."}
+              </p>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="abx_test_…"
+                  aria-label="Sandbox API key"
+                  style={inputStyle}
+                />
+                {showOneTimeClaim ? (
+                  <Btn
+                    size="sm"
+                    disabled={accountResumeBusy || !apiKeyInput.trim()}
+                    onClick={() => void claimMembershipAndResume()}
+                  >
+                    Link application &amp; resume
+                  </Btn>
+                ) : (
+                  <Btn size="sm" disabled={!apiKeyInput.trim()} onClick={() => void signInWithKey()}>
+                    Sign in with API key
+                  </Btn>
+                )}
+              </div>
+            </>
+          )}
         </ContentCard>
       ) : (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
