@@ -44,6 +44,18 @@ describe("GET /api/account/overview", () => {
     expect(body.native_account.authenticated).toBe(false);
   });
 
+  it("includes partner membership list for native accounts", async () => {
+    accountMock.mockResolvedValueOnce({
+      accountId: "abx_ac_test",
+      authMethod: "solana_wallet",
+    });
+    membershipsMock.mockResolvedValueOnce([{ partner_id: "partner_a", role: "operator" }]);
+    const res = await GET(new NextRequest("http://localhost/api/account/overview"));
+    const body = await res.json();
+    expect(body.native_account.partner_membership_count).toBe(1);
+    expect(body.native_account.partner_memberships).toEqual([{ partner_id: "partner_a", role: "operator" }]);
+  });
+
   it("does not merge partner id into holder subject", async () => {
     browserMock.mockResolvedValueOnce({
       subjectId: "0x" + "c".repeat(64),

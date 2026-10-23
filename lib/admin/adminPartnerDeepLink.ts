@@ -3,6 +3,7 @@
 
 export const ADMIN_PARTNERS_TABS = [
   "onboarding",
+  "account-recovery",
   "keys",
   "usage",
   "webhooks",

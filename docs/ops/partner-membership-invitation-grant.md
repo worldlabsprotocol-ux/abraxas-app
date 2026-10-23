@@ -11,7 +11,11 @@ Recover Launchpad access to an **existing** sandbox application when the reveal-
 
 ## Founder step — mint attestation
 
-While signed in to the demo/staging origin:
+While signed in to the demo/staging origin, use **Account → Applications → Request authorized access** (fields pre-fill from deep link), or:
+
+`/account/applications?recover_application=fbea93d2-6660-428d-85c3-8c4e12d89b05&recover_partner=studio-accept-wc-1792620888278-6a4a2447dfc8`
+
+API equivalent:
 
 `POST /api/auth/native/partner-membership-recovery-attestation`
 
@@ -25,6 +29,8 @@ While signed in to the demo/staging origin:
 Response includes `account_id` and `recovery_attestation` (JWT). Provide the token to a platform administrator.
 
 Confirm identity via `GET /api/auth/native/session` if needed — use the same browser session that minted the attestation.
+
+Administrators can complete steps 2–3 in **Admin → Partners → Account recovery** (paste attestation from a secure channel).
 
 ## Administrator step — ownership review (required when app is not server-bound to account)
 

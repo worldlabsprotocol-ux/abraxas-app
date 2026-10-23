@@ -73,10 +73,24 @@ export const ACCOUNT_PARTNER_SESSION_TITLE = "Partner Launchpad session" as cons
 export const ACCOUNT_PARTNER_SESSION_BODY =
   "When your account has partner membership, resume Launchpad with one click. Operator sessions use an HttpOnly cookie — API keys stay for server integrations only." as const;
 
-export const ACCOUNT_PARTNER_RECOVERY_TITLE = "First-time access to an existing application" as const;
+export const ACCOUNT_PARTNER_RECOVERY_TITLE = "Optional: one-time API key" as const;
 
 export const ACCOUNT_PARTNER_RECOVERY_BODY =
-  "If membership is not yet linked, prove access once with the sandbox API key shown at provisioning. After that, your Abraxas account can resume without pasting the secret again." as const;
+  "Use this only if you still have the reveal-once sandbox key from provisioning. It is not required when platform administrators complete authorized account recovery." as const;
+
+export const ACCOUNT_PARTNER_RECOVERY_REQUEST_TITLE =
+  "Request authorized access to an existing application" as const;
+
+export const ACCOUNT_PARTNER_RECOVERY_REQUEST_BODY =
+  "When the original API key is unavailable, identify the Launchpad application and partner. Abraxas mints a short-lived recovery attestation tied to your signed-in account. A platform administrator must independently verify entitlement before membership is granted — requesting access does not grant Launchpad by itself." as const;
+
+export const ACCOUNT_PARTNER_RECOVERY_ADMIN_NOTE =
+  "Administrators: Admin → Partners → Account recovery (paste the attestation, complete ownership review when required, then apply the invitation grant)." as const;
+
+export const ACCOUNT_PARTNER_RECOVERY_API_KEY_FALLBACK =
+  "To create a new sandbox application instead, use Integration Studio — that path is separate from recovering an existing app." as const;
+
+export const ACCOUNT_PARTNER_LINKED_MEMBERSHIPS_TITLE = "Applications linked to this account" as const;
 
 export const ACCOUNT_HOLDER_SIGN_IN_REQUIRED =
   "Sign in to view your account hub. Passport and Launchpad operator sessions remain separate." as const;

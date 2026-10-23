@@ -14,6 +14,7 @@ export type AccountOverviewPayload = {
     account_id: string | null;
     auth_method: AccountSession["authMethod"] | null;
     partner_membership_count: number;
+    partner_memberships: Array<{ partner_id: string; role: string }>;
   };
   wallet_auth: {
     authenticated: boolean;
@@ -43,6 +44,7 @@ export function buildAccountOverview(input: {
   nativeAccountSession?: AccountSession | null;
   ephemeralWalletSession?: EphemeralWalletSession | null;
   partnerMembershipCount?: number;
+  partnerMemberships?: Array<{ partner_id: string; role: string }>;
 }): AccountOverviewPayload {
   const walletAuthenticated = Boolean(input.ephemeralWalletSession);
   return {
@@ -52,6 +54,7 @@ export function buildAccountOverview(input: {
       account_id: input.nativeAccountSession?.accountId ?? null,
       auth_method: input.nativeAccountSession?.authMethod ?? (walletAuthenticated ? "solana_wallet" : null),
       partner_membership_count: input.partnerMembershipCount ?? 0,
+      partner_memberships: input.partnerMemberships ?? [],
     },
     wallet_auth: {
       authenticated: walletAuthenticated,

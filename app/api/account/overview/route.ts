@@ -20,12 +20,15 @@ export async function GET(req: NextRequest) {
   ]);
 
   let partnerMembershipCount = 0;
+  let partnerMemberships: Array<{ partner_id: string; role: string }> = [];
   if (nativeAccountSession) {
     try {
       const memberships = await listPartnerMemberships(nativeAccountSession.accountId);
       partnerMembershipCount = memberships.length;
+      partnerMemberships = memberships.map((m) => ({ partner_id: m.partner_id, role: m.role }));
     } catch {
       partnerMembershipCount = 0;
+      partnerMemberships = [];
     }
   }
 
@@ -35,6 +38,7 @@ export async function GET(req: NextRequest) {
     nativeAccountSession,
     ephemeralWalletSession,
     partnerMembershipCount,
+    partnerMemberships,
   });
   return NextResponse.json(payload, {
     headers: { "Cache-Control": "no-store" },
