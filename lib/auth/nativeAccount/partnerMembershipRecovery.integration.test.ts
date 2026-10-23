@@ -33,6 +33,14 @@ describe("partner membership recovery (memory)", () => {
 
   beforeEach(() => {
     resetNativeAccountMemory();
+    nativeAccountMemory.seedLaunchpadProvisioningActivity({
+      id: "activity-provision-integration",
+      application_id: applicationId,
+      partner_id: partnerId,
+      event_type: "application_provisioned",
+      public_code: "provisioned",
+      created_at: "2026-10-21T22:14:48.858819+00:00",
+    });
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     process.env.NODE_ENV = "test";
     process.env.ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED = "true";
@@ -65,6 +73,7 @@ describe("partner membership recovery (memory)", () => {
       verifiedAttestation: verified!,
       approverActorId: "platform_operator",
       reason: "Integration test — provisioning review recorded",
+      ownershipEvidenceRef: applicationId,
     });
     expect(ownershipApproval.ok).toBe(true);
 

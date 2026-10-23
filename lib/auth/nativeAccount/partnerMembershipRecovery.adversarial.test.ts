@@ -29,6 +29,14 @@ const APP = "fbea93d2-6660-428d-85c3-8c4e12d89b05";
 describe("partner membership recovery adversarial", () => {
   beforeEach(() => {
     resetNativeAccountMemory();
+    nativeAccountMemory.seedLaunchpadProvisioningActivity({
+      id: "activity-provision-1",
+      application_id: APP,
+      partner_id: PARTNER,
+      event_type: "application_provisioned",
+      public_code: "studio_sandbox_created",
+      created_at: "2026-10-21T22:14:48.968576+00:00",
+    });
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     process.env.NODE_ENV = "test";
     process.env.ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED = "true";
@@ -110,6 +118,7 @@ describe("partner membership recovery adversarial", () => {
       verifiedAttestation: verified!,
       approverActorId: "platform_operator",
       reason: "Reviewed provisioning audit — founder identity matched out of band",
+      ownershipEvidenceRef: APP,
     });
     expect(approval.ok).toBe(true);
     if (!approval.ok) return;
@@ -124,6 +133,27 @@ describe("partner membership recovery adversarial", () => {
       adminOwnershipApprovalToken: approval.adminOwnershipApprovalToken,
     });
     expect(grant.ok).toBe(true);
+  });
+
+  it("rejects ownership approval when provisioning evidence is missing", async () => {
+    resetNativeAccountMemory();
+    const requester = createNativeAccountId();
+    nativeAccountMemory.insertAccount(requester);
+    const issued = await issuePartnerMembershipRecoveryAttestation({
+      accountId: requester,
+      partnerId: PARTNER,
+      applicationId: APP,
+    });
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) return;
+    const verified = await verifyPartnerMembershipRecoveryAttestationToken(issued.attestationToken);
+    const approval = await issueAdminRecoveryOwnershipApproval({
+      verifiedAttestation: verified!,
+      approverActorId: "platform_operator",
+      reason: "Reason alone is not sufficient evidence",
+      ownershipEvidenceRef: APP,
+    });
+    expect(approval).toEqual({ ok: false, code: "ownership_evidence_provisioning_not_found" });
   });
 
   it("rejects expired recovery attestation at verification", async () => {

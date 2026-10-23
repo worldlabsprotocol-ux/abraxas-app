@@ -79,6 +79,14 @@ type MemoryState = {
       consumed_at: string | null;
     }
   >;
+  launchpadProvisioningActivity: Array<{
+    id: string;
+    application_id: string;
+    partner_id: string;
+    event_type: string;
+    public_code: string | null;
+    created_at: string;
+  }>;
   adminRecoveryApprovals: Map<
     string,
     {
@@ -114,6 +122,7 @@ function memoryState(): MemoryState {
       enrollments: [],
       recoveryAttestations: new Map(),
       adminRecoveryApprovals: new Map(),
+      launchpadProvisioningActivity: [],
     };
   }
   return g[GLOBAL_KEY]!;
@@ -170,6 +179,7 @@ export function resetNativeAccountMemory(): void {
   enrollments().length = 0;
   memoryState().recoveryAttestations.clear();
   memoryState().adminRecoveryApprovals.clear();
+  memoryState().launchpadProvisioningActivity = [];
 }
 
 export const nativeAccountMemory = {
@@ -386,6 +396,42 @@ export const nativeAccountMemory = {
       expires_at: row.expiresAt,
       consumed_at: null,
     });
+  },
+
+  findLaunchpadProvisioningEvidence(
+    applicationId: string,
+    partnerId: string,
+    activityId?: string,
+  ): {
+    activity_id: string | null;
+    event_type: string;
+    public_code: string | null;
+    provisioned_at: string | null;
+  } | null {
+    const rows = memoryState().launchpadProvisioningActivity;
+    const match = rows.find((row) => {
+      if (row.application_id !== applicationId || row.partner_id !== partnerId) return false;
+      if (activityId && row.id !== activityId) return false;
+      return row.event_type === "application_provisioned";
+    });
+    if (!match) return null;
+    return {
+      activity_id: match.id,
+      event_type: match.event_type,
+      public_code: match.public_code,
+      provisioned_at: match.created_at,
+    };
+  },
+
+  seedLaunchpadProvisioningActivity(row: {
+    id: string;
+    application_id: string;
+    partner_id: string;
+    event_type: string;
+    public_code: string | null;
+    created_at: string;
+  }): void {
+    memoryState().launchpadProvisioningActivity.push(row);
   },
 
   consumeAdminRecoveryApproval(input: {

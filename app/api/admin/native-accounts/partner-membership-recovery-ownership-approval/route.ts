@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
 
   const recoveryAttestation = String(body.recovery_attestation ?? body.recovery_attestation_token ?? "").trim();
   const reason = String(body.ownership_review_reason ?? body.reason ?? "").trim();
+  const ownershipEvidenceRef = String(
+    body.ownership_evidence_ref ?? body.ownership_evidence ?? "",
+  ).trim();
   if (!recoveryAttestation) {
     return NextResponse.json({ error: "recovery_attestation_required" }, { status: 400 });
   }
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest) {
     verifiedAttestation: verified,
     approverActorId,
     reason,
+    ownershipEvidenceRef,
   });
 
   if (!issued.ok) {
@@ -73,5 +77,6 @@ export async function POST(req: NextRequest) {
     approval_id: issued.approvalId,
     expires_at: issued.expiresAt,
     entitlement: issued.entitlement,
+    ownership_evidence_ref: ownershipEvidenceRef,
   });
 }

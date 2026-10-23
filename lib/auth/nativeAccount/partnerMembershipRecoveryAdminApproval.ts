@@ -13,6 +13,7 @@ import {
   insertAdminRecoveryApprovalRecord,
 } from "@/lib/auth/nativeAccount/partnerMembershipRecoveryAdminApprovalStore";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import { validateRecoveryOwnershipEvidence } from "@/lib/auth/nativeAccount/partnerMembershipRecoveryOwnershipEvidence";
 
 const APPROVAL_TTL_SEC = 10 * 60;
 const JWT_PURPOSE = "partner_membership_recovery_admin_approval";
@@ -34,6 +35,7 @@ export type IssueAdminRecoveryApprovalInput = {
   verifiedAttestation: VerifiedRecoveryAttestation;
   approverActorId: string;
   reason: string;
+  ownershipEvidenceRef: string;
 };
 
 export type IssueAdminRecoveryApprovalResult =
@@ -75,6 +77,15 @@ export async function issueAdminRecoveryOwnershipApproval(
     return { ok: false, code: "admin_ownership_approval_not_required" };
   }
 
+  const evidence = await validateRecoveryOwnershipEvidence({
+    partnerId,
+    applicationId,
+    evidenceRef: input.ownershipEvidenceRef,
+  });
+  if (!evidence.ok) {
+    return { ok: false, code: evidence.code };
+  }
+
   const signing = secret();
   if (!signing) {
     return { ok: false, code: "approval_signing_unavailable" };
@@ -96,6 +107,7 @@ export async function issueAdminRecoveryOwnershipApproval(
       ownership_basis: entitlement.basis,
       provisioning: entitlement.provisioning,
       reason,
+      ownership_evidence: evidence.evidence,
     },
   });
   if (!auditId) {
@@ -127,6 +139,8 @@ export async function issueAdminRecoveryOwnershipApproval(
     applicationId,
     ownershipBasis: entitlement.basis,
     ownershipReviewAuditId: auditId,
+    ownershipEvidenceType: evidence.evidence.evidence_type,
+    ownershipEvidenceRef: evidence.evidence.evidence_ref,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(accountId)

@@ -35,9 +35,12 @@ If the application is **not** already linked via `abraxas_sandbox_enrollments` t
 ```json
 {
   "recovery_attestation": "<JWT from founder step>",
-  "ownership_review_reason": "Reviewed Launchpad provisioning audit and verified founder entitlement out of band."
+  "ownership_review_reason": "Narrative for audit only — not treated as proof.",
+  "ownership_evidence_ref": "fbea93d2-6660-428d-85c3-8c4e12d89b05"
 }
 ```
+
+`ownership_evidence_ref` must resolve to **server-verified** Launchpad provisioning (`partner_launchpad_activity.application_provisioned`) for the same `application_id` and `partner_id`, or a specific provisioning activity row id.
 
 Returns `admin_ownership_approval` (short-lived, single-use). **Reject** if response is `application_entitlement_conflict` (another account is enrolled for this application).
 
