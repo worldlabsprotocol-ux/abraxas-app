@@ -2,9 +2,37 @@
 
 import { loadReceiptVerificationRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/registry";
 import type { ReceiptVerificationKeyRecord } from "@/lib/decisionReceipts/verificationKeyLifecycle/contract";
-import type { IssuerAuthorityKeyEntry, IssuerAuthorityStatementPayload } from "./contract";
+import type {
+  IssuerAuthorityKeyEntry,
+  IssuerAuthorityStatementPayload,
+  StatusSignerKeyEntry,
+} from "./contract";
 import type { SignedIssuerAuthorityStatement } from "./contract";
 import { signIssuerAuthorityPayload } from "./signVerify";
+
+function loadStatusSignerFromEnv(env: Record<string, string | undefined>): StatusSignerKeyEntry[] {
+  const keyId = env.ABRAXAS_STATUS_SIGNER_KEY_ID?.trim();
+  const publicJson = env.ABRAXAS_STATUS_SIGNER_PUBLIC_JWK?.trim();
+  if (!keyId || !publicJson) return [];
+  try {
+    const public_jwk = JSON.parse(publicJson) as JsonWebKey;
+    const environment =
+      env.VERCEL_ENV === "production" || env.NODE_ENV === "production" ? "production" : "demo";
+    return [
+      {
+        key_id: keyId,
+        environment,
+        status: "active",
+        not_before: "2020-01-01T00:00:00.000Z",
+        expires_at: null,
+        public_jwk,
+        reason_class: "active",
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
 
 function toEntry(key: ReceiptVerificationKeyRecord): IssuerAuthorityKeyEntry {
   return {
@@ -30,9 +58,11 @@ export function buildIssuerAuthorityStatementFromRegistry(input: {
 }):
   | { ok: true; payload: IssuerAuthorityStatementPayload }
   | { ok: false; reason: string } {
-  const loaded = loadReceiptVerificationRegistry(input.env ?? process.env);
+  const env = input.env ?? process.env;
+  const loaded = loadReceiptVerificationRegistry(env);
   if (!loaded.ok) return { ok: false, reason: loaded.reason };
   const issuedAt = input.issuedAt ?? new Date().toISOString();
+  const statusSigners = loadStatusSignerFromEnv(env);
   return {
     ok: true,
     payload: {
@@ -45,6 +75,7 @@ export function buildIssuerAuthorityStatementFromRegistry(input: {
       not_before: issuedAt,
       anchor_key_id: input.anchorKeyId,
       keys: loaded.keys.map(toEntry),
+      ...(statusSigners.length > 0 ? { status_signers: statusSigners } : {}),
     },
   };
 }

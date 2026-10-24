@@ -25,6 +25,11 @@ export function validateTrustAnchorBundle(
   if (!Number.isFinite(bundle.statement_cache_max_age_seconds) || bundle.statement_cache_max_age_seconds <= 0) {
     return { ok: false, reason: "invalid_statement_cache_policy" };
   }
+  const statusMaxAge =
+    bundle.status_statement_max_age_seconds ?? bundle.statement_cache_max_age_seconds;
+  if (!Number.isFinite(statusMaxAge) || statusMaxAge <= 0) {
+    return { ok: false, reason: "invalid_status_statement_cache_policy" };
+  }
   return { ok: true };
 }
 

@@ -28,6 +28,17 @@ export type IssuerAuthorityStatementPayload = {
   not_before: string;
   anchor_key_id: string;
   keys: IssuerAuthorityKeyEntry[];
+  status_signers?: StatusSignerKeyEntry[];
+};
+
+export type StatusSignerKeyEntry = {
+  key_id: string;
+  environment: "demo" | "production";
+  status: "active" | "revoked";
+  not_before: string;
+  expires_at: string | null;
+  public_jwk: JsonWebKey;
+  reason_class: string;
 };
 
 export type SignedIssuerAuthorityStatement = {

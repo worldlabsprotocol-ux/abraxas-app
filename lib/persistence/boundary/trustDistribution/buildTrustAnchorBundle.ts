@@ -13,6 +13,7 @@ export function buildTrustAnchorBundleV1(input: {
   environment: "demo" | "production";
   effectiveFrom?: string;
   statementCacheMaxAgeSeconds?: number;
+  statusStatementMaxAgeSeconds?: number;
   minimumRegistryVersionHint?: number | null;
 }): TrustAnchorBundleV1 {
   const fingerprint = publicEd25519JwkFingerprint(input.anchorPublicJwk);
@@ -27,6 +28,8 @@ export function buildTrustAnchorBundleV1(input: {
     effective_from: input.effectiveFrom ?? new Date().toISOString(),
     distribution: "out_of_band",
     statement_cache_max_age_seconds: input.statementCacheMaxAgeSeconds ?? 86_400,
+    status_statement_max_age_seconds:
+      input.statusStatementMaxAgeSeconds ?? input.statementCacheMaxAgeSeconds ?? 86_400,
     minimum_registry_version_hint: input.minimumRegistryVersionHint ?? null,
   };
 }

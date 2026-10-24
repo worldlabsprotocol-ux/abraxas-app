@@ -1,15 +1,18 @@
-import {
-  RECEIPT_STATUS_EVIDENCE_DOCUMENT,
-  RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION,
-  type DecisionReceiptRecord,
-  type ReceiptStatusEvidenceV1,
-  type RelyingPartyExpectations,
-  type SignedIssuerAuthorityStatement,
-  type TrustAnchorBundleV1,
+import type {
+  DecisionReceiptRecord,
+  ReceiptStatusEvidenceV1,
+  RelyingPartyExpectations,
+  SignedIssuerAuthorityStatement,
+  SignedReceiptStatusStatement,
+  TrustAnchorBundleV1,
 } from "./types";
 import { assertStatementMatchesPinnedAnchor, validateTrustAnchorBundle } from "./trustAnchorBundle";
 import { resolveIssuerKeyFromSignedStatement } from "./issuerAuthorityStatement";
 import { verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk } from "./receiptVerify";
+import {
+  statusPayloadMatchesReceiptContext,
+  verifySignedReceiptStatusStatement,
+} from "./signedReceiptStatusStatement";
 
 export type IndependentVerificationPhase = {
   id: string;
@@ -18,36 +21,25 @@ export type IndependentVerificationPhase = {
 };
 
 export type IndependentVerificationResult = {
-  contract_version: "abraxas_independent_verifier/1.0.0";
+  contract_version: "abraxas_independent_verifier/1.1.0";
   cryptographically_authentic: boolean;
   issuer_currently_authorized: boolean;
   policy_and_audience_match: boolean;
-  /** Never true from signature alone — requires fresh status evidence when mandated. */
+  status_evidence_authentic: boolean;
+  /** Never true from signature alone — requires authenticated signed status evidence. */
   currently_acceptable: "yes" | "no" | "indeterminate";
   phases: IndependentVerificationPhase[];
   failure_codes: string[];
   disclaimer: string;
 };
 
-function validateStatusEvidence(
-  evidence: ReceiptStatusEvidenceV1,
-  record: DecisionReceiptRecord,
-  maxAgeSeconds: number,
-  now: Date,
-): { ok: true } | { ok: false; reason: string } {
-  if (evidence.document !== RECEIPT_STATUS_EVIDENCE_DOCUMENT) {
-    return { ok: false, reason: "invalid_status_evidence_document" };
-  }
-  if (evidence.schema_version !== RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION) {
-    return { ok: false, reason: "unsupported_status_evidence_schema" };
-  }
-  if (evidence.receipt_id !== record.id) return { ok: false, reason: "status_evidence_receipt_mismatch" };
-  const observed = Date.parse(evidence.observed_at);
-  if (Number.isNaN(observed)) return { ok: false, reason: "status_evidence_observed_at_invalid" };
-  if (now.getTime() - observed > maxAgeSeconds * 1000) {
-    return { ok: false, reason: "status_evidence_stale" };
-  }
-  return { ok: true };
+function statusMaxAgeSeconds(bundle: TrustAnchorBundleV1): number {
+  return bundle.status_statement_max_age_seconds ?? bundle.statement_cache_max_age_seconds;
+}
+
+/** @deprecated Unsigned JSON is not authenticated — fails closed in v1.1.0+ */
+function rejectUnsignedStatusEvidence(): { ok: false; reason: string } {
+  return { ok: false, reason: "unsigned_status_evidence_rejected" };
 }
 
 export function verifyAbraxasReceiptIndependently(input: {
@@ -55,10 +47,13 @@ export function verifyAbraxasReceiptIndependently(input: {
   pinnedTrustAnchor: TrustAnchorBundleV1;
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   relyingParty: RelyingPartyExpectations;
-  /** When the SIAS was obtained (for cache policy). Omit only in tests. */
   statementObservedAt?: string;
+  /** Build #819 — required for current acceptability. */
+  signedStatusStatement?: SignedReceiptStatusStatement | null;
+  /** @deprecated Use signedStatusStatement */
   statusEvidence?: ReceiptStatusEvidenceV1 | null;
   minimumRegistryVersion?: number;
+  minimumStatusVersion?: number;
   now?: Date;
 }): IndependentVerificationResult {
   const now = input.now ?? new Date();
@@ -72,13 +67,13 @@ export function verifyAbraxasReceiptIndependently(input: {
   const bundleOk = validateTrustAnchorBundle(input.pinnedTrustAnchor);
   if (!bundleOk.ok) {
     push("pinned_trust_anchor", "fail", bundleOk.reason, bundleOk.reason);
-    return finish(false, false, false, "indeterminate", phases, failure_codes);
+    return finish(false, false, false, false, "indeterminate", phases, failure_codes);
   }
   push("pinned_trust_anchor", "pass", "Pinned trust anchor bundle validated (out-of-band).");
 
   if (input.pinnedTrustAnchor.environment !== input.relyingParty.environment) {
     push("environment", "fail", "Trust anchor environment does not match relying party.", "cross_environment");
-    return finish(false, false, false, "no", phases, failure_codes);
+    return finish(false, false, false, false, "no", phases, failure_codes);
   }
 
   const anchorMatch = assertStatementMatchesPinnedAnchor({
@@ -87,7 +82,7 @@ export function verifyAbraxasReceiptIndependently(input: {
   });
   if (!anchorMatch.ok) {
     push("anchor_binding", "fail", anchorMatch.reason, anchorMatch.reason);
-    return finish(false, false, false, "no", phases, failure_codes);
+    return finish(false, false, false, false, "no", phases, failure_codes);
   }
   push("anchor_binding", "pass", "Statement anchor matches integrator-pinned anchor (no substitution).");
 
@@ -170,47 +165,76 @@ export function verifyAbraxasReceiptIndependently(input: {
     audienceMatch ? undefined : "audience_mismatch",
   );
 
+  let statusEvidenceAuthentic = false;
   let currentlyAcceptable: IndependentVerificationResult["currently_acceptable"] = "indeterminate";
-  if (!input.statusEvidence) {
+
+  if (input.statusEvidence && !input.signedStatusStatement) {
+    const unsigned = rejectUnsignedStatusEvidence();
+    push("signed_status_evidence", "fail", unsigned.reason, unsigned.reason);
+    failure_codes.push(unsigned.reason);
+    currentlyAcceptable = "no";
+  } else if (!input.signedStatusStatement) {
     push(
-      "current_acceptability",
+      "signed_status_evidence",
       "blocked",
-      "No authenticated status evidence — current acceptability indeterminate.",
+      "No signed status statement — current acceptability indeterminate.",
     );
-    failure_codes.push("status_evidence_required");
+    failure_codes.push("signed_status_evidence_required");
   } else {
-    const evOk = validateStatusEvidence(
-      input.statusEvidence,
-      input.record,
-      input.pinnedTrustAnchor.statement_cache_max_age_seconds,
+    const signed = input.signedStatusStatement;
+    const auth = verifySignedReceiptStatusStatement({
+      signedStatus: signed,
+      signedIssuerAuthority: input.signedIssuerAuthority,
+      minimumStatusVersion: input.minimumStatusVersion,
       now,
-    );
-    if (!evOk.ok) {
-      push("status_evidence", "fail", evOk.reason, evOk.reason);
+    });
+    if (!auth.ok) {
+      push("signed_status_evidence", "fail", auth.reason, auth.reason);
       currentlyAcceptable = "no";
     } else {
-      push("status_evidence", "pass", "Status evidence fresh and bound to receipt.");
-      const ev = input.statusEvidence;
-      const liveOk =
-        cryptographicallyAuthentic
-        && issuerAuthorized
-        && audienceMatch
-        && ev.receipt_status === "active"
-        && !ev.superseded
-        && ev.partner_operational
-        && ev.policy_active
-        && ev.claims_current
-        && ev.evidence_current
-        && input.record.decision_result === "approved";
-      currentlyAcceptable = liveOk ? "yes" : "no";
-      push(
-        "current_acceptability",
-        liveOk ? "pass" : "fail",
-        liveOk
-          ? "Receipt currently acceptable under supplied status evidence."
-          : "Receipt not currently acceptable (revocation, supersession, policy, or evidence).",
-        liveOk ? undefined : "not_currently_acceptable",
-      );
+      const ctx = statusPayloadMatchesReceiptContext({
+        payload: signed.payload,
+        receiptId: input.record.id,
+        partnerId: input.relyingParty.partner_id,
+        policyId: input.relyingParty.policy_id,
+        policyVersion: input.record.policy_version,
+        environment: runtimeEnv,
+      });
+      if (!ctx.ok) {
+        push("status_context_binding", "fail", ctx.reason, ctx.reason);
+        currentlyAcceptable = "no";
+      } else {
+        const issuedAt = Date.parse(signed.payload.issued_at);
+        const maxAge = statusMaxAgeSeconds(input.pinnedTrustAnchor) * 1000;
+        if (Number.isNaN(issuedAt) || now.getTime() - issuedAt > maxAge) {
+          push("status_freshness", "fail", "Signed status statement exceeds freshness policy.", "status_statement_stale");
+          currentlyAcceptable = "no";
+        } else {
+          statusEvidenceAuthentic = true;
+          push("signed_status_evidence", "pass", "Signed status statement authentic and fresh.");
+          const p = signed.payload;
+          const liveOk =
+            cryptographicallyAuthentic
+            && issuerAuthorized
+            && audienceMatch
+            && p.receipt_status === "active"
+            && !p.superseded
+            && p.partner_operational
+            && p.policy_active
+            && p.claims_current
+            && p.evidence_current
+            && input.record.decision_result === "approved";
+          currentlyAcceptable = liveOk ? "yes" : "no";
+          push(
+            "current_acceptability",
+            liveOk ? "pass" : "fail",
+            liveOk
+              ? "Receipt currently acceptable under signed status evidence."
+              : "Receipt not currently acceptable (revocation, supersession, policy, or evidence).",
+            liveOk ? undefined : "not_currently_acceptable",
+          );
+        }
+      }
     }
   }
 
@@ -218,6 +242,7 @@ export function verifyAbraxasReceiptIndependently(input: {
     cryptographicallyAuthentic,
     issuerAuthorized,
     audienceMatch,
+    statusEvidenceAuthentic,
     currentlyAcceptable,
     phases,
     failure_codes,
@@ -228,20 +253,22 @@ function finish(
   cryptographicallyAuthentic: boolean,
   issuerAuthorized: boolean,
   audienceMatch: boolean,
+  statusEvidenceAuthentic: boolean,
   currentlyAcceptable: IndependentVerificationResult["currently_acceptable"],
   phases: IndependentVerificationPhase[],
   failure_codes: string[],
 ): IndependentVerificationResult {
   return {
-    contract_version: "abraxas_independent_verifier/1.0.0",
+    contract_version: "abraxas_independent_verifier/1.1.0",
     cryptographically_authentic: cryptographicallyAuthentic,
     issuer_currently_authorized: issuerAuthorized,
     policy_and_audience_match: audienceMatch,
+    status_evidence_authentic: statusEvidenceAuthentic,
     currently_acceptable: currentlyAcceptable,
     phases,
     failure_codes: Array.from(new Set(failure_codes)),
     disclaimer:
-      "HTTPS retrieval of issuer authority does not establish trust. Pin the anchor out-of-band. "
-      + "Valid signatures do not imply current authorization without fresh authenticated status evidence.",
+      "Pin the trust anchor out-of-band. Issuer authority and current status require signed statements "
+      + "from keys authorized in the issuer authority statement — not unauthenticated HTTP or JSON.",
   };
 }

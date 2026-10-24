@@ -7,11 +7,13 @@ import {
   TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION,
   type DecisionReceiptRecord,
   type IssuerAuthorityStatementPayload,
-  type ReceiptStatusEvidenceV1,
+  RECEIPT_STATUS_STATEMENT_DOCUMENT,
+  RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
   type TrustAnchorBundleV1,
 } from "./types";
 import { publicEd25519JwkFingerprint } from "./fingerprint";
 import { signIssuerAuthorityPayloadForTests, verifySignedIssuerAuthorityStatement } from "./issuerAuthorityStatement";
+import { signReceiptStatusStatement } from "./signedReceiptStatusStatement";
 import { verifyAbraxasReceiptIndependently } from "./verifyIndependent";
 import { buildCanonicalPayloadFromRecord, hashCanonicalPayload } from "./canonical";
 function keyPair(label: string) {
@@ -37,12 +39,14 @@ function trustBundle(anchor: ReturnType<typeof keyPair>): TrustAnchorBundleV1 {
     effective_from: "2020-01-01T00:00:00.000Z",
     distribution: "out_of_band",
     statement_cache_max_age_seconds: 3600,
+    status_statement_max_age_seconds: 3600,
     minimum_registry_version_hint: null,
   };
 }
 
 function statementPayload(
   receiptKey: ReturnType<typeof keyPair>,
+  statusSigner: ReturnType<typeof keyPair>,
   registryVersion: number,
   keyStatus: "active" | "revoked" = "active",
 ): IssuerAuthorityStatementPayload {
@@ -67,6 +71,17 @@ function statementPayload(
         allow_historical_verification: keyStatus === "revoked",
         historical_verify_until: keyStatus === "revoked" ? "2030-01-01T00:00:00.000Z" : null,
         reason_class: keyStatus,
+      },
+    ],
+    status_signers: [
+      {
+        key_id: "status-signer-1",
+        environment: "production",
+        status: "active",
+        not_before: "2020-01-01T00:00:00.000Z",
+        expires_at: null,
+        public_jwk: statusSigner.publicKeyJwk,
+        reason_class: "active",
       },
     ],
   };
@@ -104,29 +119,45 @@ function signedReceipt(receiptKey: ReturnType<typeof keyPair>): DecisionReceiptR
   return { ...base, payload_hash, signature: Buffer.from(sig).toString("base64url") };
 }
 
-function freshStatus(receiptId: string): ReceiptStatusEvidenceV1 {
-  return {
-    document: "abraxas_receipt_status_evidence",
-    schema_version: "1.0.0",
-    receipt_id: receiptId,
-    observed_at: new Date().toISOString(),
-    receipt_status: "active",
-    superseded: false,
-    partner_operational: true,
-    policy_active: true,
-    claims_current: true,
-    evidence_current: true,
-  };
+function signedStatusFor(record: DecisionReceiptRecord, statusSigner: ReturnType<typeof keyPair>) {
+  const issued = new Date();
+  const expires = new Date(issued.getTime() + 300_000);
+  return signReceiptStatusStatement({
+    statusSignerPrivateJwk: statusSigner.privateKeyJwk,
+    payload: {
+      document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
+      schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+      receipt_id: record.id,
+      status_reference: record.id,
+      partner_id: record.partner_id,
+      policy_id: record.policy_id,
+      policy_version: record.policy_version,
+      environment: "production",
+      status_version: 1,
+      supersedes_status_version: null,
+      receipt_status: "active",
+      superseded: false,
+      partner_operational: true,
+      policy_active: true,
+      claims_current: true,
+      evidence_current: true,
+      effective_at: issued.toISOString(),
+      issued_at: issued.toISOString(),
+      statement_expires_at: expires.toISOString(),
+      status_signer_key_id: "status-signer-1",
+    },
+  });
 }
 
 describe("independent verifier (no Abraxas backend)", () => {
   const anchor = keyPair("anchor");
   const receiptKey = keyPair("receipt-signer");
+  const statusSigner = keyPair("status-signer");
   const bundle = trustBundle(anchor);
 
-  it("accepts authentic receipt with pinned anchor and fresh status evidence", () => {
+  it("accepts authentic receipt with pinned anchor and signed status evidence", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 2),
+      payload: statementPayload(receiptKey, statusSigner, 2),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const record = signedReceipt(receiptKey);
@@ -136,17 +167,18 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus(record.id),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
       minimumRegistryVersion: 1,
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(true);
+    expect(result.status_evidence_authentic).toBe(true);
     expect(result.currently_acceptable).toBe("yes");
   });
 
   it("rejects forged authority statement signature", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 2),
+      payload: statementPayload(receiptKey, statusSigner, 2),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const forged = { ...statement, signature: statement.signature.slice(0, -2) + "xx" };
@@ -160,7 +192,7 @@ describe("independent verifier (no Abraxas backend)", () => {
   it("rejects unknown anchor fingerprint", () => {
     const badBundle = { ...bundle, public_key_fingerprint: "0".repeat(64) };
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 2),
+      payload: statementPayload(receiptKey, statusSigner, 2),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const result = verifyAbraxasReceiptIndependently({
@@ -169,7 +201,7 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus("dr_indep818"),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
     });
     expect(result.failure_codes).toContain("anchor_fingerprint_mismatch");
   });
@@ -177,7 +209,7 @@ describe("independent verifier (no Abraxas backend)", () => {
   it("rejects anchor substitution in statement", () => {
     const otherAnchor = keyPair("other-anchor");
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: { ...statementPayload(receiptKey, 2), anchor_key_id: "other-anchor-id" },
+      payload: { ...statementPayload(receiptKey, statusSigner, 2), anchor_key_id: "other-anchor-id" },
       anchorPrivateJwk: otherAnchor.privateKeyJwk,
     });
     statement.anchor_key_id = "other-anchor-id";
@@ -187,14 +219,14 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus("dr_indep818"),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
     });
     expect(result.failure_codes).toContain("anchor_substitution_rejected");
   });
 
   it("rejects registry version rollback", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 1),
+      payload: statementPayload(receiptKey, statusSigner, 1),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const result = verifyAbraxasReceiptIndependently({
@@ -203,7 +235,7 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus("dr_indep818"),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
       minimumRegistryVersion: 5,
     });
     expect(result.failure_codes).toContain("registry_version_rollback_rejected");
@@ -211,7 +243,7 @@ describe("independent verifier (no Abraxas backend)", () => {
 
   it("allows historical signature but not current authorization when key revoked", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 3, "revoked"),
+      payload: statementPayload(receiptKey, statusSigner, 3, "revoked"),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const record = signedReceipt(receiptKey);
@@ -221,7 +253,7 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus(record.id),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(false);
@@ -230,7 +262,7 @@ describe("independent verifier (no Abraxas backend)", () => {
 
   it("rejects wrong audience", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 2),
+      payload: statementPayload(receiptKey, statusSigner, 2),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const result = verifyAbraxasReceiptIndependently({
@@ -239,14 +271,14 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "wrong-partner", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus("dr_indep818"),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
     });
     expect(result.failure_codes).toContain("audience_mismatch");
   });
 
-  it("returns indeterminate without status evidence", () => {
+  it("returns indeterminate without signed status evidence", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 2),
+      payload: statementPayload(receiptKey, statusSigner, 2),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const result = verifyAbraxasReceiptIndependently({
@@ -255,15 +287,15 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: null,
+      signedStatusStatement: null,
     });
     expect(result.currently_acceptable).toBe("indeterminate");
-    expect(result.failure_codes).toContain("status_evidence_required");
+    expect(result.failure_codes).toContain("signed_status_evidence_required");
   });
 
   it("rejects tampered receipt payload", () => {
     const statement = signIssuerAuthorityPayloadForTests({
-      payload: statementPayload(receiptKey, 2),
+      payload: statementPayload(receiptKey, statusSigner, 2),
       anchorPrivateJwk: anchor.privateKeyJwk,
     });
     const record = signedReceipt(receiptKey);
@@ -274,7 +306,7 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedIssuerAuthority: statement,
       relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: freshStatus(record.id),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
     });
     expect(result.failure_codes).toContain("payload_tampered");
   });

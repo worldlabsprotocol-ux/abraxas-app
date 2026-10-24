@@ -12,11 +12,15 @@ import { publishSignedIssuerAuthorityFromRegistry } from "./issuerAuthority/buil
 import { buildTrustAnchorBundleV1 } from "./trustDistribution/buildTrustAnchorBundle";
 import {
   verifyAbraxasReceiptIndependently,
+  signReceiptStatusStatement,
+  RECEIPT_STATUS_STATEMENT_DOCUMENT,
+  RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
   type DecisionReceiptRecord as IndependentRecord,
 } from "@abraxas/independent-verifier";
 
 const RECEIPT_KEY = generateTestSigningKeyPair();
 const ANCHOR_KEY = generateTestSigningKeyPair();
+const STATUS_SIGNER_KEY = generateTestSigningKeyPair("status-signer-harness");
 
 function registryEnv(): Record<string, string> {
   const pub = RECEIPT_KEY.publicKeyJwk;
@@ -43,6 +47,9 @@ function registryEnv(): Record<string, string> {
     ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: "anchor-harness",
     ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK: JSON.stringify(ANCHOR_KEY.privateKeyJwk),
     ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(ANCHOR_KEY.publicKeyJwk),
+    ABRAXAS_STATUS_SIGNER_KEY_ID: "status-signer-harness",
+    ABRAXAS_STATUS_SIGNER_PRIVATE_JWK: JSON.stringify(STATUS_SIGNER_KEY.privateKeyJwk),
+    ABRAXAS_STATUS_SIGNER_PUBLIC_JWK: JSON.stringify(STATUS_SIGNER_KEY.publicKeyJwk),
   };
 }
 
@@ -91,8 +98,8 @@ function sampleRecord(): DecisionReceiptRecord {
   };
 }
 
-describe("independent verifier harness (#818)", () => {
-  it("verifies receipt using pinned anchor + SIAS without Supabase or app verify imports", () => {
+describe("independent verifier harness (#818/#819)", () => {
+  it("verifies receipt using pinned anchor, SIAS, and signed status without Supabase", () => {
     const env = registryEnv();
     const statement = publishSignedIssuerAuthorityFromRegistry({
       env,
@@ -107,6 +114,32 @@ describe("independent verifier harness (#818)", () => {
       environment: "production",
     });
     const record = sampleRecord() as IndependentRecord;
+    const issued = new Date();
+    const signedStatus = signReceiptStatusStatement({
+      statusSignerPrivateJwk: STATUS_SIGNER_KEY.privateKeyJwk,
+      payload: {
+        document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
+        schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+        receipt_id: record.id,
+        status_reference: record.id,
+        partner_id: record.partner_id,
+        policy_id: record.policy_id,
+        policy_version: record.policy_version,
+        environment: "production",
+        status_version: 1,
+        supersedes_status_version: null,
+        receipt_status: "active",
+        superseded: false,
+        partner_operational: true,
+        policy_active: true,
+        claims_current: true,
+        evidence_current: true,
+        effective_at: issued.toISOString(),
+        issued_at: issued.toISOString(),
+        statement_expires_at: new Date(issued.getTime() + 300_000).toISOString(),
+        status_signer_key_id: "status-signer-harness",
+      },
+    });
     const result = verifyAbraxasReceiptIndependently({
       record,
       pinnedTrustAnchor: bundle,
@@ -117,21 +150,11 @@ describe("independent verifier harness (#818)", () => {
         environment: "production",
       },
       statementObservedAt: new Date().toISOString(),
-      statusEvidence: {
-        document: "abraxas_receipt_status_evidence",
-        schema_version: "1.0.0",
-        receipt_id: record.id,
-        observed_at: new Date().toISOString(),
-        receipt_status: "active",
-        superseded: false,
-        partner_operational: true,
-        policy_active: true,
-        claims_current: true,
-        evidence_current: true,
-      },
+      signedStatusStatement: signedStatus,
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(true);
+    expect(result.status_evidence_authentic).toBe(true);
     expect(result.currently_acceptable).toBe("yes");
   });
 });
