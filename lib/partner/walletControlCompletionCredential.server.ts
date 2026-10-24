@@ -4,7 +4,7 @@
 import "server-only";
 
 import { normalizePartnerFlowSubject } from "@/lib/auth/sessionSubject";
-import { resolveActiveClaimsForRuntime } from "@/lib/credentials/activeClaims.server";
+import { getActiveWalletControlClaims } from "@/lib/credentials/claimsService";
 import { WALLET_CONTROL_CLAIM_TYPE } from "@/lib/walletControl/contract";
 
 /** Wallet-control completion uses active wallet_binding_confirmed evidence, not passport JTIs. */
@@ -12,7 +12,7 @@ export async function resolveWalletControlCompletionCredentialRef(
   subjectId: string,
 ): Promise<string | null> {
   const subject = normalizePartnerFlowSubject(subjectId);
-  const claims = await resolveActiveClaimsForRuntime(subject);
+  const claims = await getActiveWalletControlClaims(subject);
   const walletClaim = claims.find(
     (claim) => claim.claim_type === WALLET_CONTROL_CLAIM_TYPE && claim.status === "active",
   );

@@ -11,11 +11,7 @@ import {
 } from "@/lib/auth/ensureBrowserSession";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
-import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
-import {
-  holderSafeClientMessage,
-  resolveHolderRecovery,
-} from "@/lib/partner/holderExperience";
+import { holderSafeClientMessage } from "@/lib/partner/holderExperience";
 import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
 import { isNavigablePartnerHandoffRedirectUrl } from "@/lib/partner/partnerClientNavigation";
 import { HolderVerificationStepNav } from "@/components/partner/HolderVerificationStepNav";
@@ -201,9 +197,6 @@ export function PartnerWalletControlContinueFlow({
           />
         ) : null}
 
-        {handoff.phase === "failed" ? (
-          <HolderRecoveryCard recovery={resolveHolderRecovery("invalid_binding", partnerName, null)} />
-        ) : null}
       </div>
     </div>
   );

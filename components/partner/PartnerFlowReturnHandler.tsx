@@ -33,10 +33,25 @@ function failureCopy(category: NonNullable<PartnerFlowHandoffController["failure
         title: "This handoff link is no longer valid.",
         body: "Return to the partner app and start the verification request again.",
       };
+    case "partner_flow_return_url_rejected":
+      return {
+        title: "We couldn't return you to the requesting service.",
+        body: "Your wallet proof and sharing approval are recorded, but this partner callback is not authorized yet. Ask the operator to allow the Demo callback URL, then create a fresh verification link.",
+      };
+    case "partner_flow_credential_not_ready":
+      return {
+        title: "Verification isn't ready to finish yet.",
+        body: "Wallet control must be confirmed before Abraxas can issue the signed receipt. Reconnect your wallet and complete Verify wallet, then approve sharing again.",
+      };
+    case "partner_flow_consent_required":
+      return {
+        title: "Sharing approval is required.",
+        body: "Approve sharing below before Abraxas can issue the signed receipt for this request.",
+      };
     default:
       return {
         title: "Couldn't finish the partner handoff.",
-        body: "Your Abraxas verification step finished, but the receipt handoff didn't complete. Try again, or open the partner app and ask them to restart the flow.",
+        body: "Wallet verification may have succeeded, but the signed receipt was not confirmed. Do not assume a result was shared — contact the operator or restart from the partner link.",
       };
   }
 }
