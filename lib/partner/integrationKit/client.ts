@@ -53,6 +53,11 @@ export interface AbraxasPartnerKitOptions {
   fetchFn?: typeof fetch;
   /** When true, best-effort privacy-safe verification telemetry is recorded. Never affects outcomes. */
   reportVerificationTelemetry?: boolean;
+  /**
+   * Out-of-band Abraxas trust anchor pin (Build #823).
+   * Required for standalone portable verification — bundle anchors are informational only.
+   */
+  integratorPinnedTrustAnchor?: import("@abraxas/independent-verifier").TrustAnchorBundleV1;
 }
 
 export interface PartnerKitSafeResult {
@@ -500,9 +505,18 @@ export class AbraxasPartnerKit {
     if (!fetched.ok) {
       return { ok: false, currently_acceptable: "indeterminate", failure_codes: fetched.errors };
     }
+    const pin = this.options.integratorPinnedTrustAnchor;
+    if (!pin) {
+      return {
+        ok: false,
+        currently_acceptable: "indeterminate",
+        failure_codes: ["integrator_trust_anchor_pin_required"],
+      };
+    }
     const { verifyPortableBundle } = await import("@/lib/partner/portableIndependentVerification");
     const result = verifyPortableBundle({
       bundle: fetched.bundle,
+      integratorPinnedTrustAnchor: pin,
       partnerId: this.options.partnerId,
       policyId: this.options.policyId,
     });

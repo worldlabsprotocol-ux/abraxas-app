@@ -98,10 +98,11 @@ After issuance, partners may verify without Supabase or Abraxas app modules at v
 
 ```typescript
 const portable = await kit.fetchPortableVerificationBundle(receiptId);
-// Or: kit.verifyReceiptWithStandaloneVerifier(receiptId)
+// Standalone verify — pass your out-of-band pin (bundle anchor is informational only):
+// kit.verifyReceiptWithStandaloneVerifier(receiptId) // kit options must include integratorPinnedTrustAnchor
 ```
 
-Requires the Abraxas deployment to expose issuer export material (`GET /api/receipts/{id}/portable-verification`). Pin the trust anchor out-of-band; refresh signed status for current acceptability. See `docs/integration/BUILD_822_PARTNER_FLOW_PORTABLE_VERIFICATION.md`.
+Requires the Abraxas deployment to expose issuer export material (`GET /api/receipts/{id}/portable-verification`). **Pin the trust anchor independently** before calling the standalone verifier; refresh signed status for current acceptability. See `docs/integration/BUILD_822_PARTNER_FLOW_PORTABLE_VERIFICATION.md` and `docs/integration/BUILD_823_REAL_SANDBOX_RECEIPT.md`.
 
 ---
 

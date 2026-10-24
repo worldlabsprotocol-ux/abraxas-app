@@ -3,22 +3,54 @@
 import {
   verifyAbraxasReceiptIndependently,
   type IndependentVerificationResult,
+  type TrustAnchorBundleV1,
 } from "@abraxas/independent-verifier";
 import type { PortableVerificationBundle } from "./buildPortableVerificationBundle";
+import { assertBundledAnchorMatchesIntegratorPin } from "./trustAnchorPinning";
 
 export function verifyPortableBundle(input: {
   bundle: PortableVerificationBundle;
+  /** Out-of-band pin — must match bundled anchor before verification proceeds. */
+  integratorPinnedTrustAnchor: TrustAnchorBundleV1;
   partnerId: string;
   policyId: string;
   statementObservedAt?: string;
   minimumStatusVersion?: number;
+  now?: Date;
 }): IndependentVerificationResult {
+  const bundled =
+    input.bundle.bundled_trust_anchor ?? input.bundle.pinned_trust_anchor;
+  const pinMatch = assertBundledAnchorMatchesIntegratorPin({
+    bundled,
+    integratorPinned: input.integratorPinnedTrustAnchor,
+  });
+  if (!pinMatch.ok) {
+    return {
+      contract_version: "abraxas_independent_verifier/1.1.0",
+      cryptographically_authentic: false,
+      issuer_currently_authorized: false,
+      policy_and_audience_match: false,
+      status_evidence_authentic: false,
+      currently_acceptable: "indeterminate",
+      phases: [
+        {
+          id: "integrator_trust_anchor_pin",
+          status: "fail",
+          detail: "Bundled trust anchor does not match integrator pin — bundle anchor is informational only.",
+        },
+      ],
+      failure_codes: [pinMatch.reason],
+      disclaimer:
+        "Trust anchors must be established independently; never auto-trust a downloadable bundle anchor.",
+    };
+  }
+
   const environment = input.bundle.decision_receipt.decision_context === "production"
     ? "production"
     : "demo";
   return verifyAbraxasReceiptIndependently({
     record: input.bundle.decision_receipt,
-    pinnedTrustAnchor: input.bundle.pinned_trust_anchor,
+    pinnedTrustAnchor: input.integratorPinnedTrustAnchor,
     signedIssuerAuthority: input.bundle.signed_issuer_authority,
     signedStatusStatement: input.bundle.signed_status_statement,
     relyingParty: {
@@ -29,5 +61,6 @@ export function verifyPortableBundle(input: {
     statementObservedAt: input.statementObservedAt ?? new Date().toISOString(),
     minimumStatusVersion: input.minimumStatusVersion,
     minimumRegistryVersion: input.bundle.registry_version > 1 ? input.bundle.registry_version - 1 : undefined,
+    now: input.now,
   });
 }

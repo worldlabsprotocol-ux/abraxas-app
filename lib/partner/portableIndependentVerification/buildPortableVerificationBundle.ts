@@ -2,16 +2,12 @@
 // Export independently verifiable artifacts for a Partner Flow decision receipt.
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistribution/buildTrustAnchorBundle";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import {
-  RECEIPT_STATUS_STATEMENT_DOCUMENT,
-  RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
-  signReceiptStatusStatement,
   type SignedIssuerAuthorityStatement,
   type SignedReceiptStatusStatement,
   type TrustAnchorBundleV1,
@@ -21,10 +17,19 @@ import { assessPortableVerificationReadiness } from "./assessReadiness";
 export type PortableVerificationBundle = {
   schema: "abraxas_portable_verification_bundle/1.0.0";
   decision_receipt: DecisionReceiptRecord;
+  /** Informational copy shipped with the export — not trusted until matched to an integrator pin. */
+  bundled_trust_anchor: TrustAnchorBundleV1;
+  /** @deprecated Use bundled_trust_anchor — same value, misleading name. */
   pinned_trust_anchor: TrustAnchorBundleV1;
   signed_issuer_authority: SignedIssuerAuthorityStatement;
   signed_status_statement: SignedReceiptStatusStatement;
   registry_version: number;
+  export_provenance: {
+    trust_anchor_must_be_independently_pinned: true;
+    bundled_trust_anchor_informational_only: true;
+    status_evidence_authoritative: boolean;
+    status_evidence_source: "sovereign_pg_evaluation" | "unavailable";
+  };
 };
 
 function resolveRegistryVersion(env: Record<string, string | undefined>): number {
@@ -72,62 +77,36 @@ async function signStatusFromPartnerFlowTrust(input: {
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   env: Record<string, string | undefined>;
   registryVersion: number;
-}): Promise<SignedReceiptStatusStatement | { ok: false; reason: string }> {
+}): Promise<
+  | { ok: true; statement: SignedReceiptStatusStatement; authoritative: true }
+  | { ok: false; reason: string }
+> {
+  const anchorPublic = loadAnchorPublicJwk(input.env);
+  if (!anchorPublic) return { ok: false, reason: "trust_anchor_public_jwk_missing" };
+
+  let evaluation;
   try {
-    const evaluation = await evaluateSovereignCurrentValidity({
+    evaluation = await evaluateSovereignCurrentValidity({
       record: input.record,
       signedIssuerAuthority: input.signedIssuerAuthority,
-      trustAnchorPublicJwk: loadAnchorPublicJwk(input.env)!,
+      trustAnchorPublicJwk: anchorPublic,
       expectedEnvironment: verifierEnvironment(input.record),
       env: input.env,
     });
-    const sovereignStatus = await publishSignedReceiptStatusFromSovereignEvaluation({
-      record: input.record,
-      evaluation,
-      signedIssuerAuthorityEnvironment: verifierEnvironment(input.record),
-      env: input.env,
-    });
-    if ("payload" in sovereignStatus) return sovereignStatus;
   } catch {
-    // Partner Flow path — fall back to trust-evaluated status statement.
+    return { ok: false, reason: "sovereign_current_validity_evaluation_failed" };
   }
 
-  const privateJwk = loadStatusSignerPrivateJwk(input.env);
-  if (!privateJwk) return { ok: false, reason: "status_signer_private_jwk_missing" };
-
-  const stored = resolveReceiptStatus(input.record);
-  const claimsCurrent =
-    input.record.decision_result === "approved"
-    && stored === "active";
-  const issuedAt = new Date();
-  const ttlSeconds = 300;
-  const statusSignerKeyId = input.env.ABRAXAS_STATUS_SIGNER_KEY_ID?.trim() ?? "abraxas-status-signer";
-
-  return signReceiptStatusStatement({
-    statusSignerPrivateJwk: privateJwk,
-    payload: {
-      document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
-      schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
-      receipt_id: input.record.id,
-      status_reference: input.record.id,
-      partner_id: input.record.partner_id,
-      policy_id: input.record.policy_id,
-      policy_version: input.record.policy_version,
-      environment: verifierEnvironment(input.record),
-      status_version: input.registryVersion,
-      supersedes_status_version: input.registryVersion > 1 ? input.registryVersion - 1 : null,
-      receipt_status: stored === "revoked" ? "revoked" : stored === "expired" ? "expired" : "active",
-      superseded: false,
-      partner_operational: true,
-      policy_active: true,
-      claims_current: claimsCurrent,
-      evidence_current: claimsCurrent,
-      effective_at: issuedAt.toISOString(),
-      issued_at: issuedAt.toISOString(),
-      statement_expires_at: new Date(issuedAt.getTime() + ttlSeconds * 1000).toISOString(),
-      status_signer_key_id: statusSignerKeyId,
-    },
+  const sovereignStatus = await publishSignedReceiptStatusFromSovereignEvaluation({
+    record: input.record,
+    evaluation,
+    signedIssuerAuthorityEnvironment: verifierEnvironment(input.record),
+    env: input.env,
   });
+  if (!("payload" in sovereignStatus)) {
+    return { ok: false, reason: sovereignStatus.reason };
+  }
+  return { ok: true, statement: sovereignStatus, authoritative: true };
 }
 
 export async function buildPortableVerificationBundle(input: {
@@ -167,11 +146,11 @@ export async function buildPortableVerificationBundle(input: {
     env,
     registryVersion,
   });
-  if (!("payload" in signedStatus)) {
+  if (!signedStatus.ok) {
     return { ok: false, reason: signedStatus.reason };
   }
 
-  const pinned = buildTrustAnchorBundleV1({
+  const bundledAnchor = buildTrustAnchorBundleV1({
     anchorKeyId,
     anchorPublicJwk: anchorPublic,
     environment: verifierEnvironment(input.record),
@@ -185,10 +164,17 @@ export async function buildPortableVerificationBundle(input: {
     bundle: {
       schema: "abraxas_portable_verification_bundle/1.0.0",
       decision_receipt: input.record,
-      pinned_trust_anchor: pinned,
+      bundled_trust_anchor: bundledAnchor,
+      pinned_trust_anchor: bundledAnchor,
       signed_issuer_authority: signedIssuer,
-      signed_status_statement: signedStatus,
+      signed_status_statement: signedStatus.statement,
       registry_version: registryVersion,
+      export_provenance: {
+        trust_anchor_must_be_independently_pinned: true,
+        bundled_trust_anchor_informational_only: true,
+        status_evidence_authoritative: signedStatus.authoritative,
+        status_evidence_source: "sovereign_pg_evaluation",
+      },
     },
   };
 }
