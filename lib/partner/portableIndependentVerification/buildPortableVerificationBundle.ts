@@ -6,7 +6,7 @@ import { toPublicView } from "@/lib/decisionReceipts/views";
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistribution/buildTrustAnchorBundle";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
-import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
+import { evaluatePortableExportCurrentValidity } from "./evaluatePortableExportCurrentValidity";
 import {
   type SignedIssuerAuthorityStatement,
   type SignedReceiptStatusStatement,
@@ -28,7 +28,10 @@ export type PortableVerificationBundle = {
     trust_anchor_must_be_independently_pinned: true;
     bundled_trust_anchor_informational_only: true;
     status_evidence_authoritative: boolean;
-    status_evidence_source: "sovereign_pg_evaluation" | "unavailable";
+    status_evidence_source:
+      | "sovereign_pg_evaluation"
+      | "operational_demo_store"
+      | "unavailable";
   };
 };
 
@@ -86,15 +89,14 @@ async function signStatusFromPartnerFlowTrust(input: {
 
   let evaluation;
   try {
-    evaluation = await evaluateSovereignCurrentValidity({
+    evaluation = await evaluatePortableExportCurrentValidity({
       record: input.record,
       signedIssuerAuthority: input.signedIssuerAuthority,
       trustAnchorPublicJwk: anchorPublic,
-      expectedEnvironment: verifierEnvironment(input.record),
       env: input.env,
     });
   } catch {
-    return { ok: false, reason: "sovereign_current_validity_evaluation_failed" };
+    return { ok: false, reason: "portable_export_validity_evaluation_failed" };
   }
 
   const sovereignStatus = await publishSignedReceiptStatusFromSovereignEvaluation({
@@ -173,7 +175,7 @@ export async function buildPortableVerificationBundle(input: {
         trust_anchor_must_be_independently_pinned: true,
         bundled_trust_anchor_informational_only: true,
         status_evidence_authoritative: signedStatus.authoritative,
-        status_evidence_source: "sovereign_pg_evaluation",
+        status_evidence_source: evaluation.source,
       },
     },
   };
