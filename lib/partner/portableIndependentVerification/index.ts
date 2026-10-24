@@ -5,3 +5,7 @@ export {
   type PortableVerificationBundle,
 } from "./buildPortableVerificationBundle";
 export { verifyPortableBundle } from "./verifyWithStandaloneVerifier";
+export {
+  assertBundledAnchorMatchesIntegratorPin,
+  trustAnchorBundlesEquivalent,
+} from "./trustAnchorPinning";

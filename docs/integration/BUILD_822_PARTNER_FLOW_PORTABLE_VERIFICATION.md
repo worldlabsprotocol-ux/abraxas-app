@@ -9,7 +9,7 @@
 | Signed decision receipt | Yes (`/api/receipts/{id}/public`) | Yes (`DecisionReceiptRecord`) | Public view lacked `verification_decision_id` — **fixed** (#822) |
 | Pinned trust anchor | Not exported | Required | **Bridge:** issuer env + `buildTrustAnchorBundleV1` |
 | Signed issuer authority (SIAS) | Not exported | Required | **Bridge:** `publishSignedIssuerAuthorityFromRegistry` |
-| Signed status statement | Live trust on fetch only | Required (unsigned rejected) | **Bridge:** sovereign status or trust-eval fallback signer |
+| Signed status statement | Live trust on fetch only | Required (unsigned rejected) | **Bridge:** sovereign PG evaluation only (#823 — no non-authoritative fallback) |
 | Partner/policy/environment binding | Yes | Yes | Compatible (`sandbox_only` → `demo`) |
 
 Production deployments without issuer export env return **503** `issuer_export_not_configured` — not silent pass.

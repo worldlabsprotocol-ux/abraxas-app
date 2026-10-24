@@ -1,5 +1,5 @@
 /**
- * Build #822 — real Partner Flow receipt shape → portable verification bundle → standalone verifier.
+ * Build #822 / #823 — Partner Flow portable verification contract.
  */
 import { describe, expect, it } from "vitest";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
@@ -12,21 +12,33 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
 import { toPublicView } from "@/lib/decisionReceipts/views";
+import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
+import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistribution/buildTrustAnchorBundle";
+import {
+  RECEIPT_STATUS_STATEMENT_DOCUMENT,
+  RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+  signReceiptStatusStatement,
+} from "@abraxas/independent-verifier";
 import {
   assessPortableVerificationReadiness,
   buildPortableVerificationBundle,
   publicReceiptToVerifierRecord,
   verifyPortableBundle,
+  type PortableVerificationBundle,
 } from "./index";
 
 const PARTNER_ID = "partner-flow-822";
 const POLICY_ID = "policy-sandbox-822";
 
-function partnerFlowEnv(receiptKey: ReturnType<typeof generateTestSigningKeyPair>): Record<string, string> {
+function partnerFlowEnv(receiptKey: ReturnType<typeof generateTestSigningKeyPair>): {
+  env: Record<string, string>;
+  anchor: ReturnType<typeof generateTestSigningKeyPair>;
+  statusSigner: ReturnType<typeof generateTestSigningKeyPair>;
+} {
   const anchor = generateTestSigningKeyPair("anchor-822");
   const statusSigner = generateTestSigningKeyPair("status-822");
   const pub = receiptKey.publicKeyJwk;
-  return {
+  const env = {
     ABRAXAS_SIGNING_KEY: JSON.stringify(receiptKey.privateKeyJwk),
     ABRAXAS_SIGNING_KEY_ID: receiptKey.signingKeyId,
     VERCEL_ENV: "preview",
@@ -56,6 +68,7 @@ function partnerFlowEnv(receiptKey: ReturnType<typeof generateTestSigningKeyPair
     NEXT_PUBLIC_SUPABASE_URL: "",
     SUPABASE_SERVICE_ROLE_KEY: "",
   };
+  return { env, anchor, statusSigner };
 }
 
 function buildPartnerFlowSandboxReceipt(receiptKey: ReturnType<typeof generateTestSigningKeyPair>): DecisionReceiptRecord {
@@ -105,9 +118,74 @@ function buildPartnerFlowSandboxReceipt(receiptKey: ReturnType<typeof generateTe
   };
 }
 
+function assembleContractTestBundle(input: {
+  record: DecisionReceiptRecord;
+  env: Record<string, string>;
+  anchor: ReturnType<typeof generateTestSigningKeyPair>;
+  statusSigner: ReturnType<typeof generateTestSigningKeyPair>;
+}): PortableVerificationBundle {
+  const signedIssuer = publishSignedIssuerAuthorityFromRegistry({
+    registryVersion: 2,
+    anchorKeyId: "anchor-822",
+    anchorPrivateJwk: input.anchor.privateKeyJwk,
+    env: input.env,
+  });
+  if (!("payload" in signedIssuer)) throw new Error(signedIssuer.reason);
+
+  const bundledAnchor = buildTrustAnchorBundleV1({
+    anchorKeyId: "anchor-822",
+    anchorPublicJwk: input.anchor.publicKeyJwk,
+    environment: "demo",
+    statusStatementMaxAgeSeconds: 3600,
+  });
+
+  const issuedAt = new Date("2026-09-01T00:00:00.000Z");
+  const signedStatus = signReceiptStatusStatement({
+    statusSignerPrivateJwk: input.statusSigner.privateKeyJwk,
+    payload: {
+      document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
+      schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+      receipt_id: input.record.id,
+      status_reference: input.record.id,
+      partner_id: input.record.partner_id,
+      policy_id: input.record.policy_id,
+      policy_version: input.record.policy_version,
+      environment: "demo",
+      status_version: 1,
+      supersedes_status_version: null,
+      receipt_status: "active",
+      superseded: false,
+      partner_operational: true,
+      policy_active: true,
+      claims_current: true,
+      evidence_current: true,
+      effective_at: issuedAt.toISOString(),
+      issued_at: issuedAt.toISOString(),
+      statement_expires_at: new Date(issuedAt.getTime() + 86400_000 * 30).toISOString(),
+      status_signer_key_id: input.statusSigner.signingKeyId,
+    },
+  });
+
+  return {
+    schema: "abraxas_portable_verification_bundle/1.0.0",
+    decision_receipt: input.record,
+    bundled_trust_anchor: bundledAnchor,
+    pinned_trust_anchor: bundledAnchor,
+    signed_issuer_authority: signedIssuer,
+    signed_status_statement: signedStatus,
+    registry_version: 2,
+    export_provenance: {
+      trust_anchor_must_be_independently_pinned: true,
+      bundled_trust_anchor_informational_only: true,
+      status_evidence_authoritative: true,
+      status_evidence_source: "sovereign_pg_evaluation",
+    },
+  };
+}
+
 describe("Build #822 Partner Flow portable verification", () => {
   const receiptKey = generateTestSigningKeyPair("pf-822-signer");
-  const env = partnerFlowEnv(receiptKey);
+  const { env, anchor, statusSigner } = partnerFlowEnv(receiptKey);
 
   it("assesses issuer export readiness from env", () => {
     expect(assessPortableVerificationReadiness(env).ready).toBe(true);
@@ -123,16 +201,24 @@ describe("Build #822 Partner Flow portable verification", () => {
     expect(mapped.payload_hash).toBe(record.payload_hash);
   });
 
-  it("exports bundle and passes standalone verifier for sandbox Partner Flow receipt", async () => {
+  it("fails issuer export when authoritative validity store is unavailable", async () => {
     const record = buildPartnerFlowSandboxReceipt(receiptKey);
     const built = await buildPortableVerificationBundle({ record, env });
-    expect(built.ok).toBe(true);
-    if (!built.ok) return;
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.reason).toBe("authoritative_validity_store_unavailable");
+  });
 
+  it("passes standalone verifier when integrator pin matches bundled anchor", () => {
+    const record = buildPartnerFlowSandboxReceipt(receiptKey);
+    const bundle = assembleContractTestBundle({ record, env, anchor, statusSigner });
     const verified = verifyPortableBundle({
-      bundle: built.bundle,
+      bundle,
+      integratorPinnedTrustAnchor: bundle.bundled_trust_anchor,
       partnerId: PARTNER_ID,
       policyId: POLICY_ID,
+      statementObservedAt: "2026-09-01T00:00:00.000Z",
+      now: new Date("2026-09-01T01:00:00.000Z"),
     });
     expect(verified.cryptographically_authentic).toBe(true);
     expect(verified.issuer_currently_authorized).toBe(true);
@@ -140,27 +226,62 @@ describe("Build #822 Partner Flow portable verification", () => {
     expect(verified.currently_acceptable).toBe("yes");
   });
 
-  it("rejects wrong partner audience on exported bundle", async () => {
+  it("rejects verification when bundled anchor is not authenticated by integrator pin", () => {
     const record = buildPartnerFlowSandboxReceipt(receiptKey);
-    const built = await buildPortableVerificationBundle({ record, env });
-    if (!built.ok) throw new Error("bundle");
+    const bundle = assembleContractTestBundle({ record, env, anchor, statusSigner });
+    const wrongPin = buildTrustAnchorBundleV1({
+      anchorKeyId: "wrong-anchor",
+      anchorPublicJwk: generateTestSigningKeyPair("wrong-pin").publicKeyJwk,
+      environment: "demo",
+    });
     const verified = verifyPortableBundle({
-      bundle: built.bundle,
+      bundle,
+      integratorPinnedTrustAnchor: wrongPin,
+      partnerId: PARTNER_ID,
+      policyId: POLICY_ID,
+    });
+    expect(verified.currently_acceptable).toBe("indeterminate");
+    expect(verified.failure_codes).toContain("bundled_trust_anchor_not_authenticated");
+  });
+
+  it("rejects wrong partner audience on exported bundle", () => {
+    const record = buildPartnerFlowSandboxReceipt(receiptKey);
+    const bundle = assembleContractTestBundle({ record, env, anchor, statusSigner });
+    const verified = verifyPortableBundle({
+      bundle,
+      integratorPinnedTrustAnchor: bundle.bundled_trust_anchor,
       partnerId: "wrong-partner",
       policyId: POLICY_ID,
+      statementObservedAt: "2026-09-01T00:00:00.000Z",
+      now: new Date("2026-09-01T01:00:00.000Z"),
     });
     expect(verified.currently_acceptable).toBe("no");
     expect(verified.failure_codes).toContain("audience_mismatch");
   });
 
-  it("rejects revoked Partner Flow receipt in exported status", async () => {
-    const record = { ...buildPartnerFlowSandboxReceipt(receiptKey), status: "revoked" as const, revoked_at: new Date().toISOString() };
-    const built = await buildPortableVerificationBundle({ record, env });
-    if (!built.ok) throw new Error("bundle");
+  it("rejects revoked Partner Flow receipt in exported status", () => {
+    const record = {
+      ...buildPartnerFlowSandboxReceipt(receiptKey),
+      status: "revoked" as const,
+      revoked_at: new Date().toISOString(),
+    };
+    const bundle = assembleContractTestBundle({ record, env, anchor, statusSigner });
+    const signedStatus = signReceiptStatusStatement({
+      statusSignerPrivateJwk: statusSigner.privateKeyJwk,
+      payload: {
+        ...bundle.signed_status_statement.payload,
+        receipt_status: "revoked",
+        claims_current: false,
+        evidence_current: false,
+      },
+    });
     const verified = verifyPortableBundle({
-      bundle: built.bundle,
+      bundle: { ...bundle, signed_status_statement: signedStatus },
+      integratorPinnedTrustAnchor: bundle.bundled_trust_anchor,
       partnerId: PARTNER_ID,
       policyId: POLICY_ID,
+      statementObservedAt: "2026-09-01T00:00:00.000Z",
+      now: new Date("2026-09-01T01:00:00.000Z"),
     });
     expect(verified.currently_acceptable).toBe("no");
   });

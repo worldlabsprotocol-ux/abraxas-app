@@ -54,6 +54,9 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   env?: Record<string, string | undefined>;
 }): Promise<SignedReceiptStatusStatement | { ok: false; reason: string }> {
   const env = input.env ?? process.env;
+  if (!input.evaluation.store_available) {
+    return { ok: false, reason: "authoritative_validity_store_unavailable" };
+  }
   const privateJwk = loadStatusSignerPrivateJwk(env);
   if (!privateJwk) return { ok: false, reason: "status_signer_private_jwk_missing" };
 
