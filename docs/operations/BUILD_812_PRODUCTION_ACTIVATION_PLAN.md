@@ -2,6 +2,8 @@
 
 **Status:** Analysis complete · **No Production migrations executed** · **No credentials activated**
 
+**Build #813 override (2026-10-24):** Supabase Production **058/065** and native-account activation on Supabase are **suspended** until Abraxas-operated persistence is proven. See `BUILD_813_INFRASTRUCTURE_SOVEREIGNTY.md` and `lib/infrastructure/productionChangeControl.ts`.
+
 Sandbox milestone **PASS (8/8)** — evidence receipt `dr_jSXuDfM_pFMT36du`, request `vr_3413af2704dc2bc4`, handoff `hpf_6962970c9147cbab`.
 
 ---
