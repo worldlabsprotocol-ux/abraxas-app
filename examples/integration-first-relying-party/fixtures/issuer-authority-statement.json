@@ -1,0 +1,50 @@
+{
+  "payload": {
+    "document": "abraxas_issuer_authority_statement",
+    "schema_version": "1.0.0",
+    "registry_version": 2,
+    "supersedes_registry_version": 1,
+    "environment": "demo",
+    "issued_at": "2026-06-01T00:00:00.000Z",
+    "not_before": "2020-01-01T00:00:00.000Z",
+    "anchor_key_id": "build821-trust-anchor",
+    "keys": [
+      {
+        "key_id": "build821-receipt-signer",
+        "environment": "demo",
+        "status": "active",
+        "not_before": "2020-01-01T00:00:00.000Z",
+        "expires_at": null,
+        "public_jwk": {
+          "kty": "OKP",
+          "crv": "Ed25519",
+          "x": "URw0oaLLUh3xa7JGuN6OeZfOI1x-drIqPXUDokgZ3Yo"
+        },
+        "schema_versions": [
+          "1.0.0"
+        ],
+        "allow_historical_verification": false,
+        "historical_verify_until": null,
+        "reason_class": "active"
+      }
+    ],
+    "status_signers": [
+      {
+        "key_id": "build821-status-signer",
+        "environment": "demo",
+        "status": "active",
+        "not_before": "2020-01-01T00:00:00.000Z",
+        "expires_at": null,
+        "public_jwk": {
+          "kty": "OKP",
+          "crv": "Ed25519",
+          "x": "iEuIV_TqoWE8YVBNs01L6vNGUXoOMd483dTZtCAdnQs"
+        },
+        "reason_class": "active"
+      }
+    ]
+  },
+  "payload_hash": "fbfcb5e5dfbbf2e4708983db57c8d2de4351c15a4147469962d30432cc860283",
+  "signature": "KEDzCoz3rNMFYdvVM397MbtF4HRMCD_ISv6aNjb5c9sy6DN3vwSLzU6niaIq5KI55LzsunVZrNEa9tAjbr8nBQ",
+  "anchor_key_id": "build821-trust-anchor"
+}

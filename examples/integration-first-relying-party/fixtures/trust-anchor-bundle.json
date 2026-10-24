@@ -1,0 +1,17 @@
+{
+  "document": "abraxas_trust_anchor_bundle",
+  "schema_version": "1.0.0",
+  "anchor_key_id": "build821-trust-anchor",
+  "public_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "Zr5-Myx6RTMyvZ0Kf32wVfXF7xoGraZtmLOftoEMRzo"
+  },
+  "public_key_fingerprint": "f13946dc8862447e6c5a1b081924919c0a9ff73ca1125d62af8b7871b4d10a4d",
+  "environment": "demo",
+  "effective_from": "2020-01-01T00:00:00.000Z",
+  "distribution": "out_of_band",
+  "statement_cache_max_age_seconds": 31536000,
+  "status_statement_max_age_seconds": 31536000,
+  "minimum_registry_version_hint": null
+}
