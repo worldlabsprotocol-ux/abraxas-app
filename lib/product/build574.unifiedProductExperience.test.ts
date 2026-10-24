@@ -35,6 +35,8 @@ describe("Build #574 unified Passport product experience", () => {
     expect(resolveHolderFacingApiOrigin({})).toBe("https://abraxasworld.xyz");
     expect(resolveHolderFacingApiOrigin({ NEXT_PUBLIC_APP_URL: "https://abraxasworld.xyz/" }))
       .toBe("https://abraxasworld.xyz");
+    expect(resolveHolderFacingApiOrigin({ ABRAXAS_RUNTIME_ENV: "demo" }))
+      .toBe("https://demo.abraxasworld.xyz");
   });
 
   it("does not hardcode demo.abraxasworld.xyz on holder journey surfaces", () => {
