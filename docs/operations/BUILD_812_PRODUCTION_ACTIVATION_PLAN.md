@@ -67,8 +67,9 @@ Sandbox milestone **PASS (8/8)** — evidence receipt `dr_jSXuDfM_pFMT36du`, req
 ### Backup / rollback
 
 - **Before any migration window:** Supabase project backup / PITR confirmation (founder operator).
-- **Rollback:** migration-specific — dropping 147/146 removes Solana sign-in; retain 144/145 if account data must persist (`build-741-production-migration-checklist.md`).
-- **App rollback:** Vercel instant rollback to prior production deployment (`c81db5f5` or last known-good).
+- **Rollback (preferred):** Vercel redeploy to prior SHA; disable feature flags (`ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED`, etc.). **Do not drop native-account tables as routine rollback** — preserve DB records and audit history.
+- **Metering reversal:** only if 058 applied with **zero** production rows and founder explicitly approves empty-table reversal (`BUILD_812_METERING_PREFLIGHT.md`).
+- **App rollback:** Vercel instant rollback (e.g. `c81db5f5` pre-#811 or last known-good).
 
 ### Security gates (pre-activation)
 
