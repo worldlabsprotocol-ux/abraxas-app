@@ -25,7 +25,13 @@ Status version monotonic bump uses, in order:
 
 `demo.abraxasworld.xyz` is bound to Vercel **custom environment** `env_OILNDL1XzhouauSEnyVNGapIKsY2` — merging `main` does **not** auto-update Demo. Promote an approved deployment to that environment after CI passes.
 
-## Live probe
+## Live probe (2026-10-24)
+
+| Check | Result |
+| --- | --- |
+| Demo `commit_sha` (`/api/launchpad/staging/environment`) | `e666a326…` (main + #822) |
+| Public receipt | **200** |
+| Portable export | **503** `issuer_export_not_configured` — Demo missing staging-only anchor/status signer env (fail-closed ✓) |
 
 ```bash
 npm run build824:live-demo-portable-acceptance
