@@ -25,6 +25,12 @@ import {
   resolvePartnerFlowIdempotencyKey,
   type PartnerFlowReplayStatus,
 } from "@/lib/partner/partnerFlowIdempotency";
+import {
+  partnerFlowReceiptOutcomeFromResolution,
+  partnerFlowReceiptOutcomeRedirectParam,
+  type PartnerFlowReceiptOutcome,
+  type PartnerFlowReceiptResolution,
+} from "@/lib/partner/partnerFlowReceiptOutcome";
 import { resolvePartnerFlowReceiptCorrelation } from "@/lib/partner/partnerFlowCompleteCorrelation";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
@@ -96,8 +102,10 @@ export interface PartnerFlowEvaluateResult {
   passport_url?: string;
   partner_result?: PartnerVerificationResult;
   reason_codes?: string[];
-  /** P1-2 additive — idempotent replay vs fresh issue. */
+  /** P1-2 additive — idempotent replay vs fresh issue (legacy metering gate). */
   replay_status?: "issued" | "idempotent_replay";
+  /** Operator/holder clarity — issued vs session reuse vs exact replay. */
+  receipt_outcome?: PartnerFlowReceiptOutcome;
   /** P1-2 additive — authoritative trust evaluation for partner_result receipt. */
   currently_valid?: boolean;
   validity?: string;
@@ -286,6 +294,7 @@ export async function issuePartnerSessionReceipt(input: {
   receipt_expires_at: string;
   partner_result: PartnerVerificationResult;
   replay_status: PartnerFlowReplayStatus;
+  receipt_outcome: PartnerFlowReceiptOutcome;
   currently_valid: boolean;
   validity: string;
   invalidation_reasons: string[];
@@ -313,6 +322,7 @@ export async function issuePartnerSessionReceipt(input: {
   };
 
   let replay_status: PartnerFlowReplayStatus = "idempotent_replay";
+  let resolution: PartnerFlowReceiptResolution = "issued";
   let decisionId: string | undefined;
   let receiptId: string | undefined;
   let receiptExpiresAt: string | undefined;
@@ -327,6 +337,7 @@ export async function issuePartnerSessionReceipt(input: {
       decisionId = byVr.decision_id;
       receiptId = byVr.receipt_id;
       receiptExpiresAt = byVr.receipt_expires_at;
+      resolution = "verification_request";
     }
   }
 
@@ -339,6 +350,7 @@ export async function issuePartnerSessionReceipt(input: {
       decisionId = byKey.decision_id;
       receiptId = receipt.id;
       receiptExpiresAt = byKey.valid_until ?? receipt.expires_at ?? new Date().toISOString();
+      resolution = "idempotency_key";
     }
   }
 
@@ -352,6 +364,7 @@ export async function issuePartnerSessionReceipt(input: {
       decisionId = existing.decision_id;
       receiptId = existing.receipt_id;
       receiptExpiresAt = existing.receipt_expires_at;
+      resolution = "active_session";
     }
   }
 
@@ -367,6 +380,7 @@ export async function issuePartnerSessionReceipt(input: {
     }
 
     replay_status = "issued";
+    resolution = "issued";
     if (input.supersedePriorSession) {
       replacedReceiptId = await findSessionReceiptForSupersede({
         partnerId: input.partnerId,
@@ -440,6 +454,7 @@ export async function issuePartnerSessionReceipt(input: {
       receiptId = receipt.id;
       receiptExpiresAt = raced.valid_until ?? receipt.expires_at ?? sessionExpires;
       replay_status = "idempotent_replay";
+      resolution = "insert_race";
     } else if (!decisionRow?.id) {
       throw new Error(insertError?.message ?? "Failed to create verification decision");
     } else {
@@ -578,17 +593,31 @@ export async function issuePartnerSessionReceipt(input: {
     ? buildProvenancePartnerVerificationResult({ base: basePartnerResult, evaluation })
     : basePartnerResult;
 
+  const receipt_outcome = partnerFlowReceiptOutcomeFromResolution(resolution);
+
   return {
     decision_id: decisionId,
     receipt_id: receiptId,
     receipt_expires_at: receiptExpiresAt,
     partner_result,
     replay_status,
+    receipt_outcome,
     currently_valid: trust.currently_valid,
     validity: trust.validity,
     invalidation_reasons: trust.invalidation_reasons,
     replaced_receipt_id: replacedReceiptId,
   };
+}
+
+function buildPartnerFlowReturnRedirectUrl(
+  returnUrl: string,
+  params: Record<string, string>,
+  receiptOutcome: PartnerFlowReceiptOutcome,
+): string {
+  return buildRedirectUrl(returnUrl, {
+    ...params,
+    ...partnerFlowReceiptOutcomeRedirectParam(receiptOutcome),
+  });
 }
 
 export async function startPartnerFlow(input: PartnerFlowStartInput): Promise<{
@@ -864,7 +893,7 @@ export async function evaluatePartnerFlow(input: {
     );
 
     if (evaluation.decision === "approved") {
-      const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
+      const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, receipt_outcome, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
         suiAddress: subject,
         partnerId: input.partnerId,
         policyId: input.policyId,
@@ -873,7 +902,7 @@ export async function evaluatePartnerFlow(input: {
         launchpadApplicationId: input.launchpadApplicationId,
       });
 
-      const redirect_url = buildRedirectUrl(input.returnUrl, {
+      const redirect_url = buildPartnerFlowReturnRedirectUrl(input.returnUrl, {
         status: "approved",
         decision_id,
         receipt_id,
@@ -881,7 +910,7 @@ export async function evaluatePartnerFlow(input: {
         credential_id: credential.credential_jti,
         policy_id: input.policyId,
         partner_id: input.partnerId,
-      });
+      }, receipt_outcome);
 
       if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
         return {
@@ -895,6 +924,7 @@ export async function evaluatePartnerFlow(input: {
         redirect_url,
         partner_result: { ...partner_result, receipt_id, receipt_expires_at },
         replay_status,
+        receipt_outcome,
         currently_valid,
         validity,
         invalidation_reasons,
@@ -989,10 +1019,10 @@ export async function completePartnerFlowAfterApproval(input: {
     launchpadApplicationId: input.launchpadApplicationId,
   });
 
-  const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
+  const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, receipt_outcome, currently_valid, validity, invalidation_reasons } = issued;
   const policy = await getPolicy(input.policyId);
 
-  const redirect_url = buildRedirectUrl(input.returnUrl, {
+  const redirect_url = buildPartnerFlowReturnRedirectUrl(input.returnUrl, {
     status: partner_result.decision,
     decision_id,
     receipt_id,
@@ -1000,7 +1030,7 @@ export async function completePartnerFlowAfterApproval(input: {
     credential_id: credentialJti,
     policy_id: input.policyId,
     partner_id: input.partnerId,
-  });
+  }, receipt_outcome);
 
   if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
     return {
@@ -1016,6 +1046,7 @@ export async function completePartnerFlowAfterApproval(input: {
     redirect_url,
     partner_result,
     replay_status,
+    receipt_outcome,
     currently_valid,
     validity,
     invalidation_reasons,
@@ -1056,7 +1087,7 @@ export async function refreshPartnerSessionReceipt(input: {
     return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
 
-  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons, replaced_receipt_id } = await issuePartnerSessionReceipt({
+  const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, receipt_outcome, currently_valid, validity, invalidation_reasons, replaced_receipt_id } = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -1066,7 +1097,7 @@ export async function refreshPartnerSessionReceipt(input: {
     launchpadApplicationId: input.launchpadApplicationId,
   });
 
-  const redirect_url = buildRedirectUrl(input.returnUrl, {
+  const redirect_url = buildPartnerFlowReturnRedirectUrl(input.returnUrl, {
     status: "approved",
     decision_id,
     receipt_id,
@@ -1074,7 +1105,7 @@ export async function refreshPartnerSessionReceipt(input: {
     credential_id: credential.credential_jti,
     policy_id: input.policyId,
     partner_id: input.partnerId,
-  });
+  }, receipt_outcome);
 
   if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
     return {
@@ -1088,6 +1119,7 @@ export async function refreshPartnerSessionReceipt(input: {
     redirect_url,
     partner_result: { ...partner_result, receipt_id, receipt_expires_at },
     replay_status,
+    receipt_outcome,
     currently_valid,
     validity,
     invalidation_reasons,

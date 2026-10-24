@@ -207,6 +207,38 @@ export async function upsertPartnerMembership(input: {
   }
 }
 
+export async function insertPartnerMembershipIfAbsent(input: {
+  accountId: string;
+  partnerId: string;
+  role: PartnerMembershipRole;
+}): Promise<boolean> {
+  try {
+    const { rows } = await queryAbraxasPg<{ account_id: string }>(
+      `insert into public.abraxas_account_partner_memberships (account_id, partner_id, role, status)
+       values ($1, $2, $3, 'active')
+       on conflict (account_id, partner_id) do nothing
+       returning account_id`,
+      [input.accountId, input.partnerId, input.role],
+    );
+    return rows.length > 0;
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function revokePartnerMembership(accountId: string, partnerId: string): Promise<void> {
+  try {
+    await queryAbraxasPg(
+      `update public.abraxas_account_partner_memberships
+          set status = 'revoked'
+        where account_id = $1 and partner_id = $2`,
+      [accountId, partnerId],
+    );
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
 export async function assertPartnerMembership(
   accountId: string,
   partnerId: string,

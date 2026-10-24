@@ -71,6 +71,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return launchpadJson({ ok: true, ...view });
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "unavailable";
+    const operatorMessage =
+      error instanceof Error && "operator_message" in error
+        ? String((error as { operator_message?: string }).operator_message)
+        : undefined;
+    if (code === "holder_origin_mismatch" || code === "holder_origin_unconfigured") {
+      return launchpadError(code, 503, operatorMessage);
+    }
     const bindingCodes = new Set([
       "AMBIGUOUS_POLICY_BINDING",
       "POLICY_BINDING_NOT_FOUND",

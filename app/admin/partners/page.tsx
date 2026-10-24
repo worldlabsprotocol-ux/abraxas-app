@@ -8,6 +8,7 @@ import { useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PartnerOnboardingConsole } from "@/components/admin/PartnerOnboardingConsole";
+import { NativeAccountMembershipRecoveryConsole } from "@/components/admin/NativeAccountMembershipRecoveryConsole";
 import { AdminPartnerKeysPanel } from "@/components/admin/AdminPartnerKeysPanel";
 import { PartnerMeteringPanel } from "@/components/admin/PartnerMeteringPanel";
 import { PartnerWebhooksPanel } from "@/components/admin/PartnerWebhooksPanel";
@@ -28,6 +29,7 @@ const ACCENT = "#10B981";
 
 const TAB_LABELS: Record<AdminPartnersTab, string> = {
   onboarding: "Onboarding",
+  "account-recovery": "Account recovery",
   keys: "API keys",
   usage: "Usage metering",
   webhooks: "Webhooks",
@@ -126,6 +128,8 @@ export default function AdminPartnersPage() {
             adminRequest={gate.adminRequest}
             initialSelectedPartnerId={initialPartnerId}
           />
+        ) : tab === "account-recovery" ? (
+          <NativeAccountMembershipRecoveryConsole adminRequest={gate.adminRequest} />
         ) : tab === "keys" ? (
           <AdminPartnerKeysPanel adminRequest={gate.adminRequest} />
         ) : tab === "usage" ? (

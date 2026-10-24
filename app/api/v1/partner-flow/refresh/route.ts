@@ -19,6 +19,7 @@ import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
 import { maybeEnqueuePartnerReceiptIssued } from "@/lib/partner/webhooks/webhookHooks";
 import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
+import { resolvePartnerFlowReceiptOutcome } from "@/lib/partner/partnerFlowReceiptOutcome";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -148,28 +149,31 @@ export async function POST(request: NextRequest) {
 
     try {
       if (result.replay_status && !isPartnerFlowRevocationDenied(result)) {
-        await auditPartnerFlowReceiptOutcome({
-          flowTraceId,
-          partnerId,
-          policyId,
-          policyVersion: result.policy_version,
-          subjectId: session.session.subjectId,
-          outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
-          verificationRequestId: body.verification_request_id,
-          decisionId: result.decision_id,
-          receiptId: result.partner_result?.receipt_id,
-          replacedReceiptId: result.replaced_receipt_id,
-          reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
-          validity: result.validity,
-          currentlyValid: result.currently_valid,
-          idempotencyKey: verificationRequestId
-            ? buildPartnerFlowVerificationRequestIdempotencyKey(verificationRequestId)
-            : buildPartnerFlowSessionIdempotencyKey({
-              partnerId,
-              subjectId: session.session.subjectId,
-              policyId,
-            }),
-        }, result.replay_status, "refresh");
+        const receiptOutcome = resolvePartnerFlowReceiptOutcome(result);
+        if (receiptOutcome) {
+          await auditPartnerFlowReceiptOutcome({
+            flowTraceId,
+            partnerId,
+            policyId,
+            policyVersion: result.policy_version,
+            subjectId: session.session.subjectId,
+            outcome: receiptOutcome,
+            verificationRequestId: body.verification_request_id,
+            decisionId: result.decision_id,
+            receiptId: result.partner_result?.receipt_id,
+            replacedReceiptId: result.replaced_receipt_id,
+            reasonCodes: result.reason_codes ?? result.partner_result?.reason_codes,
+            validity: result.validity,
+            currentlyValid: result.currently_valid,
+            idempotencyKey: verificationRequestId
+              ? buildPartnerFlowVerificationRequestIdempotencyKey(verificationRequestId)
+              : buildPartnerFlowSessionIdempotencyKey({
+                partnerId,
+                subjectId: session.session.subjectId,
+                policyId,
+              }),
+          }, receiptOutcome, "refresh");
+        }
       }
 
       await auditPartnerFlowStepRequired({

@@ -21,10 +21,12 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as {
     partner_id?: string;
+    application_id?: string;
     return_urls?: string[];
   };
 
   const partnerId = body.partner_id?.trim();
+  const applicationId = body.application_id?.trim();
   const urls = Array.isArray(body.return_urls) ? body.return_urls : [];
   if (!partnerId) {
     return NextResponse.json({ error: "partner_id required" }, { status: 400 });
@@ -74,6 +76,39 @@ export async function POST(req: NextRequest) {
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    if (applicationId) {
+      const { data: appRow, error: appLoadError } = await sb
+        .from("partner_launchpad_applications")
+        .select("partner_id, allowed_return_urls")
+        .eq("id", applicationId)
+        .maybeSingle();
+
+      if (appLoadError) {
+        return NextResponse.json({ error: appLoadError.message }, { status: 500 });
+      }
+      if (!appRow || appRow.partner_id !== partnerId) {
+        return NextResponse.json({ error: "Launchpad application not found for partner" }, { status: 404 });
+      }
+
+      const appMerged = mergeReturnUrlAllowlist(
+        appRow.allowed_return_urls as string[] | null,
+        validation.accepted,
+      );
+
+      const { error: appUpdateError } = await sb
+        .from("partner_launchpad_applications")
+        .update({
+          allowed_return_urls: appMerged,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", applicationId)
+        .eq("partner_id", partnerId);
+
+      if (appUpdateError) {
+        return NextResponse.json({ error: appUpdateError.message }, { status: 500 });
+      }
     }
 
     await logAdminPartnerConfigAudit(req, {

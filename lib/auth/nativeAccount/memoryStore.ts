@@ -69,6 +69,39 @@ type MemoryState = {
   memberships: Map<string, { role: PartnerMembershipRole; status: "active" | "revoked"; created_at: string }>;
   grants: Array<Record<string, unknown>>;
   enrollments: Array<Record<string, unknown>>;
+  recoveryAttestations: Map<
+    string,
+    {
+      account_id: string;
+      partner_id: string;
+      application_id: string;
+      expires_at: string;
+      consumed_at: string | null;
+    }
+  >;
+  launchpadProvisioningActivity: Array<{
+    id: string;
+    application_id: string;
+    partner_id: string;
+    event_type: string;
+    public_code: string | null;
+    created_at: string;
+  }>;
+  adminRecoveryApprovals: Map<
+    string,
+    {
+      approval_id: string;
+      attestation_id: string;
+      account_id: string;
+      partner_id: string;
+      application_id: string;
+      approver_actor_id: string;
+      ownership_basis: string;
+      reason: string;
+      expires_at: string;
+      consumed_at: string | null;
+    }
+  >;
 };
 
 const GLOBAL_KEY = "__abraxas_native_account_memory__";
@@ -87,6 +120,9 @@ function memoryState(): MemoryState {
       memberships: new Map(),
       grants: [],
       enrollments: [],
+      recoveryAttestations: new Map(),
+      adminRecoveryApprovals: new Map(),
+      launchpadProvisioningActivity: [],
     };
   }
   return g[GLOBAL_KEY]!;
@@ -141,6 +177,9 @@ export function resetNativeAccountMemory(): void {
   memberships().clear();
   grants().length = 0;
   enrollments().length = 0;
+  memoryState().recoveryAttestations.clear();
+  memoryState().adminRecoveryApprovals.clear();
+  memoryState().launchpadProvisioningActivity = [];
 }
 
 export const nativeAccountMemory = {
@@ -211,6 +250,53 @@ export const nativeAccountMemory = {
     });
   },
 
+  insertMembershipIfAbsent(accountId: string, partnerId: string, role: PartnerMembershipRole): boolean {
+    const key = membershipKey(accountId, partnerId);
+    if (memberships().has(key)) return false;
+    memberships().set(key, {
+      role,
+      status: "active",
+      created_at: new Date().toISOString(),
+    });
+    return true;
+  },
+
+  insertRecoveryAttestation(input: {
+    attestationId: string;
+    accountId: string;
+    partnerId: string;
+    applicationId: string;
+    expiresAt: string;
+  }): void {
+    memoryState().recoveryAttestations.set(input.attestationId, {
+      account_id: input.accountId,
+      partner_id: input.partnerId,
+      application_id: input.applicationId,
+      expires_at: input.expiresAt,
+      consumed_at: null,
+    });
+  },
+
+  consumeRecoveryAttestation(verified: {
+    attestationId: string;
+    accountId: string;
+    partnerId: string;
+    applicationId: string;
+  }): boolean {
+    const row = memoryState().recoveryAttestations.get(verified.attestationId);
+    if (!row || row.consumed_at) return false;
+    if (new Date(row.expires_at).getTime() < Date.now()) return false;
+    if (
+      row.account_id !== verified.accountId
+      || row.partner_id !== verified.partnerId
+      || row.application_id !== verified.applicationId
+    ) {
+      return false;
+    }
+    row.consumed_at = new Date().toISOString();
+    return true;
+  },
+
   revokeMembership(accountId: string, partnerId: string): void {
     const row = memberships().get(membershipKey(accountId, partnerId));
     if (row) row.status = "revoked";
@@ -252,6 +338,122 @@ export const nativeAccountMemory = {
     idempotency_key?: string | null;
   }): void {
     enrollments().push({ ...input, created_at: new Date().toISOString() });
+  },
+
+  findEnrollmentByApplicationId(applicationId: string): {
+    account_id: string;
+    partner_id: string;
+    application_id: string | null;
+  } | null {
+    for (const row of enrollments()) {
+      if (row.application_id === applicationId) {
+        return {
+          account_id: String(row.account_id),
+          partner_id: String(row.partner_id),
+          application_id: row.application_id ? String(row.application_id) : null,
+        };
+      }
+    }
+    return null;
+  },
+
+  findEnrollmentByAccountPartner(accountId: string, partnerId: string): {
+    account_id: string;
+    partner_id: string;
+    application_id: string | null;
+  } | null {
+    const row = enrollments().find(
+      (e) => e.account_id === accountId && e.partner_id === partnerId,
+    );
+    if (!row) return null;
+    return {
+      account_id: String(row.account_id),
+      partner_id: String(row.partner_id),
+      application_id: row.application_id ? String(row.application_id) : null,
+    };
+  },
+
+  insertAdminRecoveryApproval(row: {
+    approvalId: string;
+    attestationId: string;
+    accountId: string;
+    partnerId: string;
+    applicationId: string;
+    approverActorId: string;
+    ownershipBasis: string;
+    reason: string;
+    expiresAt: string;
+  }): void {
+    memoryState().adminRecoveryApprovals.set(row.approvalId, {
+      approval_id: row.approvalId,
+      attestation_id: row.attestationId,
+      account_id: row.accountId,
+      partner_id: row.partnerId,
+      application_id: row.applicationId,
+      approver_actor_id: row.approverActorId,
+      ownership_basis: row.ownershipBasis,
+      reason: row.reason,
+      expires_at: row.expiresAt,
+      consumed_at: null,
+    });
+  },
+
+  findLaunchpadProvisioningEvidence(
+    applicationId: string,
+    partnerId: string,
+    activityId?: string,
+  ): {
+    activity_id: string | null;
+    event_type: string;
+    public_code: string | null;
+    provisioned_at: string | null;
+  } | null {
+    const rows = memoryState().launchpadProvisioningActivity;
+    const match = rows.find((row) => {
+      if (row.application_id !== applicationId || row.partner_id !== partnerId) return false;
+      if (activityId && row.id !== activityId) return false;
+      return row.event_type === "application_provisioned";
+    });
+    if (!match) return null;
+    return {
+      activity_id: match.id,
+      event_type: match.event_type,
+      public_code: match.public_code,
+      provisioned_at: match.created_at,
+    };
+  },
+
+  seedLaunchpadProvisioningActivity(row: {
+    id: string;
+    application_id: string;
+    partner_id: string;
+    event_type: string;
+    public_code: string | null;
+    created_at: string;
+  }): void {
+    memoryState().launchpadProvisioningActivity.push(row);
+  },
+
+  consumeAdminRecoveryApproval(input: {
+    approvalId: string;
+    attestationId: string;
+    accountId: string;
+    partnerId: string;
+    applicationId: string;
+  }): boolean {
+    const row = memoryState().adminRecoveryApprovals.get(input.approvalId);
+    if (!row || row.consumed_at) return false;
+    if (new Date(row.expires_at).getTime() < Date.now()) return false;
+    if (
+      row.attestation_id !== input.attestationId
+      || row.account_id !== input.accountId
+      || row.partner_id !== input.partnerId
+      || row.application_id !== input.applicationId
+    ) {
+      return false;
+    }
+    row.consumed_at = new Date().toISOString();
+    return true;
   },
 
   insertSolanaChallenge(row: Omit<MemorySolanaChallenge, "consumed_at"> & { consumed_at?: string | null }): void {

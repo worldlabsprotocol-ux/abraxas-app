@@ -178,6 +178,7 @@ function validatePartnerFlowSequence(
       }
 
       case PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay:
+      case PARTNER_FLOW_AUDIT_ACTIONS.sessionDecisionReused:
         if (!hasEligibleTerminalContext(hasEvaluate, hasConsent, hasReceiptIssued)) {
           issues.push("idempotent_replay_without_context");
         }

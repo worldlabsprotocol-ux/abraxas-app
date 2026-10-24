@@ -26,7 +26,10 @@ import {
   fetchEphemeralWalletSignInChallenge,
   type EphemeralWalletSignInChallenge,
 } from "@/lib/auth/ephemeralWallet/clientSignIn";
-import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
+import {
+  completeSolanaAccountSignInWithChallenge,
+  fetchSolanaAccountSignInChallenge,
+} from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
 import { WalletSignInReviewCard } from "@/components/wallet/WalletAuthorizationReviewCard";
 import {
   SOLANA_SIGN_IN_STEPS,
@@ -42,6 +45,14 @@ import styles from "./SolanaAccountSignInDialog.module.css";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const CONNECT_WALLET_DISCLAIMER =
   "Connect your wallet, review the sign-in request, then approve the message in Phantom.";
+
+type SignInReviewChallenge = EphemeralWalletSignInChallenge;
+
+function usesEphemeralWalletSignIn(enabledJson: {
+  auth_mode?: string;
+}): boolean {
+  return enabledJson.auth_mode === "ephemeral_wallet";
+}
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 4)}…${address.slice(-4)}`;
@@ -92,8 +103,8 @@ export function SolanaAccountSignInDialog({
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
   const [selectedWalletName, setSelectedWalletName] = useState<string | null>(null);
-  const [pendingSignInChallenge, setPendingSignInChallenge] =
-    useState<EphemeralWalletSignInChallenge | null>(null);
+  const [pendingSignInChallenge, setPendingSignInChallenge] = useState<SignInReviewChallenge | null>(null);
+  const [signInUsesEphemeralFlow, setSignInUsesEphemeralFlow] = useState<boolean | null>(null);
 
   const walletConnected = connected && Boolean(publicKey);
   const activeStep = activeSignInStepIndex({
@@ -112,6 +123,7 @@ export function SolanaAccountSignInDialog({
     setLocalError(null);
     setSelectedWalletName(null);
     setPendingSignInChallenge(null);
+    setSignInUsesEphemeralFlow(null);
   }, []);
 
   const abortPendingSignIn = useCallback(() => {
@@ -166,15 +178,28 @@ export function SolanaAccountSignInDialog({
     setError(null);
     try {
       const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
-      const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
-      if (enabledJson.auth_mode !== "ephemeral_wallet") {
-        setLocalError("Sign-in review is only available for wallet authentication in this environment.");
-        setError("Sign-in review is only available for wallet authentication in this environment.");
+      const enabledJson = (await enabledRes.json()) as {
+        auth_mode?: string;
+        enabled?: boolean;
+        solana_operational?: boolean;
+      };
+      const ephemeral = usesEphemeralWalletSignIn(enabledJson);
+      const nativeSolana =
+        !ephemeral && Boolean(enabledJson.enabled && enabledJson.solana_operational);
+      if (!ephemeral && !nativeSolana) {
+        const msg = "Account sign-in is not available in this environment right now.";
+        setLocalError(msg);
+        setError(msg);
         return;
       }
-      const fetched = await fetchEphemeralWalletSignInChallenge({
-        walletAddress: publicKey.toBase58(),
-      });
+      setSignInUsesEphemeralFlow(ephemeral);
+      const fetched = ephemeral
+        ? await fetchEphemeralWalletSignInChallenge({
+            walletAddress: publicKey.toBase58(),
+          })
+        : await fetchSolanaAccountSignInChallenge({
+            walletAddress: publicKey.toBase58(),
+          });
       if (!fetched.ok) {
         const msg = fetched.message ?? mapSignInFailure({ reason: "failed", code: fetched.code });
         setLocalError(msg);
@@ -293,9 +318,13 @@ export function SolanaAccountSignInDialog({
     setPhase("signing");
 
     try {
-      const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
-      const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
-      const useEphemeral = enabledJson.auth_mode === "ephemeral_wallet";
+      const useEphemeral =
+        signInUsesEphemeralFlow
+        ?? usesEphemeralWalletSignIn(
+          (await (
+            await fetch("/api/auth/native/enabled", { credentials: "same-origin" })
+          ).json()) as { auth_mode?: string },
+        );
 
       setPhase("signing");
       const result = useEphemeral
@@ -325,10 +354,32 @@ export function SolanaAccountSignInDialog({
               isStale: () => generation !== signAttemptGenerationRef.current,
             });
           })()
-        : await completeSolanaAccountSignIn({
-            walletAddress: publicKey.toBase58(),
-            signMessage,
-          });
+        : await (async () => {
+            let challenge = pendingSignInChallenge;
+            if (!challenge) {
+              const fetched = await fetchSolanaAccountSignInChallenge({
+                walletAddress: publicKey.toBase58(),
+                signal: controller.signal,
+              });
+              if (!fetched.ok) {
+                return {
+                  ok: false as const,
+                  reason: "failed" as const,
+                  code: fetched.code,
+                  message: fetched.message,
+                };
+              }
+              challenge = fetched.challenge;
+              setPendingSignInChallenge(challenge);
+            }
+            return completeSolanaAccountSignInWithChallenge({
+              challenge,
+              walletAddress: publicKey.toBase58(),
+              signMessage,
+              signal: controller.signal,
+              isStale: () => generation !== signAttemptGenerationRef.current,
+            });
+          })();
 
       if (generation !== signAttemptGenerationRef.current) {
         return;
@@ -340,7 +391,10 @@ export function SolanaAccountSignInDialog({
             setPhase("connected");
             return;
           }
-          const msg = mapSignInFailure({ reason: "cancelled" });
+          const msg = mapSignInFailure({
+            reason: "cancelled",
+            signFailureCode: "signFailureCode" in result ? result.signFailureCode : undefined,
+          });
           setLocalError(msg);
           setError(msg);
           setPhase("connected");
@@ -350,6 +404,8 @@ export function SolanaAccountSignInDialog({
           reason: "failed",
           code: "code" in result ? result.code : undefined,
           message: "message" in result ? result.message : undefined,
+          signFailureCode: "signFailureCode" in result ? result.signFailureCode : undefined,
+          signFailureDetail: "signFailureDetail" in result ? result.signFailureDetail : undefined,
         });
         setLocalError(msg);
         setError(msg);
@@ -379,6 +435,7 @@ export function SolanaAccountSignInDialog({
     onClose,
     abortPendingSignIn,
     pendingSignInChallenge,
+    signInUsesEphemeralFlow,
   ]);
 
   const handleDialogCancel = useCallback(() => {

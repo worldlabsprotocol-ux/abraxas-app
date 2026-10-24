@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { PartnerFlowStoredConfig } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import {
@@ -47,6 +47,7 @@ const stored: PartnerFlowStoredConfig = {
 
 afterEach(() => {
   resetHostedHandoffsForTests();
+  vi.unstubAllEnvs();
 });
 
 describe("hosted partner flow handoff", () => {
@@ -57,6 +58,21 @@ describe("hosted partner flow handoff", () => {
     expect(view.hosted_url).not.toMatch(/partner_id|policy_id|callback|return_url|receipt/);
     expect(handoffLeaks(view)).toEqual([]);
     await expect(cancelHostedHandoff(record, "other-partner", app.id)).rejects.toMatchObject({ code: "tenant_mismatch" });
+  });
+
+  it("issues demo holder URLs when demo runtime is bound", async () => {
+    vi.stubEnv("ABRAXAS_RUNTIME_ENV", "demo");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://demo.abraxasworld.xyz");
+    const record = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
+    const view = projectPublic(record);
+    expect(view.hosted_url).toContain("https://demo.abraxasworld.xyz/partner/continue");
+  });
+
+  it("refuses to create a handoff when demo runtime is misconfigured to production origin", async () => {
+    vi.stubEnv("ABRAXAS_RUNTIME_ENV", "demo");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://abraxasworld.xyz");
+    await expect(createHostedHandoff({ application: app, stored, runtime: "universal_https" }))
+      .rejects.toMatchObject({ code: "holder_origin_mismatch" });
   });
 
   it("binds callback, policy, action, and purpose from the server config", async () => {

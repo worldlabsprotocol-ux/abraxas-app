@@ -2,7 +2,7 @@
 // Holder-facing API and browser entry origins for the public product (not operator demo hosts).
 
 import { CANONICAL_PRODUCTION_ORIGIN } from "@/lib/integrationReadiness";
-import { PUBLIC_DEMO_ORIGIN } from "@/lib/product/publicOrigin";
+import { isPublicDemoRuntime, PUBLIC_DEMO_ORIGIN } from "@/lib/product/publicOrigin";
 import { isPublicDemoClientSurface } from "@/lib/product/demoRuntime";
 
 export function resolveHolderFacingApiOrigin(
@@ -10,6 +10,7 @@ export function resolveHolderFacingApiOrigin(
 ): string {
   const configured = env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
   if (configured) return configured;
+  if (isPublicDemoRuntime(env)) return PUBLIC_DEMO_ORIGIN;
   if (isPublicDemoClientSurface(env)) return PUBLIC_DEMO_ORIGIN;
   return CANONICAL_PRODUCTION_ORIGIN;
 }
