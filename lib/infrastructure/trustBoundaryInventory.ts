@@ -130,13 +130,25 @@ export const TRUST_BOUNDARY_DEPENDENCIES: TrustBoundaryDependency[] = [
   },
   {
     id: "integration_telemetry",
-    surface: "Partner webhooks, activity signals, metering",
+    surface: "Partner webhooks, activity signals, Launchpad activity",
     category: "replaceable_storage",
-    persistence_tables: ["partner_webhook_outbox", "partner_activity_signals"],
+    persistence_tables: ["partner_webhook_outbox", "partner_launchpad_activity"],
     transport: "postgrest",
     fail_closed: false,
     offline_capable: false,
     notes: "Operational telemetry — not a cryptographic trust root.",
+  },
+  {
+    id: "partner_flow_metering_ledger",
+    surface: "Observe-only receipt issuance metering (partner_metering_events)",
+    category: "replaceable_storage",
+    persistence_tables: ["partner_metering_events", "partner_entitlements"],
+    transport: "postgrest",
+    fail_closed: false,
+    offline_capable: false,
+    notes:
+      "Best-effort insert on issued approved receipts; idempotent keys. Not a trust root. "
+      + "Production Supabase 058/065 suspended (Build #813) — ledger must land on Abraxas-operated Postgres.",
   },
   {
     id: "supabase_branded_transport",
