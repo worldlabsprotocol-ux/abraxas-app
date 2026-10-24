@@ -49,8 +49,12 @@ import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
 import { publishSignedIssuerAuthorityFromRegistry } from "./issuerAuthority/buildFromRegistry";
 import { evaluateSovereignCurrentValidity } from "./sovereignCurrentValidity/evaluate";
+import { publishSignedReceiptStatusFromSovereignEvaluation } from "./trustDistribution/publishSignedReceiptStatus";
+import { buildTrustAnchorBundleV1 } from "./trustDistribution/buildTrustAnchorBundle";
+import { verifyAbraxasReceiptIndependently } from "@abraxas/independent-verifier";
 
 const ANCHOR_KEY = generateTestSigningKeyPair();
+const STATUS_SIGNER_KEY = generateTestSigningKeyPair("status-signer-integration");
 
 const PROOF_ENABLED = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
 const describeProof = PROOF_ENABLED ? describe : describe.skip;
@@ -174,6 +178,9 @@ describeProof("sovereign operational proof (Build #815)", () => {
           historical_verify_until: null,
         },
       ]),
+      ABRAXAS_STATUS_SIGNER_KEY_ID: STATUS_SIGNER_KEY.signingKeyId,
+      ABRAXAS_STATUS_SIGNER_PRIVATE_JWK: JSON.stringify(STATUS_SIGNER_KEY.privateKeyJwk),
+      ABRAXAS_STATUS_SIGNER_PUBLIC_JWK: JSON.stringify(STATUS_SIGNER_KEY.publicKeyJwk),
     };
 
     await applySovereignSliceSchema(primaryPool);
@@ -392,6 +399,49 @@ describeProof("sovereign operational proof (Build #815)", () => {
     expect(result.cryptographically_valid).toBe(true);
     expect(result.issuer_authorized).toBe(true);
     expect(result.currently_acceptable).toBe(true);
+  });
+
+  it("publishes signed status evidence consumable by standalone verifier", async () => {
+    const signedIssuer = publishSignedIssuerAuthorityFromRegistry({
+      registryVersion: 4,
+      anchorKeyId: "anchor-integration",
+      anchorPrivateJwk: ANCHOR_KEY.privateKeyJwk,
+      env: testEnv,
+    });
+    if ("ok" in signedIssuer && signedIssuer.ok === false) throw new Error(signedIssuer.reason);
+    const evaluation = await evaluateSovereignCurrentValidity({
+      record,
+      signedIssuerAuthority: signedIssuer as Exclude<typeof signedIssuer, { ok: false; reason: string }>,
+      trustAnchorPublicJwk: ANCHOR_KEY.publicKeyJwk,
+      expectedEnvironment: "production",
+      env: testEnv,
+    });
+    const signedStatus = await publishSignedReceiptStatusFromSovereignEvaluation({
+      record,
+      evaluation,
+      signedIssuerAuthorityEnvironment: "production",
+      env: testEnv,
+    });
+    if ("ok" in signedStatus && signedStatus.ok === false) throw new Error(signedStatus.reason);
+    const bundle = buildTrustAnchorBundleV1({
+      anchorKeyId: "anchor-integration",
+      anchorPublicJwk: ANCHOR_KEY.publicKeyJwk,
+      environment: "production",
+    });
+    const verified = verifyAbraxasReceiptIndependently({
+      record,
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: signedIssuer as Exclude<typeof signedIssuer, { ok: false; reason: string }>,
+      relyingParty: {
+        partner_id: record.partner_id,
+        policy_id: record.policy_id,
+        environment: "production",
+      },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatus as Exclude<typeof signedStatus, { ok: false; reason: string }>,
+    });
+    expect(verified.status_evidence_authentic).toBe(true);
+    expect(verified.currently_acceptable).toBe("yes");
   });
 
   it("rejects receipt when sovereign claim evidence is revoked", async () => {

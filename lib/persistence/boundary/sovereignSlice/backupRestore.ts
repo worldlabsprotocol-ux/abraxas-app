@@ -20,6 +20,7 @@ export type SovereignSliceBackupPayload = {
   sovereign_claim_status: unknown[];
   sovereign_evidence_sources: unknown[];
   sovereign_receipt_evidence_dependencies: unknown[];
+  sovereign_receipt_status_checkpoints: unknown[];
 };
 
 const TABLE_ORDER = [
@@ -30,6 +31,7 @@ const TABLE_ORDER = [
   "sovereign_claim_status",
   "sovereign_evidence_sources",
   "sovereign_receipt_evidence_dependencies",
+  "sovereign_receipt_status_checkpoints",
   "decision_receipt_supersessions",
   "partner_metering_events",
 ] as const;
@@ -59,6 +61,7 @@ export async function exportSovereignSliceBackup(pool: Pool): Promise<SovereignS
       pool,
       "sovereign_receipt_evidence_dependencies",
     ),
+    sovereign_receipt_status_checkpoints: await selectAll(pool, "sovereign_receipt_status_checkpoints"),
   };
   return { ...body, backup_digest: digestPayload(body) };
 }
@@ -78,6 +81,7 @@ export async function restoreSovereignSliceBackup(
     sovereign_claim_status: payload.sovereign_claim_status ?? [],
     sovereign_evidence_sources: payload.sovereign_evidence_sources ?? [],
     sovereign_receipt_evidence_dependencies: payload.sovereign_receipt_evidence_dependencies ?? [],
+    sovereign_receipt_status_checkpoints: payload.sovereign_receipt_status_checkpoints ?? [],
   };
   const expected = digestPayload(withoutDigest);
   if (expected !== payload.backup_digest) {

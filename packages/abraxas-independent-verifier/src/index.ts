@@ -5,3 +5,4 @@ export * from "./trustAnchorBundle";
 export * from "./issuerAuthorityStatement";
 export * from "./receiptVerify";
 export * from "./verifyIndependent";
+export * from "./signedReceiptStatusStatement";

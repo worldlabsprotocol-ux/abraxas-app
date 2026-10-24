@@ -86,6 +86,7 @@ export async function truncateSovereignSlice(pool: Pool): Promise<void> {
   await pool.query(`
     truncate public.partner_metering_events,
              public.decision_receipt_supersessions,
+             public.sovereign_receipt_status_checkpoints,
              public.sovereign_receipt_evidence_dependencies,
              public.sovereign_evidence_sources,
              public.sovereign_claim_status,

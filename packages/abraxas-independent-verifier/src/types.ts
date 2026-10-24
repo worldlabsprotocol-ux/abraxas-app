@@ -19,6 +19,8 @@ export type TrustAnchorBundleV1 = {
   /** Integrator must obtain this document out-of-band; HTTPS fetch of SIAS does not establish the anchor. */
   distribution: "out_of_band" | "pinned_by_integrator";
   statement_cache_max_age_seconds: number;
+  /** Max age for signed status statements (issued_at → verifier now). */
+  status_statement_max_age_seconds: number;
   minimum_registry_version_hint: number | null;
 };
 
@@ -35,6 +37,16 @@ export type IssuerAuthorityKeyEntry = {
   reason_class: string;
 };
 
+export type StatusSignerKeyEntry = {
+  key_id: string;
+  environment: "demo" | "production";
+  status: "active" | "revoked";
+  not_before: string;
+  expires_at: string | null;
+  public_jwk: JsonWebKey;
+  reason_class: string;
+};
+
 export type IssuerAuthorityStatementPayload = {
   document: typeof ISSUER_AUTHORITY_STATEMENT_DOCUMENT;
   schema_version: typeof ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION;
@@ -45,6 +57,42 @@ export type IssuerAuthorityStatementPayload = {
   not_before: string;
   anchor_key_id: string;
   keys: IssuerAuthorityKeyEntry[];
+  /** Authorized Ed25519 keys for signed receipt status statements (independent of HTTP status APIs). */
+  status_signers?: StatusSignerKeyEntry[];
+};
+
+export const RECEIPT_STATUS_STATEMENT_DOCUMENT = "abraxas_signed_receipt_status_statement" as const;
+export const RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION = "1.0.0" as const;
+
+export type ReceiptStatusStatementPayload = {
+  document: typeof RECEIPT_STATUS_STATEMENT_DOCUMENT;
+  schema_version: typeof RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION;
+  receipt_id: string;
+  /** Privacy-preserving status reference (receipt id only — no holder identifiers). */
+  status_reference: string;
+  partner_id: string;
+  policy_id: string;
+  policy_version: number;
+  environment: "demo" | "production";
+  status_version: number;
+  supersedes_status_version: number | null;
+  receipt_status: "active" | "revoked" | "expired";
+  superseded: boolean;
+  partner_operational: boolean;
+  policy_active: boolean;
+  claims_current: boolean;
+  evidence_current: boolean;
+  effective_at: string;
+  issued_at: string;
+  statement_expires_at: string;
+  status_signer_key_id: string;
+};
+
+export type SignedReceiptStatusStatement = {
+  payload: ReceiptStatusStatementPayload;
+  payload_hash: string;
+  signature: string;
+  status_signer_key_id: string;
 };
 
 export type SignedIssuerAuthorityStatement = {

@@ -80,6 +80,11 @@ create table if not exists public.sovereign_evidence_sources (
   revoked_at timestamptz
 );
 
+create table if not exists public.sovereign_receipt_status_checkpoints (
+  receipt_id text primary key references public.decision_receipts(id),
+  status_version int not null default 0 check (status_version >= 0)
+);
+
 create table if not exists public.sovereign_receipt_evidence_dependencies (
   receipt_id text not null references public.decision_receipts(id),
   source_credential_id text not null references public.sovereign_evidence_sources(source_credential_id),

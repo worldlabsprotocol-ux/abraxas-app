@@ -8,7 +8,7 @@ It does **not** import Abraxas application verification modules or Supabase cred
 
 1. **Pin** `trust-anchor-bundle.json` out-of-band (integrator security review).
 2. Obtain a **signed issuer authority statement** (SIAS) through your own channel; HTTPS alone does not establish trust.
-3. Supply **fresh status evidence** from your institution-operated adapter for current acceptability.
+3. Obtain a **signed receipt status statement** (`abraxas_signed_receipt_status_statement`) from an authorized status signer listed in the issuer authority statement.
 
 ## Usage
 
@@ -18,7 +18,7 @@ npx tsx examples/independent-sias-verifier/verify.ts \
   ./signed-receipt.json \
   ./trust-anchor-bundle.json \
   ./issuer-authority-statement.json \
-  ./status-evidence.json
+  ./signed-status-statement.json
 ```
 
 Environment:

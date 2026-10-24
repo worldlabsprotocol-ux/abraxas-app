@@ -9,6 +9,6 @@ Designed for **third-party relying parties** — no Abraxas application backend,
 1. Obtain and pin a `abraxas_trust_anchor_bundle` document out-of-band.
 2. Verify `abraxas_issuer_authority_statement` signatures against the pinned anchor public key.
 3. Verify receipt Ed25519 signatures against keys authorized in the statement.
-4. For **current acceptability**, supply fresh `abraxas_receipt_status_evidence` from your institution-operated adapter.
+4. For **current acceptability**, verify a signed `abraxas_signed_receipt_status_statement` from a status signer listed in the issuer authority statement (unsigned JSON is rejected).
 
 See `examples/independent-sias-verifier/` in the Abraxas repository.
