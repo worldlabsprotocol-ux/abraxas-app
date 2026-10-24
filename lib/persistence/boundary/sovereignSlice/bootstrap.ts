@@ -85,6 +85,7 @@ export async function seedSovereignSliceFixtures(input: {
 export async function truncateSovereignSlice(pool: Pool): Promise<void> {
   await pool.query(`
     truncate public.partner_metering_events,
+             public.decision_receipt_supersessions,
              public.decision_receipts,
              public.partner_policies,
              public.issuer_signing_keys,

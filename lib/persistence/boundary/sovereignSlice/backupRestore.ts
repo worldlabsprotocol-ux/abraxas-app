@@ -16,6 +16,7 @@ export type SovereignSliceBackupPayload = {
   issuer_signing_keys: unknown[];
   decision_receipts: unknown[];
   partner_metering_events: unknown[];
+  decision_receipt_supersessions: unknown[];
 };
 
 const TABLE_ORDER = [
@@ -24,6 +25,7 @@ const TABLE_ORDER = [
   "partner_policies",
   "decision_receipts",
   "partner_metering_events",
+  "decision_receipt_supersessions",
 ] as const;
 
 async function selectAll(pool: Pool, table: string): Promise<unknown[]> {
@@ -44,6 +46,7 @@ export async function exportSovereignSliceBackup(pool: Pool): Promise<SovereignS
     issuer_signing_keys: await selectAll(pool, "issuer_signing_keys"),
     decision_receipts: await selectAll(pool, "decision_receipts"),
     partner_metering_events: await selectAll(pool, "partner_metering_events"),
+    decision_receipt_supersessions: await selectAll(pool, "decision_receipt_supersessions"),
   };
   return { ...body, backup_digest: digestPayload(body) };
 }
@@ -59,6 +62,7 @@ export async function restoreSovereignSliceBackup(
     issuer_signing_keys: payload.issuer_signing_keys,
     decision_receipts: payload.decision_receipts,
     partner_metering_events: payload.partner_metering_events,
+    decision_receipt_supersessions: payload.decision_receipt_supersessions ?? [],
   };
   const expected = digestPayload(withoutDigest);
   if (expected !== payload.backup_digest) {
