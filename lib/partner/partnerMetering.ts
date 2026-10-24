@@ -30,10 +30,17 @@ export interface PartnerMeteringRecordResult {
   error?: string;
 }
 
+const FORBIDDEN_METERING_FIELD_NAMES = new Set([
+  "wallet_address",
+  "sui_address",
+  "subject_id",
+  "email",
+  "holder_email",
+]);
+
 const FORBIDDEN_METERING_VALUE_PATTERNS = [
   "@",
   "0x",
-  "wallet",
   "jwt.",
   "bearer ",
   "oauth",
@@ -41,8 +48,9 @@ const FORBIDDEN_METERING_VALUE_PATTERNS = [
 ] as const;
 
 export function partnerMeteringPayloadHasNoPii(payload: Record<string, unknown>): boolean {
-  for (const value of Object.values(payload)) {
+  for (const [key, value] of Object.entries(payload)) {
     if (value == null) continue;
+    if (FORBIDDEN_METERING_FIELD_NAMES.has(key.toLowerCase())) return false;
     const text = String(value).toLowerCase();
     if (FORBIDDEN_METERING_VALUE_PATTERNS.some(pattern => text.includes(pattern))) {
       return false;
