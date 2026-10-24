@@ -189,6 +189,69 @@ describe("vertical slice invariants", () => {
   });
 });
 
+describe("sovereign freshness layers (fixture)", () => {
+  it("does not treat signature-only validity as current authorization when expired", async () => {
+    const { evaluateReceiptFreshnessFromSovereignPg } = await import("./verticalSlice/freshnessEvaluation");
+    const payload = buildCanonicalPayload({
+      receipt_id: "dr_expired815",
+      decision_id: "00000000-0000-4000-8000-000000008815",
+      policy_id: "policy-shadow",
+      policy_version: 2,
+      partner_id: "partner-shadow",
+      subject_pseudonym_id: subjectPseudonymId("wallet-shadow"),
+      wallet_binding_ref: null,
+      consent_receipt_id: null,
+      decision_result: "approved",
+      reason_codes: ["ok"],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: "production",
+      evaluated_at: "2019-06-01T12:00:00.000Z",
+      expires_at: "2020-01-01T00:00:00.000Z",
+    });
+    const { payloadHash, signature } = signReceiptPayload(payload, TEST_KEY.privateKeyJwk);
+    const record: DecisionReceiptRecord = {
+      id: payload.receipt_id,
+      verification_decision_id: payload.decision_id,
+      consent_receipt_id: null,
+      partner_id: payload.partner_id,
+      policy_id: payload.policy_id,
+      policy_version: payload.policy_version,
+      subject_pseudonym_id: payload.subject_pseudonym_id,
+      wallet_binding_ref: null,
+      decision_result: "approved",
+      reason_codes: payload.reason_codes,
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: "production",
+      evaluated_at: payload.evaluated_at,
+      expires_at: payload.expires_at,
+      revoked_at: null,
+      status: "expired",
+      schema_version: payload.schema_version,
+      payload_hash: payloadHash,
+      signature,
+      signing_key_id: TEST_KEY.signingKeyId,
+      anchor_reference: null,
+      idempotency_key: null,
+      created_at: payload.evaluated_at,
+    };
+    const env = {
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      ABRAXAS_SOVEREIGN_STAGING_PG_URL: "postgresql://unused:5432/unreachable",
+    };
+    const result = await evaluateReceiptFreshnessFromSovereignPg({
+      record,
+      issuerPublicJwk: TEST_KEY.publicKeyJwk,
+      env,
+      now: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    expect(result.signature_authentic).toBe(true);
+    expect(result.currently_acceptable).toBe(false);
+    expect(result.invalidation_reasons).toContain("receipt_expired");
+  });
+});
+
 describe("fixture parity runner", () => {
   it("reports ok when snapshots align", () => {
     const record = sampleRecord();
