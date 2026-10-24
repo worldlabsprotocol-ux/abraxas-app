@@ -1,7 +1,8 @@
 # Build #812 — Production metering preflight (058 / 065)
 
 **Project:** `bztwutzprwsdrtqdpymf` (Production)  
-**Status:** Preflight only — **no SQL executed** without founder authorization  
+**Status:** Preflight complete — **SQL not executed** (awaiting explicit Production change approval)  
+**Last preflight (read-only):** 2026-10-24 · operator: Cloud Agent · project ref confirmed `bztwutzprwsdrtqdpymf`  
 **Billing:** Observe-only; `enforcement_mode` default `observe` in 058
 
 ---
@@ -122,3 +123,15 @@ SELECT conname FROM pg_constraint
 **Single founder authorization:** “Apply **058** (+ **065** or minimal B2) on Production `bztwutzprwsdrtqdpymf` in window \<date\>.”
 
 Native account migrations **144–147**, Production app promotion, and live key issuance remain **separate approvals**.
+
+---
+
+## Change-control record
+
+| Field | Value |
+|-------|--------|
+| **Execution status** | **Not executed** — engineering preflight only; founder message 2026-10-24 does **not** authorize SQL |
+| **Designated approver** | Founder / Production operator |
+| **Backup / PITR** | **Operator must confirm** in Supabase dashboard (not verifiable via agent SQL) before execution |
+| **Rollback note** | Vercel rollback **does not** undo 058; DB recovery = PITR/backup or documented empty-table reversal only |
+| **Post-migration acceptance** | Pending — run Step C in this doc after authorized execution |
