@@ -16,6 +16,7 @@ export default defineConfig({
       "scripts/launchpad-staging-smoke/**/*.test.ts",
       "scripts/trust-contract-drift/**/*.test.ts",
       "examples/partner-access-nextjs-starter/**/*.test.ts",
+      "examples/integration-first-relying-party/**/*.test.ts",
       "examples/good-trouble-wix/**/*.test.js",
       "packages/**/*.test.ts",
     ],

@@ -1,0 +1,9 @@
+{
+  "build": 821,
+  "label": "synthetic_sandbox_only",
+  "partner_id": "partner-integration-821",
+  "policy_id": "policy-age21-sandbox-821",
+  "environment": "demo",
+  "receipt_id": "dr_build821_integration_synthetic",
+  "not_for_production": true
+}
