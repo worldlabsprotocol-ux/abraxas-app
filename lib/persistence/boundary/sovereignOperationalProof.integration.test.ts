@@ -35,6 +35,16 @@ import {
 import { assertSovereignStagingWriteAllowed } from "./isolationGuard";
 import { buildPartnerFlowReceiptMeteringKey } from "@/lib/partner/partnerMetering";
 import { resetSovereignStagingPgPoolForTests } from "./sovereignStagingPg";
+import {
+  exportEncryptedSovereignSliceBackup,
+  restoreEncryptedSovereignSliceBackup,
+} from "./sovereignSlice/encryptedBackup";
+import { computeRecoveryMetrics } from "./staging/recoveryMetrics";
+import {
+  readIssuerSigningKeyStatus,
+  revokeIssuerSigningKeyOnSovereignPg,
+} from "./staging/issuerTrustRecovery";
+import { insertMeteringFixtureOnSovereignPg } from "./verticalSlice/meteringAttribution";
 
 const PROOF_ENABLED = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
 const describeProof = PROOF_ENABLED ? describe : describe.skip;
@@ -138,6 +148,7 @@ describeProof("sovereign operational proof (Build #815)", () => {
       NEXT_PUBLIC_SUPABASE_URL: "",
       SUPABASE_SERVICE_ROLE_KEY: "",
       ABRAXAS_SIGNING_KEY: JSON.stringify(TEST_KEY.privateKeyJwk),
+      ABRAXAS_BACKUP_ENCRYPTION_KEY: Buffer.alloc(32, 11).toString("base64"),
     };
 
     await applySovereignSliceSchema(primaryPool);
@@ -241,6 +252,100 @@ describeProof("sovereign operational proof (Build #815)", () => {
     await expect(restoreSovereignSliceBackup(restorePool, corrupted)).rejects.toThrow(
       /sovereign_backup_digest_mismatch/,
     );
+  });
+
+  it("restores from encrypted backup and measures RPO/RTO bounds", async () => {
+    const lastWriteAt = Date.now();
+    const exportStarted = Date.now();
+    const encrypted = await exportEncryptedSovereignSliceBackup(primaryPool, testEnv);
+    const exportCompleted = Date.now();
+    await truncateSovereignSlice(restorePool);
+    await restoreEncryptedSovereignSliceBackup(restorePool, encrypted, testEnv);
+    const restoreCompleted = Date.now();
+    const recon = await reconcileSovereignSlice(restorePool);
+    const reconcileCompleted = Date.now();
+    const metrics = computeRecoveryMetrics({
+      last_write_at_ms: lastWriteAt,
+      export_started_at_ms: exportStarted,
+      export_completed_at_ms: exportCompleted,
+      restore_completed_at_ms: restoreCompleted,
+      reconcile_completed_at_ms: reconcileCompleted,
+    });
+    expect(recon.receiptCount).toBeGreaterThan(0);
+    expect(metrics.rto_observed_ms).toBeGreaterThan(0);
+    expect(metrics.rpo_bound_ms).toBeLessThan(60_000);
+  });
+
+  it("fails closed when issuer key revoked after restore (compromise cannot be undone by backup alone)", async () => {
+    await restoreEncryptedSovereignSliceBackup(
+      restorePool,
+      await exportEncryptedSovereignSliceBackup(primaryPool, testEnv),
+      testEnv,
+    );
+    await revokeIssuerSigningKeyOnSovereignPg(restorePool, TEST_KEY.signingKeyId);
+    expect(await readIssuerSigningKeyStatus(restorePool, TEST_KEY.signingKeyId)).toBe("revoked");
+
+    const restoreEnv = { ...testEnv, ABRAXAS_DATABASE_URL: dbUrl(RESTORE_DB), ABRAXAS_SOVEREIGN_STAGING_PG_URL: dbUrl(RESTORE_DB) };
+    resetSovereignStagingPgPoolForTests();
+    const freshness = await evaluateReceiptFreshnessFromSovereignPg({
+      record,
+      issuerPublicJwk: TEST_KEY.publicKeyJwk,
+      env: restoreEnv,
+    });
+    expect(freshness.signature_authentic).toBe(true);
+    expect(freshness.currently_acceptable).toBe(false);
+    expect(freshness.invalidation_reasons).toContain("issuer_not_authorized");
+  });
+
+  it("rejects cross-tenant policy audience mismatch", async () => {
+    const freshness = await evaluateReceiptFreshnessFromSovereignPg({
+      record,
+      issuerPublicJwk: TEST_KEY.publicKeyJwk,
+      expectedPartnerId: "other-partner",
+      env: testEnv,
+    });
+    expect(freshness.currently_acceptable).toBe(false);
+    expect(freshness.invalidation_reasons).toContain("environment_mismatch");
+  });
+
+  it("fails closed when sovereign backend unreachable", async () => {
+    resetSovereignStagingPgPoolForTests();
+    const badEnv = {
+      ...testEnv,
+      ABRAXAS_SOVEREIGN_STAGING_PG_URL: "postgresql://postgres:postgres@127.0.0.1:59999/missing",
+      ABRAXAS_DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:59999/missing",
+    };
+    const freshness = await evaluateReceiptFreshnessFromSovereignPg({
+      record,
+      issuerPublicJwk: TEST_KEY.publicKeyJwk,
+      env: badEnv,
+    });
+    expect(freshness.store_available).toBe(false);
+    expect(freshness.currently_acceptable).toBe(false);
+    resetSovereignStagingPgPoolForTests();
+  });
+
+  it("prevents duplicate metering idempotency on sovereign path", async () => {
+    resetSovereignStagingPgPoolForTests();
+    const dupReceiptId = `dr_dup_meter_816_${Date.now()}`;
+    const idempotencyKey = buildPartnerFlowReceiptMeteringKey(dupReceiptId);
+    const first = await insertMeteringFixtureOnSovereignPg(
+      { partnerId: record.partner_id, receiptId: dupReceiptId },
+      testEnv,
+    );
+    const second = await insertMeteringFixtureOnSovereignPg(
+      { partnerId: record.partner_id, receiptId: dupReceiptId },
+      testEnv,
+    );
+    expect(first.ok).toBe(true);
+    expect(first.duplicate).toBe(false);
+    expect(second.ok).toBe(true);
+    expect(second.duplicate).toBe(true);
+    const count = await primaryPool.query<{ count: string }>(
+      `select count(*)::text as count from public.partner_metering_events where idempotency_key = $1`,
+      [idempotencyKey],
+    );
+    expect(Number(count.rows[0]?.count)).toBe(1);
   });
 
   it("blocks shadow writes during compare mode", () => {
