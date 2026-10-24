@@ -19,9 +19,9 @@ describe("welcome route continuity", () => {
     expect(continuity).toContain("/#start-sandbox");
   });
 
-  it("embeds focused sandbox entry directly after hero", () => {
-    const home = read("components/redesign/RedesignHome.tsx");
-    expect(home).toContain("HomeNativeSandboxChapter");
+  it("embeds focused sandbox entry in unified post-hero region", () => {
+    const unified = read("components/home/HomeUnifiedProductEntry.tsx");
+    expect(unified).toContain("HomeNativeSandboxChapter");
     const chapter = read("components/home/HomeNativeSandboxChapter.tsx");
     expect(chapter).toContain('id="start-sandbox"');
     expect(chapter).toContain("HomeSandboxSessionEntry");

@@ -14,9 +14,9 @@ function read(rel: string): string {
 }
 
 describe("homepage alignment (#550–#565)", () => {
-  it("surfaces consolidated trust narrative on RedesignHome", () => {
-    const home = read("components/redesign/RedesignHome.tsx");
-    expect(home).toContain("HomeHowAbraxasWorksSection");
+  it("surfaces consolidated trust narrative on unified homepage entry", () => {
+    const unified = read("components/home/HomeUnifiedProductEntry.tsx");
+    expect(unified).toContain("HomeHowAbraxasWorksSection");
     expect(HOMEPAGE_FOUR_PILLARS).toHaveLength(4);
     expect(HOMEPAGE_FOUR_PILLARS.map((p) => p.id)).toEqual([
       "passport",

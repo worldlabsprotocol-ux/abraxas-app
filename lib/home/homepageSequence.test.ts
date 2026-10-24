@@ -11,22 +11,18 @@ function read(rel: string): string {
 }
 
 describe("homepage journey sequence", () => {
-  it("places sandbox entry immediately after hero", () => {
+  it("places unified product entry immediately after hero", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     const body = shell.slice(shell.indexOf("function HomeContent"));
     const heroIdx = body.indexOf("{hero}");
-    const sandboxIdx = body.indexOf("<HomeNativeSandboxChapter");
-    const howIdx = body.indexOf("HomeHowAbraxasWorksSection");
+    const unifiedIdx = body.indexOf("<HomeUnifiedProductEntry");
     expect(heroIdx).toBeGreaterThan(-1);
-    expect(sandboxIdx).toBeGreaterThan(heroIdx);
-    expect(howIdx).toBeGreaterThan(sandboxIdx);
-    expect(body.indexOf("<HomeNativeSandboxChapter", sandboxIdx + 1)).toBe(-1);
+    expect(unifiedIdx).toBeGreaterThan(heroIdx);
   });
 
-  it("keeps evidence chapter before build capabilities", () => {
-    const shell = read("components/redesign/RedesignHome.tsx");
-    const body = shell.slice(shell.indexOf("function HomeContent"));
-    expect(body.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(body.indexOf("HomeVerifiableTrustChapter"));
-    expect(body.indexOf("HomeVerifiableTrustChapter")).toBeLessThan(body.indexOf("HomeBuildEntrySection"));
+  it("keeps evidence chapter before build capabilities in unified entry", () => {
+    const unified = read("components/home/HomeUnifiedProductEntry.tsx");
+    expect(unified.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(unified.indexOf("HomeVerifiableTrustChapter"));
+    expect(unified.indexOf("HomeVerifiableTrustChapter")).toBeLessThan(unified.indexOf("HomeBuildEntrySection"));
   });
 });
