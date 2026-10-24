@@ -17,9 +17,12 @@ import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 export type PartnerFlowHandoffPhase = "idle" | "completing" | "completed" | "failed";
 export type PartnerFlowHandoffFailureCategory =
   | "partner_flow_completion_failed"
+  | "partner_flow_return_url_rejected"
+  | "partner_flow_credential_not_ready"
   | "partner_flow_network_failed"
   | "partner_flow_server_unavailable"
-  | "partner_flow_handoff_invalid";
+  | "partner_flow_handoff_invalid"
+  | "partner_flow_consent_required";
 
 export interface PartnerFlowHandoffContext {
   suiAddress: string | null;
@@ -121,10 +124,24 @@ function classifyCompleteFailure(
   data: Record<string, unknown> | null,
 ): PartnerFlowHandoffFailureCategory {
   const code = typeof data?.code === "string" ? data.code : undefined;
+  const error = typeof data?.error === "string" ? data.error.toLowerCase() : "";
   if (code === "handoff_expired" || code === "handoff_missing" || res.status === 410 || res.status === 404) {
     return "partner_flow_handoff_invalid";
   }
-  if (res.status >= 500 || code === "sui_rpc_unavailable") {
+  if (
+    code === "return_url_rejected"
+    || code === "open_redirect"
+    || error.includes("return_url")
+  ) {
+    return "partner_flow_return_url_rejected";
+  }
+  if (code === "sharing_consent_required") {
+    return "partner_flow_consent_required";
+  }
+  if (error.includes("credential not yet active")) {
+    return "partner_flow_credential_not_ready";
+  }
+  if (res.status >= 500 || code === "sui_rpc_unavailable" || code === "completion_failed") {
     return "partner_flow_server_unavailable";
   }
   return "partner_flow_completion_failed";

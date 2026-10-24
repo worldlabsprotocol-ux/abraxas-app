@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { completePartnerFlowAfterApproval, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
-import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
+import { authorizePartnerFlowCompleteReturnUrl } from "@/lib/partner/authorizePartnerFlowCompleteReturnUrl";
 import {
   auditPartnerFlowReceiptOutcome,
   auditPartnerFlowStepBestEffort,
@@ -99,21 +99,6 @@ export async function POST(request: NextRequest) {
 
   const launchpadContext = extractLaunchpadFlowContext(body);
 
-  const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
-  if (!allowed) {
-    void recordFlowFailureActivity({
-      context: launchpadContext,
-      partnerId,
-      policyId,
-      publicCode: "return_url_rejected",
-      eventType: "callback_failed",
-    });
-    return NextResponse.json(
-      { error: "return_url is not allowed for this relying party" },
-      { status: 400 },
-    );
-  }
-
   let correlation;
   try {
     correlation = resolvePartnerFlowCompleteCorrelation({
@@ -128,6 +113,31 @@ export async function POST(request: NextRequest) {
   }
 
   const correlationId = correlation.correlationId;
+
+  const returnUrlAuth = await authorizePartnerFlowCompleteReturnUrl({
+    partnerId,
+    returnUrl,
+    correlationId,
+  });
+  if (!returnUrlAuth.ok) {
+    void recordFlowFailureActivity({
+      context: launchpadContext,
+      partnerId,
+      policyId,
+      publicCode: returnUrlAuth.code,
+      eventType: "callback_failed",
+    });
+    return NextResponse.json(
+      {
+        error: returnUrlAuth.code === "return_url_rejected"
+          ? "return_url is not allowed for this relying party"
+          : "return_url does not match this verification request",
+        code: returnUrlAuth.code,
+      },
+      { status: 400 },
+    );
+  }
+  const authoritativeReturnUrl = returnUrlAuth.authoritativeReturnUrl;
 
   let flowTraceId: string | undefined;
   if (correlationId) {
@@ -187,7 +197,7 @@ export async function POST(request: NextRequest) {
     result = await completePartnerFlowAfterApproval({
       partnerId,
       policyId,
-      returnUrl,
+      returnUrl: authoritativeReturnUrl,
       suiAddress: session.session.subjectId,
       verificationRequestId: correlationId ?? undefined,
       launchpadApplicationId: launchpadContext.applicationId,

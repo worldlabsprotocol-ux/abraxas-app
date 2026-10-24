@@ -201,9 +201,6 @@ export function PartnerWalletControlContinueFlow({
           />
         ) : null}
 
-        {handoff.phase === "failed" ? (
-          <HolderRecoveryCard recovery={resolveHolderRecovery("invalid_binding", partnerName, null)} />
-        ) : null}
       </div>
     </div>
   );

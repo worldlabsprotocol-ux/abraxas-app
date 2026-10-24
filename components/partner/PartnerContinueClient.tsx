@@ -121,6 +121,7 @@ function PartnerContinueInner() {
   const [provenanceEvidenceComplete, setProvenanceEvidenceComplete] = useState(false);
   const [walletBrowserSession, setWalletBrowserSession] = useState(false);
   const [holderSubjectId, setHolderSubjectId] = useState<string | null>(null);
+  const [hostedHandoffEnvironment, setHostedHandoffEnvironment] = useState<"sandbox" | "production" | null>(null);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -167,9 +168,13 @@ function PartnerContinueInner() {
               policy_id?: string;
               purpose?: string | null;
               return_url?: string;
+              environment?: "sandbox" | "production";
             };
             if (!cancelled) {
               setContextResolveFailure(null);
+              if (preview.environment === "sandbox" || preview.environment === "production") {
+                setHostedHandoffEnvironment(preview.environment);
+              }
               if (typeof preview.return_url === "string") {
                 setBoundReturnUrl(preview.return_url);
               }
@@ -299,10 +304,11 @@ function PartnerContinueInner() {
   });
   const walletControlPolicy = isWalletControlPartnerPolicy(policyId);
   const walletControlEnvironment = useMemo((): "sandbox" | "production" => {
+    if (hostedHandoffEnvironment) return hostedHandoffEnvironment;
     const pack = inferPolicyPackFromPolicyId(policyId);
     if (pack && policyPackIsSandboxOnly(pack)) return "sandbox";
     return "production";
-  }, [policyId]);
+  }, [hostedHandoffEnvironment, policyId]);
   const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
   const sessionSubjectForHandoff = suiAddress ?? holderSubjectId;
 
