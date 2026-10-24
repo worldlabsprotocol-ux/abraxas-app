@@ -3,7 +3,7 @@
 
 import { createHash } from "crypto";
 import { SITE_URL } from "@/lib/siteUrl";
-import { buildHolderRequestBrief, type HolderRequestBrief } from "@/lib/partner/holderExperience";
+import { buildHolderRequestBrief, holderCopyLeaks, type HolderRequestBrief } from "@/lib/partner/holderExperience";
 import { studioPayloadLeaks } from "@/lib/partner/integrationStudio/safety";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { selectedEnabledCapabilities } from "./capabilities";
@@ -120,6 +120,10 @@ export function buildPartnerFlowRequestView(input: {
   };
 }
 
+/** Holder preview may list educational withheld categories (e.g. seed phrases); scan it separately. */
 export function partnerFlowViewLeaks(view: PartnerFlowRequestView): string[] {
-  return studioPayloadLeaks(view);
+  const { preview, ...configSurface } = view;
+  const configLeaks = studioPayloadLeaks(configSurface);
+  const previewLeaks = preview ? holderCopyLeaks(JSON.stringify(preview)) : [];
+  return Array.from(new Set([...configLeaks, ...previewLeaks]));
 }

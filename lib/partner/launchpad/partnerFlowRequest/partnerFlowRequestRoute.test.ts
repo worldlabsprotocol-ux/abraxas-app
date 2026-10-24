@@ -18,7 +18,7 @@ vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   },
 }));
 
-vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
+vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication.server", () => ({
   getLaunchpadApplicationForPartner: (...args: unknown[]) => getAppMock(...args),
 }));
 
@@ -97,6 +97,28 @@ describe("partner-flow-request route", () => {
     });
     expect(res.status).toBe(403);
     expect(loadStoredMock).not.toHaveBeenCalled();
+  });
+
+  it("loads wallet_control configuration without false-positive leak rejection", async () => {
+    getAppMock.mockResolvedValue({
+      ...app,
+      policy_template_id: "wallet_control",
+      policy_id: "studio--accept-wc--wallet_control-v1",
+    });
+    loadStoredMock.mockResolvedValue({
+      purpose: "Prove control of the wallet you connect for this request.",
+      action: "wallet_bound_action",
+      callback_url: "http://localhost:3000/callback",
+      capabilities: [],
+      display_label: "Acceptance",
+    });
+    const res = await GET(get("http://localhost/api/launchpad/applications/app-1/partner-flow-request"), {
+      params: { id: "app-1" },
+    });
+    expect(res.status).toBe(200);
+    const json = await res.json() as { policy_template_id: string; preview: { withheld: string[] } | null };
+    expect(json.policy_template_id).toBe("wallet_control");
+    expect(json.preview?.withheld.join(" ").toLowerCase()).toContain("seed");
   });
 
   it("loads configuration for the session tenant with pinned policy version", async () => {

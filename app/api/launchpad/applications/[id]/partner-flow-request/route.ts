@@ -70,10 +70,10 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   }
   const assembled = await assemble(params.id, auth.session.partnerId);
   if (!assembled.ok) {
-    return launchpadError(
-      assembled.status === 404 ? LAUNCHPAD_PUBLIC_ERRORS.application_not_found : LAUNCHPAD_PUBLIC_ERRORS.forbidden,
-      assembled.status,
-    );
+    if (assembled.status === 404) {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+    }
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503, "partner_flow_unavailable");
   }
   return launchpadJson({ ok: true, ...assembled.view });
 }
