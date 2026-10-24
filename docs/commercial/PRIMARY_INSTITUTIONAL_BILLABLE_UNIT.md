@@ -9,7 +9,8 @@
 - `event_type`: `partner_flow_receipt_issued`
 - First insert only (`idempotency_key`: `meter:pf_receipt:{receipt_id}`)
 - `decision` gate: partner flow outcome **`approved`**
-- `replay_status` gate: **`issued`** (not `idempotent_replay`)
+- `replay_status` gate: **`issued`** (not `idempotent_replay`) — metering unchanged
+- Operator evidence also records **`receipt_outcome`**: `issued` | `reused` | `replayed` (session reuse is not a new billable issuance)
 
 Implementation: `maybeRecordPartnerFlowReceiptMetering` in `lib/partner/partnerMeteringHooks.ts`, invoked from partner-flow **evaluate**, **complete**, and **refresh** routes. Duplicate route calls for the same receipt collapse to a single ledger row (Postgres unique on idempotency key).
 
@@ -20,6 +21,7 @@ Implementation: `maybeRecordPartnerFlowReceiptMetering` in `lib/partner/partnerM
 | Failed / cancelled wallet signing | No receipt → no metering hook |
 | Consent declined / request expired | Complete blocked → no new receipt |
 | Idempotent replay of same verification | `replay_status !== issued` → hook returns early |
+| New handoff while session decision still valid | `receipt_outcome: reused` — same receipt, no new issuance charge |
 | Denied / revoked decision | `decision !== approved` → hook returns early |
 | Public receipt verify | Excluded from API metering hook paths |
 

@@ -3,6 +3,10 @@
 
 import { PARTNER_INTEGRATION_FORBIDDEN_CALLBACK_KEYS } from "@/lib/partner/integrationKit/contract";
 import { parsePartnerCallbackParams } from "@/lib/partner/integrationKit/callback";
+import {
+  isPartnerFlowReceiptOutcome,
+  type PartnerFlowReceiptOutcome,
+} from "@/lib/partner/partnerFlowReceiptOutcome";
 
 export const PARTNER_SANDBOX_CALLBACK_PATH = "/partner/callback" as const;
 
@@ -16,6 +20,7 @@ export interface PartnerSandboxCallbackHints {
   policy_id: string | null;
   decision_id: string | null;
   receipt_expires_at: string | null;
+  receipt_outcome: PartnerFlowReceiptOutcome | null;
 }
 
 export interface PartnerSandboxCallbackView {
@@ -83,6 +88,10 @@ export function buildPartnerSandboxCallbackView(
     policy_id: params.get("policy_id")?.trim() || null,
     decision_id: params.get("decision_id")?.trim() || null,
     receipt_expires_at: params.get("receipt_expires_at")?.trim() || null,
+    receipt_outcome: (() => {
+      const raw = params.get("receipt_outcome")?.trim();
+      return isPartnerFlowReceiptOutcome(raw) ? raw : null;
+    })(),
   };
 
   let headline = "Returned from verification";
