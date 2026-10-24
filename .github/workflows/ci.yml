@@ -338,6 +338,14 @@ jobs:
           ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
           NEXT_PUBLIC_SUPABASE_URL: ""
           SUPABASE_SERVICE_ROLE_KEY: ""
+      - name: Build #820 three-layer trust acceptance (CI contract)
+        run: npx vitest run --no-file-parallelism lib/persistence/boundary/staging/threeLayerTrustAcceptance.integration.test.ts
+        env:
+          ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
+          ABRAXAS_BUILD_820_CI_CONTRACT: "1"
+          ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          SUPABASE_SERVICE_ROLE_KEY: ""
 
   ephemeral-wallet-auth:
     name: ephemeral-wallet-auth

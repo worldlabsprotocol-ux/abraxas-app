@@ -50,6 +50,18 @@ Run CI-equivalent proof:
 ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF=1 npx vitest run lib/persistence/boundary/sovereignOperationalProof.integration.test.ts
 ```
 
+Build **#820** three-layer trust acceptance (receipt + SIAS + signed status, adverse + recovery):
+
+```bash
+# CI / disposable contract (does not claim external attestation)
+ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF=1 npx vitest run lib/persistence/boundary/staging/threeLayerTrustAcceptance.integration.test.ts
+
+# Operator host with primary + restore URLs (optional JSON report path)
+npm run sovereign:build-820-acceptance
+```
+
+See `docs/operations/BUILD_820_EXTERNAL_STAGING_ACCEPTANCE.md`.
+
 ## Issuer compromise procedure (independent of backup)
 
 1. Revoke compromised `signing_key_id` in `issuer_signing_keys` (authoritative state).  
