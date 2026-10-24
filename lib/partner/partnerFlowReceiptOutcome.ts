@@ -58,7 +58,10 @@ export function partnerFlowReceiptOutcomeHolderNote(outcome: PartnerFlowReceiptO
   return null;
 }
 
-/** Optional callback redirect hint — authoritative trust remains on receipt fetch. */
+/**
+ * Optional callback redirect hint for holder copy only.
+ * Never use for billing, authorization, or trust — server routes derive outcome at complete/evaluate time.
+ */
 export function partnerFlowReceiptOutcomeRedirectParam(
   outcome: PartnerFlowReceiptOutcome,
 ): Record<string, string> {
