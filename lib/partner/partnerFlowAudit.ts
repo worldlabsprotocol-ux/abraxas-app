@@ -9,6 +9,7 @@ import {
   type PartnerFlowIssuanceOperation,
   type PartnerFlowReplayStatus,
 } from "@/lib/partner/partnerFlowAuditContract";
+import type { PartnerFlowReceiptOutcome } from "@/lib/partner/partnerFlowReceiptOutcome";
 
 export const FLOW_TRACE_VR_PREFIX = "ft_vr_";
 export const FLOW_TRACE_DEC_PREFIX = "ft_dec_";
@@ -79,6 +80,7 @@ export interface PartnerFlowAuditInput {
   validity?: string | null;
   currentlyValid?: boolean | null;
   replayStatus?: PartnerFlowReplayStatus | null;
+  receiptOutcome?: string | null;
   idempotencyKey?: string | null;
   issuanceOperation?: PartnerFlowIssuanceOperation | null;
   replacedReceiptId?: string | null;
@@ -106,6 +108,7 @@ function toAuditEvent(input: PartnerFlowAuditInput) {
     validity: input.validity,
     currentlyValid: input.currentlyValid,
     replayStatus: input.replayStatus,
+    receiptOutcome: input.receiptOutcome,
     idempotencyKey: input.idempotencyKey,
     issuanceOperation: input.issuanceOperation,
     replacedReceiptId: input.replacedReceiptId,
@@ -153,6 +156,7 @@ export async function auditPartnerFlowReceiptIssued(
     ...input,
     action: PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued,
     replayStatus: "issued",
+    receiptOutcome: "issued",
     issuanceOperation: input.issuanceOperation,
   });
 }
@@ -163,22 +167,40 @@ export async function auditPartnerFlowIdempotentReplay(input: PartnerFlowAuditCo
     ...input,
     action: PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay,
     replayStatus: "idempotent_replay",
+    receiptOutcome: input.receiptOutcome ?? "replayed",
+  });
+}
+
+/** Active session decision reused for a new request — not an exact HTTP replay. */
+export async function auditPartnerFlowSessionDecisionReused(input: PartnerFlowAuditContext): Promise<void> {
+  await auditPartnerFlowStepBestEffort({
+    ...input,
+    action: PARTNER_FLOW_AUDIT_ACTIONS.sessionDecisionReused,
+    replayStatus: "idempotent_replay",
+    receiptOutcome: "reused",
   });
 }
 
 /** Route-level receipt outcome audit — evaluate: after step; complete/refresh: before step. */
 export async function auditPartnerFlowReceiptOutcome(
   input: PartnerFlowAuditContext,
-  replayStatus: PartnerFlowReplayStatus,
+  receiptOutcome: PartnerFlowReceiptOutcome,
   issuanceOperation: PartnerFlowIssuanceOperation,
 ): Promise<void> {
-  if (replayStatus === "issued") {
-    await auditPartnerFlowReceiptIssued({ ...input, issuanceOperation });
+  const enriched = {
+    ...input,
+    receiptOutcome,
+    replayStatus: receiptOutcome === "issued" ? ("issued" as const) : ("idempotent_replay" as const),
+  };
+  if (receiptOutcome === "issued") {
+    await auditPartnerFlowReceiptIssued({ ...enriched, issuanceOperation });
     return;
   }
-  if (replayStatus === "idempotent_replay") {
-    await auditPartnerFlowIdempotentReplay(input);
+  if (receiptOutcome === "reused") {
+    await auditPartnerFlowSessionDecisionReused(enriched);
+    return;
   }
+  await auditPartnerFlowIdempotentReplay(enriched);
 }
 
 /** @deprecated Use auditPartnerFlowStepRequired or auditPartnerFlowStepBestEffort */

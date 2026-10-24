@@ -34,6 +34,7 @@ import {
 } from "@/lib/partner/partnerFlowRouteGuard";
 import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaunchpadFlowContext";
 import { recordEvaluateLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
+import { resolvePartnerFlowReceiptOutcome } from "@/lib/partner/partnerFlowReceiptOutcome";
 import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 import { bindPartnerFlowContinuationForEvaluate } from "@/lib/partner/bindPartnerFlowContinuationForEvaluate";
@@ -232,23 +233,26 @@ export async function POST(request: NextRequest) {
       });
 
       if (result.replay_status && !isPartnerFlowRevocationDenied(result)) {
-        await auditPartnerFlowReceiptOutcome({
-          flowTraceId,
-          partnerId,
-          policyId,
-          policyVersion: result.policy_version,
-          subjectId: sessionSubjectId,
-          outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
-          verificationRequestId: result.verification_request_id,
-          decisionId: result.decision_id,
-          receiptId: result.partner_result?.receipt_id,
-          reasonCodes: result.reason_codes,
-          validity: result.validity,
-          currentlyValid: result.currently_valid,
-          idempotencyKey: result.verification_request_id
-            ? buildPartnerFlowVerificationRequestIdempotencyKey(result.verification_request_id)
-            : null,
-        }, result.replay_status, "evaluate");
+        const receiptOutcome = resolvePartnerFlowReceiptOutcome(result);
+        if (receiptOutcome) {
+          await auditPartnerFlowReceiptOutcome({
+            flowTraceId,
+            partnerId,
+            policyId,
+            policyVersion: result.policy_version,
+            subjectId: sessionSubjectId,
+            outcome: receiptOutcome,
+            verificationRequestId: result.verification_request_id,
+            decisionId: result.decision_id,
+            receiptId: result.partner_result?.receipt_id,
+            reasonCodes: result.reason_codes,
+            validity: result.validity,
+            currentlyValid: result.currently_valid,
+            idempotencyKey: result.verification_request_id
+              ? buildPartnerFlowVerificationRequestIdempotencyKey(result.verification_request_id)
+              : null,
+          }, receiptOutcome, "evaluate");
+        }
       }
     } catch (e) {
       if (e instanceof PartnerFlowAuditPersistenceError) {
@@ -336,6 +340,7 @@ export async function POST(request: NextRequest) {
       correlationId: flowTraceId,
       next: result.next,
       replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      receiptOutcome: isPartnerFlowRevocationDenied(result) ? null : resolvePartnerFlowReceiptOutcome(result),
       hasRedirectUrl: Boolean(result.redirect_url),
     });
 

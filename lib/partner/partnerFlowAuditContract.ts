@@ -16,6 +16,7 @@ export const PARTNER_FLOW_AUDIT_METADATA_KEYS = [
   "validity",
   "currently_valid",
   "replay_status",
+  "receipt_outcome",
   "idempotency_key",
   "reason_codes",
   "error",
@@ -62,6 +63,7 @@ export interface PartnerFlowAuditMetadata {
   validity: string | null;
   currently_valid: boolean | null;
   replay_status: PartnerFlowReplayStatus | null;
+  receipt_outcome: string | null;
   idempotency_key: string | null;
   reason_codes: string[];
   error: string | null;
@@ -81,6 +83,7 @@ export interface BuildPartnerFlowAuditMetadataInput {
   validity?: string | null;
   currentlyValid?: boolean | null;
   replayStatus?: PartnerFlowReplayStatus | null;
+  receiptOutcome?: string | null;
   idempotencyKey?: string | null;
   reasonCodes?: string[];
   error?: string | null;
@@ -112,6 +115,7 @@ export function buildPartnerFlowAuditMetadata(
     validity: input.validity ?? null,
     currently_valid: input.currentlyValid ?? null,
     replay_status: input.replayStatus ?? null,
+    receipt_outcome: sanitizeReceiptOutcome(input.receiptOutcome),
     idempotency_key: safeIdempotencyKeyForAudit(input.idempotencyKey),
     reason_codes: input.reasonCodes ?? [],
     error: input.error ?? null,
@@ -178,6 +182,12 @@ function sanitizeIssuanceOperation(
   if ((PARTNER_FLOW_ISSUANCE_OPERATIONS as readonly string[]).includes(trimmed)) {
     return trimmed as PartnerFlowIssuanceOperation;
   }
+  return null;
+}
+
+function sanitizeReceiptOutcome(outcome: string | null | undefined): string | null {
+  const trimmed = outcome?.trim();
+  if (trimmed === "issued" || trimmed === "reused" || trimmed === "replayed") return trimmed;
   return null;
 }
 
@@ -252,6 +262,7 @@ export const PARTNER_FLOW_AUDIT_ACTIONS = {
   refresh: "partner_flow.refresh",
   receiptIssued: "partner_flow.receipt_issued",
   idempotentReplay: "partner_flow.idempotent_replay",
+  sessionDecisionReused: "partner_flow.session_decision_reused",
   rejected: "partner_flow.rejected",
 } as const;
 
@@ -265,14 +276,15 @@ export const PARTNER_FLOW_AUDIT_ACTION_TIERS: Record<string, number> = {
   [PARTNER_FLOW_AUDIT_ACTIONS.consent]: 1,
   [PARTNER_FLOW_AUDIT_ACTIONS.receiptIssued]: 2,
   [PARTNER_FLOW_AUDIT_ACTIONS.idempotentReplay]: 2,
+  [PARTNER_FLOW_AUDIT_ACTIONS.sessionDecisionReused]: 2,
   [PARTNER_FLOW_AUDIT_ACTIONS.complete]: 3,
   [PARTNER_FLOW_AUDIT_ACTIONS.refresh]: 4,
 };
 
 /**
  * Documented lifecycle (causal per cycle, not one global monotonic timeline):
- * evaluate/rejected → consent → receipt_issued|idempotent_replay → complete|refresh
- * with idempotent_replay reopening complete/refresh cycles.
+ * evaluate/rejected → consent → receipt_issued|session_decision_reused|idempotent_replay → complete|refresh
+ * with reuse/replay reopening complete/refresh cycles.
  *
  * Within one HTTP request, route handlers persist step audits before receipt/replay
  * for evaluate, and receipt/replay before step for complete/refresh.

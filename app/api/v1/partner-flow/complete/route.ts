@@ -26,6 +26,7 @@ import {
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
 import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaunchpadFlowContext";
+import { resolvePartnerFlowReceiptOutcome } from "@/lib/partner/partnerFlowReceiptOutcome";
 import { recordCompleteLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
 import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
@@ -290,23 +291,26 @@ export async function POST(request: NextRequest) {
 
   try {
     if (result.replay_status && !isPartnerFlowRevocationDenied(result)) {
-      await auditPartnerFlowReceiptOutcome({
-        flowTraceId,
-        partnerId,
-        policyId,
-        policyVersion: result.policy_version,
-        subjectId: session.session.subjectId,
-        outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
-        verificationRequestId: correlationId ?? undefined,
-        decisionId: result.decision_id,
-        receiptId: result.partner_result?.receipt_id,
-        reasonCodes: result.partner_result?.reason_codes,
-        validity: result.validity,
-        currentlyValid: result.currently_valid,
-        idempotencyKey: correlationId
-          ? buildPartnerFlowVerificationRequestIdempotencyKey(correlationId)
-          : null,
-      }, result.replay_status, "complete");
+      const receiptOutcome = resolvePartnerFlowReceiptOutcome(result);
+      if (receiptOutcome) {
+        await auditPartnerFlowReceiptOutcome({
+          flowTraceId,
+          partnerId,
+          policyId,
+          policyVersion: result.policy_version,
+          subjectId: session.session.subjectId,
+          outcome: receiptOutcome,
+          verificationRequestId: correlationId ?? undefined,
+          decisionId: result.decision_id,
+          receiptId: result.partner_result?.receipt_id,
+          reasonCodes: result.partner_result?.reason_codes,
+          validity: result.validity,
+          currentlyValid: result.currently_valid,
+          idempotencyKey: correlationId
+            ? buildPartnerFlowVerificationRequestIdempotencyKey(correlationId)
+            : null,
+        }, receiptOutcome, "complete");
+      }
     }
 
     await auditPartnerFlowStepRequired({
@@ -410,6 +414,7 @@ export async function POST(request: NextRequest) {
     policyId,
     correlationId: flowTraceId,
     replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+    receiptOutcome: isPartnerFlowRevocationDenied(result) ? null : resolvePartnerFlowReceiptOutcome(result),
     hasRedirectUrl: Boolean(result.redirect_url),
   });
 
