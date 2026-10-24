@@ -16,11 +16,13 @@ function read(rel: string): string {
 describe("institutional homepage surface (V2)", () => {
   it("RedesignHome uses premium hero, sandbox entry, consolidated how-it-works, and build", () => {
     const home = read("components/redesign/RedesignHome.tsx");
+    const unified = read("components/home/HomeUnifiedProductEntry.tsx");
     const page = read("app/page.tsx");
     expect(page).toContain("PremiumHomeHero");
-    expect(home).toContain("HomeNativeSandboxChapter");
-    expect(home).toContain("HomeHowAbraxasWorksSection");
-    expect(home).toContain("HomeBuildEntrySection");
+    expect(home).toContain("HomeUnifiedProductEntry");
+    expect(unified).toContain("HomeNativeSandboxChapter");
+    expect(unified).toContain("HomeHowAbraxasWorksSection");
+    expect(unified).toContain("HomeBuildEntrySection");
     expect(home).not.toContain("KineticMarquee");
     expect(home).not.toContain("CinematicHero");
     expect(home).toContain("abx-v2-shell");

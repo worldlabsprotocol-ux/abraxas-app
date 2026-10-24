@@ -32,6 +32,7 @@
     "components/home/HomeProtocolMap.tsx",
     "components/home/HomeUseCases.tsx",
     "components/home/HomeGoodTroubleIntegration.tsx",
+    "components/home/HomeUnifiedProductEntry.tsx",
     "lib/home/goodTroubleIntegrationDemo.ts",
     "lib/product/publicFlowManifest.ts"
   ],
@@ -49,7 +50,7 @@
     {
       "id": "home-shell-institutional",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["abx-institutional-home", "hero", "HomeHowAbraxasWorksSection", "abx-v2-shell"]
+      "mustContain": ["abx-institutional-home", "hero", "HomeUnifiedProductEntry", "abx-v2-shell"]
     },
     {
       "id": "protocol-in-action-media",
@@ -68,8 +69,8 @@
     },
     {
       "id": "command-center-map",
-      "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["hero", "HomeVerifiableTrustChapter", "HomeBuildEntrySection", "HomeNativeSandboxChapter"]
+      "file": "components/home/HomeUnifiedProductEntry.tsx",
+      "mustContain": ["HomeVerifiableTrustChapter", "HomeBuildEntrySection", "HomeNativeSandboxChapter", "HomeHowAbraxasWorksSection"]
     },
     {
       "id": "how-abraxas-works-depth",
