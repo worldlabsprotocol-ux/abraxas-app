@@ -6,7 +6,10 @@ import { toPublicView } from "@/lib/decisionReceipts/views";
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistribution/buildTrustAnchorBundle";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
-import { evaluatePortableExportCurrentValidity } from "./evaluatePortableExportCurrentValidity";
+import {
+  evaluatePortableExportCurrentValidity,
+  type PortableExportValiditySource,
+} from "./evaluatePortableExportCurrentValidity";
 import {
   type SignedIssuerAuthorityStatement,
   type SignedReceiptStatusStatement,
@@ -65,6 +68,12 @@ function loadAnchorPublicJwk(env: Record<string, string | undefined>): JsonWebKe
   }
 }
 
+function mapValiditySourceToExportProvenance(
+  source: PortableExportValiditySource,
+): PortableVerificationBundle["export_provenance"]["status_evidence_source"] {
+  return source === "sovereign_pg" ? "sovereign_pg_evaluation" : "operational_demo_store";
+}
+
 function loadStatusSignerPrivateJwk(env: Record<string, string | undefined>): JsonWebKey | null {
   const raw = env.ABRAXAS_STATUS_SIGNER_PRIVATE_JWK?.trim();
   if (!raw) return null;
@@ -81,7 +90,12 @@ async function signStatusFromPartnerFlowTrust(input: {
   env: Record<string, string | undefined>;
   registryVersion: number;
 }): Promise<
-  | { ok: true; statement: SignedReceiptStatusStatement; authoritative: true }
+  | {
+    ok: true;
+    statement: SignedReceiptStatusStatement;
+    authoritative: true;
+    status_evidence_source: PortableVerificationBundle["export_provenance"]["status_evidence_source"];
+  }
   | { ok: false; reason: string }
 > {
   const anchorPublic = loadAnchorPublicJwk(input.env);
@@ -108,7 +122,12 @@ async function signStatusFromPartnerFlowTrust(input: {
   if (!("payload" in sovereignStatus)) {
     return { ok: false, reason: sovereignStatus.reason };
   }
-  return { ok: true, statement: sovereignStatus, authoritative: true };
+  return {
+    ok: true,
+    statement: sovereignStatus,
+    authoritative: true,
+    status_evidence_source: mapValiditySourceToExportProvenance(evaluation.source),
+  };
 }
 
 export async function buildPortableVerificationBundle(input: {
@@ -175,7 +194,7 @@ export async function buildPortableVerificationBundle(input: {
         trust_anchor_must_be_independently_pinned: true,
         bundled_trust_anchor_informational_only: true,
         status_evidence_authoritative: signedStatus.authoritative,
-        status_evidence_source: evaluation.source,
+        status_evidence_source: signedStatus.status_evidence_source,
       },
     },
   };
