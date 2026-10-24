@@ -97,8 +97,8 @@ Holder wallet → Abraxas protocol (evaluate, sign) → portable receipt → rel
 
 | Phase | Work | Production impact |
 |-------|------|-------------------|
-| **0 (now)** | Protocol standard + inventory + suspend 058/065 | None |
-| **1** | Abraxas-operated Postgres **staging**; `ABRAXAS_PERSISTENCE_BACKEND=postgres_direct` for **non-holder** read/write shadow | None on prod traffic |
+| **0** | Protocol standard + inventory + suspend 058/065 | Done (#813) |
+| **1** | Sovereign staging + shadow parity boundary (`BUILD_814_SOVEREIGN_STAGING_PHASE1.md`) | None on prod traffic |
 | **2** | Backup/restore proof; migration runner; replicate **metering** schema on sovereign PG | Still no Prod cutover |
 | **3** | Shadow-read receipt validity + partner row counts vs Supabase | None |
 | **4** | Controlled cutover (maintenance window); keep Supabase read-only archive until validated | Planned downtime / fail-closed |
