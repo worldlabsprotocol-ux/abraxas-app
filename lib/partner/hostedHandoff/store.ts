@@ -2,7 +2,10 @@
 // Durable handoff records. Fail closed when the table or allowlist is unavailable.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { SITE_URL } from "@/lib/siteUrl";
+import {
+  buildHostedHandoffContinueUrl,
+  evaluateHostedHandoffHolderOriginGate,
+} from "@/lib/partner/hostedHandoff/holderOrigin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
 import { opaqueCallbackRef } from "@/lib/partner/launchpad/partnerFlowRequest/view";
@@ -36,7 +39,7 @@ export function putHandoffForTests(record: HostedHandoffRecord): void {
 }
 
 function hostedUrl(verifyRequest: string): string {
-  return `${SITE_URL.replace(/\/$/, "")}/partner/continue?verify_request=${encodeURIComponent(verifyRequest)}`;
+  return buildHostedHandoffContinueUrl(verifyRequest);
 }
 
 function fromRow(row: Record<string, unknown>): HostedHandoffRecord {
@@ -193,6 +196,13 @@ export async function createHostedHandoff(input: {
   bindingId?: string | null;
   fixture?: boolean;
 }): Promise<HostedHandoffRecord> {
+  const originGate = evaluateHostedHandoffHolderOriginGate();
+  if (!originGate.ok) {
+    throw Object.assign(new Error(originGate.code), {
+      code: originGate.code,
+      operator_message: originGate.operator_message,
+    });
+  }
   const urls = input.application.allowed_return_urls ?? [];
   const callback = input.stored.callback_url;
   if (!callback || !isLaunchpadReturnUrlAllowlisted(urls, callback)) {

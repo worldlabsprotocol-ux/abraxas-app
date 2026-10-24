@@ -47,9 +47,14 @@ export function HostedHandoffControls({ applicationId, partnerId }: { applicatio
       });
       const data = await res.json() as { hosted_url?: string; handoff_ref?: string; status?: typeof status; error?: string };
       if (!res.ok || !data.hosted_url) {
-        setError(data.error === "not_configured"
-          ? "Save Partner Flow configuration and an approved callback first."
-          : "Could not create a handoff.");
+        const errCode = typeof data.error === "string" ? data.error : "";
+        setError(
+          errCode === "not_configured"
+            ? "Save Partner Flow configuration and an approved callback first."
+            : errCode === "holder_origin_mismatch" || errCode === "holder_origin_unconfigured"
+              ? "This Launchpad deployment cannot issue a valid holder link yet. Contact your operator — Demo and Production holder URLs must match the environment where the request is stored."
+              : "Could not create a handoff.",
+        );
         return;
       }
       setUrl(data.hosted_url);
