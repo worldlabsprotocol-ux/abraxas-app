@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/partner/launchpad/HostedHandoffControls.tsx
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { INSTITUTIONAL_PRIMARY_BTN_TEXT } from "@/lib/design/institutionalTheme";
 import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } from "@/lib/partner/hostedHandoff/contract";
 import { resolveChainAttestationSolanaKeysUrl } from "@/lib/product/canonicalProductOrigin";
 import {
@@ -321,9 +322,15 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
           </Btn>
         )}
         {phase === "completed" && resultHref && (
-          <Btn size="sm" href={resultHref} target="_blank" rel="noopener noreferrer">
+          <a
+            href={resultHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="abx-interactive"
+            style={handoffActionLinkStyle("primary")}
+          >
             View completed result
-          </Btn>
+          </a>
         )}
         {phase === "completed" && (
           <Btn size="sm" variant="secondary" disabled={busy} onClick={startAnotherVerification}>
@@ -336,9 +343,15 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
           </Btn>
         )}
         {url && openVerificationLabel && phase === "pending" && (
-          <Btn size="sm" href={url} target="_blank" rel="noopener noreferrer">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="abx-interactive"
+            style={handoffActionLinkStyle("primary")}
+          >
             {openVerificationLabel} ↗
-          </Btn>
+          </a>
         )}
         {url && phase === "pending" && (
           <Btn
@@ -431,4 +444,34 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
       </a>
     </section>
   );
+}
+
+/** Matches redesign `Btn` sm primary — link actions only (external holder / callback URLs). */
+function handoffActionLinkStyle(variant: "primary"): CSSProperties {
+  const base: CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.5rem",
+    minHeight: 40,
+    padding: "0.55rem 1.05rem",
+    borderRadius: 2,
+    fontFamily: FONT,
+    fontSize: "0.78rem",
+    fontWeight: 700,
+    letterSpacing: "-0.01em",
+    cursor: "pointer",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+  };
+  if (variant === "primary") {
+    return {
+      ...base,
+      background: "var(--btn-primary-bg)",
+      color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
+      border: "1px solid var(--btn-primary-bg)",
+      boxShadow: "none",
+    };
+  }
+  return base;
 }
