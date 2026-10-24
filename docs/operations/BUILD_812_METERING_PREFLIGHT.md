@@ -130,8 +130,34 @@ Native account migrations **144–147**, Production app promotion, and live key 
 
 | Field | Value |
 |-------|--------|
-| **Execution status** | **Not executed** — engineering preflight only; founder message 2026-10-24 does **not** authorize SQL |
-| **Designated approver** | Founder / Production operator |
-| **Backup / PITR** | **Operator must confirm** in Supabase dashboard (not verifiable via agent SQL) before execution |
-| **Rollback note** | Vercel rollback **does not** undo 058; DB recovery = PITR/backup or documented empty-table reversal only |
-| **Post-migration acceptance** | Pending — run Step C in this doc after authorized execution |
+| **Execution status** | **Not executed** — preflight accepted; **no SQL authorization recorded** as of 2026-10-24 (Pacific) |
+| **Scope (if authorized)** | **`058_partner_metering_foundation.sql`** then **`065_service_role_runtime_grants.sql`** only on **`bztwutzprwsdrtqdpymf`** |
+| **Out of scope** | 144–147, auth flags, live keys, app promotion, billing, synthetic receipts |
+| **Designated approver** | Founder (execution) + Production operator (backup attestation) |
+| **Exact SQL sources** | `supabase/migrations/058_partner_metering_foundation.sql`; `supabase/migrations/065_service_role_runtime_grants.sql` |
+| **Dependency integrity (2026-10-24 read-only)** | `partners` present; metering tables absent; 065 prerequisite tables present except those created by 058; `service_role` INSERT on issuance path OK |
+| **Maintenance window** | **TBD** — operator schedules; DDL scope is new tables + grants (low touch on existing relations) |
+| **Rollback note** | Vercel rollback **does not** undo 058; DB recovery requires **verified backup/PITR** or exceptional empty-table reversal with founder sign-off |
+| **Post-migration acceptance** | Pending — Step C in this doc after authorized execution |
+
+### Backup / PITR verification (required gate)
+
+| Check | Agent result | Operator action |
+|-------|----------------|-----------------|
+| Supabase MCP/API backup status | **Not exposed** — cannot infer from `ACTIVE_HEALTHY` | Open **Project → Database → Backups** (and **Point in time** if enabled) for `bztwutzprwsdrtqdpymf` |
+| Organization plan (MCP `get_organization`) | Reports **`tier_free`** for org `ttiqxkjqzbxsleaapbkg` | Confirm **Production project** subscription, daily backup retention, and whether **PITR** is enabled (do not assume from agent) |
+| Postgres `archive_mode` / `wal_level` | `archive_mode=on`, `wal_level=logical` | **Not sufficient** for change approval — dashboard backup/PITR only |
+| Recovery drill | Not performed | Operator records: backup schedule, retention, PITR window (if any), and contact for restore |
+
+**Operator attestation (fill before execution):**
+
+- [ ] I confirmed Production project ref **`bztwutzprwsdrtqdpymf`**
+- [ ] I verified **restorable backup or PITR** capability in Supabase dashboard
+- [ ] I recorded the maintenance window: _______________
+- [ ] I am executing only **058** then **065** (or documented B2 fallback)
+
+**Founder execution authorization (fill before execution):**
+
+> I authorize applying **`058_partner_metering_foundation.sql`** and **`065_service_role_runtime_grants.sql`** to Production **`bztwutzprwsdrtqdpymf`** in the window above. This does **not** authorize native-account migrations, authentication flag changes, live credential issuance, or billing activation.
+
+Without **both** operator attestation and founder authorization text, engineering **must not** run SQL.
