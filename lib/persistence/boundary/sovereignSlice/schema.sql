@@ -56,6 +56,16 @@ create table if not exists public.decision_receipts (
   foreign key (policy_id, policy_version) references public.partner_policies(id, version)
 );
 
+create table if not exists public.decision_receipt_supersessions (
+  superseded_receipt_id text primary key references public.decision_receipts(id),
+  superseding_receipt_id text not null,
+  partner_id text not null references public.partners(partner_id),
+  policy_id text not null,
+  policy_version int not null,
+  scope text not null default 'session_refresh',
+  superseded_at timestamptz not null default now()
+);
+
 create table if not exists public.partner_metering_events (
   id bigserial primary key,
   partner_id text not null references public.partners(partner_id),

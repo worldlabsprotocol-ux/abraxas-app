@@ -45,6 +45,12 @@ import {
   revokeIssuerSigningKeyOnSovereignPg,
 } from "./staging/issuerTrustRecovery";
 import { insertMeteringFixtureOnSovereignPg } from "./verticalSlice/meteringAttribution";
+import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
+import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
+import { publishSignedIssuerAuthorityFromRegistry } from "./issuerAuthority/buildFromRegistry";
+import { evaluateSovereignCurrentValidity } from "./sovereignCurrentValidity/evaluate";
+
+const ANCHOR_KEY = generateTestSigningKeyPair();
 
 const PROOF_ENABLED = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
 const describeProof = PROOF_ENABLED ? describe : describe.skip;
@@ -149,6 +155,25 @@ describeProof("sovereign operational proof (Build #815)", () => {
       SUPABASE_SERVICE_ROLE_KEY: "",
       ABRAXAS_SIGNING_KEY: JSON.stringify(TEST_KEY.privateKeyJwk),
       ABRAXAS_BACKUP_ENCRYPTION_KEY: Buffer.alloc(32, 11).toString("base64"),
+      VERCEL_ENV: "production",
+      ABRAXAS_RECEIPT_VERIFICATION_REGISTRY: JSON.stringify([
+        {
+          key_id: TEST_KEY.signingKeyId,
+          environment: "production",
+          status: "active",
+          public_jwk: TEST_KEY.publicKeyJwk,
+          fingerprint: publicReceiptJwkFingerprint(
+            TEST_KEY.publicKeyJwk as { kty: "OKP"; crv: "Ed25519"; x: string },
+          ),
+          issued_at: "2020-01-01T00:00:00.000Z",
+          not_before: "2020-01-01T00:00:00.000Z",
+          expires_at: null,
+          schema_versions: [DECISION_RECEIPT_SCHEMA_VERSION],
+          reason_class: "active",
+          allow_historical_verification: false,
+          historical_verify_until: null,
+        },
+      ]),
     };
 
     await applySovereignSliceSchema(primaryPool);
@@ -346,6 +371,55 @@ describeProof("sovereign operational proof (Build #815)", () => {
       [idempotencyKey],
     );
     expect(Number(count.rows[0]?.count)).toBe(1);
+  });
+
+  it("evaluates current validity using signed issuer authority (not DB trust root)", async () => {
+    const signed = publishSignedIssuerAuthorityFromRegistry({
+      registryVersion: 1,
+      anchorKeyId: "anchor-integration",
+      anchorPrivateJwk: ANCHOR_KEY.privateKeyJwk,
+      env: testEnv,
+    });
+    if ("ok" in signed && signed.ok === false) throw new Error(signed.reason);
+    const result = await evaluateSovereignCurrentValidity({
+      record,
+      signedIssuerAuthority: signed as Exclude<typeof signed, { ok: false; reason: string }>,
+      trustAnchorPublicJwk: ANCHOR_KEY.publicKeyJwk,
+      expectedEnvironment: "production",
+      env: testEnv,
+      now: new Date("2026-07-01T00:00:00.000Z"),
+    });
+    expect(result.cryptographically_valid).toBe(true);
+    expect(result.issuer_authorized).toBe(true);
+    expect(result.currently_acceptable).toBe(true);
+  });
+
+  it("marks receipt superseded on sovereign current validity", async () => {
+    await primaryPool.query(
+      `insert into public.decision_receipt_supersessions (
+         superseded_receipt_id, superseding_receipt_id, partner_id, policy_id, policy_version, scope
+       ) values ($1, $2, $3, $4, $5, 'session_refresh')
+       on conflict (superseded_receipt_id) do nothing`,
+      [record.id, "dr_superseding_817", record.partner_id, record.policy_id, record.policy_version],
+    );
+    const signed = publishSignedIssuerAuthorityFromRegistry({
+      registryVersion: 2,
+      supersedesRegistryVersion: 1,
+      anchorKeyId: "anchor-integration",
+      anchorPrivateJwk: ANCHOR_KEY.privateKeyJwk,
+      env: testEnv,
+    });
+    if ("ok" in signed && signed.ok === false) throw new Error(signed.reason);
+    const result = await evaluateSovereignCurrentValidity({
+      record,
+      signedIssuerAuthority: signed as Exclude<typeof signed, { ok: false; reason: string }>,
+      trustAnchorPublicJwk: ANCHOR_KEY.publicKeyJwk,
+      expectedEnvironment: "production",
+      env: testEnv,
+    });
+    expect(result.superseded).toBe(true);
+    expect(result.currently_acceptable).toBe(false);
+    expect(result.invalidation_reasons).toContain("receipt_superseded");
   });
 
   it("blocks shadow writes during compare mode", () => {
