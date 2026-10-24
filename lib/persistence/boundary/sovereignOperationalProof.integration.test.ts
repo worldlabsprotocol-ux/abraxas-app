@@ -394,6 +394,61 @@ describeProof("sovereign operational proof (Build #815)", () => {
     expect(result.currently_acceptable).toBe(true);
   });
 
+  it("rejects receipt when sovereign claim evidence is revoked", async () => {
+    const claimId = "claim-sovereign818";
+    await primaryPool.query(
+      `insert into public.sovereign_claim_status (claim_id, status) values ($1, 'revoked')
+       on conflict (claim_id) do update set status = excluded.status`,
+      [claimId],
+    );
+    const claimPayload = buildCanonicalPayload({
+      receipt_id: "dr_claim_rev_818",
+      decision_id: "00000000-0000-4000-8000-000000008818",
+      policy_id: record.policy_id,
+      policy_version: record.policy_version,
+      partner_id: record.partner_id,
+      subject_pseudonym_id: record.subject_pseudonym_id,
+      wallet_binding_ref: null,
+      consent_receipt_id: null,
+      decision_result: "approved",
+      reason_codes: ["ok"],
+      evaluated_claim_refs: [
+        { claim_id: claimId, claim_type: "age21", status: "active", issued_at: record.evaluated_at },
+      ],
+      issuer_refs: [],
+      decision_context: "production",
+      evaluated_at: record.evaluated_at,
+      expires_at: record.expires_at,
+    });
+    const signedClaim = signReceiptPayload(claimPayload, TEST_KEY.privateKeyJwk);
+    const claimRecord: DecisionReceiptRecord = {
+      ...record,
+      id: claimPayload.receipt_id,
+      verification_decision_id: claimPayload.decision_id,
+      evaluated_claim_refs: claimPayload.evaluated_claim_refs,
+      payload_hash: signedClaim.payloadHash,
+      signature: signedClaim.signature,
+    };
+    await seedSovereignSliceFixtures({ pool: primaryPool, record: claimRecord, env: testEnv });
+    const signed = publishSignedIssuerAuthorityFromRegistry({
+      registryVersion: 3,
+      anchorKeyId: "anchor-integration",
+      anchorPrivateJwk: ANCHOR_KEY.privateKeyJwk,
+      env: testEnv,
+    });
+    if ("ok" in signed && signed.ok === false) throw new Error(signed.reason);
+    const result = await evaluateSovereignCurrentValidity({
+      record: claimRecord,
+      signedIssuerAuthority: signed as Exclude<typeof signed, { ok: false; reason: string }>,
+      trustAnchorPublicJwk: ANCHOR_KEY.publicKeyJwk,
+      expectedEnvironment: "production",
+      env: testEnv,
+    });
+    expect(result.claims_current).toBe(false);
+    expect(result.currently_acceptable).toBe(false);
+    expect(result.invalidation_reasons).toContain("claim_revoked");
+  });
+
   it("marks receipt superseded on sovereign current validity", async () => {
     await primaryPool.query(
       `insert into public.decision_receipt_supersessions (

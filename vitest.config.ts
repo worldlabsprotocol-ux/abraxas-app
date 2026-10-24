@@ -17,10 +17,15 @@ export default defineConfig({
       "scripts/trust-contract-drift/**/*.test.ts",
       "examples/partner-access-nextjs-starter/**/*.test.ts",
       "examples/good-trouble-wix/**/*.test.js",
+      "packages/**/*.test.ts",
     ],
   },
   resolve: {
     alias: {
+      "@abraxas/independent-verifier": path.resolve(
+        __dirname,
+        "packages/abraxas-independent-verifier/src/index.ts",
+      ),
       "@": path.resolve(__dirname, "."),
       "server-only": path.resolve(__dirname, "test/mocks/server-only.ts"),
       "wix-data": path.resolve(__dirname, "test/mocks/wix-data.js"),

@@ -17,6 +17,9 @@ export type SovereignSliceBackupPayload = {
   decision_receipts: unknown[];
   partner_metering_events: unknown[];
   decision_receipt_supersessions: unknown[];
+  sovereign_claim_status: unknown[];
+  sovereign_evidence_sources: unknown[];
+  sovereign_receipt_evidence_dependencies: unknown[];
 };
 
 const TABLE_ORDER = [
@@ -24,8 +27,11 @@ const TABLE_ORDER = [
   "issuer_signing_keys",
   "partner_policies",
   "decision_receipts",
-  "partner_metering_events",
+  "sovereign_claim_status",
+  "sovereign_evidence_sources",
+  "sovereign_receipt_evidence_dependencies",
   "decision_receipt_supersessions",
+  "partner_metering_events",
 ] as const;
 
 async function selectAll(pool: Pool, table: string): Promise<unknown[]> {
@@ -47,6 +53,12 @@ export async function exportSovereignSliceBackup(pool: Pool): Promise<SovereignS
     decision_receipts: await selectAll(pool, "decision_receipts"),
     partner_metering_events: await selectAll(pool, "partner_metering_events"),
     decision_receipt_supersessions: await selectAll(pool, "decision_receipt_supersessions"),
+    sovereign_claim_status: await selectAll(pool, "sovereign_claim_status"),
+    sovereign_evidence_sources: await selectAll(pool, "sovereign_evidence_sources"),
+    sovereign_receipt_evidence_dependencies: await selectAll(
+      pool,
+      "sovereign_receipt_evidence_dependencies",
+    ),
   };
   return { ...body, backup_digest: digestPayload(body) };
 }
@@ -63,6 +75,9 @@ export async function restoreSovereignSliceBackup(
     decision_receipts: payload.decision_receipts,
     partner_metering_events: payload.partner_metering_events,
     decision_receipt_supersessions: payload.decision_receipt_supersessions ?? [],
+    sovereign_claim_status: payload.sovereign_claim_status ?? [],
+    sovereign_evidence_sources: payload.sovereign_evidence_sources ?? [],
+    sovereign_receipt_evidence_dependencies: payload.sovereign_receipt_evidence_dependencies ?? [],
   };
   const expected = digestPayload(withoutDigest);
   if (expected !== payload.backup_digest) {

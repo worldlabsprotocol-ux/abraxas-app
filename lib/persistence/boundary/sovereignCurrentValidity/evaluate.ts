@@ -8,12 +8,15 @@ import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import type { SignedIssuerAuthorityStatement } from "../issuerAuthority/contract";
 import { resolveIssuerKeyFromSignedStatement } from "../issuerAuthority/resolveIssuerKey";
 import { isReceiptSupersededOnSovereignPg } from "../verticalSlice/supersessionRead";
+import { evaluateClaimEvidenceOnSovereignPg } from "../verticalSlice/claimEvidenceRead";
 import { querySovereignStagingPg } from "../sovereignStagingPg";
 import type { SovereignFreshnessEvaluation } from "../verticalSlice/freshnessEvaluation";
 
 export type SovereignCurrentValidityResult = SovereignFreshnessEvaluation & {
   cryptographically_valid: boolean;
   superseded: boolean;
+  claims_current: boolean;
+  evidence_current: boolean;
   lifecycle_status: "active" | "expired" | "revoked" | "superseded" | "invalidated";
 };
 
@@ -151,6 +154,14 @@ export async function evaluateSovereignCurrentValidity(input: {
   }
   if (!policyActive && storeAvailable) reasons.push("policy_no_longer_valid");
 
+  const claimEvidence = await evaluateClaimEvidenceOnSovereignPg(input.record, env, now);
+  if (!claimEvidence.store_available) {
+    storeAvailable = false;
+    reasons.push("validity_store_unavailable");
+  } else {
+    reasons.push(...claimEvidence.reasons);
+  }
+
   const issuedApproved = cryptographicallyValid && input.record.decision_result === "approved";
   const currentlyAcceptable =
     issuedApproved
@@ -158,6 +169,8 @@ export async function evaluateSovereignCurrentValidity(input: {
     && policyAudienceMatch
     && partnerOperational
     && policyActive
+    && claimEvidence.claims_current
+    && claimEvidence.evidence_current
     && storedStatus === "active"
     && !superseded
     && storeAvailable
@@ -182,5 +195,7 @@ export async function evaluateSovereignCurrentValidity(input: {
     invalidation_reasons: Array.from(new Set(reasons)),
     store_available: storeAvailable,
     checked_at: now.toISOString(),
+    claims_current: claimEvidence.claims_current,
+    evidence_current: claimEvidence.evidence_current,
   };
 }
