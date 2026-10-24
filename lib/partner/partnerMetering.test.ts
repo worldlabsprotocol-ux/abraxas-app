@@ -342,6 +342,17 @@ describe("partner metering ledger", () => {
     expect(JSON.stringify(payload)).not.toContain("0x");
   });
 
+  it("allows wallet_control policy ids without false PII rejection", () => {
+    expect(partnerMeteringPayloadHasNoPii({
+      partner_id: "studio-accept-wc-1792620888278-6a4a2447dfc8",
+      event_type: "partner_flow_receipt_issued",
+      idempotency_key: buildPartnerFlowReceiptMeteringKey("dr_CyEfbNw7tTqsZNIh"),
+      receipt_id: "dr_CyEfbNw7tTqsZNIh",
+      policy_id: "studio-accept-wc-1792620888278-6a4a2447dfc8-wallet_control-v1",
+      decision_id: "3332705d-a49a-45e2-ba0f-92a9448aee1a",
+    })).toBe(true);
+  });
+
   it("resolves api correlation id from record id before path", () => {
     expect(resolvePartnerApiMeteringCorrelationId({
       recordId: "vr-abc",

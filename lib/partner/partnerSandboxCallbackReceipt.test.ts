@@ -130,6 +130,31 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
     expect(display.url_mismatches).toHaveLength(0);
   });
 
+  it("shows acceptable current authorization when public receipt is sandbox-current", () => {
+    const policyId = "studio-accept-wc-1792620888278-6a4a2447dfc8-wallet_control-v1";
+    const urlView = buildPartnerSandboxCallbackView(new URLSearchParams({
+      status: "approved",
+      receipt_id: "dr_CyEfbNw7tTqsZNIh",
+      partner_id: "studio-accept-wc-1792620888278-6a4a2447dfc8",
+      policy_id: policyId,
+    }));
+    const display = resolvePartnerSandboxCallbackDisplay({
+      urlView,
+      fetchStatus: "loaded",
+      receipt: baseReceipt({
+        receipt_id: "dr_CyEfbNw7tTqsZNIh",
+        currently_valid: true,
+        production_usable: false,
+        decision_context: "sandbox_only",
+        partner_id: "studio-accept-wc-1792620888278-6a4a2447dfc8",
+        policy_id: policyId,
+      }),
+    });
+    expect(display.currently_acceptable_for_access).toBe(true);
+    expect(display.headline).toBe("Verification complete");
+    expect(display.holder_status_rows.find((r) => r.label === "Current authorization")?.value).toBe("Acceptable");
+  });
+
   it("fails safely for expired receipts with historically valid signature", () => {
     const urlView = buildPartnerSandboxCallbackView(new URLSearchParams({
       status: "approved",

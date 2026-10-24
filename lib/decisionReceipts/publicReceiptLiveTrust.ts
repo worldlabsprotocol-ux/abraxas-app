@@ -95,6 +95,8 @@ export async function buildPublicReceiptWithLiveTrust(
     record,
     expectedPartnerId: record.partner_id,
     expectedPolicyId: record.policy_id,
+    // Sandbox-only receipts are currently acceptable in sandbox — not production_usable.
+    expectedEnvironment: record.decision_context === "sandbox_only" ? "sandbox" : undefined,
   });
   const trust = evaluatePublicReceiptTrust(enrichedView, {
     partnerId: record.partner_id,

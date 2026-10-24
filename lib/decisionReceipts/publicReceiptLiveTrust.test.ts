@@ -83,12 +83,15 @@ vi.mock("@/lib/trust/issuerFramework", () => ({
 }));
 
 function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionReceiptRecord {
+  const decision_context = overrides.decision_context ?? "production";
+  const policy_id = overrides.policy_id ?? "partner-policy-v1";
+  const partner_id = overrides.partner_id ?? "partner-a";
   const payload = buildCanonicalPayload({
     receipt_id: "dr_public_contract",
     decision_id: "00000000-0000-4000-8000-000000009901",
-    policy_id: "partner-policy-v1",
+    policy_id,
     policy_version: 1,
-    partner_id: "partner-a",
+    partner_id,
     subject_pseudonym_id: subjectPseudonymId("0xabc"),
     wallet_binding_ref: null,
     consent_receipt_id: null,
@@ -103,7 +106,7 @@ function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionR
       expires_at: null,
     }],
     issuer_refs: ["issuer:abraxas"],
-    decision_context: "production",
+    decision_context,
     evaluated_at: "2026-06-01T12:00:00.000Z",
     expires_at: "2099-01-01T00:00:00.000Z",
   });
@@ -112,8 +115,8 @@ function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionR
     id: payload.receipt_id,
     verification_decision_id: payload.decision_id,
     consent_receipt_id: null,
-    partner_id: payload.partner_id,
-    policy_id: payload.policy_id,
+    partner_id,
+    policy_id,
     policy_version: payload.policy_version,
     subject_pseudonym_id: payload.subject_pseudonym_id,
     wallet_binding_ref: null,
@@ -121,7 +124,7 @@ function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionR
     reason_codes: payload.reason_codes,
     evaluated_claim_refs: payload.evaluated_claim_refs,
     issuer_refs: payload.issuer_refs,
-    decision_context: "production",
+    decision_context,
     evaluated_at: payload.evaluated_at,
     expires_at: payload.expires_at,
     revoked_at: null,
@@ -202,6 +205,18 @@ describe("public receipt live trust contract", () => {
     expect(partnerValidation.ok).toBe(true);
     expect(JSON.stringify(publicView)).not.toContain("reviewer");
     expect(JSON.stringify(publicView)).not.toContain("@");
+  });
+
+  it("sandbox_only receipts are currently valid for sandbox public verification", async () => {
+    const record = sampleRecord({ decision_context: "sandbox_only" });
+    mockClaimStatusLookup({ "claim-1": "active" });
+
+    const publicView = await buildPublicReceiptWithLiveTrust(record);
+
+    expect(publicView.signature_valid).toBe(true);
+    expect(publicView.currently_valid).toBe(true);
+    expect(publicView.production_usable).toBe(false);
+    expect(publicView.invalidation_reasons).not.toContain("production_not_usable");
   });
 
   it("after linked claim revoke, public response is currently invalid and partner rejects synchronously", async () => {
