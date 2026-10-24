@@ -147,6 +147,7 @@ describe("issuePartnerSessionReceipt idempotency", () => {
     });
 
     expect(first.replay_status).toBe("idempotent_replay");
+    expect(first.receipt_outcome).toBe("replayed");
     expect(first.decision_id).toBe("vd_existing");
     expect(first.receipt_id).toBe("dr_existing");
     expect(issueReceiptForDecision).not.toHaveBeenCalled();
@@ -170,6 +171,7 @@ describe("issuePartnerSessionReceipt idempotency", () => {
     });
 
     expect(result.replay_status).toBe("idempotent_replay");
+    expect(result.receipt_outcome).toBe("reused");
     expect(issueReceiptForDecision).not.toHaveBeenCalled();
   });
 

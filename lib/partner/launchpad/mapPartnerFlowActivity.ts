@@ -3,6 +3,8 @@
 import type { LaunchpadActivityEventType } from "@/lib/partner/launchpad/types";
 import { maybeRecordLaunchpadFlowActivity } from "@/lib/partner/launchpad/recordPartnerFlowActivity";
 import { recordIntegrationEventBestEffort } from "@/lib/partner/integrationObservability/record";
+import type { PartnerFlowReceiptOutcome } from "@/lib/partner/partnerFlowReceiptOutcome";
+import { resolvePartnerFlowReceiptOutcome } from "@/lib/partner/partnerFlowReceiptOutcome";
 
 export type PartnerFlowLaunchpadContext = {
   appSlug?: string | null;
@@ -45,6 +47,7 @@ export async function recordEvaluateLaunchpadActivity(input: {
   correlationId?: string | null;
   next: string;
   replayStatus?: string | null;
+  receiptOutcome?: PartnerFlowReceiptOutcome | null;
   hasRedirectUrl?: boolean;
 }): Promise<void> {
   const base = {
@@ -93,7 +96,23 @@ export async function recordEvaluateLaunchpadActivity(input: {
     return;
   }
 
-  if (input.replayStatus === "idempotent_replay") {
+  const receiptOutcome =
+    input.receiptOutcome
+    ?? resolvePartnerFlowReceiptOutcome({ replay_status: input.replayStatus as "issued" | "idempotent_replay" | null });
+
+  if (receiptOutcome === "reused") {
+    await maybeRecordLaunchpadFlowActivity({
+      ...base,
+      eventType: "proof_reused",
+      publicCode: "session_reused",
+    });
+  } else if (receiptOutcome === "replayed") {
+    await maybeRecordLaunchpadFlowActivity({
+      ...base,
+      eventType: "proof_reused",
+      publicCode: "replayed",
+    });
+  } else if (input.replayStatus === "idempotent_replay") {
     await maybeRecordLaunchpadFlowActivity({
       ...base,
       eventType: "proof_reused",
@@ -120,7 +139,10 @@ export async function recordEvaluateLaunchpadActivity(input: {
       lifecycleStage: "receipt",
       outcome: "issued",
       correlationId: input.correlationId,
-      metadata: { replay_status: input.replayStatus },
+      metadata: {
+        replay_status: input.replayStatus,
+        receipt_outcome: receiptOutcome ?? "issued",
+      },
     });
   }
 
@@ -163,6 +185,7 @@ export async function recordCompleteLaunchpadActivity(input: {
   policyId: string;
   correlationId?: string | null;
   replayStatus?: string | null;
+  receiptOutcome?: PartnerFlowReceiptOutcome | null;
   hasRedirectUrl?: boolean;
 }): Promise<void> {
   const base = {
@@ -173,11 +196,27 @@ export async function recordCompleteLaunchpadActivity(input: {
     correlationId: input.correlationId,
   };
 
+  const receiptOutcome =
+    input.receiptOutcome
+    ?? resolvePartnerFlowReceiptOutcome({ replay_status: input.replayStatus as "issued" | "idempotent_replay" | null });
+
   if (input.replayStatus === "issued") {
     await maybeRecordLaunchpadFlowActivity({
       ...base,
       eventType: "receipt_issued",
       publicCode: "issued",
+    });
+  } else if (receiptOutcome === "reused") {
+    await maybeRecordLaunchpadFlowActivity({
+      ...base,
+      eventType: "proof_reused",
+      publicCode: "session_reused",
+    });
+  } else if (receiptOutcome === "replayed") {
+    await maybeRecordLaunchpadFlowActivity({
+      ...base,
+      eventType: "proof_reused",
+      publicCode: "replayed",
     });
   }
 

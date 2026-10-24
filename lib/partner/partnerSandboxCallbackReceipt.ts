@@ -3,6 +3,7 @@
 
 import type { DecisionReceiptPublicView } from "@/lib/decisionReceipts/types";
 import type { PartnerSandboxCallbackView } from "@/lib/partner/partnerSandboxCallback";
+import { partnerFlowReceiptOutcomeHolderNote } from "@/lib/partner/partnerFlowReceiptOutcome";
 
 export type PartnerSandboxReceiptFetchStatus =
   | "idle"
@@ -376,11 +377,13 @@ export function resolvePartnerSandboxCallbackDisplay(input: {
     };
   }
 
+  const reuseNote = partnerFlowReceiptOutcomeHolderNote(urlView.hints.receipt_outcome);
+
   return {
     headline: "Verification complete",
     body: "Your wallet-control check succeeded. The requesting application must confirm this signed result on its server before allowing access.",
     subheadline: null,
-    subbody: null,
+    subbody: reuseNote,
     trust_level: sandbox ? "verified_sandbox" : "verified",
     receipt_confirmed: true,
     currently_acceptable_for_access: true,
