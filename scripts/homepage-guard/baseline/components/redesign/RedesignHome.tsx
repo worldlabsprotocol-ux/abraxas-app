@@ -4,6 +4,8 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { HomeHowAbraxasWorksSection } from "@/components/home/HomeHowAbraxasWorksSection";
+import { HomeWhatAbraxasDoesSection } from "@/components/home/HomeWhatAbraxasDoesSection";
+import { HomeWhyDefensibleSection } from "@/components/home/HomeWhyDefensibleSection";
 import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
 import { HomeBuildEntrySection } from "@/components/home/HomeBuildEntrySection";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
@@ -40,13 +42,21 @@ function HomeContent({ hero }: { hero: ReactNode }) {
           <HomeHowAbraxasWorksSection />
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="02" label="Result" id="chapter-evidence" bleed>
+        <PremiumHomeChapter index="02" label="Protocol" id="chapter-what">
+          <HomeWhatAbraxasDoesSection />
+        </PremiumHomeChapter>
+
+        <PremiumHomeChapter index="03" label="Defensible" id="chapter-why">
+          <HomeWhyDefensibleSection />
+        </PremiumHomeChapter>
+
+        <PremiumHomeChapter index="04" label="Result" id="chapter-evidence" bleed>
           <LazyHomeSection minHeight="22rem" eager>
             <HomeVerifiableTrustChapter />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="03" label="Ready" id="chapter-build-wrap">
+        <PremiumHomeChapter index="05" label="Ready" id="chapter-build-wrap">
           <HomeBuildEntrySection />
         </PremiumHomeChapter>
       </div>
