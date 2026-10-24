@@ -81,6 +81,25 @@ describe("postPartnerFlowComplete", () => {
     expect(result).toEqual({ ok: false, category: "partner_flow_server_unavailable" });
   });
 
+  it("does not treat opaque completion errors as callback authorization failures", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        error: "return_url not allowlisted for partner",
+      }),
+    }));
+
+    const result = await postPartnerFlowComplete({
+      partner_id: "studio-accept-wc",
+      policy_id: "studio-accept-wc-wallet_control-v1",
+      return_url: "https://demo.abraxasworld.xyz/partner/callback",
+      verify_request: "vr_cf755c9710e6b3cb",
+    });
+
+    expect(result).toEqual({ ok: false, category: "partner_flow_completion_failed" });
+  });
+
   it("classifies fetch throw as partner_flow_network_failed", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
 

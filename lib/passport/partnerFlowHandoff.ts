@@ -128,11 +128,7 @@ function classifyCompleteFailure(
   if (code === "handoff_expired" || code === "handoff_missing" || res.status === 410 || res.status === 404) {
     return "partner_flow_handoff_invalid";
   }
-  if (
-    code === "return_url_rejected"
-    || code === "open_redirect"
-    || error.includes("return_url")
-  ) {
+  if (code === "return_url_rejected" || code === "open_redirect" || code === "cross_partner") {
     return "partner_flow_return_url_rejected";
   }
   if (code === "sharing_consent_required") {

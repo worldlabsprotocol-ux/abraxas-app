@@ -949,9 +949,10 @@ export async function completePartnerFlowAfterApproval(input: {
   expectedPolicyVersion?: number;
   launchpadApplicationId?: string | null;
 }): Promise<PartnerFlowEvaluateResult & { ok: true } | { ok: false; error: string }> {
-  if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
-    return { ok: false, error: "return_url not allowlisted for partner" };
-  }
+  // Return URL authorization is enforced at API boundaries (e.g. partner-flow/complete
+  // via authorizePartnerFlowCompleteReturnUrl). Do not re-check partners.allowed_return_urls
+  // here — Launchpad application callbacks can be authorized via continuation while the
+  // partner row remains stale.
 
   const credential = await getHolderCredentialStatus(input.suiAddress);
   const provenanceFlow = isContentOriginDisclosurePolicyId(input.policyId);

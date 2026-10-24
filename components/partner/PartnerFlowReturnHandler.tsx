@@ -36,7 +36,7 @@ function failureCopy(category: NonNullable<PartnerFlowHandoffController["failure
     case "partner_flow_return_url_rejected":
       return {
         title: "We couldn't return you to the requesting service.",
-        body: "Your wallet proof and sharing approval are recorded, but this partner callback is not authorized yet. Ask the operator to allow the Demo callback URL, then create a fresh verification link.",
+        body: "This verification link does not match an authorized callback for the request. Start again from the partner or Launchpad link that created this session — do not change callback URLs manually.",
       };
     case "partner_flow_credential_not_ready":
       return {
@@ -51,7 +51,7 @@ function failureCopy(category: NonNullable<PartnerFlowHandoffController["failure
     default:
       return {
         title: "Couldn't finish the partner handoff.",
-        body: "Wallet verification may have succeeded, but the signed receipt was not confirmed. Do not assume a result was shared — contact the operator or restart from the partner link.",
+        body: "Wallet proof and sharing approval may be recorded, but Abraxas did not issue the signed receipt for this request. Try again once, then start a fresh verification link from the partner if it still fails.",
       };
   }
 }
