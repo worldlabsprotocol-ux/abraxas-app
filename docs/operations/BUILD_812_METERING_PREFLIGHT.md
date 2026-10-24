@@ -1,8 +1,9 @@
 # Build #812 — Production metering preflight (058 / 065)
 
 **Project:** `bztwutzprwsdrtqdpymf` (Production)  
-**Status:** Preflight complete — **SQL not executed** (awaiting explicit Production change approval)  
-**Last preflight (read-only):** 2026-10-24 · operator: Cloud Agent · project ref confirmed `bztwutzprwsdrtqdpymf`  
+**Status:** **SUSPENDED (Build #813)** — founder 2026-10-24: do not expand Supabase Production DDL; establish Abraxas-operated persistence first. Preflight evidence retained for reuse on sovereign Postgres.  
+**SQL on Supabase `bztwutzprwsdrtqdpymf`:** **not executed** · **not authorized** while suspended  
+**Last preflight (read-only):** 2026-10-24 · project ref confirmed `bztwutzprwsdrtqdpymf`  
 **Billing:** Observe-only; `enforcement_mode` default `observe` in 058
 
 ---
@@ -130,7 +131,7 @@ Native account migrations **144–147**, Production app promotion, and live key 
 
 | Field | Value |
 |-------|--------|
-| **Execution status** | **Not executed** — preflight accepted; **no SQL authorization recorded** as of 2026-10-24 (Pacific) |
+| **Execution status** | **Suspended** — Build #813 infrastructure sovereignty; see `lib/infrastructure/productionChangeControl.ts` |
 | **Scope (if authorized)** | **`058_partner_metering_foundation.sql`** then **`065_service_role_runtime_grants.sql`** only on **`bztwutzprwsdrtqdpymf`** |
 | **Out of scope** | 144–147, auth flags, live keys, app promotion, billing, synthetic receipts |
 | **Designated approver** | Founder (execution) + Production operator (backup attestation) |
