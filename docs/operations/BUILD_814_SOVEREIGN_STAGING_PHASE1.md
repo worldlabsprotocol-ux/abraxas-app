@@ -61,11 +61,9 @@ This is **not** Production-ready sovereign infrastructure until backup/restore d
 - Policy/signature/metering invariant failures  
 - Offline signature verification without DB  
 
-## Next phase (Build #815+)
+## Next phase
 
-- Reproducible sovereign **staging** host + `validateStagingPersistentEnv` green  
-- Backup/restore drill with distinct restore endpoint (`sovereignRestoreSafety`)  
-- Expand boundary adapters incrementally (revocation/current validity read path) — **not** 450 call site rewrite  
+See **`BUILD_815_SOVEREIGN_RECOVERY_REVOCATION.md`** — CI operational proof, backup/restore drill, sovereign freshness evaluation.
 
 ## Production gates (unchanged)
 
