@@ -40,3 +40,7 @@ Treat as a persistence defect in `maybeRecordPartnerFlowReceiptMetering` / Demo 
 | `replayed` | Exact operation returned prior outcome |
 
 Legacy `replay_status` remains for metering gates: only `issued` is billable.
+
+## Security (non-negotiable)
+
+The callback query parameter `receipt_outcome` is **display-only**. Holders or partners can edit the URL; **billing, authorization, and trust decisions must never read it**. Authoritative state comes from the signed receipt (public verify API), server audit metadata, and durable ledger rows written at issuance time inside partner-flow routes.
