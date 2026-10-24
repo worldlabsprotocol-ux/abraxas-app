@@ -14,10 +14,12 @@ export function siteMetadata(overrides?: Partial<Metadata>): Metadata {
     metadataBase: new URL(SITE_URL),
     icons: {
       icon: [
-        { url: "/brand/official/abraxas-emblem-protocol.png", sizes: "512x512", type: "image/png" },
+        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
         { url: "/icon-48.png", sizes: "48x48", type: "image/png" },
+        { url: "/icon-32.png", sizes: "32x32", type: "image/png" },
       ],
-      apple: "/brand/official/abraxas-emblem-protocol.png",
+      apple: "/icon-192.png",
     },
     title: {
       default: typeof title === "string" ? title : SEO_DEFAULT_TITLE,

@@ -17,6 +17,7 @@ import {
   handoffLeaks,
   loadHandoff,
   parseHandoffCreateBody,
+  projectPartner,
   projectPublic,
 } from "@/lib/partner/hostedHandoff";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (!record || record.partner_id !== auth.session.partnerId || record.application_id !== params.id) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 404, "not_found");
   }
-  const view = projectPublic(record);
+  const view = projectPartner(record);
   if (handoffLeaks(view).length) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "redacted");
   return launchpadJson({ ok: true, ...view });
 }

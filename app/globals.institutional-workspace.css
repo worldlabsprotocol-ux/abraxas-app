@@ -12,13 +12,18 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
     0 24px 48px rgba(0, 0, 0, 0.35);
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .abx-inst-workspace-shell__content {
   position: relative;
   z-index: 1;
   padding: clamp(0.85rem, 2.5vw, 1.35rem);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .abx-studio-workspace {
@@ -361,13 +366,7 @@
   overflow-x: clip;
 }
 
-@media (min-width: 1024px) {
-  .abx-launchpad-operational {
-    grid-template-columns: min(220px, 22vw) minmax(0, 1fr) min(300px, 28vw);
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1280px) {
+@media (min-width: 1024px) and (max-width: 1279px) {
   .abx-launchpad-operational {
     grid-template-columns: min(200px, 24vw) minmax(0, 1fr);
   }
@@ -375,6 +374,12 @@
   .abx-launchpad-inspector {
     grid-column: 1 / -1;
     max-width: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .abx-launchpad-operational {
+    grid-template-columns: min(220px, 20vw) minmax(0, 1fr) min(280px, 26vw);
   }
 }
 
@@ -581,4 +586,73 @@
   font-size: 0.78rem;
   line-height: 1.55;
   color: var(--text-muted);
+}
+
+/* Build #809 — Launchpad verify flow: readable at 100% zoom (no horizontal clip) */
+.abx-launchpad-console-stage .abx-card,
+.abx-launchpad-console-stage .abx-holder-verification-request,
+.abx-launchpad-console-stage .abx-privacy-boundary,
+.abx-launchpad-console-stage .abx-privacy-boundary__receive,
+.abx-launchpad-console-stage .abx-privacy-boundary__private,
+.abx-launchpad-handoff-controls {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.abx-launchpad-console-stage .abx-holder-verification-request,
+.abx-launchpad-console-stage .abx-holder-request-header__question,
+.abx-launchpad-console-stage .abx-privacy-boundary__receive p,
+.abx-launchpad-handoff-controls__ref {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.abx-launchpad-console-stage .abx-holder-sandbox-badge {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.abx-launchpad-handoff-controls__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+@media (min-width: 480px) {
+  .abx-launchpad-handoff-controls__actions--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+.abx-launchpad-handoff-controls__status {
+  margin: 0 0 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 245, 243, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.abx-launchpad-handoff-controls__status--completed {
+  border-color: rgba(76, 187, 146, 0.35);
+  background: rgba(76, 187, 146, 0.06);
+}
+
+.abx-launchpad-handoff-controls__status-title {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.abx-launchpad-handoff-controls__status-line {
+  margin: 0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
 }

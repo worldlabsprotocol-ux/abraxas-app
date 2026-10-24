@@ -1268,12 +1268,8 @@
   display: grid;
   gap: 1.25rem;
   align-items: start;
-}
-
-@media (min-width: 1024px) {
-  .abx-launchpad-operational {
-    grid-template-columns: 220px minmax(0, 1fr) 280px;
-  }
+  min-width: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 1023px) {

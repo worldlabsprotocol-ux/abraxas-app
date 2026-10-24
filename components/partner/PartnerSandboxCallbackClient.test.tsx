@@ -56,4 +56,14 @@ describe("PartnerSandboxCallbackClient layout", () => {
     expect(card?.querySelector(".abx-partner-sandbox-callback__actions")).toBeTruthy();
     expect(card?.querySelector(".abx-partner-sandbox-callback__details")).toBeTruthy();
   });
+
+  it("shows sandbox environment note once for sandbox_only receipts", async () => {
+    render(<PartnerSandboxCallbackClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Verification complete")).toBeTruthy();
+    });
+
+    expect(document.querySelectorAll(".abx-partner-sandbox-callback__sandbox-note")).toHaveLength(1);
+  });
 });
