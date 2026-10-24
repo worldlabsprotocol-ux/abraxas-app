@@ -126,6 +126,8 @@ export function PartnerSandboxCallbackClient() {
 
   const showDeveloperDetails = Boolean(receiptId && (display.receipt_confirmed || display.receipt));
   const showSandboxNote = display.receipt?.decision_context === "sandbox_only";
+  const sandboxNoteText =
+    "Sandbox environment — your application validates this record with its sandbox API key. Production authorization requires a production-usable receipt verified on your server.";
 
   return (
     <div className="abx-partner-sandbox-callback" data-testid="partner-sandbox-callback">
@@ -147,8 +149,7 @@ export function PartnerSandboxCallbackClient() {
 
         {showSandboxNote ? (
           <p className="abx-partner-sandbox-callback__sandbox-note" role="note">
-            Sandbox environment — your application validates this record with its sandbox API key. Production
-            authorization requires a production-usable receipt verified on your server.
+            {sandboxNoteText}
           </p>
         ) : null}
 
@@ -187,7 +188,7 @@ export function PartnerSandboxCallbackClient() {
           </div>
         ) : null}
 
-        {display.acceptability_note ? (
+        {display.acceptability_note && !showSandboxNote ? (
           <p style={{ ...bodyBase, marginTop: "1rem", color: "var(--text-muted)", fontSize: "0.95rem" }}>
             {display.acceptability_note}
           </p>

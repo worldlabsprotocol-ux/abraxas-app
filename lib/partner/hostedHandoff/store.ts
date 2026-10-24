@@ -180,6 +180,7 @@ export function projectPartner(record: HostedHandoffRecord): HostedHandoffPartne
   return {
     ...projectPublic(live),
     application_id: live.application_id,
+    policy_id: live.policy_id,
     public_receipt_id: live.status === "completed" || live.status === "consumed" ? live.public_receipt_id : null,
     action: live.action,
     policy_version: live.policy_version,

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-24T02:23:27.922Z",
+  "updatedAt": "2026-10-24T13:27:13.944Z",
   "files": {
     "components/redesign/RedesignHome.tsx": "5bd2f856a332c20b19dde2af9b8b3a8f84099b710afe4a650f1a0a2541bd7028",
     "components/redesign/AbraxasBootScreen.tsx": "c8e2d8815064f0bf65f0421303b35b3c7187354a90810ce689ac9a1918fbfe9f",
@@ -28,7 +28,7 @@
     "lib/home/goodTroubleIntegrationDemo.ts": "51ac40a767cf07f6842f2910430a7f13e6c1ce2633fd3e4a6738f12ff4923506",
     "lib/product/publicFlowManifest.ts": "0f1a0deb66bdc2da3a486bd95036c71ccf72b90d7e69c31b74a7176effa7a142",
     "app/globals.home.css": "d2a08238768ed1223a4fce8f81682c73ea4011129ae34aab01665cb1ef1048f6",
-    "assets/icon-48.png": "3d3dcbcaf12e30ae599c8b003b63c71825b6aaea3169dfdddc8cd85759a11711",
+    "assets/icon-48.png": "1e48eade5b00bb4840ac9d071283aa37ead53bd991852fce05a632703cca17a8",
     "assets/assets/partner-network/premiere-lookbook-cover.jpg": "71aa8838b2c3cd3a53e35b528f2020df4e4f5eab9cabd5c3d5c770c32479f3b1",
     "assets/assets/partner-network/smakd-brand-lifestyle.jpg": "90375709e494c54ccf4e5f21b32aad940221064b5653157a81dc3e5c60fbbcf9",
     "assets/assets/partner-network/good-trouble-partner-brand.png": "1de27d316f26f5576bda39f4dc1d8fd58cb13a0cc20cd9acf8753824322a5849",
