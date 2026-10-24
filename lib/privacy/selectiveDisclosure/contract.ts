@@ -96,6 +96,9 @@ export const PLANNER_ALLOWED_OUTPUT_FIELDS = [
 
 export const PUBLIC_RECEIPT_ALLOWED_FIELDS = [
   ...PARTNER_INTEGRATION_TRUSTED_RECEIPT_FIELDS,
+  "consent_receipt_id",
+  "wallet_binding_ref",
+  "revoked_at",
   "evaluated_claim_refs",
   "issuer_refs",
   "reason_codes",

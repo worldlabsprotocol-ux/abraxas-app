@@ -460,6 +460,59 @@ export class AbraxasPartnerKit {
     }
   }
 
+  async fetchPortableVerificationBundle(receiptId: string): Promise<
+    | { ok: true; bundle: import("@/lib/partner/portableIndependentVerification").PortableVerificationBundle }
+    | { ok: false; errors: string[] }
+  > {
+    const fetchFn = this.options.fetchFn ?? fetch;
+    const base = (this.options.baseUrl ?? SITE_URL).replace(/\/$/, "");
+    try {
+      const res = await fetchFn(
+        `${base}/api/receipts/${encodeURIComponent(receiptId)}/portable-verification`,
+        { headers: { Accept: "application/json" }, cache: "no-store" },
+      );
+      if (res.status >= 500) return { ok: false, errors: ["portable_verification_fetch_failed", "retry"] };
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string; gaps?: string[] };
+        return {
+          ok: false,
+          errors: [body.error ?? "portable_verification_unavailable", ...(body.gaps ?? [])],
+        };
+      }
+      const json = (await res.json()) as { ok?: boolean; bundle?: import("@/lib/partner/portableIndependentVerification").PortableVerificationBundle };
+      if (!json.ok || !json.bundle) return { ok: false, errors: ["portable_verification_malformed"] };
+      return { ok: true, bundle: json.bundle };
+    } catch {
+      return { ok: false, errors: ["portable_verification_fetch_failed", "retry"] };
+    }
+  }
+
+  /**
+   * Partner Flow receipt → standalone @abraxas/independent-verifier (no Supabase at verify time).
+   * Requires Abraxas issuer export configured on the deployment serving portable-verification.
+   */
+  async verifyReceiptWithStandaloneVerifier(receiptId: string): Promise<{
+    ok: boolean;
+    currently_acceptable: "yes" | "no" | "indeterminate";
+    failure_codes: string[];
+  }> {
+    const fetched = await this.fetchPortableVerificationBundle(receiptId);
+    if (!fetched.ok) {
+      return { ok: false, currently_acceptable: "indeterminate", failure_codes: fetched.errors };
+    }
+    const { verifyPortableBundle } = await import("@/lib/partner/portableIndependentVerification");
+    const result = verifyPortableBundle({
+      bundle: fetched.bundle,
+      partnerId: this.options.partnerId,
+      policyId: this.options.policyId,
+    });
+    return {
+      ok: result.currently_acceptable === "yes",
+      currently_acceptable: result.currently_acceptable,
+      failure_codes: result.failure_codes,
+    };
+  }
+
   async verifyEligibilityPresentation(
     envelope: unknown,
     expected: {

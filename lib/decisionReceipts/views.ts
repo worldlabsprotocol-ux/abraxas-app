@@ -31,6 +31,10 @@ export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPubl
   const signatureValid = verifyRecordSignature(record);
   const view = {
     receipt_id: record.id,
+    verification_decision_id: record.verification_decision_id,
+    consent_receipt_id: record.consent_receipt_id,
+    wallet_binding_ref: record.wallet_binding_ref,
+    revoked_at: record.revoked_at,
     schema_version: record.schema_version,
     policy_id: record.policy_id,
     policy_version: record.policy_version,
