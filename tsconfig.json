@@ -24,6 +24,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@abraxas/independent-verifier": [
+        "./packages/abraxas-independent-verifier/src/index.ts"
       ]
     }
   },

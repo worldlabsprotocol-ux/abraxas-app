@@ -66,6 +66,27 @@ create table if not exists public.decision_receipt_supersessions (
   superseded_at timestamptz not null default now()
 );
 
+-- Claim/evidence freshness (no holder PII — status refs only).
+create table if not exists public.sovereign_claim_status (
+  claim_id text primary key,
+  status text not null check (status in ('active', 'revoked', 'expired', 'suspended')),
+  expires_at timestamptz
+);
+
+create table if not exists public.sovereign_evidence_sources (
+  source_credential_id text primary key,
+  status text not null check (status in ('active', 'revoked', 'expired')),
+  expires_at timestamptz,
+  revoked_at timestamptz
+);
+
+create table if not exists public.sovereign_receipt_evidence_dependencies (
+  receipt_id text not null references public.decision_receipts(id),
+  source_credential_id text not null references public.sovereign_evidence_sources(source_credential_id),
+  dependency_type text not null default 'source_receipt',
+  primary key (receipt_id, source_credential_id)
+);
+
 create table if not exists public.partner_metering_events (
   id bigserial primary key,
   partner_id text not null references public.partners(partner_id),
