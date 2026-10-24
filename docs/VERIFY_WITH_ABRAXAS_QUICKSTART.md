@@ -92,6 +92,17 @@ Use `verified.narrow` only — policy-specific authorized facts. No DOB, raw doc
 
 Grant your gated action only after server verification. Use durable idempotency keys so duplicate callbacks cannot repeat protected actions.
 
+## 11. Optional — independent verification (Build #822)
+
+After issuance, partners may verify without Supabase or Abraxas app modules at verify time:
+
+```typescript
+const portable = await kit.fetchPortableVerificationBundle(receiptId);
+// Or: kit.verifyReceiptWithStandaloneVerifier(receiptId)
+```
+
+Requires the Abraxas deployment to expose issuer export material (`GET /api/receipts/{id}/portable-verification`). Pin the trust anchor out-of-band; refresh signed status for current acceptability. See `docs/integration/BUILD_822_PARTNER_FLOW_PORTABLE_VERIFICATION.md`.
+
 ---
 
 **Legacy redirect mode:** pass `mode: "redirect"` and configure `requestStateStore` on the kit. See `PartnerRequestStateStore` in PartnerKit exports.

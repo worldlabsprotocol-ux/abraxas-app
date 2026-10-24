@@ -105,6 +105,7 @@
     "sovereign-runtime:certify-559": "tsx scripts/sovereign-runtime/certify-build-559.ts",
     "sovereign:build-820-acceptance": "ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF=1 vitest run --no-file-parallelism lib/persistence/boundary/staging/threeLayerTrustAcceptance.integration.test.ts",
     "test:integration-first-821": "vitest run examples/integration-first-relying-party/integration-first.test.ts",
+    "test:partner-flow-portable-822": "vitest run lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts",
     "sovereign-runtime:audit-dependencies-561": "tsx scripts/sovereign-runtime/audit-provider-dependencies-561.ts",
     "sovereign-runtime:verify-portable-561": "tsx scripts/sovereign-runtime/verify-portable-runtime-561.ts",
     "test:sovereign-activation-env": "vitest run lib/sovereignRuntime/institutionalActivationEnv.test.ts lib/sovereignRuntime/sovereignActivationHardening.test.ts lib/sovereignRuntime/sovereignHealth.test.ts lib/sovereignRuntime/sovereignStagingSafety.adversarial.test.ts lib/sovereignRuntime/syntheticCertificationIsolation.adversarial.test.ts lib/sovereignRuntime/stagingCertification559.test.ts lib/sovereignRuntime/sovereignDependencyAudit.test.ts lib/sovereignRuntime/sovereignOperationalReadiness.test.ts lib/sovereignRuntime/sovereignRestartDurability.test.ts",

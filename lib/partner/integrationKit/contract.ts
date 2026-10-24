@@ -32,6 +32,7 @@ export type PartnerIntegrationOutcome = (typeof PARTNER_INTEGRATION_OUTCOMES)[nu
 
 export const PARTNER_INTEGRATION_TRUSTED_RECEIPT_FIELDS = [
   "receipt_id",
+  "verification_decision_id",
   "schema_version",
   "policy_id",
   "policy_version",

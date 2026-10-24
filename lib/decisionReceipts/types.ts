@@ -67,6 +67,11 @@ export interface DecisionReceiptRecord {
 /** Public-safe view — no PII, no raw claim values */
 export interface DecisionReceiptPublicView {
   receipt_id: string;
+  /** Required for portable independent verification (canonical payload binding). */
+  verification_decision_id?: string;
+  consent_receipt_id?: string | null;
+  wallet_binding_ref?: string | null;
+  revoked_at?: string | null;
   schema_version: string;
   policy_id: string;
   policy_version: number;
