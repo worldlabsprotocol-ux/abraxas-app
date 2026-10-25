@@ -113,6 +113,35 @@ export const PARTNER_FLOW_ERROR_TABLE = [
   { condition: "Audit persistence failed", http: "503", action: "Retry evaluate; contact Abraxas ops if persistent" },
 ] as const;
 
+/** Portable export path (Build #822–826): offline verify after one HTTPS fetch. */
+export const PORTABLE_VERIFICATION_INTEGRATION_STEPS = [
+  {
+    step: 1,
+    title: "Request policy-bound verification",
+    body: "Partner Flow redirect or server verification request — holder authorizes in wallet/browser.",
+  },
+  {
+    step: 2,
+    title: "Receive receipt_id on callback",
+    body: "Callback params are not authorization; use receipt_id only as a lookup handle.",
+  },
+  {
+    step: 3,
+    title: "Pin trust anchor out-of-band",
+    body: "Install Abraxas Demo or Production anchor JSON via security ops — never auto-trust bundled_trust_anchor from downloads.",
+  },
+  {
+    step: 4,
+    title: "Fetch portable bundle once",
+    body: "GET /api/receipts/{receipt_id}/portable-verification — issuer export; retry on 503 issuer_export_not_configured.",
+  },
+  {
+    step: 5,
+    title: "Verify offline",
+    body: "@abraxas/independent-verifier + integrator pin; enforce permit / deny / indeterminate (expired authentic receipts → deny).",
+  },
+] as const;
+
 export const PARTNER_FLOW_AUTH_BOUNDARY = {
   browserSession: [
     "POST /api/v1/partner-flow/evaluate",
@@ -130,6 +159,7 @@ export const PARTNER_FLOW_AUTH_BOUNDARY = {
   ],
   publicNoAuth: [
     "GET /api/receipts/{receipt_id}/public",
+    "GET /api/receipts/{receipt_id}/portable-verification",
     "GET /api/receipts/verification-keys",
     "GET /api/credentials/public-key",
   ],

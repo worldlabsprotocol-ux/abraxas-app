@@ -1,0 +1,15 @@
+{
+  "document": "abraxas_trust_anchor_bundle",
+  "schema_version": "1.0.0",
+  "anchor_key_id": "abraxas-demo-trust-anchor",
+  "public_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "14rriYWXOPqlK4xk7nAXlLPYnO_de1EBrJoBR2DQWII"
+  },
+  "public_key_fingerprint": "de6e0d6c238236e5f095d4e9a426579d5305ffeabdb8d68071acebc4f90ce047",
+  "environment": "demo",
+  "distribution": "out_of_band",
+  "statement_cache_max_age_seconds": 86400,
+  "status_statement_max_age_seconds": 86400
+}
