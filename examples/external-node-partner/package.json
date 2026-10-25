@@ -1,0 +1,21 @@
+{
+  "name": "abraxas-external-partner-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone wallet-control integration — HTTPS only, no Abraxas app imports",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abraxas/independent-verifier": "file:../../packages/abraxas-independent-verifier"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "vitest": "^3.2.7"
+  }
+}

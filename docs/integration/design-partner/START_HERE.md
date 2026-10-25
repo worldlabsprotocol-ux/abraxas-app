@@ -1,71 +1,56 @@
-# Start here — first verification request (wallet-control pilot)
+# Start here — external developer
 
-**One action:** create a server-side verification request and redirect the holder to Abraxas.
+## What you are integrating
 
-Everything else is reference material ([README](./README.md), [QUICKSTART](./QUICKSTART.md), security docs).
+Abraxas provides **wallet-native verification** (e.g. wallet control). Your app asks for a decision; the holder authorizes in Abraxas; you receive a **signed receipt** and enforce **permit**, **deny**, or **indeterminate** in your own code.
 
-## Before you code (founder / ops — not in public chat)
+You do **not** need the Abraxas repository or `@/lib` imports.
 
-You need a **single consistent host** for the whole pilot ([SANDBOX_ENVIRONMENT.md](./SANDBOX_ENVIRONMENT.md)):
+## What you need from Abraxas (secure handoff)
 
-- Sandbox `partner_id`, `policy_id`, `application_id`
-- `abx_test_…` API key (delivered **securely**, never in docs or Slack)
-- Callback URL allowlisted
-- Demo trust anchor JSON (out-of-band)
+Delivered privately (never in public docs or chat):
 
-## Step 1 — Environment (your server)
+- `ABRAXAS_API_KEY` (`abx_test_…`)
+- `ABRAXAS_APPLICATION_ID`
+- `ABRAXAS_PARTNER_ID` and `ABRAXAS_POLICY_ID` (wallet-control sandbox)
+- Demo **trust anchor** JSON + fingerprint
+- Callback URL **allowlisted** on your sandbox app
+
+Use one host for everything: **`https://demo.abraxasworld.xyz`** ([SANDBOX_ENVIRONMENT.md](./SANDBOX_ENVIRONMENT.md)).
+
+## Run the working example (first action)
 
 ```bash
-ABRAXAS_BASE_URL=https://demo.abraxasworld.xyz
-ABRAXAS_PARTNER_ID=<from secure handoff>
-ABRAXAS_POLICY_ID=<wallet_control policy from handoff>
-ABRAXAS_APP_ID=<from secure handoff>
-ABRAXAS_SANDBOX_API_KEY=<from secure channel — never commit>
+cp -R examples/external-node-partner ~/my-abraxas-gate
+cd ~/my-abraxas-gate
+cp .env.example .env
+# Edit .env with your secure credentials
+cp path/to/trust-anchor.demo.json ./trust-anchor.demo.json
+npm install
+npm start
 ```
 
-Use **`environment: "sandbox"`** in Partner Kit. Set `RP_ENVIRONMENT=demo` for portable verify.
+Open **http://127.0.0.1:3847** → **Create verification request** → complete the holder flow → your callback shows JSON with `enforcement.action`.
 
-## Step 2 — Create the request (your server)
+The example uses **HTTPS only**:
 
-```typescript
-import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
+- `POST /api/v1/partner-handoff` to start
+- `GET /api/receipts/{id}/portable-verification` + `@abraxas/independent-verifier` to enforce
 
-const kit = new AbraxasPartnerKit({
-  partnerId: process.env.ABRAXAS_PARTNER_ID!,
-  policyId: process.env.ABRAXAS_POLICY_ID!,
-  environment: "sandbox",
-  applicationId: process.env.ABRAXAS_APP_ID,
-  apiKey: process.env.ABRAXAS_SANDBOX_API_KEY,
-  baseUrl: process.env.ABRAXAS_BASE_URL,
-});
+Details: [examples/external-node-partner/README.md](../../../examples/external-node-partner/README.md) and [HTTP_API.md](../../../examples/external-node-partner/HTTP_API.md).
 
-const request = await kit.createVerificationRequest({
-  returnUrl: "https://your-app.example.com/auth/abraxas/callback",
-});
-if (!request.ok) throw new Error(request.errors.join(", "));
+## Success looks like
 
-// Persist request.request_id in YOUR database, then:
-// redirect(holder, request.verification_url);
-```
+- `enforcement.action` is `permit`, `deny`, or `indeterminate` (never trust callback query params alone)
+- `cryptographically_authentic: true` on genuine receipts
+- Expired but authentic receipts → **deny**, not permit
 
-**Success:** you receive `verification_url` and `request_id`.
-
-## Step 3 — What happens next
-
-1. Holder completes wallet authorization on Abraxas (hosted UI).
-2. Your callback receives params — verify server-side with `verifyCallbackWithNarrowResult` (see [QUICKSTART](./QUICKSTART.md)).
-3. Optionally verify offline: `GET {ABRAXAS_BASE_URL}/api/receipts/{receipt_id}/portable-verification` + `@abraxas/independent-verifier` ([portable example](../../../examples/portable-relying-party/verifyPortableReceipt.ts)).
-
-## Pilot policy
-
-**Wallet control** — narrow scope: prove the holder controls the wallet; your app enforces permit / deny / indeterminate.
-
-## Reference (read when stuck)
+## Advanced documentation
 
 | Topic | Doc |
 |-------|-----|
-| Full 14-day flow | [QUICKSTART.md](./QUICKSTART.md) |
-| Demo vs Production hosts | [SANDBOX_ENVIRONMENT.md](./SANDBOX_ENVIRONMENT.md) |
-| Trust anchor install | [TRUST_ANCHOR.md](./TRUST_ANCHOR.md) |
+| Full pilot timeline | [QUICKSTART.md](./QUICKSTART.md) |
+| Env vars | [ENVIRONMENT.md](./ENVIRONMENT.md) |
+| Trust anchor | [TRUST_ANCHOR.md](./TRUST_ANCHOR.md) |
 | Errors | [ERRORS_AND_RECOVERY.md](./ERRORS_AND_RECOVERY.md) |
-| Acceptance checklist | [PILOT_ACCEPTANCE_CHECKLIST.md](./PILOT_ACCEPTANCE_CHECKLIST.md) |
+| In-repo Partner Kit (optional) | [VERIFY_WITH_ABRAXAS_QUICKSTART.md](../../VERIFY_WITH_ABRAXAS_QUICKSTART.md) |
