@@ -4,7 +4,9 @@ Place **`abraxas-independent-verifier-0.1.1.tgz`** and **`.sha256`** in this fol
 
 ## Obtain the archive (do not use monorepo paths)
 
-**After founder-approved GitHub Release:**
+**First design partner (typical):** Abraxas sends the `.tgz` and `.sha256` through a secure channel under a written evaluation agreement. Verify checksum, then place both files in this folder.
+
+**Optional — after founder-approved public GitHub Release:**
 
 ```bash
 curl -LO https://github.com/worldlabsprotocol-ux/abraxas-app/releases/download/independent-verifier-v0.1.1/abraxas-independent-verifier-0.1.1.tgz

@@ -1,6 +1,6 @@
 # Design partner pilot — founder runbook (internal)
 
-**Status:** PR #828 merged. External partner **not** yet onboarded.
+**Status:** Build #831 merged. External partner **not** yet onboarded. First activation: [FIRST_DESIGN_PARTNER_SECURE_HANDOFF.md](./FIRST_DESIGN_PARTNER_SECURE_HANDOFF.md) + [DRAFT_VERIFIER_SANDBOX_EVALUATION_AGREEMENT.md](../legal/DRAFT_VERIFIER_SANDBOX_EVALUATION_AGREEMENT.md) (legal review).
 
 ## Merge confirmation
 
@@ -28,19 +28,22 @@ Portable export **live** on Demo for reference receipt `dr_jSXuDfM_pFMT36du`. Pr
 | Single first-action quickstart | Yes (`START_HERE.md`) |
 | External developer completed pilot | **No** — pending invite |
 | Dedicated partner sandbox app + key | **Founder action** |
+| Evaluation agreement + private verifier `.tgz` | **Founder + Legal** — no public Release for single partner |
 
 ## Founder provisioning checklist (secure)
 
-1. Confirm pilot uses **Demo end-to-end** ([SANDBOX_ENVIRONMENT.md](../integration/design-partner/SANDBOX_ENVIRONMENT.md)).
-2. Create or designate **wallet-control** sandbox application on **Demo** Integration Studio.
-3. Allowlist partner **exact** HTTPS callback URL(s).
-4. Deliver via **secure channel** (one message bundle):
+1. Execute evaluation agreement after legal review ([DRAFT](../legal/DRAFT_VERIFIER_SANDBOX_EVALUATION_AGREEMENT.md)); collect partner minimum fields ([handoff doc](./FIRST_DESIGN_PARTNER_SECURE_HANDOFF.md)).
+2. Confirm pilot uses **Demo end-to-end** ([SANDBOX_ENVIRONMENT.md](../integration/design-partner/SANDBOX_ENVIRONMENT.md)).
+3. Create or designate **wallet-control** sandbox application on **Demo** Integration Studio.
+4. Allowlist partner **exact** HTTPS callback URL(s).
+5. Deliver via **secure channel** (one message bundle):
    - `abx_test_…` API key (show once)
    - `partner_id`, `policy_id`, `application_id`, `binding_id` if applicable
    - `ABRAXAS_BASE_URL=https://demo.abraxasworld.xyz`
-5. Deliver **out-of-band** Demo trust anchor JSON + fingerprint ([TRUST_ANCHOR.md](../integration/design-partner/TRUST_ANCHOR.md)); public template fingerprint `de6e0d6c…ce047`.
-6. Ask partner to run **START_HERE** Step 2; support only on blockers (export 503, allowlist, env mismatch).
-7. Record in [PILOT_ACCEPTANCE_CHECKLIST.md](../integration/design-partner/PILOT_ACCEPTANCE_CHECKLIST.md): setup time, errors, operator assists.
+6. Deliver **private** verifier `abraxas-independent-verifier-0.1.1.tgz` + SHA-256 (Build #831 artifact); partner verifies checksum before install.
+7. Deliver **out-of-band** Demo trust anchor JSON + fingerprint ([TRUST_ANCHOR.md](../integration/design-partner/TRUST_ANCHOR.md)); public template fingerprint `de6e0d6c…ce047`.
+8. Ask partner to run **START_HERE**; support only on blockers (export 503, allowlist, env mismatch).
+9. Record in [PILOT_ACCEPTANCE_CHECKLIST.md](../integration/design-partner/PILOT_ACCEPTANCE_CHECKLIST.md): setup time, errors, operator assists.
 
 ## Measurable acceptance (partner must demonstrate)
 
