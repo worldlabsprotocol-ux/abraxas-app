@@ -1,5 +1,6 @@
 // FILE: lib/persistence/boundary/issuerAuthority/buildFromRegistry.ts
 
+import { resolveReceiptKeyRuntimeEnvironment } from "@/lib/decisionReceipts/verificationKeyLifecycle/environment";
 import { loadReceiptVerificationRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/registry";
 import type { ReceiptVerificationKeyRecord } from "@/lib/decisionReceipts/verificationKeyLifecycle/contract";
 import type {
@@ -16,8 +17,7 @@ function loadStatusSignerFromEnv(env: Record<string, string | undefined>): Statu
   if (!keyId || !publicJson) return [];
   try {
     const public_jwk = JSON.parse(publicJson) as JsonWebKey;
-    const environment =
-      env.VERCEL_ENV === "production" || env.NODE_ENV === "production" ? "production" : "demo";
+    const environment = resolveReceiptKeyRuntimeEnvironment(env);
     return [
       {
         key_id: keyId,
