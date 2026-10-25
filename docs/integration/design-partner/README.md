@@ -4,7 +4,9 @@
 
 ## First action
 
-**New integrators:** [`START_HERE.md`](./START_HERE.md) — create your first verification request (wallet-control pilot).
+**External developers:** [`START_HERE.md`](./START_HERE.md) → copy [`examples/external-node-partner/`](../../../examples/external-node-partner/) (HTTP + verifier only, no `@/lib`).
+
+**Monorepo / Abraxas app consumers:** [VERIFY_WITH_ABRAXAS_QUICKSTART.md](../../VERIFY_WITH_ABRAXAS_QUICKSTART.md) (Partner Kit).
 
 **Environment:** read [`SANDBOX_ENVIRONMENT.md`](./SANDBOX_ENVIRONMENT.md) once so Demo and Production are not mixed.
 

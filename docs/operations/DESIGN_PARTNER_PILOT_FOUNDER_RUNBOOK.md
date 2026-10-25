@@ -6,7 +6,7 @@
 
 - **PR:** [#828](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/828) merged to `main`
 - **Handoff package:** `docs/integration/design-partner/`
-- **Partner first link to send:** [`docs/integration/design-partner/START_HERE.md`](../integration/design-partner/START_HERE.md) (render or PDF; no login required to read)
+- **Partner first link to send:** [`docs/integration/design-partner/START_HERE.md`](../integration/design-partner/START_HERE.md) → copy [`examples/external-node-partner/`](../../examples/external-node-partner/) (HTTP only; no `@/lib`)
 
 ## Verified sandbox URLs (2026-10-25)
 

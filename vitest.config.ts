@@ -19,6 +19,7 @@ export default defineConfig({
       "examples/integration-first-relying-party/**/*.test.ts",
       "examples/portable-relying-party/**/*.test.ts",
       "examples/design-partner-sandbox/**/*.test.ts",
+      "examples/external-node-partner/**/*.test.ts",
       "examples/good-trouble-wix/**/*.test.js",
       "packages/**/*.test.ts",
     ],
