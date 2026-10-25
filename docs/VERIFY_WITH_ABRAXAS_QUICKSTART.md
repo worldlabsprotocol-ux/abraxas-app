@@ -2,6 +2,8 @@
 
 One policy-agnostic integration primitive for relying applications. Abraxas owns the proof interaction; your application owns the customer experience.
 
+**External design partner pilot (Build #828):** start at [`docs/integration/design-partner/README.md`](./integration/design-partner/README.md) for the consolidated sandbox handoff package.
+
 **PartnerKit is source-level code in this repository** (`lib/partner/integrationKit`). It is not a published npm package yet.
 
 ## Canonical path (multi-instance safe)
