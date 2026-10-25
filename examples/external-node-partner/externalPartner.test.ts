@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { createHostedHandoff, fetchPortableVerificationBundle } from "./src/abraxasHttp.js";
 import { parseCallbackQuery } from "./src/callback.js";
 import { loadPinnedTrustAnchor, verifyPortableBundle } from "./src/verifyPortable.js";
-import { build821SyntheticFixtureSet } from "../integration-first-relying-party/syntheticFixtureFactory";
+import { loadTestFixtures } from "./fixtures/loadTestFixtures.js";
 
 describe("Build #830 external HTTP partner", () => {
   it("creates handoff via fetch without @/lib", async () => {
@@ -39,7 +39,7 @@ describe("Build #830 external HTTP partner", () => {
   });
 
   it("verifies synthetic portable bundle with wrong partner → deny/indeterminate", () => {
-    const set = build821SyntheticFixtureSet();
+    const set = loadTestFixtures();
     const pin = loadPinnedTrustAnchor(set.trust_anchor_bundle);
     const bundle = {
       decision_receipt: set.decision_receipt,
@@ -69,7 +69,7 @@ describe("Build #830 external HTTP partner", () => {
   });
 
   it("rejects wrong trust anchor fingerprint", () => {
-    const set = build821SyntheticFixtureSet();
+    const set = loadTestFixtures();
     const pin = loadPinnedTrustAnchor(set.trust_anchor_bundle);
     const bundled = { ...set.trust_anchor_bundle, public_key_fingerprint: "deadbeef".repeat(8) };
     const bundle = {

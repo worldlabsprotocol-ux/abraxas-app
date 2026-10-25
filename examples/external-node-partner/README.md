@@ -33,9 +33,10 @@ Optional: `ABRAXAS_BINDING_ID`, `CALLBACK_BASE_URL`, `PORT`.
 
 ## Verifier package
 
-In-repo: `"@abraxas/independent-verifier": "file:../../packages/abraxas-independent-verifier"`.
+1. Put `abraxas-independent-verifier-0.1.1.tgz` + checksum in **`vendor/`** ([vendor/README.md](./vendor/README.md) — GitHub Release or secure handoff).
+2. `npm install` (resolves `file:./vendor/abraxas-independent-verifier-0.1.1.tgz`).
 
-When published: `npm install @abraxas/independent-verifier` and remove the file dependency.
+This folder is copy-ready: no Abraxas monorepo layout required.
 
 ## HTTP contract
 

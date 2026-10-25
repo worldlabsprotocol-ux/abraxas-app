@@ -2,55 +2,47 @@
 
 ## What you are integrating
 
-Abraxas provides **wallet-native verification** (e.g. wallet control). Your app asks for a decision; the holder authorizes in Abraxas; you receive a **signed receipt** and enforce **permit**, **deny**, or **indeterminate** in your own code.
+Abraxas **wallet-control verification**: your app requests a decision, the holder authorizes on Abraxas, you receive a **signed receipt** and enforce **permit**, **deny**, or **indeterminate** locally.
 
-You do **not** need the Abraxas repository or `@/lib` imports.
+No Abraxas application code. No `@/lib` imports.
 
-## What you need from Abraxas (secure handoff)
+## What you need (secure handoff — not public chat)
 
-Delivered privately (never in public docs or chat):
+- Demo sandbox: API key, application id, partner id, policy id
+- Callback URL allowlisted on your sandbox app
+- **Trust anchor JSON** (issuer trust — separate from software download)
+- **Verifier tarball** `abraxas-independent-verifier-0.1.1.tgz` + SHA-256 (GitHub Release or secure channel)
 
-- `ABRAXAS_API_KEY` (`abx_test_…`)
-- `ABRAXAS_APPLICATION_ID`
-- `ABRAXAS_PARTNER_ID` and `ABRAXAS_POLICY_ID` (wallet-control sandbox)
-- Demo **trust anchor** JSON + fingerprint
-- Callback URL **allowlisted** on your sandbox app
+Host: **`https://demo.abraxasworld.xyz`** end-to-end ([SANDBOX_ENVIRONMENT.md](./SANDBOX_ENVIRONMENT.md)).
 
-Use one host for everything: **`https://demo.abraxasworld.xyz`** ([SANDBOX_ENVIRONMENT.md](./SANDBOX_ENVIRONMENT.md)).
-
-## Run the working example (first action)
+## Run the example (first action)
 
 ```bash
-cp -R examples/external-node-partner ~/my-abraxas-gate
-cd ~/my-abraxas-gate
-cp .env.example .env
-# Edit .env with your secure credentials
-cp path/to/trust-anchor.demo.json ./trust-anchor.demo.json
+# Copy only the example folder (email/zip from Abraxas, or clone and copy examples/external-node-partner)
+cd external-node-partner
+# Download release assets into vendor/ — see vendor/README.md
+cp .env.example .env    # fill from secure handoff
+cp /secure-handoff/trust-anchor.demo.json ./trust-anchor.demo.json
 npm install
 npm start
 ```
 
-Open **http://127.0.0.1:3847** → **Create verification request** → complete the holder flow → your callback shows JSON with `enforcement.action`.
+Open **http://127.0.0.1:3847** → **Create verification request** → holder flow → callback JSON with `enforcement.action`.
 
-The example uses **HTTPS only**:
+Uses **HTTPS only**: `POST /api/v1/partner-handoff`, then portable export + installed verifier.
 
-- `POST /api/v1/partner-handoff` to start
-- `GET /api/receipts/{id}/portable-verification` + `@abraxas/independent-verifier` to enforce
+## Success
 
-Details: [examples/external-node-partner/README.md](../../../examples/external-node-partner/README.md) and [HTTP_API.md](../../../examples/external-node-partner/HTTP_API.md).
+- `enforcement.action` is `permit`, `deny`, or `indeterminate`
+- Callback query params alone never grant access
+- Authentic expired receipt → **deny**
 
-## Success looks like
-
-- `enforcement.action` is `permit`, `deny`, or `indeterminate` (never trust callback query params alone)
-- `cryptographically_authentic: true` on genuine receipts
-- Expired but authentic receipts → **deny**, not permit
-
-## Advanced documentation
+## Reference
 
 | Topic | Doc |
 |-------|-----|
-| Full pilot timeline | [QUICKSTART.md](./QUICKSTART.md) |
-| Env vars | [ENVIRONMENT.md](./ENVIRONMENT.md) |
+| HTTP API | [examples/external-node-partner/HTTP_API.md](../../examples/external-node-partner/HTTP_API.md) |
+| Verifier install | [vendor/README.md](../../examples/external-node-partner/vendor/README.md) |
+| Release process (internal) | [VERIFIER_GITHUB_RELEASE.md](../../docs/operations/VERIFIER_GITHUB_RELEASE.md) |
 | Trust anchor | [TRUST_ANCHOR.md](./TRUST_ANCHOR.md) |
-| Errors | [ERRORS_AND_RECOVERY.md](./ERRORS_AND_RECOVERY.md) |
-| In-repo Partner Kit (optional) | [VERIFY_WITH_ABRAXAS_QUICKSTART.md](../../VERIFY_WITH_ABRAXAS_QUICKSTART.md) |
+| Full pilot | [QUICKSTART.md](./QUICKSTART.md) |

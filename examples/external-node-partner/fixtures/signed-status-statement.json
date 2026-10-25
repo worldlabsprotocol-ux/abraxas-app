@@ -1,0 +1,27 @@
+{
+  "payload": {
+    "document": "abraxas_signed_receipt_status_statement",
+    "schema_version": "1.0.0",
+    "receipt_id": "dr_build821_integration_synthetic",
+    "status_reference": "dr_build821_integration_synthetic",
+    "partner_id": "partner-integration-821",
+    "policy_id": "policy-age21-sandbox-821",
+    "policy_version": 1,
+    "environment": "demo",
+    "status_version": 1,
+    "supersedes_status_version": null,
+    "receipt_status": "active",
+    "superseded": false,
+    "partner_operational": true,
+    "policy_active": true,
+    "claims_current": true,
+    "evidence_current": true,
+    "effective_at": "2026-06-01T12:00:00.000Z",
+    "issued_at": "2026-06-01T12:00:00.000Z",
+    "statement_expires_at": "2030-06-01T12:00:00.000Z",
+    "status_signer_key_id": "build821-status-signer"
+  },
+  "payload_hash": "96a40ddca8f15d2e21d516b40669b4cea513f30b43da04e0cad12d220e9524da",
+  "signature": "wSdUi5CajcEYl1s0sBRbIAlIi7WCcjKrloYgI2OPMM4-mwUgtY4_2SmHXyVKJhBiyCOn1lKAMb1H1BXlDInlBg",
+  "status_signer_key_id": "build821-status-signer"
+}
