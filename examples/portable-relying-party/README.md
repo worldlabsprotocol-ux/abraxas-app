@@ -39,3 +39,26 @@ For apps already using `AbraxasPartnerKit`:
 - `loadIntegratorTrustAnchorFromEnv()` for `ABRAXAS_INTEGRATOR_TRUST_ANCHOR_JSON` / `_PATH`
 
 See `docs/integration/BUILD_826_INDEPENDENT_PARTNER_INTEGRATION_READINESS.md`.
+
+## Trust continuity (Build #827)
+
+Durable minimum signed-status floors across restarts and explicit anchor registry semantics (Partner Kit or standalone file checkpoint):
+
+| Step | Action |
+|------|--------|
+| 1 | Pin or registry JSON out-of-band |
+| 2 | Treat callback `receipt_id` as handle only |
+| 3 | Fetch portable bundle once |
+| 4 | Verify with `@abraxas/independent-verifier` + checkpoint floors |
+| 5 | Commit checkpoint when status evidence is authentic |
+| 6 | `permit` / `deny` / `indeterminate` |
+| 7 | Follow `next_actions` on failure (rotation, stale status, corruption) |
+
+```bash
+export RP_CHECKPOINT_PATH=examples/portable-relying-party/checkpoints.demo.json
+npx tsx examples/portable-relying-party/verifyWithContinuity.ts dr_jSXuDfM_pFMT36du
+```
+
+Partner Kit: `enforcePortableVerificationWithTrustContinuity`, `ABRAXAS_INTEGRATOR_TRUST_REGISTRY_PATH`, `statusCheckpointStore` option.
+
+See `docs/integration/BUILD_827_PARTNER_TRUST_CONTINUITY.md`.

@@ -35,6 +35,27 @@ export {
   parseIntegratorTrustAnchorJson,
 } from "@/lib/partner/integrationKit/trustAnchorPinConfig";
 export {
+  applyAuthorizedAnchorRotation,
+  distrustAnchorFingerprint,
+  resolveTrustedAnchorForBundledExport,
+  validateIntegratorTrustRegistry,
+  verifyAnchorRotationAuthorization,
+  type IntegratorTrustAnchorRegistryV1,
+} from "@/lib/partner/integrationKit/trustContinuity/integratorAnchorRegistry";
+export {
+  FilePartnerStatusCheckpointStore,
+  InMemoryPartnerStatusCheckpointStore,
+  checkpointRecoveryGuidance,
+  type PartnerStatusCheckpointStore,
+  type PersistedStatusCheckpoint,
+} from "@/lib/partner/integrationKit/trustContinuity/statusCheckpointStore";
+export { enforcePortableVerificationWithTrustContinuity } from "@/lib/partner/integrationKit/trustContinuity/enforcePortableWithContinuity";
+export {
+  loadIntegratorTrustRegistryFromEnv,
+  parseIntegratorTrustRegistryJson,
+} from "@/lib/partner/integrationKit/trustContinuity/trustRegistryConfig";
+export { partnerSafeNextActions } from "@/lib/partner/integrationKit/trustContinuity/partnerSafeNextActions";
+export {
   resolvePolicyIntegrationCapabilities,
   validateVerificationRequestCapabilities,
   type PolicyIntegrationCapabilities,
