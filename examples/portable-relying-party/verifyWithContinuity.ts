@@ -173,12 +173,12 @@ async function main() {
     }
   }
 
-  const failure_codes = [
-    ...new Set([
+  const failure_codes = Array.from(
+    new Set([
       ...verified.failure_codes,
       ...(checkpointResult.ok === false ? [checkpointResult.reason] : []),
     ]),
-  ];
+  );
   const enforcement =
     checkpointResult.ok === false && verified.status_evidence_authentic
       ? { action: "indeterminate" as const, failure_codes }
