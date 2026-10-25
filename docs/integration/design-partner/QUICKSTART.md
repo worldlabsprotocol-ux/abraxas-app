@@ -8,7 +8,7 @@
 
 ## Day 1–2 — Enrollment and trust
 
-1. **Sandbox application** — Sign in at [Integration Studio](https://abraxasworld.xyz/developers/integration-studio) (or Launchpad). Create a sandbox integration; record `partner_id`, `policy_id`, `application_id`, `binding_id`, and the one-time API key.
+1. **Sandbox application** — Sign in at [Integration Studio on Demo](https://demo.abraxasworld.xyz/developers/integration-studio) for the pilot ([SANDBOX_ENVIRONMENT.md](./SANDBOX_ENVIRONMENT.md)). Create a sandbox integration; record `partner_id`, `policy_id`, `application_id`, `binding_id`, and the one-time API key (secure channel only).
 2. **Callback allowlist** — Add your exact callback URL on the application (Abraxas ops/founder step if self-serve UI is blocked).
 3. **Trust anchor** — Install Demo or sandbox anchor JSON out-of-band ([TRUST_ANCHOR.md](./TRUST_ANCHOR.md)). Template: `examples/portable-relying-party/trust-config.demo.template.json`.
 4. **Optional registry** — For rotation overlap later, use `IntegratorTrustAnchorRegistryV1` ([BUILD #827](../BUILD_827_PARTNER_TRUST_CONTINUITY.md)).
