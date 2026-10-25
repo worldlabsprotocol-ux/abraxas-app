@@ -21,19 +21,33 @@
 - Public API: [PUBLIC_API.md](../../packages/abraxas-independent-verifier/PUBLIC_API.md)
 - Install: [DISTRIBUTION.md](../../packages/abraxas-independent-verifier/DISTRIBUTION.md)
 
-## 4. External example
+## 4. External example (self-contained)
 
-`examples/external-node-partner` depends on `file:../../artifacts/npm/abraxas-independent-verifier-0.1.1.tgz`.
+`examples/external-node-partner` depends on `file:./vendor/abraxas-independent-verifier-0.1.1.tgz`. Partners copy the example folder (including `vendor/`) or download the tarball from a versioned GitHub Release — no monorepo layout required.
 
-## 5. Founder approval for npm
+## 5. Self-contained proof
 
-Before `npm publish`:
+`examples/external-node-partner/vendor/` holds the tarball; dependency is `file:./vendor/...` — copy the example folder alone.
 
-- Confirm `@abraxas` scope ownership on npm
-- License / legal review (`UNLICENSED` today)
-- Release signing and CI publish workflow
+Proof: `scripts/build831/prove-self-contained-example.sh`
 
-## 6. Remaining blockers to external invite
+## 6. GitHub Release (founder-gated)
 
+Procedure: [VERIFIER_GITHUB_RELEASE.md](../operations/VERIFIER_GITHUB_RELEASE.md)
+
+**Not published by automation** until license and release permissions are approved.
+
+## 7. Founder decisions before first invite
+
+| Decision | Status |
+|----------|--------|
+| Distribution license (`UNLICENSED` → approved terms) | **Pending** |
+| GitHub Release `independent-verifier-v0.1.1` | **Prepared, not published** |
+| npm `@abraxas` publish | **Disabled** |
+| Demo sandbox credentials + anchor OOB | **Pending** |
+
+## 8. Remaining blockers to external invite
+
+- Legal approval for tarball redistribution
+- Published GitHub Release URL (or secure tarball handoff)
 - Live sandbox credentials + callback allowlist (ops)
-- Optional: attach tarball to GitHub Release for partners who do not clone the repo

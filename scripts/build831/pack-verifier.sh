@@ -17,5 +17,7 @@ Tgz=$(ls -1 "$OUT"/abraxas-independent-verifier-*.tgz | sort -V | tail -1)
   shasum -a 256 "$(basename "$Tgz")" > "$(basename "$Tgz").sha256"
 )
 
+bash "$ROOT/scripts/build831/sync-vendor-tarball.sh"
+
 echo "Packed: $Tgz"
 cat "$Tgz.sha256"

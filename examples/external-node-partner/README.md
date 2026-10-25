@@ -33,15 +33,10 @@ Optional: `ABRAXAS_BINDING_ID`, `CALLBACK_BASE_URL`, `PORT`.
 
 ## Verifier package
 
-Install from the **versioned tarball** (no Abraxas app source required):
+1. Put `abraxas-independent-verifier-0.1.1.tgz` + checksum in **`vendor/`** ([vendor/README.md](./vendor/README.md) — GitHub Release or secure handoff).
+2. `npm install` (resolves `file:./vendor/abraxas-independent-verifier-0.1.1.tgz`).
 
-```bash
-npm install ../../artifacts/npm/abraxas-independent-verifier-0.1.1.tgz
-```
-
-Verify integrity: `shasum -a 256 -c ../../artifacts/npm/abraxas-independent-verifier-0.1.1.tgz.sha256`
-
-After founder-approved npm publish: `npm install @abraxas/independent-verifier@0.1.1`.
+This folder is copy-ready: no Abraxas monorepo layout required.
 
 ## HTTP contract
 
