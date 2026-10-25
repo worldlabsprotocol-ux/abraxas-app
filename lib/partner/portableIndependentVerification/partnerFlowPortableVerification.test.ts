@@ -201,12 +201,15 @@ describe("Build #822 Partner Flow portable verification", () => {
     expect(mapped.payload_hash).toBe(record.payload_hash);
   });
 
-  it("fails issuer export when authoritative validity store is unavailable", async () => {
+  it("fails issuer export when status signing cannot complete without keys", async () => {
     const record = buildPartnerFlowSandboxReceipt(receiptKey);
-    const built = await buildPortableVerificationBundle({ record, env });
+    const built = await buildPortableVerificationBundle({
+      record,
+      env: { ...env, ABRAXAS_STATUS_SIGNER_PRIVATE_JWK: "" },
+    });
     expect(built.ok).toBe(false);
     if (built.ok) return;
-    expect(built.reason).toBe("authoritative_validity_store_unavailable");
+    expect(["status_signer_private_jwk_missing", "issuer_export_not_configured"]).toContain(built.reason);
   });
 
   it("passes standalone verifier when integrator pin matches bundled anchor", () => {

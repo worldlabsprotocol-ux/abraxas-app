@@ -11,7 +11,7 @@ import {
   type SignedReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
 import type { SovereignCurrentValidityResult } from "../sovereignCurrentValidity/evaluate";
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { nextSignedStatusVersion } from "./statusVersionCheckpoint";
 
 const DEFAULT_TTL_SECONDS = 300;
 
@@ -29,23 +29,6 @@ function statusSignerKeyId(env: Record<string, string | undefined>): string {
   return env.ABRAXAS_STATUS_SIGNER_KEY_ID?.trim() ?? "abraxas-status-signer";
 }
 
-async function nextStatusVersion(
-  receiptId: string,
-  env: Record<string, string | undefined>,
-): Promise<number | { error: string }> {
-  const bump = await querySovereignStagingPg<{ status_version: number }>(
-    `insert into public.sovereign_receipt_status_checkpoints (receipt_id, status_version)
-     values ($1, 1)
-     on conflict (receipt_id) do update
-       set status_version = public.sovereign_receipt_status_checkpoints.status_version + 1
-     returning status_version`,
-    [receiptId],
-    env,
-  );
-  if ("error" in bump) return { error: bump.error };
-  return bump.rows[0]?.status_version ?? 1;
-}
-
 export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   record: DecisionReceiptRecord;
   evaluation: SovereignCurrentValidityResult;
@@ -60,7 +43,15 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   const privateJwk = loadStatusSignerPrivateJwk(env);
   if (!privateJwk) return { ok: false, reason: "status_signer_private_jwk_missing" };
 
-  const version = await nextStatusVersion(input.record.id, env);
+  const version = await nextSignedStatusVersion({
+    receiptId: input.record.id,
+    env,
+    operationalFallback: {
+      checkedAt: input.evaluation.checked_at,
+      lifecycleStatus: input.evaluation.lifecycle_status,
+      invalidationReasons: input.evaluation.invalidation_reasons,
+    },
+  });
   if (typeof version !== "number") return { ok: false, reason: version.error };
 
   const stored = resolveReceiptStatus(input.record);

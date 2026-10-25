@@ -18,7 +18,7 @@ Production deployments without issuer export env return **503** `issuer_export_n
 
 - `lib/partner/portableIndependentVerification/` — assess readiness, build bundle, verify
 - `GET /api/receipts/{receiptId}/portable-verification` — JSON bundle for partners
-- `AbraxasPartnerKit.fetchPortableVerificationBundle` / `verifyReceiptWithStandaloneVerifier`
+- `AbraxasPartnerKit.fetchPortableVerificationBundle` / `verifyReceiptWithStandaloneVerifier` (requires `integratorPinnedTrustAnchor` — see Build #823)
 
 Issuance path unchanged; export is additive.
 
