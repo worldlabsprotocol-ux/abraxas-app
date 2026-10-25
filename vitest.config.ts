@@ -18,6 +18,7 @@ export default defineConfig({
       "examples/partner-access-nextjs-starter/**/*.test.ts",
       "examples/integration-first-relying-party/**/*.test.ts",
       "examples/portable-relying-party/**/*.test.ts",
+      "examples/design-partner-sandbox/**/*.test.ts",
       "examples/good-trouble-wix/**/*.test.js",
       "packages/**/*.test.ts",
     ],
