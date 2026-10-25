@@ -87,7 +87,7 @@ Documentation + test script only; CI via standard `typescript-validation` and ex
 | Integration steps (hosted + portable) | ≤ 12 documented | 12 in QUICKSTART |
 | Time to first independent verify | Partner Day 6–8 | Synthetic: sub-second in vitest |
 | Runtime deps for verify | Node + verifier only | Confirmed |
-| Permit/deny/indeterminate | Explicit | 14+ automated tests |
+| Permit/deny/indeterminate | Explicit | 20 automated tests |
 | Stale status rejection | Required | adversarial + integration-first |
 | Checkpoint after restart | Required | file store test (#827) |
 
