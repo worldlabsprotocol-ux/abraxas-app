@@ -26,6 +26,15 @@ export {
   type PartnerKitSafeResult,
 } from "@/lib/partner/integrationKit/client";
 export {
+  classifyStandalonePortableVerification,
+  type StandalonePortableAction,
+  type StandalonePortableEnforcement,
+} from "@/lib/partner/integrationKit/standalonePortableOutcome";
+export {
+  loadIntegratorTrustAnchorFromEnv,
+  parseIntegratorTrustAnchorJson,
+} from "@/lib/partner/integrationKit/trustAnchorPinConfig";
+export {
   resolvePolicyIntegrationCapabilities,
   validateVerificationRequestCapabilities,
   type PolicyIntegrationCapabilities,

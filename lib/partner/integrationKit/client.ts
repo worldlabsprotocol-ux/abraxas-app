@@ -501,30 +501,51 @@ export class AbraxasPartnerKit {
     currently_acceptable: "yes" | "no" | "indeterminate";
     failure_codes: string[];
   }> {
+    const enforced = await this.enforceStandalonePortableVerification(receiptId);
+    return {
+      ok: enforced.action === "permit",
+      currently_acceptable: enforced.currently_acceptable,
+      failure_codes: enforced.failure_codes,
+    };
+  }
+
+  /**
+   * Fetch portable bundle, verify offline with integrator pin, return explicit permit / deny / indeterminate.
+   * Indeterminate is never treated as permit (network, pin, stale status, or unauthenticated trust).
+   */
+  async enforceStandalonePortableVerification(
+    receiptId: string,
+    options?: {
+      statementObservedAt?: string;
+      minimumStatusVersion?: number;
+      now?: Date;
+    },
+  ): Promise<import("@/lib/partner/integrationKit/standalonePortableOutcome").StandalonePortableEnforcement> {
+    const { classifyStandalonePortableVerification } = await import(
+      "@/lib/partner/integrationKit/standalonePortableOutcome"
+    );
     const fetched = await this.fetchPortableVerificationBundle(receiptId);
     if (!fetched.ok) {
-      return { ok: false, currently_acceptable: "indeterminate", failure_codes: fetched.errors };
+      return classifyStandalonePortableVerification({ fetchErrors: fetched.errors, pinConfigured: false });
     }
     const pin = this.options.integratorPinnedTrustAnchor;
     if (!pin) {
-      return {
-        ok: false,
-        currently_acceptable: "indeterminate",
-        failure_codes: ["integrator_trust_anchor_pin_required"],
-      };
+      return classifyStandalonePortableVerification({ pinConfigured: false });
     }
     const { verifyPortableBundle } = await import("@/lib/partner/portableIndependentVerification");
-    const result = verifyPortableBundle({
+    const verification = verifyPortableBundle({
       bundle: fetched.bundle,
       integratorPinnedTrustAnchor: pin,
       partnerId: this.options.partnerId,
       policyId: this.options.policyId,
+      statementObservedAt: options?.statementObservedAt,
+      minimumStatusVersion: options?.minimumStatusVersion,
+      now: options?.now,
     });
-    return {
-      ok: result.currently_acceptable === "yes",
-      currently_acceptable: result.currently_acceptable,
-      failure_codes: result.failure_codes,
-    };
+    return classifyStandalonePortableVerification({
+      pinConfigured: true,
+      verification,
+    });
   }
 
   async verifyEligibilityPresentation(
