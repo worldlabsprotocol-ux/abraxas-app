@@ -16,6 +16,7 @@ export function verifyPortableBundle(input: {
   policyId: string;
   statementObservedAt?: string;
   minimumStatusVersion?: number;
+  minimumRegistryVersion?: number;
   now?: Date;
 }): IndependentVerificationResult {
   const bundled =
@@ -60,7 +61,9 @@ export function verifyPortableBundle(input: {
     },
     statementObservedAt: input.statementObservedAt ?? new Date().toISOString(),
     minimumStatusVersion: input.minimumStatusVersion,
-    minimumRegistryVersion: input.bundle.registry_version > 1 ? input.bundle.registry_version - 1 : undefined,
+    minimumRegistryVersion:
+      input.minimumRegistryVersion
+      ?? (input.bundle.registry_version > 1 ? input.bundle.registry_version - 1 : undefined),
     now: input.now,
   });
 }

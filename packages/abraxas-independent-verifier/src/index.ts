@@ -6,3 +6,4 @@ export * from "./issuerAuthorityStatement";
 export * from "./receiptVerify";
 export * from "./verifyIndependent";
 export * from "./signedReceiptStatusStatement";
+export { verifyEd25519Detached } from "./crypto";

@@ -58,6 +58,10 @@ export interface AbraxasPartnerKitOptions {
    * Required for standalone portable verification — bundle anchors are informational only.
    */
   integratorPinnedTrustAnchor?: import("@abraxas/independent-verifier").TrustAnchorBundleV1;
+  /** Build #827 — multi-anchor registry with rotation overlap / distrust (preferred over single pin). */
+  integratorTrustAnchorRegistry?: import("@/lib/partner/integrationKit/trustContinuity/integratorAnchorRegistry").IntegratorTrustAnchorRegistryV1;
+  /** Build #827 — durable partner-side status/registry checkpoint store. */
+  statusCheckpointStore?: import("@/lib/partner/integrationKit/trustContinuity/statusCheckpointStore").PartnerStatusCheckpointStore;
 }
 
 export interface PartnerKitSafeResult {
@@ -545,6 +549,53 @@ export class AbraxasPartnerKit {
     return classifyStandalonePortableVerification({
       pinConfigured: true,
       verification,
+    });
+  }
+
+  /**
+   * Portable verification with partner trust continuity (anchor registry + durable checkpoints).
+   */
+  async enforcePortableVerificationWithTrustContinuity(
+    receiptId: string,
+    options?: {
+      statementObservedAt?: string;
+      now?: Date;
+    },
+  ): Promise<
+    import("@/lib/partner/integrationKit/trustContinuity/enforcePortableWithContinuity").PortableContinuityEnforcement
+  > {
+    const fetched = await this.fetchPortableVerificationBundle(receiptId);
+    const { enforcePortableVerificationWithTrustContinuity } = await import(
+      "@/lib/partner/integrationKit/trustContinuity/enforcePortableWithContinuity"
+    );
+    const { classifyStandalonePortableVerification } = await import(
+      "@/lib/partner/integrationKit/standalonePortableOutcome"
+    );
+    const { partnerSafeNextActions } = await import(
+      "@/lib/partner/integrationKit/trustContinuity/partnerSafeNextActions"
+    );
+
+    if (!fetched.ok) {
+      const base = classifyStandalonePortableVerification({
+        fetchErrors: fetched.errors,
+        pinConfigured: false,
+      });
+      return {
+        ...base,
+        checkpoint: { ok: "skipped", reason: "fetch_failed" },
+        next_actions: partnerSafeNextActions(base.failure_codes),
+      };
+    }
+
+    return enforcePortableVerificationWithTrustContinuity({
+      bundle: fetched.bundle,
+      partnerId: this.options.partnerId,
+      policyId: this.options.policyId,
+      legacyPin: this.options.integratorPinnedTrustAnchor,
+      registry: this.options.integratorTrustAnchorRegistry,
+      checkpointStore: this.options.statusCheckpointStore,
+      statementObservedAt: options?.statementObservedAt,
+      now: options?.now,
     });
   }
 
