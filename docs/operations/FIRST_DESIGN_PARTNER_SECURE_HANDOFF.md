@@ -2,7 +2,9 @@
 
 **Build #831 complete.** Use Demo only. **No** public GitHub Release, **no** npm publish, **no** Production DB or billing for this pilot.
 
-**Partner-facing entry (single link):** [`docs/integration/design-partner/START_HERE.md`](../integration/design-partner/START_HERE.md)
+**Partner-facing entry (single link):** [`docs/integration/design-partner/START_HERE.md`](../integration/design-partner/START_HERE.md) — technical only; keep separate from the signed evaluation agreement.
+
+**Candidate selection (internal):** [`DESIGN_PARTNER_CANDIDATE_EVALUATION.md`](./DESIGN_PARTNER_CANDIDATE_EVALUATION.md)
 
 **Developer assignment (copy to partner after handoff):**
 

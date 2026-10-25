@@ -1,4 +1,6 @@
-# 14-day sandbox pilot — acceptance checklist
+# Sandbox pilot — acceptance checklist
+
+**Schedule note:** Day ranges below are an **engineering friction target** (~two weeks), not a contractual deadline. The evaluation agreement’s **Evaluation period** (legal) is separate — see internal handoff docs.
 
 Copy this table into your partner runbook. Mark **Measured** only with evidence (timestamp, receipt id, log excerpt).
 
