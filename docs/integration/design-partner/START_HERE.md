@@ -21,14 +21,16 @@ Use one host for everything: **`https://demo.abraxasworld.xyz`** ([SANDBOX_ENVIR
 ## Run the working example (first action)
 
 ```bash
-cp -R examples/external-node-partner ~/my-abraxas-gate
-cd ~/my-abraxas-gate
-cp .env.example .env
-# Edit .env with your secure credentials
-cp path/to/trust-anchor.demo.json ./trust-anchor.demo.json
-npm install
+# Option A — clone only to copy the example + verifier tarball
+git clone https://github.com/worldlabsprotocol-ux/abraxas-app.git
+cd abraxas-app/examples/external-node-partner
+cp .env.example .env   # fill from secure handoff
+cp ../portable-relying-party/trust-config.demo.template.json ./trust-anchor.demo.json
+npm install            # installs @abraxas/independent-verifier from artifacts/npm/*.tgz
 npm start
 ```
+
+Option B — without full clone: obtain `abraxas-independent-verifier-0.1.1.tgz` + checksum from your Abraxas contact, `npm install ./abraxas-independent-verifier-0.1.1.tgz`, and copy `examples/external-node-partner` source from the release tag.
 
 Open **http://127.0.0.1:3847** → **Create verification request** → complete the holder flow → your callback shows JSON with `enforcement.action`.
 

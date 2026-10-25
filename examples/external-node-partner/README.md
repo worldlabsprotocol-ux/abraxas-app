@@ -33,9 +33,15 @@ Optional: `ABRAXAS_BINDING_ID`, `CALLBACK_BASE_URL`, `PORT`.
 
 ## Verifier package
 
-In-repo: `"@abraxas/independent-verifier": "file:../../packages/abraxas-independent-verifier"`.
+Install from the **versioned tarball** (no Abraxas app source required):
 
-When published: `npm install @abraxas/independent-verifier` and remove the file dependency.
+```bash
+npm install ../../artifacts/npm/abraxas-independent-verifier-0.1.1.tgz
+```
+
+Verify integrity: `shasum -a 256 -c ../../artifacts/npm/abraxas-independent-verifier-0.1.1.tgz.sha256`
+
+After founder-approved npm publish: `npm install @abraxas/independent-verifier@0.1.1`.
 
 ## HTTP contract
 
