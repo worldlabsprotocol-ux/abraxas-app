@@ -73,9 +73,41 @@ async function main() {
 
   report.standalone_verifier = {
     cryptographically_authentic: verified.cryptographically_authentic,
+    issuer_currently_authorized: verified.issuer_currently_authorized,
     status_evidence_authentic: verified.status_evidence_authentic,
+    policy_and_audience_match: verified.policy_and_audience_match,
     currently_acceptable: verified.currently_acceptable,
     failure_codes: verified.failure_codes,
+    required_abraxas_api_at_verify_time: false,
+  };
+
+  const wrongPin = {
+    ...integratorPinnedTrustAnchor,
+    public_jwk: { ...integratorPinnedTrustAnchor.public_jwk, x: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" },
+  };
+  const wrongPinResult = verifyPortableBundle({
+    bundle: body.bundle,
+    integratorPinnedTrustAnchor: wrongPin,
+    partnerId: BUILD823_DEMO_PARTNER_ID,
+    policyId: BUILD823_DEMO_POLICY_ID,
+    now: new Date(),
+  });
+  report.wrong_integrator_pin = {
+    cryptographically_authentic: wrongPinResult.cryptographically_authentic,
+    failure_codes: wrongPinResult.failure_codes,
+  };
+
+  const wrongAudience = verifyPortableBundle({
+    bundle: body.bundle,
+    integratorPinnedTrustAnchor,
+    partnerId: "wrong-partner-id",
+    policyId: BUILD823_DEMO_POLICY_ID,
+    now: new Date(),
+  });
+  report.wrong_audience = {
+    policy_and_audience_match: wrongAudience.policy_and_audience_match,
+    currently_acceptable: wrongAudience.currently_acceptable,
+    failure_codes: wrongAudience.failure_codes,
   };
 
   console.log(JSON.stringify(report, null, 2));
