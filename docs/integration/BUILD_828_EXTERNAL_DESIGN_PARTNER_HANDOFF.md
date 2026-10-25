@@ -4,7 +4,8 @@
 
 ## 1. Canonical partner integration entry point
 
-**`docs/integration/design-partner/README.md`**
+**Partner sends:** [`docs/integration/design-partner/START_HERE.md`](./design-partner/START_HERE.md)  
+**Index:** [`docs/integration/design-partner/README.md`](./design-partner/README.md)
 
 Single route:
 
