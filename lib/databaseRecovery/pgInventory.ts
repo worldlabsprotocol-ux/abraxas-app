@@ -7,7 +7,7 @@ export interface PgQueryable {
   query<T = unknown>(sql: string): Promise<{ rows: T[] }>;
 }
 
-const INVENTORY_TABLES = [
+const FULL_INVENTORY_TABLES = [
   "identity_verifications",
   "identity_verification_events",
   "abraxas_credentials",
@@ -29,13 +29,47 @@ const INVENTORY_TABLES = [
   "audit_events",
 ] as const;
 
-export async function probeRecoveryInventoryReady(client: PgQueryable): Promise<boolean> {
-  const list = INVENTORY_TABLES.map((t) => `'${t}'`).join(", ");
+/** Live Demo partner DB (`ocntwbxarpjeixdnzide`) — subset verified 2026-10-26. Full pg_dump still captures all public objects. */
+export const DEMO_PARTNER_INVENTORY_TABLES = [
+  "identity_verifications",
+  "identity_verification_events",
+  "abraxas_credentials",
+  "credential_claims",
+  "passport_holder_subjects",
+  "passport_holder_wallet_accounts",
+  "passport_holder_legacy_links",
+  "sui_zklogin_identities",
+  "decision_receipts",
+  "audit_events",
+] as const;
+
+export type RecoveryInventoryProfile = "full" | "demo_partner";
+
+export function resolveRecoveryInventoryProfile(
+  env: Record<string, string | undefined> = process.env,
+): RecoveryInventoryProfile {
+  const explicit = env.ABRAXAS_BACKUP_INVENTORY_PROFILE?.trim();
+  if (explicit === "demo_partner" || explicit === "full") return explicit;
+  const demoRef = env.DEMO_SUPABASE_PROJECT_REF?.trim();
+  if (demoRef === "ocntwbxarpjeixdnzide") return "demo_partner";
+  return "full";
+}
+
+function inventoryTablesForProfile(profile: RecoveryInventoryProfile): readonly string[] {
+  return profile === "demo_partner" ? DEMO_PARTNER_INVENTORY_TABLES : FULL_INVENTORY_TABLES;
+}
+
+export async function probeRecoveryInventoryReady(
+  client: PgQueryable,
+  profile: RecoveryInventoryProfile = "full",
+): Promise<boolean> {
+  const tables = inventoryTablesForProfile(profile);
+  const list = tables.map((t) => `'${t}'`).join(", ");
   const result = await client.query<{ n: string }>(`
     select count(*)::text as n from information_schema.tables
     where table_schema = 'public' and table_name in (${list});
   `);
-  return result.rows[0]?.n === String(INVENTORY_TABLES.length);
+  return result.rows[0]?.n === String(tables.length);
 }
 
 export async function fetchRecoveryInventory(client: PgQueryable): Promise<RecoveryInventoryRow[]> {

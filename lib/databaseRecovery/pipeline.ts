@@ -17,6 +17,7 @@ import {
   fetchRecoveryInventory,
   fetchSupabaseMigrationVersions,
   probeRecoveryInventoryReady,
+  resolveRecoveryInventoryProfile,
 } from "./pgInventory";
 import type { PgQueryable } from "./pgInventory";
 import { assertManifestArtifactBinding, assertManifestBackupIdentity } from "./manifestGuard";
@@ -49,7 +50,7 @@ export async function collectBackupSnapshot(client: PgQueryable): Promise<{
 export function runPgDump(
   sourceUrl: string,
   dumpPath: string,
-  options?: { serializableDeferrable?: boolean },
+  options?: { serializableDeferrable?: boolean; env?: Record<string, string | undefined> },
 ): void {
   const args = [
     "--dbname",
@@ -63,24 +64,45 @@ export function runPgDump(
   if (options?.serializableDeferrable) {
     args.push("--serializable-deferrable");
   }
+  const dockerImage = options?.env?.ABRAXAS_PG_DUMP_DOCKER?.trim();
+  if (dockerImage) {
+    execFileSync(
+      "docker",
+      ["run", "--rm", "-i", "--network", "host", dockerImage, "pg_dump", ...args],
+      { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
+    );
+    return;
+  }
   execFileSync("pg_dump", args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
 }
 
-export async function assertBackupSourceReady(client: PgQueryable): Promise<void> {
-  const ready = await probeRecoveryInventoryReady(client);
+export async function assertBackupSourceReady(
+  client: PgQueryable,
+  env: Record<string, string | undefined> = process.env,
+): Promise<void> {
+  const profile = resolveRecoveryInventoryProfile(env);
+  const ready = await probeRecoveryInventoryReady(client, profile);
   if (!ready) {
     throw new Error(
-      "backup source is missing required recovery inventory tables — pg_dump would not be verifiable",
+      `backup source is missing required recovery inventory tables (profile=${profile}) — pg_dump would not be verifiable`,
     );
   }
 }
 
-export function runPgRestore(restoreUrl: string, dumpPath: string): void {
-  execFileSync(
-    "pg_restore",
-    ["--dbname", restoreUrl, "--clean", "--if-exists", "--no-owner", "--no-acl", dumpPath],
-    { stdio: "inherit" },
-  );
+export function runPgRestore(
+  restoreUrl: string,
+  dumpPath: string,
+  env: Record<string, string | undefined> = process.env,
+): void {
+  const args = ["--dbname", restoreUrl, "--clean", "--if-exists", "--no-owner", "--no-acl", dumpPath];
+  const dockerImage = env.ABRAXAS_PG_DUMP_DOCKER?.trim();
+  if (dockerImage) {
+    execFileSync("docker", ["run", "--rm", "-i", "--network", "host", dockerImage, "pg_restore", ...args], {
+      stdio: "inherit",
+    });
+    return;
+  }
+  execFileSync("pg_restore", args, { stdio: "inherit" });
 }
 
 export function writeEncryptedBackupArtifact(params: {
@@ -188,7 +210,7 @@ export function restoreFromManifestFile(
   const { manifest, plaintext } = loadAndDecryptBackup(manifestPath, keyRaw, env);
   const tmpDump = `/tmp/abraxas-restore-${Date.now()}.dump`;
   writeFileSync(tmpDump, plaintext);
-  runPgRestore(restoreUrl, tmpDump);
+  runPgRestore(restoreUrl, tmpDump, env);
   return { tmpDump, manifest };
 }
 

@@ -44,7 +44,7 @@ async function main(): Promise<void> {
 
   const client = await createDemoPgClient({ databaseUrl, env });
   try {
-    await assertBackupSourceReady(client);
+    await assertBackupSourceReady(client, env);
     const snapshot = await collectBackupSnapshot(client);
 
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -56,7 +56,7 @@ async function main(): Promise<void> {
         : databaseUrl;
 
     const serializableDeferrable = env.ABRAXAS_BACKUP_SERIALIZABLE_DEFERRABLE?.trim() === "1";
-    runPgDump(conn, dumpPath, { serializableDeferrable });
+    runPgDump(conn, dumpPath, { serializableDeferrable, env });
     const plain = readFileSync(dumpPath);
     rmSync(dumpPath, { force: true });
 

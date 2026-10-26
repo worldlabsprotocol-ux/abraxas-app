@@ -3,6 +3,10 @@ import { decryptBackupCiphertext, encryptBackupPlaintext, parseBackupEncryptionK
 import { hashIntegrity, hashInventory } from "./fingerprints";
 import { assertDisposableRestoreTarget } from "./guard";
 import { pruneBackupArtifacts } from "./retention";
+import {
+  DEMO_PARTNER_INVENTORY_TABLES,
+  resolveRecoveryInventoryProfile,
+} from "./pgInventory";
 import { mkdtempSync, writeFileSync, existsSync, rmSync, utimesSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -58,6 +62,21 @@ describe("databaseRecovery retention", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("databaseRecovery inventory profile", () => {
+  it("selects demo_partner profile for ocntwbxarpjeixdnzide", () => {
+    expect(
+      resolveRecoveryInventoryProfile({
+        DEMO_SUPABASE_PROJECT_REF: "ocntwbxarpjeixdnzide",
+      }),
+    ).toBe("demo_partner");
+    expect(DEMO_PARTNER_INVENTORY_TABLES).toContain("decision_receipts");
+  });
+
+  it("defaults to full profile for unknown refs", () => {
+    expect(resolveRecoveryInventoryProfile({ DEMO_SUPABASE_PROJECT_REF: "other" })).toBe("full");
   });
 });
 
