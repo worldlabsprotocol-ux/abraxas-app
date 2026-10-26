@@ -9,6 +9,13 @@ import {
   StagedIssuanceUnavailableError,
 } from "@/lib/decisionReceipts/issuanceSchemaCapability.server";
 import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
+import {
+  finalizePendingV11ReceiptCryptographic,
+} from "@/lib/decisionReceipts/v1_1_0/finalizePending.server";
+import {
+  resolveAuthoritativeApplicationIdForIssuance,
+} from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
 
 export class IssuanceLifecycleError extends Error {
   constructor(
@@ -24,6 +31,24 @@ export class IssuanceLifecycleError extends Error {
   }
 }
 
+async function resolveLaunchpadApplicationIdForReceipt(
+  record: DecisionReceiptRecord,
+): Promise<string | null> {
+  const sb = requireSupabaseAdmin();
+  const { data: decision } = await sb
+    .from("verification_decisions")
+    .select("request_id")
+    .eq("id", record.verification_decision_id)
+    .maybeSingle();
+  if (!decision?.request_id) return null;
+  const { data: request } = await sb
+    .from("verification_requests")
+    .select("launchpad_application_id")
+    .eq("id", decision.request_id as string)
+    .maybeSingle();
+  return (request?.launchpad_application_id as string | null) ?? null;
+}
+
 async function mapUpdatedReceipt(receiptId: string): Promise<DecisionReceiptRecord> {
   const record = await getReceiptById(receiptId);
   if (!record) throw new IssuanceLifecycleError("receipt_not_found", "receipt_not_found");
@@ -36,6 +61,26 @@ export async function activateDecisionReceiptIssuance(receiptId: string): Promis
   if (!capability.stagedIssuanceEnabled) {
     throw new StagedIssuanceUnavailableError("staged_issuance_activation_unavailable");
   }
+
+  const pending = await getReceiptById(receiptId);
+  if (!pending) {
+    throw new IssuanceLifecycleError("receipt_not_found", "receipt_not_found");
+  }
+
+  if (pending.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const authoritativeAppId = await resolveLaunchpadApplicationIdForReceipt(pending);
+    const appScope = await resolveAuthoritativeApplicationIdForIssuance({
+      verificationDecisionId: pending.verification_decision_id,
+      partnerId: pending.partner_id,
+      callerApplicationId: authoritativeAppId,
+    });
+    return finalizePendingV11ReceiptCryptographic({
+      receiptId,
+      applicationId: appScope.applicationId,
+      applicationScopeRequired: appScope.applicationScopeRequired,
+    });
+  }
+
   const sb = requireSupabaseAdmin();
   const finalizedAt = new Date().toISOString();
   const { data, error } = await sb
@@ -59,6 +104,7 @@ export async function activateDecisionReceiptIssuance(receiptId: string): Promis
     }
     throw new IssuanceLifecycleError("receipt_not_pending", "receipt_not_pending");
   }
+
   return mapUpdatedReceipt(receiptId);
 }
 

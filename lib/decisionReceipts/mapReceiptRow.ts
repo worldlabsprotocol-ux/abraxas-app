@@ -1,11 +1,13 @@
 // FILE: lib/decisionReceipts/mapReceiptRow.ts
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import { decodeReceiptV11Sidecar } from "@/lib/decisionReceipts/v1_1_0/sidecar";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
 
 /** Preserve undefined when migration 151 column is absent from the row payload. */
 export function mapReceiptRow(row: Record<string, unknown>): DecisionReceiptRecord {
   const hasFinalizationColumn = Object.prototype.hasOwnProperty.call(row, "issuance_finalized_at");
-  return {
+  const mapped: DecisionReceiptRecord = {
     id: row.id as string,
     verification_decision_id: row.verification_decision_id as string,
     consent_receipt_id: (row.consent_receipt_id as string | null) ?? null,
@@ -34,4 +36,12 @@ export function mapReceiptRow(row: Record<string, unknown>): DecisionReceiptReco
       : undefined,
     created_at: row.created_at as string,
   };
+  if (mapped.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const sidecar = decodeReceiptV11Sidecar(mapped.anchor_reference);
+    if (sidecar.ok) {
+      mapped.application_binding_ref = sidecar.sidecar.application_binding_ref;
+      mapped.evidence_commitment = sidecar.sidecar.evidence_commitment;
+    }
+  }
+  return mapped;
 }

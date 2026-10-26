@@ -27,6 +27,14 @@ import {
   type DecisionReceiptRecord,
   type IssueDecisionReceiptInput,
 } from "@/lib/decisionReceipts/types";
+import { resolveIssuanceSchemaVersion } from "@/lib/decisionReceipts/issuanceSchemaV110";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
+import {
+  AuthoritativeIssuanceError,
+  buildAuthoritativeV11IssuanceFields,
+  resolveAuthoritativeApplicationIdForIssuance,
+} from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
+import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
 
 function generateReceiptId(): string {
   return `dr_${randomBytes(12).toString("base64url")}`;
@@ -93,8 +101,9 @@ export async function issueDecisionReceipt(
     if (byKey) return mapRow(byKey as Record<string, unknown>);
   }
 
+  const issuanceSchemaVersion = resolveIssuanceSchemaVersion();
   const signingKey = resolveIssuanceSigningKey({
-    schemaVersion: DECISION_RECEIPT_SCHEMA_VERSION,
+    schemaVersion: issuanceSchemaVersion,
   });
   if (!signingKey.ok) {
     throw new Error("receipt_signing_unavailable");
@@ -128,25 +137,89 @@ export async function issueDecisionReceipt(
   }
   const pseudonym = pseudonymResult.pseudonym;
 
-  const canonical = buildCanonicalPayload({
-    receipt_id: receiptId,
-    decision_id: input.verificationDecisionId,
-    policy_id: input.policyId,
-    policy_version: input.policyVersion,
-    partner_id: input.partnerId,
-    subject_pseudonym_id: pseudonym,
-    wallet_binding_ref: walletBindingRef,
-    consent_receipt_id: input.consentReceiptId ?? null,
-    decision_result: input.decisionResult,
-    reason_codes: input.reasonCodes,
-    evaluated_claim_refs: input.evaluatedClaimRefs,
-    issuer_refs: Array.from(new Set(input.evaluatedClaimRefs.map(r => r.issuer_id))).sort(),
-    decision_context: decisionContext,
-    evaluated_at: evaluatedAt,
-    expires_at: input.expiresAt ?? null,
-  });
+  const issuerRefs = Array.from(new Set(input.evaluatedClaimRefs.map(r => r.issuer_id))).sort();
+  let anchorReference = input.anchorReference ?? null;
+  let payloadHash: string;
+  let signature: string;
+  let schemaVersionForRow = issuanceSchemaVersion;
 
-  const { payloadHash, signature } = signReceiptPayload(canonical, signingKey.privateKeyJwk);
+  if (issuanceSchemaVersion === DECISION_RECEIPT_SCHEMA_V1_1) {
+    let v11Fields;
+    const appScope = await resolveAuthoritativeApplicationIdForIssuance({
+      verificationDecisionId: input.verificationDecisionId,
+      partnerId: input.partnerId,
+      callerApplicationId: input.applicationId,
+    });
+    try {
+      v11Fields = await buildAuthoritativeV11IssuanceFields({
+        receiptId,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        policyVersion: input.policyVersion,
+        decisionContext,
+        applicationId: appScope.applicationId,
+        applicationScopeRequired: appScope.applicationScopeRequired,
+        issuancePhase: pendingEvidence ? "pending" : "final",
+        externalAnchorReference: input.anchorReference,
+      });
+    } catch (error) {
+      if (error instanceof AuthoritativeIssuanceError) throw error;
+      throw error;
+    }
+    anchorReference = v11Fields.anchor_reference;
+    const recordForSign = attachV11FieldsFromSidecar({
+      id: receiptId,
+      verification_decision_id: input.verificationDecisionId,
+      consent_receipt_id: input.consentReceiptId ?? null,
+      partner_id: input.partnerId,
+      policy_id: input.policyId,
+      policy_version: input.policyVersion,
+      subject_pseudonym_id: pseudonym,
+      wallet_binding_ref: walletBindingRef,
+      decision_result: input.decisionResult,
+      reason_codes: input.reasonCodes,
+      evaluated_claim_refs: input.evaluatedClaimRefs,
+      issuer_refs: issuerRefs,
+      decision_context: decisionContext,
+      evaluated_at: evaluatedAt,
+      expires_at: input.expiresAt ?? null,
+      status: insertStatus,
+      schema_version: DECISION_RECEIPT_SCHEMA_V1_1,
+      payload_hash: "",
+      signature: "",
+      signing_key_id: signingKey.key_id,
+      anchor_reference: anchorReference,
+      idempotency_key: input.idempotencyKey ?? input.verificationDecisionId,
+      created_at: evaluatedAt,
+      revoked_at: null,
+    });
+    const { payload } = buildSignedCanonicalV11(recordForSign);
+    ({ payloadHash, signature } = signReceiptPayload(
+      payload as Parameters<typeof signReceiptPayload>[0],
+      signingKey.privateKeyJwk,
+    ));
+    schemaVersionForRow = DECISION_RECEIPT_SCHEMA_V1_1;
+  } else {
+    const canonical = buildCanonicalPayload({
+      receipt_id: receiptId,
+      decision_id: input.verificationDecisionId,
+      policy_id: input.policyId,
+      policy_version: input.policyVersion,
+      partner_id: input.partnerId,
+      subject_pseudonym_id: pseudonym,
+      wallet_binding_ref: walletBindingRef,
+      consent_receipt_id: input.consentReceiptId ?? null,
+      decision_result: input.decisionResult,
+      reason_codes: input.reasonCodes,
+      evaluated_claim_refs: input.evaluatedClaimRefs,
+      issuer_refs: issuerRefs,
+      decision_context: decisionContext,
+      evaluated_at: evaluatedAt,
+      expires_at: input.expiresAt ?? null,
+    });
+    ({ payloadHash, signature } = signReceiptPayload(canonical, signingKey.privateKeyJwk));
+    schemaVersionForRow = canonical.schema_version;
+  }
 
   const sb = requireSupabaseAdmin();
   const insertRow: Record<string, unknown> = {
@@ -161,16 +234,16 @@ export async function issueDecisionReceipt(
     decision_result: input.decisionResult,
     reason_codes: input.reasonCodes,
     evaluated_claim_refs: input.evaluatedClaimRefs,
-    issuer_refs: canonical.issuer_refs,
+    issuer_refs: issuerRefs,
     decision_context: decisionContext,
     evaluated_at: evaluatedAt,
     expires_at: input.expiresAt ?? null,
     status: insertStatus,
-    schema_version: canonical.schema_version,
+    schema_version: schemaVersionForRow,
     payload_hash: payloadHash,
     signature,
     signing_key_id: signingKey.key_id,
-    anchor_reference: input.anchorReference ?? null,
+    anchor_reference: anchorReference,
     idempotency_key: input.idempotencyKey ?? input.verificationDecisionId,
   };
   if (schemaCapability.stagedIssuanceEnabled) {
@@ -371,7 +444,10 @@ export async function issueReceiptForDecision(input: {
         : "immediate",
     });
   } catch (e) {
-    if (e instanceof StagedIssuanceUnavailableError) {
+    if (
+      e instanceof StagedIssuanceUnavailableError
+      || e instanceof AuthoritativeIssuanceError
+    ) {
       throw e;
     }
     console.error("[decision_receipt]", e instanceof Error ? e.message : e);
