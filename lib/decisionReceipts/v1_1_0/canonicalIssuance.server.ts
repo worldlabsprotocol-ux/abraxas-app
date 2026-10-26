@@ -7,6 +7,10 @@ import {
   type DecisionReceiptRecordV1_1,
 } from "@/lib/decisionReceipts/schema/v1_1_0.server";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import {
+  resolveAuthoritativeV11Field,
+  resolveParityIssuancePhase,
+} from "@/lib/decisionReceipts/v1_1_0/dedicatedPersistence";
 import { decodeReceiptV11Sidecar } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 
 export function attachV11FieldsFromSidecar(record: DecisionReceiptRecord): DecisionReceiptRecordV1_1 {
@@ -40,10 +44,30 @@ export function attachV11FieldsFromSidecar(record: DecisionReceiptRecord): Decis
     evidence_commitment: null,
   };
   if (!sidecar.ok) return base;
+  const persistence = record.v11_dedicated_persistence ?? {
+    columns: {
+      application_binding_ref: false,
+      evidence_commitment: false,
+      evidence_commitment_manifest: false,
+      v11_issuance_phase: false,
+    },
+    issuance_phase: sidecar.sidecar.issuance_phase,
+  };
+  const phase = resolveParityIssuancePhase(persistence, sidecar.sidecar.issuance_phase);
   return {
     ...base,
-    application_binding_ref: sidecar.sidecar.application_binding_ref,
-    evidence_commitment: sidecar.sidecar.evidence_commitment,
+    application_binding_ref: resolveAuthoritativeV11Field(
+      record.application_binding_ref,
+      sidecar.sidecar.application_binding_ref,
+      persistence.columns.application_binding_ref,
+      phase,
+    ),
+    evidence_commitment: resolveAuthoritativeV11Field(
+      record.evidence_commitment,
+      sidecar.sidecar.evidence_commitment,
+      persistence.columns.evidence_commitment,
+      phase,
+    ),
   };
 }
 

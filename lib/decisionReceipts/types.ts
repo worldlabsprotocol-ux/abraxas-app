@@ -73,6 +73,9 @@ export interface DecisionReceiptRecord {
   created_at: string;
   application_binding_ref?: string | null;
   evidence_commitment?: EvidenceCommitmentV1 | null;
+  evidence_commitment_manifest?: EvidenceCommitmentEntryV1[] | null;
+  /** Set by mapReceiptRow when v1.1.0 dedicated columns may exist (migration 152). */
+  v11_dedicated_persistence?: import("@/lib/decisionReceipts/v1_1_0/dedicatedPersistence").V11DedicatedPersistenceContext;
 }
 
 /** Public-safe view — no PII, no raw claim values */

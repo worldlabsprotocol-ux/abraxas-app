@@ -1,6 +1,7 @@
 // FILE: lib/decisionReceipts/mapReceiptRow.ts
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import { v11PersistenceContextFromRow } from "@/lib/decisionReceipts/v1_1_0/dedicatedPersistence";
 import { decodeReceiptV11Sidecar } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
 
@@ -37,21 +38,30 @@ export function mapReceiptRow(row: Record<string, unknown>): DecisionReceiptReco
     created_at: row.created_at as string,
   };
   if (mapped.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
-    const hasDedicatedBinding = Object.prototype.hasOwnProperty.call(row, "application_binding_ref");
-    const hasDedicatedCommitment = Object.prototype.hasOwnProperty.call(row, "evidence_commitment");
-    if (hasDedicatedBinding) {
+    const sidecar = decodeReceiptV11Sidecar(mapped.anchor_reference);
+    const sidecarPhase = sidecar.ok ? sidecar.sidecar.issuance_phase : null;
+    mapped.v11_dedicated_persistence = v11PersistenceContextFromRow(row, sidecarPhase);
+
+    const columns = mapped.v11_dedicated_persistence.columns;
+    if (columns.application_binding_ref) {
       mapped.application_binding_ref = (row.application_binding_ref as string | null) ?? null;
     }
-    if (hasDedicatedCommitment) {
+    if (columns.evidence_commitment) {
       mapped.evidence_commitment = (row.evidence_commitment as DecisionReceiptRecord["evidence_commitment"]) ?? null;
     }
-    const sidecar = decodeReceiptV11Sidecar(mapped.anchor_reference);
+    if (columns.evidence_commitment_manifest) {
+      mapped.evidence_commitment_manifest =
+        (row.evidence_commitment_manifest as DecisionReceiptRecord["evidence_commitment_manifest"]) ?? null;
+    }
     if (sidecar.ok) {
-      if (!hasDedicatedBinding) {
+      if (!columns.application_binding_ref) {
         mapped.application_binding_ref = sidecar.sidecar.application_binding_ref;
       }
-      if (!hasDedicatedCommitment) {
+      if (!columns.evidence_commitment) {
         mapped.evidence_commitment = sidecar.sidecar.evidence_commitment;
+      }
+      if (!columns.evidence_commitment_manifest) {
+        mapped.evidence_commitment_manifest = sidecar.sidecar.evidence_commitment_manifest;
       }
     }
   }
