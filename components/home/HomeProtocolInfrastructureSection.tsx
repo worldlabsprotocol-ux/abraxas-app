@@ -2,10 +2,14 @@
 
 import { HomeAbraxasProtocolDiagram } from "@/components/home/HomeAbraxasProtocolDiagram";
 
-export function HomeProtocolInfrastructureSection() {
+export function HomeProtocolInfrastructureSection({
+  diagramPriority = true,
+}: {
+  diagramPriority?: boolean;
+}) {
   return (
     <section id="protocol-infrastructure" className="abx-home-protocol abx-home-protocol--diagram-only">
-      <HomeAbraxasProtocolDiagram />
+      <HomeAbraxasProtocolDiagram imagePriority={diagramPriority} />
     </section>
   );
 }

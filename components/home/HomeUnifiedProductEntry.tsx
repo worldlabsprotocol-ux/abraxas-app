@@ -32,7 +32,7 @@ export function HomeUnifiedProductEntry() {
 
   return (
     <section
-      id="start-with-abraxas"
+      id="start-sandbox"
       className="abx-home-unified-entry"
       aria-labelledby="home-unified-heading"
     >

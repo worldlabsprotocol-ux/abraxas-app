@@ -4,7 +4,6 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { HomeUnifiedProductEntry } from "@/components/home/HomeUnifiedProductEntry";
-import { HomeProtocolInfrastructureSection } from "@/components/home/HomeProtocolInfrastructureSection";
 import { HomeProtocolSignalMarquee } from "@/components/home/HomeProtocolSignalMarquee";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
 import { ABX_V2_SHELL_CLASS } from "@/lib/design/institutionalV2Tokens";
@@ -24,15 +23,15 @@ function HomeContent({ hero }: { hero: ReactNode }) {
   return (
     <main className="abx-institutional-home abx-v2-home abx-premium-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
       {hero}
-      <HomeProtocolSignalMarquee />
 
       <div
-        className="abx-premium-home__spine abx-premium-home__spine--shell abx-premium-home__spine--unified"
+        className="abx-premium-home__spine abx-premium-home__spine--shell abx-premium-home__spine--unified abx-premium-home__spine--sandbox-first"
         style={SHELL}
       >
-        <HomeProtocolInfrastructureSection />
         <HomeUnifiedProductEntry />
       </div>
+
+      <HomeProtocolSignalMarquee />
     </main>
   );
 }

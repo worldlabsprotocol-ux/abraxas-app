@@ -42,15 +42,23 @@ describe("homepage simplification (#homepage-refinement)", () => {
     read("public/home/abraxas-protocol-architecture.png");
   });
 
-  it("places protocol marquee between hero and spine content", () => {
+  it("places sandbox entry directly beneath hero carousel", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("HomeProtocolSignalMarquee");
+    expect(shell).not.toContain("<HomeProtocolInfrastructureSection");
     const body = shell.slice(shell.indexOf("function HomeContent"));
     const heroIndex = body.indexOf("{hero}");
+    const unifiedIndex = body.indexOf("<HomeUnifiedProductEntry");
     const marqueeIndex = body.indexOf("<HomeProtocolSignalMarquee");
-    const spineIndex = body.indexOf("<HomeProtocolInfrastructureSection");
-    expect(marqueeIndex).toBeGreaterThan(heroIndex);
-    expect(spineIndex).toBeGreaterThan(marqueeIndex);
+    expect(unifiedIndex).toBeGreaterThan(heroIndex);
+    expect(marqueeIndex).toBeGreaterThan(unifiedIndex);
+  });
+
+  it("hero carousel composes emblem slide and architecture diagram slide", () => {
+    const carousel = read("components/home/premium/PremiumHomeHeroCarousel.tsx");
+    expect(carousel).toContain("PremiumHomeHero");
+    expect(carousel).toContain("HomeProtocolInfrastructureSection");
+    expect(carousel).toContain("useReducedMotion");
   });
 
   it("unified entry removes four tab panels before sandbox", () => {

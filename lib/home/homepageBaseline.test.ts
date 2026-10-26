@@ -24,7 +24,7 @@ describe("homepage baseline (institutional invariants)", () => {
 
   it("public homepage leads with cinematic editorial composition", () => {
     const page = read("app/page.tsx");
-    expect(page).toContain("PremiumHomeHero");
+    expect(page).toContain("PremiumHomeHeroCarousel");
     const shell = read("components/redesign/RedesignHome.tsx");
     const unified = read("components/home/HomeUnifiedProductEntry.tsx");
     expect(shell).toContain("hero");

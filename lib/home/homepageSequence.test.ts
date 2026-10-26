@@ -11,17 +11,15 @@ function read(rel: string): string {
 }
 
 describe("homepage journey sequence", () => {
-  it("orders hero, protocol signal, protocol section, then sandbox entry", () => {
+  it("orders hero carousel, sandbox entry, then protocol signal", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     const body = shell.slice(shell.indexOf("function HomeContent"));
     const heroIdx = body.indexOf("{hero}");
-    const marqueeIdx = body.indexOf("<HomeProtocolSignalMarquee");
-    const protocolIdx = body.indexOf("<HomeProtocolInfrastructureSection");
     const unifiedIdx = body.indexOf("<HomeUnifiedProductEntry");
+    const marqueeIdx = body.indexOf("<HomeProtocolSignalMarquee");
     expect(heroIdx).toBeGreaterThan(-1);
-    expect(marqueeIdx).toBeGreaterThan(heroIdx);
-    expect(protocolIdx).toBeGreaterThan(marqueeIdx);
-    expect(unifiedIdx).toBeGreaterThan(protocolIdx);
+    expect(unifiedIdx).toBeGreaterThan(heroIdx);
+    expect(marqueeIdx).toBeGreaterThan(unifiedIdx);
   });
 
   it("unified entry leads with sandbox workspace only", () => {

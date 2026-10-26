@@ -18,10 +18,10 @@ describe("institutional homepage surface (V2)", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     const unified = read("components/home/HomeUnifiedProductEntry.tsx");
     const page = read("app/page.tsx");
-    expect(page).toContain("PremiumHomeHero");
+    expect(page).toContain("PremiumHomeHeroCarousel");
     expect(home).toContain("HomeUnifiedProductEntry");
     expect(home).toContain("HomeProtocolSignalMarquee");
-    expect(home).toContain("HomeProtocolInfrastructureSection");
+    expect(home).not.toContain("<HomeProtocolInfrastructureSection");
     expect(unified).toContain("HomeNativeSandboxChapter");
     expect(unified).not.toContain("HomeHowAbraxasWorksSection");
     expect(home).not.toContain("CinematicHero");

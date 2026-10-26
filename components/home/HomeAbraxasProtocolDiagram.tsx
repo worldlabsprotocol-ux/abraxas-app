@@ -6,7 +6,7 @@ import { HomeAbraxasSystemArchitectureDiagram } from "@/components/home/HomeAbra
 
 const DESKTOP_ART = "/home/abraxas-protocol-architecture.png";
 
-export function HomeAbraxasProtocolDiagram() {
+export function HomeAbraxasProtocolDiagram({ imagePriority = true }: { imagePriority?: boolean }) {
   return (
     <div className="abx-protocol-diagram" aria-label="Abraxas protocol architecture">
       <div className="abx-protocol-diagram__desktop" aria-hidden={false}>
@@ -16,7 +16,8 @@ export function HomeAbraxasProtocolDiagram() {
           width={2400}
           height={1350}
           className="abx-protocol-diagram__art"
-          priority
+          priority={imagePriority}
+          loading={imagePriority ? undefined : "lazy"}
           sizes="(max-width: 960px) 0px, min(1200px, 100vw)"
         />
       </div>
