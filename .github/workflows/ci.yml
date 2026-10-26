@@ -346,6 +346,19 @@ jobs:
           ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
           NEXT_PUBLIC_SUPABASE_URL: ""
           SUPABASE_SERVICE_ROLE_KEY: ""
+      - name: Build #834 sovereign current-validity parity (CI contract)
+        run: npx vitest run --no-file-parallelism lib/persistence/boundary/staging/build834SovereignValidityParity.integration.test.ts lib/decisionReceipts/currentValidity/decisionCore.test.ts
+        env:
+          ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
+          ABRAXAS_BUILD_820_CI_CONTRACT: "1"
+          ABRAXAS_BUILD_834_CI_CONTRACT: "1"
+          ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+          ABRAXAS_SOVEREIGN_STAGING_RESTORE_DRILL_AUTHORIZED: "true"
+          ABRAXAS_SOVEREIGN_STAGING_RESTORE_OPERATOR_AUTHORIZATION: build834-ci
+          ABRAXAS_SOVEREIGN_STAGING_RESTORE_OPERATOR_AUTHORIZATION_EXPECTED: build834-ci
+          ABRAXAS_BACKUP_ENCRYPTION_KEY: CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          SUPABASE_SERVICE_ROLE_KEY: ""
 
   ephemeral-wallet-auth:
     name: ephemeral-wallet-auth
