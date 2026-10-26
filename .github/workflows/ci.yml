@@ -234,6 +234,11 @@ jobs:
         env:
           MIGRATION_153_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_153_parity
 
+      - name: Decision receipt backup restore parity
+        run: bash scripts/ci/run-decision-receipt-backup-restore-parity.sh
+        env:
+          RECEIPT_BACKUP_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_153_parity
+
   foundry-evm-verifier:
     runs-on: ubuntu-latest
     steps:

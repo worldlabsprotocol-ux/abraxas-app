@@ -76,6 +76,7 @@
     "wallet-binding:verify-schema": "tsx scripts/verify-wallet-binding-schema.ts",
     "identity:seed-review-queue": "tsx scripts/seed-identity-review-queue.ts",
     "demo:validate": "tsx scripts/demo/validate-partner-sandbox-environment.ts",
+    "demo:receipt-v11-backfill-dry-run": "tsx scripts/demo/receipt-v11-backfill-dry-run.ts",
     "demo:migrate": "tsx scripts/demo/apply-demo-migrations.ts",
     "demo:provision": "tsx scripts/demo/provision-partner-sandbox-holder.ts",
     "demo:signing-key:generate": "tsx scripts/demo/generate-demo-signing-key.ts",
