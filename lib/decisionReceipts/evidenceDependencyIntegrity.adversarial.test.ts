@@ -2,10 +2,7 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import {
-  EvidenceDependencyStoreUnavailableError,
-  getReceiptEvidenceDependencies,
-} from "@/lib/decisionReceipts/evidenceDependencies";
+import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity/evaluate";
 import { sourceEvidenceStillValidForReceipt } from "@/lib/passport/reusableEligibility/invalidation";

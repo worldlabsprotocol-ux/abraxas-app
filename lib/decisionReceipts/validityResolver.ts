@@ -8,6 +8,7 @@ import {
   EvidenceDependencyStoreUnavailableError,
   getReceiptEvidenceDependencies,
   receiptRequiresEvidenceDependencyGraph,
+  type ReceiptEvidenceDependency,
 } from "@/lib/decisionReceipts/evidenceDependencies";
 import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
 import {
@@ -127,7 +128,7 @@ export async function resolveReceiptValidity(
   }
 
   const requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id);
-  let evidenceDeps;
+  let evidenceDeps: ReceiptEvidenceDependency[] = [];
   try {
     evidenceDeps = await getReceiptEvidenceDependencies(record.id);
   } catch (error) {
