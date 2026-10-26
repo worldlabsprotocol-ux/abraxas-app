@@ -4,6 +4,11 @@ import "server-only";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
+import {
+  resolveIssuanceFinalizationSchemaCapability,
+  StagedIssuanceUnavailableError,
+} from "@/lib/decisionReceipts/issuanceSchemaCapability.server";
+import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
 
 export class IssuanceLifecycleError extends Error {
   constructor(
@@ -27,6 +32,10 @@ async function mapUpdatedReceipt(receiptId: string): Promise<DecisionReceiptReco
 
 /** Commit durable authorization after evidence dependencies and mirror succeed. */
 export async function activateDecisionReceiptIssuance(receiptId: string): Promise<DecisionReceiptRecord> {
+  const capability = await resolveIssuanceFinalizationSchemaCapability();
+  if (!capability.stagedIssuanceEnabled) {
+    throw new StagedIssuanceUnavailableError("staged_issuance_activation_unavailable");
+  }
   const sb = requireSupabaseAdmin();
   const finalizedAt = new Date().toISOString();
   const { data, error } = await sb
@@ -45,7 +54,7 @@ export async function activateDecisionReceiptIssuance(receiptId: string): Promis
   }
   if (!data) {
     const existing = await getReceiptById(receiptId);
-    if (existing?.status === "active" && existing.issuance_finalized_at) {
+    if (existing && isReceiptIssuanceFinalized(existing)) {
       return existing;
     }
     throw new IssuanceLifecycleError("receipt_not_pending", "receipt_not_pending");
