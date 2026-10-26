@@ -17,6 +17,7 @@ import {
   PARTNER_TRUST_EXECUTION_CHALLENGE_TTL_MS,
   PARTNER_TRUST_EXECUTION_RESOURCE_PREFIX,
 } from "./constants";
+import { bindTrustExecutionSubjectPseudonym } from "./trustExecutionSubjectBinding";
 
 export type PartnerApplicationScope = {
   applicationId: string;
@@ -121,11 +122,17 @@ export async function issuePartnerTrustExecutionChallenge(input: {
   };
 
   const message = buildWalletScopedTrustExecutionMessage(binding);
+  const subjectPseudonymId = bindTrustExecutionSubjectPseudonym({
+    partnerId: scope.partnerId,
+    applicationId: scope.applicationId,
+    walletAddress: wallet,
+  });
   await insertScopedTrustChallenge({
     binding,
     message,
     policyVersion: scope.policyVersion,
     correlationId,
+    subjectPseudonymId,
   });
 
   return {

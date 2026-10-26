@@ -145,8 +145,20 @@ create table if not exists public.wallet_scoped_trust_challenges (
   expires_at           timestamptz not null,
   consumed_at          timestamptz,
   authorization_ref    text,
+  subject_pseudonym_id text        not null,
   created_at           timestamptz not null default now(),
   constraint wallet_scoped_trust_challenges_nonce_uq unique (nonce)
+);
+
+create table if not exists public.wallet_scoped_trust_execution_outcomes (
+  authorization_ref text primary key,
+  challenge_id      text not null unique references public.wallet_scoped_trust_challenges(id),
+  partner_id        text not null references public.partners(partner_id),
+  application_id    uuid not null,
+  receipt_id        text not null references public.decision_receipts(id),
+  correlation_id    text not null unique,
+  decision_result   text not null check (decision_result in ('approved', 'denied', 'indeterminate')),
+  finalized_at      timestamptz not null default now()
 );
 
 create or replace function public.abraxas_consume_wallet_scoped_trust_challenge_atomic(

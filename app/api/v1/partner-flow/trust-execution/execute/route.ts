@@ -8,7 +8,7 @@ import {
 } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { executeTrustExecutionDecision } from "@/lib/partner/trustExecution/executeTrustExecutionDecision";
 import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthorization/errors";
-import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
+import { resolveTrustExecutionEvidenceMode } from "@/lib/partner/trustExecution/controlledTestEvidenceGate";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "app_required" }, { status: 400 });
   }
 
-  let body: { authorization_ref?: string; subject_pseudonym_seed?: string };
+  let body: { authorization_ref?: string };
   try {
     body = await req.json();
   } catch {
@@ -50,13 +50,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "application_not_found" }, { status: 404 });
   }
 
-  const controlledTestEvidence = process.env.ABRAXAS_TRUST_EXECUTION_CONTROLLED_TEST_EVIDENCE === "1";
+  const evidenceMode = resolveTrustExecutionEvidenceMode(process.env);
+  const controlledTestEvidence = evidenceMode === "controlled_test_evidence";
 
   try {
     const executed = await executeTrustExecutionDecision({
       partnerId: auth.ctx.partnerId,
       authorizationRef,
-      subjectPseudonymSeed: String(body.subject_pseudonym_seed ?? authorizationRef),
       controlledTestEvidence,
     });
     if (!executed.ok) {
@@ -75,13 +75,14 @@ export async function POST(req: NextRequest) {
       decision_result: executed.decision_result,
       receipt_id: executed.receipt.id,
       wallet_binding_ref: executed.receipt.wallet_binding_ref,
-      portable_verification: {
-        record: toIndependentVerifierRecord(executed.receipt),
-        currently_acceptable: executed.independent_verification.currently_acceptable,
-        cryptographically_authentic: executed.independent_verification.cryptographically_authentic,
-        failure_codes: executed.independent_verification.failure_codes,
+      evidence_mode: executed.evidence_mode,
+      independent_verification_material: {
+        portable_receipt: executed.verification_material.portable_receipt,
+        signed_issuer_authority: executed.verification_material.signed_issuer_authority,
+        signed_status_statement: executed.verification_material.signed_status_statement,
       },
-      evidence_mode: controlledTestEvidence ? "controlled_test_evidence" : "live_authoritative_evidence",
+      relying_party_note:
+        "Verify the portable receipt with your pinned trust anchor and signed status; Abraxas does not assert currently_acceptable on this response.",
     });
   } catch (error) {
     if (error instanceof ScopedChallengeStoreUnavailableError) {

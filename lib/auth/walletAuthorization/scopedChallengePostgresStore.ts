@@ -86,6 +86,7 @@ export async function insertScopedTrustChallenge(input: {
   message: string;
   policyVersion: number;
   correlationId: string;
+  subjectPseudonymId: string;
   sessionContextHash?: string | null;
 }): Promise<PersistedScopedTrustChallenge> {
   const challengeId = input.binding.requestId;
@@ -95,9 +96,9 @@ export async function insertScopedTrustChallenge(input: {
       `insert into public.wallet_scoped_trust_challenges (
         id, partner_id, application_id, policy_id, policy_version, action, resource,
         wallet_address, origin, audience, uri, nonce, request_id, correlation_id,
-        message_sha256, message, session_context_hash, expires_at
+        message_sha256, message, session_context_hash, expires_at, subject_pseudonym_id
       ) values (
-        $1,$2,$3::uuid,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::timestamptz
+        $1,$2,$3::uuid,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::timestamptz,$19
       )`,
       [
         challengeId,
@@ -118,6 +119,7 @@ export async function insertScopedTrustChallenge(input: {
         input.message,
         input.sessionContextHash ?? null,
         input.binding.expiresAt,
+        input.subjectPseudonymId,
       ],
     ),
   );

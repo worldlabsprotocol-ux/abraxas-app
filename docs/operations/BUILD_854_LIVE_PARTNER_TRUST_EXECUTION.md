@@ -20,12 +20,24 @@ Store path: `querySovereignStagingPg` only. Unavailable pool → **503 fail clos
 
 ## Evidence modes
 
-- **Live:** `ABRAXAS_TRUST_EXECUTION_CONTROLLED_TEST_EVIDENCE` unset — requires authoritative evidence (deny/indeterminate without it).
-- **CI:** `ABRAXAS_TRUST_EXECUTION_CONTROLLED_TEST_EVIDENCE=1` — labeled controlled test evidence only.
+- **Live (deployable):** default — requires pre-authorized issuer keys, partner policy, sovereign evidence, SIAS, and signed status. Fail closed (`denied` / `indeterminate`) when unavailable. Execution does **not** insert issuer keys or policies.
+- **Controlled test (CI/disposable only):** requires **all** of:
+  - `ABRAXAS_TRUST_EXECUTION_CONTROLLED_TEST_EVIDENCE=1`
+  - `ABRAXAS_SOVEREIGN_ENV_CLASS=disposable`
+  - `ABRAXAS_SOVEREIGN_STAGING_FIXTURE_WRITES=true`
+  - `ABRAXAS_TRUST_EXECUTION_FIXTURE_ATTESTATION=disposable_ci_only`
+  - `VERCEL_ENV` not `production` or `preview`
+
+Synthetic fixture signing is isolated in `executeTrustExecutionFixture.internal.ts` and cannot be enabled on Demo/Production via a single env toggle.
 
 ## Independent verification
 
-Execute response includes `portable_verification` (record + `@abraxas/independent-verifier` outcomes). Relying parties should verify locally; Abraxas HTTP success is not the trust verdict.
+Execute response returns `independent_verification_material` (portable receipt + signed issuer authority + signed status). Relying parties verify locally with a **pinned** trust anchor. Abraxas does **not** return `currently_acceptable` as proof.
+
+## Durability
+
+- `wallet_scoped_trust_execution_outcomes` — at most one finalized receipt per `authorization_ref` (transactional finalize).
+- Challenge rows store authoritative `subject_pseudonym_id` at issue time (no caller-supplied seed on execute).
 
 ## CI
 

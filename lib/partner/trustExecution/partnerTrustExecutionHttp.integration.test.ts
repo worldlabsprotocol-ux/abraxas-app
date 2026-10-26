@@ -18,6 +18,8 @@ import { POST as authorizePOST } from "@/app/api/v1/partner-flow/trust-execution
 import { POST as executePOST } from "@/app/api/v1/partner-flow/trust-execution/execute/route";
 import { NextRequest } from "next/server";
 import { vi } from "vitest";
+import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
+import { registryEnv } from "@/lib/persistence/boundary/staging/build834Fixtures";
 
 const PROOF = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
 const describeProof = PROOF ? describe : describe.skip;
@@ -62,7 +64,25 @@ describeProof("Build #854 partner trust execution HTTP", () => {
 
   beforeAll(async () => {
     process.env.ABRAXAS_SOVEREIGN_ENV_CLASS = "disposable";
+    process.env.ABRAXAS_SOVEREIGN_STAGING_FIXTURE_WRITES = "true";
     process.env.ABRAXAS_TRUST_EXECUTION_CONTROLLED_TEST_EVIDENCE = "1";
+    process.env.ABRAXAS_TRUST_EXECUTION_FIXTURE_ATTESTATION = "disposable_ci_only";
+    process.env.VERCEL_ENV = "development";
+
+    const receiptKey = generateTestSigningKeyPair("build854-issuer");
+    const anchorKey = generateTestSigningKeyPair("build854-anchor");
+    const statusSignerKey = generateTestSigningKeyPair("build854-status");
+    Object.assign(
+      process.env,
+      registryEnv(receiptKey, anchorKey, process.env),
+      {
+        ABRAXAS_STATUS_SIGNER_KEY_ID: statusSignerKey.signingKeyId,
+        ABRAXAS_STATUS_SIGNER_PRIVATE_JWK: JSON.stringify(statusSignerKey.privateKeyJwk),
+        ABRAXAS_STATUS_SIGNER_PUBLIC_JWK: JSON.stringify(statusSignerKey.publicKeyJwk),
+        VERCEL_ENV: "development",
+      },
+    );
+
     const dbName = "abraxas_build854_primary";
     const admin = new pg.Pool({
       connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/postgres`,
@@ -83,6 +103,17 @@ describeProof("Build #854 partner trust execution HTTP", () => {
       PARTNER,
     ]);
     await pool.query(
+      `insert into public.partner_policies (id, partner_id, version, name, rules_json, status)
+       values ($1,$2,1,'build854-trust-exec','{}','active')
+       on conflict (id, version) do nothing`,
+      [POLICY, PARTNER],
+    );
+    await pool.query(
+      `insert into public.issuer_signing_keys (signing_key_id, status) values ($1,'active')
+       on conflict (signing_key_id) do nothing`,
+      [receiptKey.signingKeyId],
+    );
+    await pool.query(
       `insert into public.partner_launchpad_applications (id, partner_id, status, policy_id, policy_version)
        values ($1::uuid,$2,'active',$3,1) on conflict (id) do update set partner_id = excluded.partner_id`,
       [APP_ID, PARTNER, POLICY],
@@ -101,7 +132,7 @@ describeProof("Build #854 partner trust execution HTTP", () => {
     await pool?.end().catch(() => undefined);
   });
 
-  it("runs challenge → authorize → execute with independent verification", async () => {
+  async function authorizeFreshChallenge() {
     const issued = await issuePartnerTrustExecutionChallenge({
       partnerId: PARTNER,
       applicationId: APP_ID,
@@ -111,12 +142,9 @@ describeProof("Build #854 partner trust execution HTTP", () => {
       solanaNetwork: "devnet",
     });
     expect(issued.ok).toBe(true);
-    if (!issued.ok) return;
-
+    if (!issued.ok) throw new Error("issue failed");
     const row = await loadScopedTrustChallenge(issued.challenge_id);
-    expect(row?.message).toBeTruthy();
     const signature = signWalletScopedTrustMessage(row!.message, kp);
-
     const authorized = await authorizePartnerTrustExecution({
       challengeId: issued.challenge_id,
       walletAddress: wallet,
@@ -124,18 +152,25 @@ describeProof("Build #854 partner trust execution HTTP", () => {
       solanaNetwork: "devnet",
     });
     expect(authorized.ok).toBe(true);
-    if (!authorized.ok) return;
+    if (!authorized.ok) throw new Error("authorize failed");
+    return authorized;
+  }
 
+  it("runs challenge → authorize → execute with verification material (no server verdict)", async () => {
+    const authorized = await authorizeFreshChallenge();
     const executed = await executeTrustExecutionDecision({
       partnerId: PARTNER,
       authorizationRef: authorized.authorization_ref,
-      subjectPseudonymSeed: "build854-subject",
       controlledTestEvidence: true,
     });
-    expect(executed.ok).toBe(true);
-    if (!executed.ok) return;
-    expect(executed.independent_verification.cryptographically_authentic).toBe(true);
-    expect(executed.independent_verification.currently_acceptable).toBe("yes");
+    if (!executed.ok) {
+      throw new Error(`execute failed: ${executed.code} (${executed.decision_result ?? ""})`);
+    }
+    expect(executed.evidence_mode).toBe("controlled_test_evidence");
+    expect(executed.verification_material.portable_receipt.id).toBe(executed.receipt.id);
+    expect(executed.verification_material.signed_issuer_authority).toBeTruthy();
+    expect(executed.verification_material.signed_status_statement).toBeTruthy();
+    expect(executed).not.toHaveProperty("independent_verification");
   });
 
   it("rejects concurrent replay on authorize", async () => {
@@ -168,6 +203,38 @@ describeProof("Build #854 partner trust execution HTTP", () => {
     ]);
     const successes = [first, second].filter((r) => r.ok).length;
     expect(successes).toBe(1);
+  });
+
+  it("binds one authorization_ref to one receipt on concurrent execute", async () => {
+    const authorized = await authorizeFreshChallenge();
+    const [a, b] = await Promise.all([
+      executeTrustExecutionDecision({
+        partnerId: PARTNER,
+        authorizationRef: authorized.authorization_ref,
+        controlledTestEvidence: true,
+      }),
+      executeTrustExecutionDecision({
+        partnerId: PARTNER,
+        authorizationRef: authorized.authorization_ref,
+        controlledTestEvidence: true,
+      }),
+    ]);
+    const okResults = [a, b].filter((r) => r.ok);
+    expect(okResults.length).toBe(2);
+    if (okResults.length !== 2) return;
+    expect(okResults[0]!.receipt.id).toBe(okResults[1]!.receipt.id);
+  });
+
+  it("fail-closes live authoritative path without evidence", async () => {
+    const authorized = await authorizeFreshChallenge();
+    const executed = await executeTrustExecutionDecision({
+      partnerId: PARTNER,
+      authorizationRef: authorized.authorization_ref,
+      controlledTestEvidence: false,
+    });
+    expect(executed.ok).toBe(false);
+    if (executed.ok) return;
+    expect(["denied", "indeterminate"]).toContain(executed.decision_result);
   });
 
   it("exercises HTTP route handlers", async () => {
@@ -213,6 +280,8 @@ describeProof("Build #854 partner trust execution HTTP", () => {
     const executeRes = await executePOST(executeReq);
     expect(executeRes.status).toBe(200);
     const executeBody = await executeRes.json();
-    expect(executeBody.portable_verification.cryptographically_authentic).toBe(true);
+    expect(executeBody.independent_verification_material.portable_receipt).toBeTruthy();
+    expect(executeBody.portable_verification).toBeUndefined();
+    expect(executeBody.relying_party_note).toMatch(/pinned trust anchor/i);
   });
 });
