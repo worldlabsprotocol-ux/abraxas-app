@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-10-24T13:27:13.944Z",
+  "updatedAt": "2026-10-26T03:30:35.672Z",
   "files": {
-    "components/redesign/RedesignHome.tsx": "5bd2f856a332c20b19dde2af9b8b3a8f84099b710afe4a650f1a0a2541bd7028",
+    "components/redesign/RedesignHome.tsx": "b837641e48f7a95740dc532a84309b8356a1abf4b15b1fa94a3cce4737e9b7a0",
     "components/redesign/AbraxasBootScreen.tsx": "c8e2d8815064f0bf65f0421303b35b3c7187354a90810ce689ac9a1918fbfe9f",
     "components/home/HomeSharpHero.tsx": "55c0d9f4efcacb8d95e102de9a7d25339ece2522d5d41b0708a9412cd6473e49",
     "components/home/HomeProtocolInAction.tsx": "92936bd202ca99a126ef1a791753888ad8cc880f7fc51a0cf3486d0fa8a84242",
