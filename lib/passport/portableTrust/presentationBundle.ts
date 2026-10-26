@@ -1,6 +1,8 @@
 // FILE: lib/passport/portableTrust/presentationBundle.ts
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import { isReceiptIssuanceAuthorizable } from "@/lib/decisionReceipts/issuanceFinalization";
+import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import {
   assertPresentationExcludesSensitiveCustody,
   composeHolderPolicyScopedPresentation,
@@ -29,7 +31,11 @@ export function summarizeHolderPortableCredential(
     policy_id: record.policy_id,
     policy_version: record.policy_version,
     decision_result: record.decision_result,
-    status: record.status,
+    status: (() => {
+      if (!isReceiptIssuanceAuthorizable(record)) return "revoked" as const;
+      const resolved = resolveReceiptStatus(record);
+      return resolved === "pending_finalization" ? ("revoked" as const) : resolved;
+    })(),
     evaluated_at: record.evaluated_at,
     expires_at: record.expires_at,
     issuer_refs: record.issuer_refs,

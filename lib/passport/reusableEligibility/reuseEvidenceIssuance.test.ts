@@ -1,20 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InternalReusableFact } from "./contract";
+import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 
-vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: vi.fn(() => ({
-    from: vi.fn(() => ({
-      update: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(async () => ({ error: null })),
-        })),
-      })),
-    })),
-  })),
+const pendingReceipt: DecisionReceiptRecord = {
+  id: "dr_derived",
+  verification_decision_id: "00000000-0000-4000-8000-000000000099",
+  consent_receipt_id: null,
+  partner_id: "partner",
+  policy_id: "pol",
+  policy_version: 1,
+  subject_pseudonym_id: "psr",
+  wallet_binding_ref: null,
+  decision_result: "approved",
+  reason_codes: [],
+  evaluated_claim_refs: [],
+  issuer_refs: [],
+  decision_context: "sandbox_only",
+  evaluated_at: "2026-01-01T00:00:00.000Z",
+  expires_at: null,
+  revoked_at: null,
+  status: "pending_finalization",
+  issuance_finalized_at: null,
+  schema_version: "1.0.0",
+  payload_hash: "hash",
+  signature: "sig",
+  signing_key_id: "key",
+  anchor_reference: null,
+  idempotency_key: null,
+  created_at: "2026-01-01T00:00:00.000Z",
+};
+
+vi.mock("@/lib/decisionReceipts/service", () => ({
+  getReceiptById: vi.fn(async () => pendingReceipt),
 }));
 
 vi.mock("@/lib/persistence/boundary/sovereignStagingPg", () => ({
-  getSovereignStagingPgPool: vi.fn(() => ({})),
+  getSovereignStagingPgPool: vi.fn(() => null),
 }));
 
 vi.mock("./issue", () => ({
@@ -22,10 +43,20 @@ vi.mock("./issue", () => ({
 }));
 
 vi.mock("@/lib/persistence/boundary/verticalSlice/evidenceIntegrityWrite.server", () => ({
-  mirrorReuseEvidenceIntegrityOnSovereignPg: vi.fn(async () => ({
-    mirrored: false,
-    reason: "source_unavailable",
-  })),
+  mirrorReuseEvidenceIntegrityOnSovereignPg: vi.fn(async () => ({ mirrored: false, reason: "sovereign_pg_unconfigured" })),
+}));
+
+const activateDecisionReceiptIssuance = vi.fn(async () => ({
+  ...pendingReceipt,
+  status: "active" as const,
+  issuance_finalized_at: "2026-01-01T00:00:01.000Z",
+}));
+
+const markDecisionReceiptIssuanceFailed = vi.fn(async () => undefined);
+
+vi.mock("@/lib/decisionReceipts/issuanceLifecycle.server", () => ({
+  activateDecisionReceiptIssuance: (...args: unknown[]) => activateDecisionReceiptIssuance(...args),
+  markDecisionReceiptIssuanceFailed: (...args: unknown[]) => markDecisionReceiptIssuanceFailed(...args),
 }));
 
 const FACT: InternalReusableFact = {
@@ -53,18 +84,26 @@ describe("finalizeReuseEvidenceForIssuance", () => {
     vi.clearAllMocks();
   });
 
-  it("revokes receipt when sovereign mirror cannot resolve source", async () => {
+  it("activates pending receipt after dependencies commit", async () => {
     const { finalizeReuseEvidenceForIssuance } = await import("./reuseEvidenceIssuance.server");
-    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
-    const update = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        eq: vi.fn(async () => ({ error: null })),
-      })),
-    }));
-    vi.mocked(requireSupabaseAdmin).mockReturnValue({
-      from: vi.fn(() => ({ update })),
-    } as never);
+    await finalizeReuseEvidenceForIssuance({
+      fact: FACT,
+      derivedReceiptId: "dr_derived",
+      derivedDecisionId: "dec",
+      requestingPartnerId: "partner",
+      requestingPolicyId: "pol",
+      requestingPolicyVersion: 1,
+      verifyRequestId: "req",
+      derivedClaimRefs: [],
+    });
+    expect(activateDecisionReceiptIssuance).toHaveBeenCalledWith("dr_derived");
+    expect(markDecisionReceiptIssuanceFailed).not.toHaveBeenCalled();
+  });
 
+  it("marks failed when dependency persist throws", async () => {
+    const { persistReuseDerivation } = await import("./issue");
+    vi.mocked(persistReuseDerivation).mockRejectedValueOnce(new Error("deps_failed"));
+    const { finalizeReuseEvidenceForIssuance } = await import("./reuseEvidenceIssuance.server");
     await expect(
       finalizeReuseEvidenceForIssuance({
         fact: FACT,
@@ -76,8 +115,8 @@ describe("finalizeReuseEvidenceForIssuance", () => {
         verifyRequestId: "req",
         derivedClaimRefs: [],
       }),
-    ).rejects.toThrow(/evidence_source_unavailable/);
-
-    expect(update).toHaveBeenCalled();
+    ).rejects.toThrow(/deps_failed/);
+    expect(activateDecisionReceiptIssuance).not.toHaveBeenCalled();
+    expect(markDecisionReceiptIssuanceFailed).toHaveBeenCalledWith("dr_derived");
   });
 });

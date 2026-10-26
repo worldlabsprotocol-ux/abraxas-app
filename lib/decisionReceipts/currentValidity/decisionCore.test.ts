@@ -41,4 +41,12 @@ describe("deriveCurrentValidityDecision", () => {
     expect(d.currently_acceptable).toBe(false);
     expect(d.lifecycle_status).toBe("revoked");
   });
+
+  it("never permits when issuance incomplete", () => {
+    const d = deriveCurrentValidityDecision(
+      { ...base, receipt_status_active: false },
+      ["issuance_incomplete"],
+    );
+    expect(d.currently_acceptable).toBe(false);
+  });
 });

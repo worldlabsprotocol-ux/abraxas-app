@@ -5,6 +5,10 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
 import { verifyReceiptSignature } from "@/lib/decisionReceipts/signing";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
+import {
+  isReceiptIssuanceAuthorizable,
+  issuanceFinalizationInvalidationReasons,
+} from "@/lib/decisionReceipts/issuanceFinalization";
 import type { SignedIssuerAuthorityStatement } from "../issuerAuthority/contract";
 import { resolveIssuerKeyFromSignedStatement } from "../issuerAuthority/resolveIssuerKey";
 import { isReceiptSupersededOnSovereignPg } from "../verticalSlice/supersessionRead";
@@ -107,6 +111,7 @@ export async function evaluateSovereignCurrentValidity(input: {
   if (!policyAudienceMatch) reasons.push("policy_audience_mismatch");
 
   const storedStatus = resolveReceiptStatus(input.record);
+  reasons.push(...issuanceFinalizationInvalidationReasons(input.record));
   if (storedStatus === "revoked") reasons.push("receipt_revoked");
   if (
     storedStatus === "expired"
@@ -193,7 +198,7 @@ export async function evaluateSovereignCurrentValidity(input: {
       policy_active: policyActive,
       claims_current: claimEvidence.claims_current,
       evidence_current: claimEvidence.evidence_current,
-      receipt_status_active: storedStatus === "active",
+      receipt_status_active: storedStatus === "active" && isReceiptIssuanceAuthorizable(input.record),
       not_expired: notExpired,
       not_superseded: !superseded,
       store_available: storeAvailable,

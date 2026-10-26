@@ -41,10 +41,10 @@ export async function seedSovereignSliceFixtures(input: {
     `insert into public.decision_receipts (
        id, verification_decision_id, consent_receipt_id, partner_id, policy_id, policy_version,
        subject_pseudonym_id, wallet_binding_ref, decision_result, reason_codes, evaluated_claim_refs,
-       issuer_refs, decision_context, evaluated_at, expires_at, revoked_at, status, schema_version,
-       payload_hash, signature, signing_key_id, created_at
+       issuer_refs, decision_context, evaluated_at, expires_at, revoked_at, status, issuance_finalized_at,
+       schema_version, payload_hash, signature, signing_key_id, created_at
      ) values (
-       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22
+       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
      )
      on conflict (id) do nothing`,
     [
@@ -65,6 +65,7 @@ export async function seedSovereignSliceFixtures(input: {
       r.expires_at,
       r.revoked_at,
       r.status,
+      r.issuance_finalized_at ?? r.evaluated_at,
       r.schema_version,
       r.payload_hash,
       r.signature,

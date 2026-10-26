@@ -16,6 +16,10 @@ import {
 } from "./contract";
 import { mapPartnerSafeReceiptReason } from "./partnerSafeReason";
 import { deriveCurrentValidityDecision } from "./unifiedContract";
+import {
+  isReceiptIssuanceAuthorizable,
+  issuanceFinalizationInvalidationReasons,
+} from "@/lib/decisionReceipts/issuanceFinalization";
 import type { ApplicationScopeResolver } from "./applicationScopeContract";
 
 export type { ApplicationScopeResolver } from "./applicationScopeContract";
@@ -69,6 +73,7 @@ export async function evaluateReceiptCurrentValidity(
   const issuedValid = signatureValid && record.decision_result === "approved";
 
   const invalidationReasons: string[] = [];
+  invalidationReasons.push(...issuanceFinalizationInvalidationReasons(record));
   let storeUnavailable = false;
 
   let superseded = false;
@@ -169,7 +174,7 @@ export async function evaluateReceiptCurrentValidity(
       policy_active: policyVersionActive,
       claims_current: claimsCurrent,
       evidence_current: !invalidationReasons.some((r) => r.includes("evidence")),
-      receipt_status_active: storedStatus === "active",
+      receipt_status_active: storedStatus === "active" && isReceiptIssuanceAuthorizable(record),
       not_expired: notExpired,
       not_superseded: !superseded,
       store_available: !storeUnavailable,

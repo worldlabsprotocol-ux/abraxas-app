@@ -16,6 +16,7 @@ import {
   isIssuerTrustedForClaim,
 } from "@/lib/trust/issuerFramework";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
+import { issuanceFinalizationInvalidationReasons } from "@/lib/decisionReceipts/issuanceFinalization";
 
 export type ReceiptValidityState =
   | "active"
@@ -52,6 +53,18 @@ export async function resolveReceiptValidity(
       stored_status: storedStatus,
       signature_valid: false,
       invalidation_reasons: ["signature_invalid"],
+      dependency_claim_ids: [],
+    };
+  }
+
+  const issuanceReasons = issuanceFinalizationInvalidationReasons(record);
+  if (issuanceReasons.length > 0) {
+    return {
+      validity: "invalidated",
+      currently_valid: false,
+      stored_status: storedStatus,
+      signature_valid: true,
+      invalidation_reasons: issuanceReasons,
       dependency_claim_ids: [],
     };
   }

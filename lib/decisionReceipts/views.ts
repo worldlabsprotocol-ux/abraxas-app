@@ -2,6 +2,7 @@
 // Public and partner-safe receipt views.
 
 import type { DecisionReceiptPublicView, DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import { isReceiptIssuanceAuthorizable } from "@/lib/decisionReceipts/issuanceFinalization";
 import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { assertCustodySafePayload } from "@/lib/custody/guardrails";
@@ -10,6 +11,7 @@ import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contrac
 
 export function resolveReceiptStatus(record: DecisionReceiptRecord): DecisionReceiptRecord["status"] {
   if (record.status === "revoked" || record.revoked_at) return "revoked";
+  if (record.status === "pending_finalization") return "pending_finalization";
   if (record.expires_at && new Date(record.expires_at) < new Date()) return "expired";
   return record.status === "expired" ? "expired" : "active";
 }
@@ -17,6 +19,7 @@ export function resolveReceiptStatus(record: DecisionReceiptRecord): DecisionRec
 export function isReceiptCurrentlyValid(record: DecisionReceiptRecord): boolean {
   const status = resolveReceiptStatus(record);
   if (status !== "active") return false;
+  if (!isReceiptIssuanceAuthorizable(record)) return false;
   if (record.decision_context === "sandbox_only") return false;
   if (isSandboxPolicyId(record.policy_id)) return false;
   return true;

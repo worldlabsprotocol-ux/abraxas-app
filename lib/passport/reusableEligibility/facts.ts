@@ -34,6 +34,7 @@ export function projectInternalFact(input: {
   const pack = inferPolicyPackFromPolicyId(input.receipt.policy_id);
   if (!pack) return null;
   if (input.receipt.decision_result !== "approved") return null;
+  if (input.receipt.status === "pending_finalization") return null;
   const now = input.now ?? new Date();
   let status: InternalReusableFact["status"] = "active";
   if (input.receipt.status === "revoked" || input.receipt.revoked_at) status = "revoked";

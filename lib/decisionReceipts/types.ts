@@ -3,7 +3,7 @@
 
 export const DECISION_RECEIPT_SCHEMA_VERSION = "1.0.0";
 
-export type DecisionReceiptStatus = "active" | "expired" | "revoked";
+export type DecisionReceiptStatus = "active" | "expired" | "revoked" | "pending_finalization";
 export type DecisionReceiptContext = "production" | "sandbox_only";
 export type DecisionReceiptResult = "approved" | "denied" | "manual_review";
 
@@ -54,6 +54,8 @@ export interface DecisionReceiptRecord {
   evaluated_at: string;
   expires_at: string | null;
   revoked_at: string | null;
+  /** Set when status becomes active after evidence finalization (migration 151). */
+  issuance_finalized_at?: string | null;
   status: DecisionReceiptStatus;
   schema_version: string;
   payload_hash: string;
@@ -111,6 +113,8 @@ export interface DecisionReceiptPartnerView extends DecisionReceiptPublicView {
   consent_scope_allowed: boolean;
 }
 
+export type DecisionReceiptIssuanceLifecycle = "immediate" | "pending_evidence_finalization";
+
 export interface IssueDecisionReceiptInput {
   verificationDecisionId: string;
   consentReceiptId?: string | null;
@@ -130,4 +134,6 @@ export interface IssueDecisionReceiptInput {
   decisionContext?: DecisionReceiptContext;
   idempotencyKey?: string;
   anchorReference?: string | null;
+  /** Reuse with evidence deps: signed artifact prepared as pending until finalization. */
+  issuanceLifecycle?: DecisionReceiptIssuanceLifecycle;
 }
