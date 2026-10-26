@@ -236,6 +236,290 @@ describe("Build #845 operational v1.1.0 verification", () => {
     expect(validity.currently_valid).toBe(false);
   });
 
+  function buildSignedFinalV11(opts?: {
+    application_binding_ref?: string | null;
+    sidecarBinding?: string | null;
+  }) {
+    const key = testKeyPair("845-helper");
+    registryEnv(key);
+    const commitment = buildEvidenceCommitment([]);
+    const sidecarBinding = opts?.sidecarBinding ?? opts?.application_binding_ref ?? null;
+    const anchor = encodeReceiptV11Sidecar({
+      schema: V1_1_SIDECAR_SCHEMA,
+      issuance_phase: "final",
+      application_binding_ref: sidecarBinding,
+      evidence_commitment: commitment,
+      evidence_commitment_manifest: [],
+    });
+    const record = attachV11FieldsFromSidecar({
+      id: "dr_helper",
+      verification_decision_id: "00000000-0000-4000-8000-000000008849",
+      consent_receipt_id: null,
+      partner_id: "partner",
+      policy_id: "policy",
+      policy_version: 1,
+      subject_pseudonym_id: "subj",
+      wallet_binding_ref: null,
+      decision_result: "approved",
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: "production",
+      evaluated_at: "2026-06-01T12:00:00.000Z",
+      expires_at: "2027-06-01T12:00:00.000Z",
+      revoked_at: null,
+      status: "active",
+      schema_version: "1.1.0",
+      payload_hash: "pending",
+      signature: "pending",
+      signing_key_id: key.signingKeyId,
+      anchor_reference: anchor,
+      idempotency_key: null,
+      created_at: "2026-06-01T12:00:00.000Z",
+      issuance_finalized_at: "2026-06-01T12:00:01.000Z",
+      application_binding_ref: opts?.application_binding_ref,
+    });
+    const { payload, payloadHash } = buildSignedCanonicalV11(record);
+    const signed = signReceiptPayload(payload as Parameters<typeof signReceiptPayload>[0], key.privateKeyJwk);
+    const stored: DecisionReceiptRecord = {
+      ...record,
+      payload_hash: signed.payloadHash,
+      signature: signed.signature,
+      signing_key_id: key.signingKeyId,
+      anchor_reference: anchor,
+    };
+    return { stored, commitment, anchor, key, sidecarBinding: sidecarBinding ?? null };
+  }
+
+  it("pre-152 sidecar-only row passes operational integrity", () => {
+    const { stored, commitment, anchor } = buildSignedFinalV11();
+    const row = {
+      id: stored.id,
+      verification_decision_id: stored.verification_decision_id,
+      consent_receipt_id: stored.consent_receipt_id,
+      partner_id: stored.partner_id,
+      policy_id: stored.policy_id,
+      policy_version: stored.policy_version,
+      subject_pseudonym_id: stored.subject_pseudonym_id,
+      wallet_binding_ref: stored.wallet_binding_ref,
+      decision_result: stored.decision_result,
+      reason_codes: stored.reason_codes,
+      evaluated_claim_refs: stored.evaluated_claim_refs,
+      issuer_refs: stored.issuer_refs,
+      decision_context: stored.decision_context,
+      evaluated_at: stored.evaluated_at,
+      expires_at: stored.expires_at,
+      revoked_at: stored.revoked_at,
+      status: stored.status,
+      schema_version: stored.schema_version,
+      payload_hash: stored.payload_hash,
+      signature: stored.signature,
+      signing_key_id: stored.signing_key_id,
+      anchor_reference: anchor,
+      idempotency_key: stored.idempotency_key,
+      created_at: stored.created_at,
+    };
+    const mapped = mapReceiptRow(row);
+    expect(mapped.v11_dedicated_persistence?.columns.application_binding_ref).toBe(false);
+    expect(assertV11OperationalIntegrity(mapped).ok).toBe(true);
+    expect(verifyOperational(mapped)).toBe(true);
+  });
+
+  it("post-152 unbackfilled null columns accept signed sidecar values", () => {
+    const { stored, anchor, commitment } = buildSignedFinalV11({ sidecarBinding: "bind-signed" });
+    const row = {
+      id: stored.id,
+      verification_decision_id: stored.verification_decision_id,
+      consent_receipt_id: null,
+      partner_id: stored.partner_id,
+      policy_id: stored.policy_id,
+      policy_version: stored.policy_version,
+      subject_pseudonym_id: stored.subject_pseudonym_id,
+      wallet_binding_ref: null,
+      decision_result: stored.decision_result,
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: stored.decision_context,
+      evaluated_at: stored.evaluated_at,
+      expires_at: stored.expires_at,
+      revoked_at: null,
+      status: stored.status,
+      schema_version: "1.1.0",
+      payload_hash: stored.payload_hash,
+      signature: stored.signature,
+      signing_key_id: stored.signing_key_id,
+      anchor_reference: anchor,
+      idempotency_key: null,
+      created_at: stored.created_at,
+      application_binding_ref: null,
+      evidence_commitment: null,
+      v11_issuance_phase: null,
+    };
+    const mapped = mapReceiptRow(row);
+    expect(mapped.application_binding_ref).toBe(null);
+    expect(mapped.v11_dedicated_persistence?.issuance_phase).toBe(null);
+    expect(assertV11OperationalIntegrity(mapped).ok).toBe(true);
+    expect(verifyOperational(mapped)).toBe(true);
+  });
+
+  it("final phase rejects dedicated null application_binding vs signed sidecar binding", () => {
+    const commitment = buildEvidenceCommitment([]);
+    const anchor = encodeReceiptV11Sidecar({
+      schema: V1_1_SIDECAR_SCHEMA,
+      issuance_phase: "final",
+      application_binding_ref: "bind-signed",
+      evidence_commitment: commitment,
+      evidence_commitment_manifest: [],
+    });
+    const { stored } = buildSignedFinalV11({ sidecarBinding: "bind-signed" });
+    const mapped = mapReceiptRow({
+      id: stored.id,
+      verification_decision_id: stored.verification_decision_id,
+      consent_receipt_id: null,
+      partner_id: stored.partner_id,
+      policy_id: stored.policy_id,
+      policy_version: stored.policy_version,
+      subject_pseudonym_id: stored.subject_pseudonym_id,
+      wallet_binding_ref: null,
+      decision_result: stored.decision_result,
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: stored.decision_context,
+      evaluated_at: stored.evaluated_at,
+      expires_at: stored.expires_at,
+      revoked_at: null,
+      status: stored.status,
+      schema_version: "1.1.0",
+      payload_hash: stored.payload_hash,
+      signature: stored.signature,
+      signing_key_id: stored.signing_key_id,
+      anchor_reference: anchor,
+      idempotency_key: null,
+      created_at: stored.created_at,
+      application_binding_ref: null,
+      evidence_commitment: commitment,
+      v11_issuance_phase: "final",
+    });
+    const integrity = assertV11OperationalIntegrity(mapped);
+    expect(integrity.ok).toBe(false);
+    if (!integrity.ok) {
+      expect(integrity.reasons).toContain("application_binding_persistence_mismatch");
+    }
+  });
+
+  it("final phase rejects dedicated null evidence_commitment vs signed sidecar commitment", () => {
+    const commitment = buildEvidenceCommitment([]);
+    const sidecarCommitment = buildEvidenceCommitment([{
+      dependency_type: "reusable_fact",
+      fact_id: blindEvidenceRef("00000000-0000-4000-8000-00000000fact", BLINDING_KEY),
+      source_credential_id: blindEvidenceRef("dr_source", BLINDING_KEY),
+    }]);
+    const anchor = encodeReceiptV11Sidecar({
+      schema: V1_1_SIDECAR_SCHEMA,
+      issuance_phase: "final",
+      application_binding_ref: null,
+      evidence_commitment: sidecarCommitment,
+      evidence_commitment_manifest: [{
+        dependency_type: "reusable_fact",
+        fact_id: blindEvidenceRef("00000000-0000-4000-8000-00000000fact", BLINDING_KEY),
+        source_credential_id: blindEvidenceRef("dr_source", BLINDING_KEY),
+      }],
+    });
+    const { stored } = buildSignedFinalV11();
+    const mapped = mapReceiptRow({
+      id: stored.id,
+      verification_decision_id: stored.verification_decision_id,
+      consent_receipt_id: null,
+      partner_id: stored.partner_id,
+      policy_id: stored.policy_id,
+      policy_version: stored.policy_version,
+      subject_pseudonym_id: stored.subject_pseudonym_id,
+      wallet_binding_ref: null,
+      decision_result: stored.decision_result,
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: stored.decision_context,
+      evaluated_at: stored.evaluated_at,
+      expires_at: stored.expires_at,
+      revoked_at: null,
+      status: stored.status,
+      schema_version: "1.1.0",
+      payload_hash: stored.payload_hash,
+      signature: stored.signature,
+      signing_key_id: stored.signing_key_id,
+      anchor_reference: anchor,
+      idempotency_key: null,
+      created_at: stored.created_at,
+      application_binding_ref: null,
+      evidence_commitment: null,
+      v11_issuance_phase: "final",
+    });
+    const integrity = assertV11OperationalIntegrity(mapped);
+    expect(integrity.ok).toBe(false);
+    if (!integrity.ok) {
+      expect(integrity.reasons).toContain("evidence_commitment_persistence_mismatch");
+    }
+  });
+
+  it("rejects evidence_commitment_manifest tampering when dedicated column is authoritative", () => {
+    const manifest = [{
+      dependency_type: "reusable_fact" as const,
+      fact_id: blindEvidenceRef("00000000-0000-4000-8000-00000000fact", BLINDING_KEY),
+      source_credential_id: blindEvidenceRef("dr_source", BLINDING_KEY),
+    }];
+    const commitment = buildEvidenceCommitment(manifest);
+    const anchor = encodeReceiptV11Sidecar({
+      schema: V1_1_SIDECAR_SCHEMA,
+      issuance_phase: "final",
+      application_binding_ref: null,
+      evidence_commitment: commitment,
+      evidence_commitment_manifest: manifest,
+    });
+    const { stored } = buildSignedFinalV11();
+    const tamperedManifest = [{
+      ...manifest[0],
+      fact_id: blindEvidenceRef("00000000-0000-4000-8000-00000000evil", BLINDING_KEY),
+    }];
+    const mapped = mapReceiptRow({
+      id: stored.id,
+      verification_decision_id: stored.verification_decision_id,
+      consent_receipt_id: null,
+      partner_id: stored.partner_id,
+      policy_id: stored.policy_id,
+      policy_version: stored.policy_version,
+      subject_pseudonym_id: stored.subject_pseudonym_id,
+      wallet_binding_ref: null,
+      decision_result: stored.decision_result,
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: stored.decision_context,
+      evaluated_at: stored.evaluated_at,
+      expires_at: stored.expires_at,
+      revoked_at: null,
+      status: stored.status,
+      schema_version: "1.1.0",
+      payload_hash: stored.payload_hash,
+      signature: stored.signature,
+      signing_key_id: stored.signing_key_id,
+      anchor_reference: anchor,
+      idempotency_key: null,
+      created_at: stored.created_at,
+      application_binding_ref: null,
+      evidence_commitment: commitment,
+      evidence_commitment_manifest: tamperedManifest,
+      v11_issuance_phase: "final",
+    });
+    const integrity = assertV11OperationalIntegrity(mapped);
+    expect(integrity.ok).toBe(false);
+    if (!integrity.ok) {
+      expect(integrity.reasons).toContain("evidence_commitment_manifest_persistence_mismatch");
+    }
+  });
+
   it("mapReceiptRow detects dedicated column vs sidecar mismatch", async () => {
     const commitment = buildEvidenceCommitment([{
       dependency_type: "reusable_fact",

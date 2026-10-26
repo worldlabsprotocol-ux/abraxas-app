@@ -16,13 +16,26 @@ Server-only modules enforce full v1.1.0 canonical signature verification and sig
 
 **Client-safe (unchanged):** `trustEvaluation.ts`, `views.ts`, `resolve.ts` — v1.1.0 signatures return `false` (fail-closed). Browser demos must not import `*.server.ts` or `@abraxas/independent-verifier` runtime.
 
+## Migration 152 persistence contract
+
+Pure rules live in `lib/decisionReceipts/v1_1_0/dedicatedPersistence.ts` and are enforced by `assertV11OperationalIntegrity` and `attachV11FieldsFromSidecar` (canonical signing / verification).
+
+| State | Detection | Operational behavior |
+|-------|-----------|----------------------|
+| Column **absent** | Key not on DB row | Legacy sidecar-only; no dedicated vs sidecar parity check |
+| Column **present, null**, phase not **final** | Migration 152 applied, backfill pending | Sidecar remains authoritative for canonical hash/signature; null vs non-null sidecar is **not** a mismatch |
+| Column **present, non-null** | Partial or full backfill | Dedicated value must match signed sidecar (including null vs non-null) |
+| Column **present**, phase **final** | Finalized v1.1.0 row | Dedicated values must match signed sidecar exactly; null dedicated vs signed non-null **fails closed** |
+| Contradiction | Any enforced state | `application_binding_persistence_mismatch`, `evidence_commitment_persistence_mismatch`, or `evidence_commitment_manifest_persistence_mismatch` |
+
+`mapReceiptRow` records raw dedicated column values plus `v11_dedicated_persistence` (column presence + issuance phase). Verification resolves the authoritative signed field via `resolveAuthoritativeV11Field`; it does not treat an unbackfilled SQL `NULL` as an authoritative empty binding.
+
 ## Legacy sidecar compatibility
 
 Until migration `152_decision_receipt_v1_1_signed_fields.sql` is applied:
 
 - **Write path:** v1.1.0 signed metadata remains in `anchor_reference` sidecar (`abraxas.receipt.v1_1.sidecar/v1`).
-- **Read path:** `mapReceiptRow` prefers dedicated columns when present on the row; otherwise decodes sidecar.
-- **Mismatch:** If both dedicated columns and sidecar disagree, operational validity fails closed (`application_binding_persistence_mismatch`, `evidence_commitment_persistence_mismatch`).
+- **Read path:** `mapReceiptRow` hydrates from sidecar when column keys are absent; when keys exist, dedicated storage is preserved on the record for integrity checks.
 
 External `anchor_reference` values that are not sidecars remain reserved for partner/chain anchors.
 
