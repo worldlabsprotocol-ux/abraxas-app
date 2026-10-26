@@ -115,9 +115,10 @@ describe("evidence dependency integrity (adversarial)", () => {
 
   it("fails closed when evidence dependency store is unavailable for reuse-derived receipts", async () => {
     const deps = await import("@/lib/decisionReceipts/evidenceDependencies");
+    const actual = await vi.importActual<typeof deps>("@/lib/decisionReceipts/evidenceDependencies");
     vi.mocked(deps.receiptRequiresEvidenceDependencyGraph).mockResolvedValue(true);
     vi.mocked(deps.getReceiptEvidenceDependencies).mockRejectedValue(
-      new EvidenceDependencyStoreUnavailableError(),
+      new actual.EvidenceDependencyStoreUnavailableError(),
     );
 
     const validity = await resolveReceiptValidity(baseRecord, undefined, { verifySignature: () => true });

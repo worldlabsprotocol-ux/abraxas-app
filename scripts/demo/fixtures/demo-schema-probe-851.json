@@ -1,0 +1,29 @@
+{
+  "project_ref": "ocntwbxarpjeixdnzide",
+  "migration_ledger_max": "065_service_role_runtime_grants.sql",
+  "tables": {
+    "decision_receipts": true,
+    "reusable_eligibility_facts": true,
+    "reusable_eligibility_derivations": true,
+    "decision_receipt_revocation_events": false,
+    "decision_receipt_evidence_dependencies": false,
+    "receipt_claim_dependencies": true
+  },
+  "functions": {
+    "revoke_decision_receipt_atomic": false,
+    "revoke_derived_receipts_for_source": true,
+    "abraxas_finalize_v11_receipt_atomic": false
+  },
+  "decision_receipts": {
+    "status_check_includes_pending_finalization": false,
+    "has_v11_dedicated_columns": false,
+    "receipt_count": 9,
+    "v10_count": 9,
+    "v11_count": 0,
+    "pending_count": 0
+  },
+  "reusable_rows": {
+    "facts": 0,
+    "derivations": 0
+  }
+}
