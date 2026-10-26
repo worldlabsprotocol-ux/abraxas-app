@@ -52,6 +52,7 @@ export async function GET(
     }
   }
   const reuseDerivation = await getDerivationByDerivedReceipt(receiptId).catch(() => null);
+  const evidenceDependencyCount = Array.isArray(evidenceDependencies) ? evidenceDependencies.length : null;
 
   return NextResponse.json({
     receipt: {
@@ -74,9 +75,9 @@ export async function GET(
           derived_from_source: true,
           requesting_partner_id: reuseDerivation.requesting_partner_id,
           requesting_policy_id: reuseDerivation.requesting_policy_id,
-          evidence_dependency_count: evidenceDependencies.length,
+          evidence_dependency_count: evidenceDependencyCount,
         }
-      : { derived_from_source: false, evidence_dependency_count: evidenceDependencies.length },
+      : { derived_from_source: false, evidence_dependency_count: evidenceDependencyCount },
     audit_timeline: audit,
   });
 }
