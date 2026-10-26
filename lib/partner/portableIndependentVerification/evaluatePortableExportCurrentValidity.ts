@@ -109,6 +109,8 @@ export async function evaluatePortableExportCurrentValidity(input: {
   record: DecisionReceiptRecord;
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   trustAnchorPublicJwk: JsonWebKey;
+  /** When set, sovereign PG enforces Launchpad receipt binding (fail closed). */
+  expectedApplicationId?: string | null;
   env?: Record<string, string | undefined>;
   now?: Date;
 }): Promise<PortableExportValidityEvaluation> {
@@ -122,6 +124,7 @@ export async function evaluatePortableExportCurrentValidity(input: {
       signedIssuerAuthority: input.signedIssuerAuthority,
       trustAnchorPublicJwk: input.trustAnchorPublicJwk,
       expectedEnvironment,
+      expectedApplicationId: input.expectedApplicationId,
       env,
       now,
     });

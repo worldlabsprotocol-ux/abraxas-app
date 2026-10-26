@@ -1,7 +1,7 @@
 // FILE: lib/admin/adminConfirmCopy.ts
 // Fixed confirmation copy registry for admin mutation dialogs (UI only).
 
-import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
+import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationReasonCodes";
 
 export type AdminConfirmRisk = "low" | "medium" | "high";
 

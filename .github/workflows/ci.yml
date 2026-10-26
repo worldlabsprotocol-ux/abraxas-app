@@ -367,6 +367,18 @@ jobs:
           ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
           NEXT_PUBLIC_SUPABASE_URL: ""
           SUPABASE_SERVICE_ROLE_KEY: ""
+      - name: Build #836 sovereign application authorization parity
+        run: npm run sovereign:build-836-application-authorization-parity
+        env:
+          ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
+          ABRAXAS_BUILD_836_CI_CONTRACT: "1"
+          ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+          ABRAXAS_SOVEREIGN_ENV_CLASS: disposable
+          ABRAXAS_SOVEREIGN_STAGING_FIXTURE_WRITES: "true"
+          ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true"
+          ABRAXAS_BACKUP_ENCRYPTION_KEY: CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          SUPABASE_SERVICE_ROLE_KEY: ""
 
   ephemeral-wallet-auth:
     name: ephemeral-wallet-auth

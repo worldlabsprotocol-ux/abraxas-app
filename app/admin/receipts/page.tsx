@@ -13,7 +13,7 @@ import {
   PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE,
   useProductionAdminSessionGate,
 } from "@/lib/admin/productionAdminSessionUi";
-import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
+import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationReasonCodes";
 
 const MONO = "'JetBrains Mono',monospace";
 

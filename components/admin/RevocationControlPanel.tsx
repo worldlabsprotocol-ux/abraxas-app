@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { adminFetch } from "@/lib/admin/adminFetch";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
-import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationControlPlane";
+import { REVOCATION_REASON_CODES } from "@/lib/decisionReceipts/revocationReasonCodes";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";

@@ -10,4 +10,8 @@ export {
   type ReceiptCurrentValidityResult,
 } from "./contract";
 export { mapPartnerSafeReceiptReason } from "./partnerSafeReason";
-export { evaluateReceiptCurrentValidity, type EvaluateReceiptCurrentValidityInput } from "./evaluate";
+export {
+  evaluateReceiptCurrentValidity,
+  type EvaluateReceiptCurrentValidityInput,
+  type ApplicationScopeResolver,
+} from "./evaluate";

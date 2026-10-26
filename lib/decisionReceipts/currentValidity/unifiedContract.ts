@@ -22,7 +22,7 @@ export type CurrentValidityDecisionInput = {
   not_expired: boolean;
   not_superseded: boolean;
   store_available: boolean;
-  /** When false, operational Launchpad application scope failed. Sovereign slice may omit app checks. */
+  /** When false, Launchpad application scope failed (inactive, unbound, or mismatched). */
   application_scope_satisfied?: boolean;
 };
 
@@ -53,6 +53,9 @@ const HARD_DENY = new Set([
   "source_evidence_missing",
   "source_evidence_revoked",
   "source_evidence_expired",
+  "application_inactive",
+  "application_mismatch",
+  "application_unbound",
 ]);
 
 export function deriveCurrentValidityDecision(

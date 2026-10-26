@@ -6,7 +6,6 @@ import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvalua
 import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { isReceiptSuperseded } from "@/lib/decisionReceipts/receiptSupersession";
 import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
 import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
@@ -17,6 +16,9 @@ import {
 } from "./contract";
 import { mapPartnerSafeReceiptReason } from "./partnerSafeReason";
 import { deriveCurrentValidityDecision } from "./unifiedContract";
+import type { ApplicationScopeResolver } from "./applicationScopeContract";
+
+export type { ApplicationScopeResolver } from "./applicationScopeContract";
 
 export interface EvaluateReceiptCurrentValidityInput {
   record: DecisionReceiptRecord;
@@ -24,6 +26,8 @@ export interface EvaluateReceiptCurrentValidityInput {
   expectedPolicyId?: string;
   expectedEnvironment?: "sandbox" | "production";
   applicationId?: string | null;
+  /** Server boundary: resolves authoritative Launchpad binding (required when applicationId is set). */
+  resolveApplicationScope?: ApplicationScopeResolver;
   now?: Date;
 }
 
@@ -49,15 +53,6 @@ async function resolvePartnerOperational(partnerId: string): Promise<boolean> {
     const { data } = await sb.from("partners").select("status").eq("partner_id", partnerId).maybeSingle();
     if (!data) return true;
     return String(data.status ?? "active") !== "suspended";
-  } catch {
-    return false;
-  }
-}
-
-async function resolveApplicationActive(applicationId: string, partnerId: string): Promise<boolean> {
-  try {
-    const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
-    return Boolean(app && app.status === "active");
   } catch {
     return false;
   }
@@ -123,8 +118,24 @@ export async function evaluateReceiptCurrentValidity(
 
   let applicationActive: boolean | null = null;
   if (input.applicationId) {
-    applicationActive = await resolveApplicationActive(input.applicationId, record.partner_id);
-    if (!applicationActive) invalidationReasons.push("application_inactive");
+    if (!input.resolveApplicationScope) {
+      storeUnavailable = true;
+      invalidationReasons.push("validity_store_unavailable");
+      applicationActive = false;
+    } else {
+      const applicationScope = await input.resolveApplicationScope({
+        receiptId: record.id,
+        partnerId: record.partner_id,
+        applicationId: input.applicationId,
+      });
+      if (!applicationScope.store_available) {
+        storeUnavailable = true;
+        invalidationReasons.push("validity_store_unavailable");
+      } else {
+        invalidationReasons.push(...applicationScope.reasons);
+        applicationActive = applicationScope.application_scope_satisfied;
+      }
+    }
   }
 
   const claimsCurrent = !trust.invalidation_reasons.some((reason) =>

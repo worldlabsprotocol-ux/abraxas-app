@@ -13,18 +13,13 @@ import {
   maybeEnqueuePartnerReceiptRevoked,
 } from "@/lib/partner/webhooks/webhookHooks";
 import { enqueueDerivedInvalidationEvents } from "@/lib/partner/receiptLifecycle";
+import {
+  isRevocationReasonCode,
+  REVOCATION_REASON_CODES,
+  type RevocationReasonCode,
+} from "@/lib/decisionReceipts/revocationReasonCodes";
 
-export const REVOCATION_REASON_CODES = [
-  "operator_security_review",
-  "credential_compromised",
-  "policy_violation",
-  "fraud_investigation",
-  "compliance_hold",
-  "duplicate_issuance",
-  "holder_withdrawal",
-] as const;
-
-export type RevocationReasonCode = (typeof REVOCATION_REASON_CODES)[number];
+export { REVOCATION_REASON_CODES, isRevocationReasonCode, type RevocationReasonCode };
 
 export interface RevokeDecisionReceiptResult {
   ok: true;
@@ -73,10 +68,6 @@ interface RpcClaimRevokeResult {
   to_status?: string;
   already_revoked?: boolean;
   affected_receipt_ids?: string[];
-}
-
-export function isRevocationReasonCode(value: string): value is RevocationReasonCode {
-  return (REVOCATION_REASON_CODES as readonly string[]).includes(value);
 }
 
 async function revokeDecisionReceiptAtomic(input: {
