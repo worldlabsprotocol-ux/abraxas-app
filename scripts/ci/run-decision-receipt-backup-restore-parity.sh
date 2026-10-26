@@ -8,6 +8,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
+export PARITY_REPO_ROOT="$ROOT_DIR"
 # shellcheck source=scripts/ci/lib/postgres-client-16.sh
 . "$ROOT_DIR/scripts/ci/lib/postgres-client-16.sh"
 
@@ -15,23 +16,22 @@ DUMP_FILE="$(mktemp /tmp/decision_receipts_backup_XXXXXX.sql)"
 cleanup() { rm -f "$DUMP_FILE"; }
 trap cleanup EXIT
 
-postgres_client_16_path
 postgres_report_versions "$RECEIPT_BACKUP_PG_URL"
 postgres_assert_client_major_matches_server "$RECEIPT_BACKUP_PG_URL"
 
-if ! psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select to_regclass('public.decision_receipts');" | grep -q decision_receipts; then
-  psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -f scripts/ci/migration-153-parity-bootstrap.sql
-  psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/033_decision_receipts.sql
+if ! parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select to_regclass('public.decision_receipts');" | grep -q decision_receipts; then
+  parity_psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/scripts/ci/migration-153-parity-bootstrap.sql"
+  parity_psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -f "$ROOT_DIR/supabase/migrations/033_decision_receipts.sql"
 fi
 
-HAS_V152="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "
+HAS_V152="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "
   select count(*)::int from information_schema.columns
   where table_schema = 'public' and table_name = 'decision_receipts'
     and column_name = 'application_binding_ref';
 ")"
 
-DECISION_ID="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "insert into public.verification_decisions default values returning id;")"
-psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -c "
+DECISION_ID="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "insert into public.verification_decisions default values returning id;")"
+parity_psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -c "
   INSERT INTO public.decision_receipts (
     id, verification_decision_id, partner_id, policy_id, policy_version,
     subject_pseudonym_id, decision_result, evaluated_at, status, schema_version,
@@ -88,30 +88,30 @@ if [ "$HAS_V152" = "0" ]; then
   "
 fi
 
-BEFORE_FP="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "$FINGERPRINT_SQL")"
-BEFORE_COUNT="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select count(*)::int from public.decision_receipts;")"
+BEFORE_FP="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "$FINGERPRINT_SQL")"
+BEFORE_COUNT="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select count(*)::int from public.decision_receipts;")"
 
-pg_dump "$RECEIPT_BACKUP_PG_URL" \
+parity_pg_dump "$RECEIPT_BACKUP_PG_URL" \
   --data-only \
   --table=public.decision_receipts \
   --no-owner \
   --no-privileges \
   --file="$DUMP_FILE"
 
-psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM public.decision_receipts;"
-AFTER_DELETE="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select count(*)::int from public.decision_receipts;")"
+parity_psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM public.decision_receipts;"
+AFTER_DELETE="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select count(*)::int from public.decision_receipts;")"
 test "$AFTER_DELETE" = "0"
 
-psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -f "$DUMP_FILE"
+parity_psql "$RECEIPT_BACKUP_PG_URL" -v ON_ERROR_STOP=1 -f "$DUMP_FILE"
 
-AFTER_FP="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "$FINGERPRINT_SQL")"
-AFTER_COUNT="$(psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select count(*)::int from public.decision_receipts;")"
+AFTER_FP="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "$FINGERPRINT_SQL")"
+AFTER_COUNT="$(parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "select count(*)::int from public.decision_receipts;")"
 
 test "$BEFORE_COUNT" = "$AFTER_COUNT"
 test "$BEFORE_FP" = "$AFTER_FP"
 
-psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "
+parity_psql "$RECEIPT_BACKUP_PG_URL" -q -t -A -c "
   SELECT id FROM public.decision_receipts WHERE id = 'dr_backupRestoreParity1';
 " | grep -q dr_backupRestoreParity1
 
-echo "backup_restore_parity_ok rows=${AFTER_COUNT} fingerprint_match=1 pg_dump=$(pg_dump --version | tr -d '\n')"
+echo "backup_restore_parity_ok rows=${AFTER_COUNT} fingerprint_match=1 pg_dump=$(parity_pg_dump --version | tr -d '\n')"

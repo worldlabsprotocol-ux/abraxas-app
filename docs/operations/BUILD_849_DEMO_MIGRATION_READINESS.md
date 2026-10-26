@@ -46,7 +46,7 @@ Rules: `persistenceState.ts`, `dedicatedPersistence.ts` (#846). Classifier tests
 |--------|--------|
 | `scripts/ci/run-migration-153-sql-parity.sh` | 033→151→152→153 apply + idempotent re-apply; `migration153.sqlParity.test.ts` (dr_ id, service_role-only RPC) |
 | `migration151153Chain.sqlParity.test.ts` | Column + status constraint checks after chain |
-| `scripts/ci/run-decision-receipt-backup-restore-parity.sh` | **PostgreSQL 16** client + `postgres:16-alpine` service; `pg_dump` → delete → restore → JSON fingerprint parity (id, schema, hash, signature, dedicated columns when present) |
+| `scripts/ci/run-decision-receipt-backup-restore-parity.sh` | **`postgres:16-alpine` container clients** (`POSTGRES_CLIENT_DOCKER_IMAGE`) + matching service; `pg_dump` → delete → restore → JSON fingerprint parity |
 
 ## 5. Backup and recovery (Demo)
 

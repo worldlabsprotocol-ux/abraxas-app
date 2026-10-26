@@ -229,24 +229,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install PostgreSQL 16 client (match postgres service)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-16
-          /usr/lib/postgresql/16/bin/pg_dump --version
-          /usr/lib/postgresql/16/bin/psql --version
-
       - name: Migration 153 SQL parity
         run: bash scripts/ci/run-migration-153-sql-parity.sh
         env:
           MIGRATION_153_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_153_parity
-          PATH: /usr/lib/postgresql/16/bin:${{ env.PATH }}
 
       - name: Decision receipt backup restore parity
         run: bash scripts/ci/run-decision-receipt-backup-restore-parity.sh
         env:
           RECEIPT_BACKUP_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_153_parity
-          PATH: /usr/lib/postgresql/16/bin:${{ env.PATH }}
+          POSTGRES_CLIENT_DOCKER_IMAGE: postgres:16-alpine
+          PARITY_REPO_ROOT: ${{ github.workspace }}
 
   foundry-evm-verifier:
     runs-on: ubuntu-latest
