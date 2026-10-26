@@ -30,9 +30,14 @@ export function isReceiptIssuanceAuthorizable(record: DecisionReceiptRecord): bo
 export function issuanceFinalizationInvalidationReasons(
   record: DecisionReceiptRecord,
 ): string[] {
-  if (isReceiptIssuanceAuthorizable(record)) return [];
   if (isReceiptPendingEvidenceFinalization(record)) {
     return [ISSUANCE_INCOMPLETE_REASON];
   }
-  return [ISSUANCE_INCOMPLETE_REASON];
+  if (
+    record.status === "active"
+    && record.issuance_finalized_at === null
+  ) {
+    return [ISSUANCE_INCOMPLETE_REASON];
+  }
+  return [];
 }

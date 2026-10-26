@@ -169,9 +169,15 @@ export async function recordPartnerFlowReceiptMetering(input: {
   }
   if (input.issuanceAuthorizable === undefined) {
     const { getReceiptById } = await import("@/lib/decisionReceipts/service");
-    const { isReceiptIssuanceAuthorizable } = await import("@/lib/decisionReceipts/issuanceFinalization");
+    const { isReceiptPendingEvidenceFinalization, issuanceFinalizationInvalidationReasons } = await import(
+      "@/lib/decisionReceipts/issuanceFinalization",
+    );
     const record = await getReceiptById(receiptId);
-    if (!record || !isReceiptIssuanceAuthorizable(record)) {
+    if (
+      !record
+      || isReceiptPendingEvidenceFinalization(record)
+      || issuanceFinalizationInvalidationReasons(record).length > 0
+    ) {
       return { recorded: false, duplicate: false, error: "issuance_not_finalized" };
     }
   }

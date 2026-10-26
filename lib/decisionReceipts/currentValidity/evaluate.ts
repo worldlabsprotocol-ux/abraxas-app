@@ -18,7 +18,7 @@ import { mapPartnerSafeReceiptReason } from "./partnerSafeReason";
 import { deriveCurrentValidityDecision } from "./unifiedContract";
 import {
   isReceiptIssuanceAuthorizable,
-  ISSUANCE_INCOMPLETE_REASON,
+  issuanceFinalizationInvalidationReasons,
 } from "@/lib/decisionReceipts/issuanceFinalization";
 import type { ApplicationScopeResolver } from "./applicationScopeContract";
 
@@ -73,9 +73,7 @@ export async function evaluateReceiptCurrentValidity(
   const issuedValid = signatureValid && record.decision_result === "approved";
 
   const invalidationReasons: string[] = [];
-  if (!isReceiptIssuanceAuthorizable(record)) {
-    invalidationReasons.push(ISSUANCE_INCOMPLETE_REASON);
-  }
+  invalidationReasons.push(...issuanceFinalizationInvalidationReasons(record));
   let storeUnavailable = false;
 
   let superseded = false;

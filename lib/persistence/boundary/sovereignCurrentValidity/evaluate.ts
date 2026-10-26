@@ -7,7 +7,7 @@ import { verifyReceiptSignature } from "@/lib/decisionReceipts/signing";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import {
   isReceiptIssuanceAuthorizable,
-  ISSUANCE_INCOMPLETE_REASON,
+  issuanceFinalizationInvalidationReasons,
 } from "@/lib/decisionReceipts/issuanceFinalization";
 import type { SignedIssuerAuthorityStatement } from "../issuerAuthority/contract";
 import { resolveIssuerKeyFromSignedStatement } from "../issuerAuthority/resolveIssuerKey";
@@ -111,9 +111,7 @@ export async function evaluateSovereignCurrentValidity(input: {
   if (!policyAudienceMatch) reasons.push("policy_audience_mismatch");
 
   const storedStatus = resolveReceiptStatus(input.record);
-  if (!isReceiptIssuanceAuthorizable(input.record)) {
-    reasons.push(ISSUANCE_INCOMPLETE_REASON);
-  }
+  reasons.push(...issuanceFinalizationInvalidationReasons(input.record));
   if (storedStatus === "revoked") reasons.push("receipt_revoked");
   if (
     storedStatus === "expired"
