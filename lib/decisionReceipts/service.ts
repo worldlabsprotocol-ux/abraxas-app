@@ -16,6 +16,11 @@ import { toPartnerView } from "@/lib/decisionReceipts/viewsPartner";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { buildPublicReceiptWithLiveTrust } from "@/lib/decisionReceipts/publicReceiptLiveTrust";
+import { mapReceiptRow } from "@/lib/decisionReceipts/mapReceiptRow";
+import {
+  resolveIssuanceFinalizationSchemaCapability,
+  StagedIssuanceUnavailableError,
+} from "@/lib/decisionReceipts/issuanceSchemaCapability.server";
 import {
   DECISION_RECEIPT_SCHEMA_VERSION,
   type DecisionReceiptContext,
@@ -28,33 +33,7 @@ function generateReceiptId(): string {
 }
 
 function mapRow(row: Record<string, unknown>): DecisionReceiptRecord {
-  return {
-    id: row.id as string,
-    verification_decision_id: row.verification_decision_id as string,
-    consent_receipt_id: (row.consent_receipt_id as string | null) ?? null,
-    partner_id: row.partner_id as string,
-    policy_id: row.policy_id as string,
-    policy_version: row.policy_version as number,
-    subject_pseudonym_id: row.subject_pseudonym_id as string,
-    wallet_binding_ref: (row.wallet_binding_ref as string | null) ?? null,
-    decision_result: row.decision_result as DecisionReceiptRecord["decision_result"],
-    reason_codes: (row.reason_codes as string[]) ?? [],
-    evaluated_claim_refs: (row.evaluated_claim_refs as DecisionReceiptRecord["evaluated_claim_refs"]) ?? [],
-    issuer_refs: (row.issuer_refs as string[]) ?? [],
-    decision_context: row.decision_context as DecisionReceiptContext,
-    evaluated_at: row.evaluated_at as string,
-    expires_at: (row.expires_at as string | null) ?? null,
-    revoked_at: (row.revoked_at as string | null) ?? null,
-    status: row.status as DecisionReceiptRecord["status"],
-    schema_version: row.schema_version as string,
-    payload_hash: row.payload_hash as string,
-    signature: row.signature as string,
-    signing_key_id: row.signing_key_id as string,
-    anchor_reference: (row.anchor_reference as string | null) ?? null,
-    idempotency_key: (row.idempotency_key as string | null) ?? null,
-    issuance_finalized_at: (row.issuance_finalized_at as string | null | undefined) ?? null,
-    created_at: row.created_at as string,
-  };
+  return mapReceiptRow(row);
 }
 
 async function resolveWalletBindingRefFromClaimRefs(
@@ -130,6 +109,10 @@ export async function issueDecisionReceipt(
   const pendingEvidence =
     input.issuanceLifecycle === "pending_evidence_finalization"
     && input.decisionResult === "approved";
+  const schemaCapability = await resolveIssuanceFinalizationSchemaCapability();
+  if (pendingEvidence && !schemaCapability.stagedIssuanceEnabled) {
+    throw new StagedIssuanceUnavailableError();
+  }
   const insertStatus = pendingEvidence ? "pending_finalization" : "active";
   const issuanceFinalizedAt = pendingEvidence ? null : evaluatedAt;
   const walletBindingRef = input.walletBindingRef
@@ -166,7 +149,7 @@ export async function issueDecisionReceipt(
   const { payloadHash, signature } = signReceiptPayload(canonical, signingKey.privateKeyJwk);
 
   const sb = requireSupabaseAdmin();
-  const { data, error } = await sb.from("decision_receipts").insert({
+  const insertRow: Record<string, unknown> = {
     id: receiptId,
     verification_decision_id: input.verificationDecisionId,
     consent_receipt_id: input.consentReceiptId ?? null,
@@ -183,14 +166,18 @@ export async function issueDecisionReceipt(
     evaluated_at: evaluatedAt,
     expires_at: input.expiresAt ?? null,
     status: insertStatus,
-    issuance_finalized_at: issuanceFinalizedAt,
     schema_version: canonical.schema_version,
     payload_hash: payloadHash,
     signature,
     signing_key_id: signingKey.key_id,
     anchor_reference: input.anchorReference ?? null,
     idempotency_key: input.idempotencyKey ?? input.verificationDecisionId,
-  }).select("*").single();
+  };
+  if (schemaCapability.stagedIssuanceEnabled) {
+    insertRow.issuance_finalized_at = issuanceFinalizedAt;
+  }
+
+  const { data, error } = await sb.from("decision_receipts").insert(insertRow).select("*").single();
 
   if (error) {
     if (error.code === "23505") {
@@ -384,6 +371,9 @@ export async function issueReceiptForDecision(input: {
         : "immediate",
     });
   } catch (e) {
+    if (e instanceof StagedIssuanceUnavailableError) {
+      throw e;
+    }
     console.error("[decision_receipt]", e instanceof Error ? e.message : e);
     return null;
   }

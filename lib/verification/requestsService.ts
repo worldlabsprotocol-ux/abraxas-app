@@ -28,6 +28,7 @@ import {
   claimTypesFromEvaluation,
 } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { StagedIssuanceUnavailableError } from "@/lib/decisionReceipts/issuanceSchemaCapability";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
@@ -376,24 +377,32 @@ export async function consentAndDecide(input: {
     );
 
   const pendingEvidenceFinalization = Boolean(reuseFact && evaluation.decision === "approved");
-  const receipt = await issueReceiptForDecision({
-    decisionId: decisionRow?.id as string,
-    consentReceiptId: consent?.id as string,
-    partnerId,
-    policyId: policy.id,
-    policyVersion: policy.version,
-    subjectId: subject,
-    applicationId: (request.launchpad_application_id as string | null) ?? null,
-    decisionResult: evaluation.decision,
-    reasonCodes: evaluation.reason_codes,
-    claimsJson: evaluation.claims,
-    evaluatedClaimRefs,
-    expiresAt: evaluation.valid_until,
-    decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
-      ? "sandbox_only"
-      : "production",
-    pendingEvidenceFinalization,
-  });
+  let receipt: Awaited<ReturnType<typeof issueReceiptForDecision>>;
+  try {
+    receipt = await issueReceiptForDecision({
+      decisionId: decisionRow?.id as string,
+      consentReceiptId: consent?.id as string,
+      partnerId,
+      policyId: policy.id,
+      policyVersion: policy.version,
+      subjectId: subject,
+      applicationId: (request.launchpad_application_id as string | null) ?? null,
+      decisionResult: evaluation.decision,
+      reasonCodes: evaluation.reason_codes,
+      claimsJson: evaluation.claims,
+      evaluatedClaimRefs,
+      expiresAt: evaluation.valid_until,
+      decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
+        ? "sandbox_only"
+        : "production",
+      pendingEvidenceFinalization,
+    });
+  } catch (error) {
+    if (error instanceof StagedIssuanceUnavailableError) {
+      throw new Error("staged_issuance_unavailable");
+    }
+    throw error;
+  }
 
   if (!receipt) {
     throw new Error("Failed to issue decision receipt");
