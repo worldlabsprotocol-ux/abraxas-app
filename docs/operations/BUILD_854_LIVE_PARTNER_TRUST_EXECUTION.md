@@ -39,6 +39,12 @@ Execute response returns `independent_verification_material` (portable receipt +
 - `wallet_scoped_trust_execution_outcomes` — at most one finalized receipt per `authorization_ref` (transactional finalize).
 - Challenge rows store authoritative `subject_pseudonym_id` at issue time (no caller-supplied seed on execute).
 
+## Authoritative evidence (live path)
+
+- Pre-authorized rows in `wallet_scoped_trust_authoritative_evidence` (partner + application + policy version + subject pseudonym → sovereign source + claims).
+- `loadSovereignEvidenceIntegrityGraphForTrustExecution` loads snapshots from sovereign PG and feeds `deriveEvidenceIntegrityVerdict` (no empty `source` / `claims` bypass).
+- Operator/CI seeds evidence bindings and sovereign claim/source tables; execute never fabricates eligibility.
+
 ## CI
 
 ```bash

@@ -37,6 +37,7 @@ export async function buildAuthoritativeVerificationMaterial(input: {
     expectedApplicationId: input.applicationId,
     expectedPartnerId: input.record.partner_id,
     expectedPolicyId: input.record.policy_id,
+    expectedEnvironment: "demo",
     env: input.env,
   });
 
@@ -62,16 +63,4 @@ export async function buildAuthoritativeVerificationMaterial(input: {
       signed_status_statement: signedStatus,
     },
   };
-}
-
-export async function buildFixtureVerificationMaterial(input: {
-  record: DecisionReceiptRecord;
-  env: Record<string, string | undefined>;
-  anchorKey: ReceiptSigningKeyPair;
-  registryVersion: number;
-}): Promise<TrustExecutionVerificationMaterial> {
-  const { buildFixturePortableVerificationArtifacts } = await import(
-    "./executeTrustExecutionFixture.internal"
-  );
-  return buildFixturePortableVerificationArtifacts(input);
 }

@@ -161,6 +161,19 @@ create table if not exists public.wallet_scoped_trust_execution_outcomes (
   finalized_at      timestamptz not null default now()
 );
 
+-- Pre-authorized evidence graph for wallet trust execution (operator/CI seeded — not created at execute).
+create table if not exists public.wallet_scoped_trust_authoritative_evidence (
+  partner_id            text not null references public.partners(partner_id),
+  application_id        uuid not null,
+  policy_id             text not null,
+  policy_version        int  not null,
+  subject_pseudonym_id  text not null,
+  source_credential_id  text not null references public.sovereign_evidence_sources(source_credential_id),
+  claim_id              text not null references public.sovereign_claim_status(claim_id),
+  primary key (partner_id, application_id, subject_pseudonym_id, claim_id),
+  foreign key (policy_id, policy_version) references public.partner_policies(id, version)
+);
+
 create or replace function public.abraxas_consume_wallet_scoped_trust_challenge_atomic(
   p_challenge_id text,
   p_wallet_address text,

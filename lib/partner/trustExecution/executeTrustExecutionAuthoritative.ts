@@ -2,15 +2,32 @@
 
 import { randomUUID } from "node:crypto";
 import { deriveEvidenceIntegrityVerdict } from "@/lib/decisionReceipts/evidenceIntegrityContract";
-import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
+import { buildCanonicalPayload, normalizeDecisionReceiptTimestamp } from "@/lib/decisionReceipts/canonical";
 import { signReceiptPayload } from "@/lib/decisionReceipts/signing";
 import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import { evaluateClaimEvidenceOnSovereignPg } from "@/lib/persistence/boundary/verticalSlice/claimEvidenceRead";
+import {
+  ensureSovereignReceiptEvidenceDependencies,
+  loadSovereignEvidenceIntegrityGraphForTrustExecution,
+} from "@/lib/persistence/boundary/verticalSlice/claimEvidenceRead";
 import type { ConsumedTrustAuthorization } from "./trustExecutionTypes";
 import { finalizeTrustExecutionOutcome } from "./finalizeTrustExecutionOutcome";
 import { buildAuthoritativeVerificationMaterial } from "./buildTrustExecutionVerificationMaterial";
+import { loadTrustExecutionOutcomeReceipt } from "./loadTrustExecutionOutcomeReceipt";
+
+const GRAPH_DENY = new Set([
+  "tenant_mismatch",
+  "policy_binding_mismatch",
+  "source_evidence_inconsistent",
+  "source_evidence_missing",
+  "source_evidence_revoked",
+  "source_evidence_expired",
+  "claim_missing",
+  "claim_revoked",
+  "claim_expired",
+  "validity_store_unavailable",
+]);
 
 function readAnchorMaterial(env: Record<string, string | undefined>):
   | { ok: true; anchorKeyId: string; anchorPublicJwk: JsonWebKey; anchorPrivateJwk: JsonWebKey }
@@ -33,6 +50,18 @@ function readAnchorMaterial(env: Record<string, string | undefined>):
   }
 }
 
+function graphFailure(input: {
+  reasons: string[];
+}): { ok: false; code: string; decision_result: "denied" | "indeterminate" } {
+  const code = input.reasons.join(",") || "authoritative_evidence_not_permit";
+  const denied = input.reasons.some((r) => GRAPH_DENY.has(r));
+  return {
+    ok: false,
+    code,
+    decision_result: denied ? "denied" : "indeterminate",
+  };
+}
+
 export async function executeTrustExecutionAuthoritativeDecision(input: {
   auth: ConsumedTrustAuthorization;
   partnerId: string;
@@ -46,6 +75,10 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     }
   | { ok: false; code: string; decision_result?: "denied" | "indeterminate" }
 > {
+  if (input.partnerId !== input.auth.partner_id) {
+    return { ok: false, code: "tenant_mismatch", decision_result: "denied" };
+  }
+
   const signingKey = resolveIssuanceSigningKey({
     schemaVersion: DECISION_RECEIPT_SCHEMA_VERSION,
     env: input.env,
@@ -59,9 +92,84 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     return { ok: false, code: anchor.code, decision_result: "indeterminate" };
   }
 
+  const existingReceipt = await loadTrustExecutionOutcomeReceipt({
+    authorizationRef: input.auth.wallet_binding_ref,
+    partnerId: input.partnerId,
+    applicationId: input.auth.application_id,
+    challengeId: input.auth.challenge_id,
+    policyId: input.auth.policy_id,
+    policyVersion: input.auth.policy_version,
+    subjectPseudonymId: input.auth.subject_pseudonym_id,
+  });
+  if (existingReceipt) {
+    const materialBuilt = await buildAuthoritativeVerificationMaterial({
+      record: existingReceipt,
+      applicationId: input.auth.application_id,
+      env: input.env,
+      anchorPublicJwk: anchor.anchorPublicJwk,
+      anchorPrivateJwk: anchor.anchorPrivateJwk,
+      anchorKeyId: anchor.anchorKeyId,
+      registryVersion: 854,
+    });
+    if (!materialBuilt.ok) {
+      return { ok: false, code: materialBuilt.code, decision_result: "indeterminate" };
+    }
+    return {
+      ok: true,
+      receipt: existingReceipt,
+      verification_material: materialBuilt.material,
+      outcome_created: false,
+    };
+  }
+
+  const evidenceGraph = await loadSovereignEvidenceIntegrityGraphForTrustExecution(
+    {
+      partnerId: input.auth.partner_id,
+      applicationId: input.auth.application_id,
+      policyId: input.auth.policy_id,
+      policyVersion: input.auth.policy_version,
+      subjectPseudonymId: input.auth.subject_pseudonym_id,
+    },
+    input.env,
+  );
+
+  if (!evidenceGraph.store_available) {
+    return { ok: false, code: "validity_store_unavailable", decision_result: "indeterminate" };
+  }
+  if (!evidenceGraph.binding_found) {
+    return graphFailure({ reasons: ["authoritative_evidence_binding_missing"] });
+  }
+  if (evidenceGraph.reasons.some((r) => GRAPH_DENY.has(r))) {
+    return graphFailure({ reasons: evidenceGraph.reasons });
+  }
+
+  const evidenceVerdict = deriveEvidenceIntegrityVerdict({
+    receipt_id: `pending_${input.auth.challenge_id}`,
+    subject_pseudonym_id: input.auth.subject_pseudonym_id,
+    expected_subject_pseudonym_id: input.auth.subject_pseudonym_id,
+    partner_id: input.auth.partner_id,
+    policy_id: input.auth.policy_id,
+    source: evidenceGraph.source,
+    claims: evidenceGraph.claims,
+    store_available: evidenceGraph.store_available,
+  });
+
+  if (evidenceVerdict.verdict !== "accepted") {
+    return {
+      ok: false,
+      code: evidenceVerdict.reasons.join(",") || "authoritative_evidence_not_permit",
+      decision_result: evidenceVerdict.verdict === "denied" ? "denied" : "indeterminate",
+    };
+  }
+
   const receiptId = `dr_trust_exec_${input.auth.challenge_id.slice(-16)}`;
   const decisionId = randomUUID();
-  const evaluatedAt = new Date().toISOString();
+  const evaluatedAt = normalizeDecisionReceiptTimestamp(new Date().toISOString());
+  const evaluatedClaimRefs = evidenceGraph.evaluated_claim_refs.map((ref) => ({
+    ...ref,
+    issued_at: evaluatedAt,
+    expires_at: ref.expires_at ? normalizeDecisionReceiptTimestamp(ref.expires_at) : null,
+  }));
   const draftRecord: DecisionReceiptRecord = {
     id: receiptId,
     verification_decision_id: decisionId,
@@ -73,11 +181,11 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     wallet_binding_ref: input.auth.wallet_binding_ref,
     decision_result: "approved",
     reason_codes: [],
-    evaluated_claim_refs: [],
-    issuer_refs: [],
+    evaluated_claim_refs: evaluatedClaimRefs,
+    issuer_refs: evidenceGraph.issuer_refs,
     decision_context: "sandbox_only",
     evaluated_at: evaluatedAt,
-    expires_at: new Date(Date.now() + 86400_000).toISOString(),
+    expires_at: normalizeDecisionReceiptTimestamp(new Date(Date.now() + 86400_000).toISOString()),
     revoked_at: null,
     status: "active",
     issuance_finalized_at: evaluatedAt,
@@ -90,38 +198,6 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     created_at: evaluatedAt,
   };
 
-  const claimEvidence = await evaluateClaimEvidenceOnSovereignPg(draftRecord, input.env);
-  if (!claimEvidence.store_available) {
-    return { ok: false, code: "validity_store_unavailable", decision_result: "indeterminate" };
-  }
-
-  const evidenceVerdict = deriveEvidenceIntegrityVerdict({
-    receipt_id: draftRecord.id,
-    subject_pseudonym_id: draftRecord.subject_pseudonym_id,
-    expected_subject_pseudonym_id: draftRecord.subject_pseudonym_id,
-    partner_id: draftRecord.partner_id,
-    policy_id: draftRecord.policy_id,
-    source: null,
-    claims: [],
-    store_available: claimEvidence.store_available,
-  });
-
-  if (evidenceVerdict.verdict !== "accepted") {
-    return {
-      ok: false,
-      code: evidenceVerdict.reasons.join(",") || "authoritative_evidence_not_permit",
-      decision_result: evidenceVerdict.verdict === "denied" ? "denied" : "indeterminate",
-    };
-  }
-
-  if (!claimEvidence.claims_current || !claimEvidence.evidence_current) {
-    return {
-      ok: false,
-      code: claimEvidence.reasons.join(",") || "authoritative_evidence_stale",
-      decision_result: "indeterminate",
-    };
-  }
-
   const payload = buildCanonicalPayload({
     receipt_id: receiptId,
     decision_id: decisionId,
@@ -133,8 +209,8 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     consent_receipt_id: null,
     decision_result: "approved",
     reason_codes: ["trust_execution_live_authoritative_evidence"],
-    evaluated_claim_refs: [],
-    issuer_refs: [],
+    evaluated_claim_refs: evaluatedClaimRefs,
+    issuer_refs: evidenceGraph.issuer_refs,
     decision_context: "sandbox_only",
     evaluated_at: evaluatedAt,
     expires_at: draftRecord.expires_at,
@@ -147,19 +223,6 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     signature,
   };
 
-  const materialBuilt = await buildAuthoritativeVerificationMaterial({
-    record,
-    applicationId: input.auth.application_id,
-    env: input.env,
-    anchorPublicJwk: anchor.anchorPublicJwk,
-    anchorPrivateJwk: anchor.anchorPrivateJwk,
-    anchorKeyId: anchor.anchorKeyId,
-    registryVersion: 854,
-  });
-  if (!materialBuilt.ok) {
-    return { ok: false, code: materialBuilt.code, decision_result: "indeterminate" };
-  }
-
   const finalized = await finalizeTrustExecutionOutcome({
     authorizationRef: input.auth.wallet_binding_ref,
     partnerId: input.partnerId,
@@ -171,9 +234,46 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
   });
   if (!finalized.ok) return finalized;
 
+  if (evidenceGraph.source?.source_credential_id) {
+    const dep = await ensureSovereignReceiptEvidenceDependencies({
+      receiptId: finalized.receipt_id,
+      sourceCredentialId: evidenceGraph.source.source_credential_id,
+      env: input.env,
+    });
+    if (!dep.ok) {
+      return { ok: false, code: dep.code, decision_result: "indeterminate" };
+    }
+  }
+
+  const committedReceipt = await loadTrustExecutionOutcomeReceipt({
+    authorizationRef: input.auth.wallet_binding_ref,
+    partnerId: input.partnerId,
+    applicationId: input.auth.application_id,
+    challengeId: input.auth.challenge_id,
+    policyId: input.auth.policy_id,
+    policyVersion: input.auth.policy_version,
+    subjectPseudonymId: input.auth.subject_pseudonym_id,
+  });
+  if (!committedReceipt) {
+    return { ok: false, code: "committed_receipt_missing", decision_result: "indeterminate" };
+  }
+
+  const materialBuilt = await buildAuthoritativeVerificationMaterial({
+    record: committedReceipt,
+    applicationId: input.auth.application_id,
+    env: input.env,
+    anchorPublicJwk: anchor.anchorPublicJwk,
+    anchorPrivateJwk: anchor.anchorPrivateJwk,
+    anchorKeyId: anchor.anchorKeyId,
+    registryVersion: 854,
+  });
+  if (!materialBuilt.ok) {
+    return { ok: false, code: materialBuilt.code, decision_result: "indeterminate" };
+  }
+
   return {
     ok: true,
-    receipt: record,
+    receipt: committedReceipt,
     verification_material: materialBuilt.material,
     outcome_created: finalized.created,
   };
