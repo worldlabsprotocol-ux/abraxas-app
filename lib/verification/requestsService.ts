@@ -375,6 +375,7 @@ export async function consentAndDecide(input: {
       evaluation.matched_claim_ids,
     );
 
+  const pendingEvidenceFinalization = Boolean(reuseFact && evaluation.decision === "approved");
   const receipt = await issueReceiptForDecision({
     decisionId: decisionRow?.id as string,
     consentReceiptId: consent?.id as string,
@@ -391,6 +392,7 @@ export async function consentAndDecide(input: {
     decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
       ? "sandbox_only"
       : "production",
+    pendingEvidenceFinalization,
   });
 
   if (!receipt) {

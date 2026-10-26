@@ -56,6 +56,7 @@ const HARD_DENY = new Set([
   "application_inactive",
   "application_mismatch",
   "application_unbound",
+  "issuance_incomplete",
 ]);
 
 export function deriveCurrentValidityDecision(

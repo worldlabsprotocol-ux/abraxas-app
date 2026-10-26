@@ -157,10 +157,23 @@ export async function recordPartnerFlowReceiptMetering(input: {
   receiptId: string;
   policyId?: string | null;
   decisionId?: string | null;
+  /** When false, skip billable event (incomplete issuance). */
+  issuanceAuthorizable?: boolean;
 }): Promise<PartnerMeteringRecordResult> {
   const receiptId = input.receiptId?.trim();
   if (!receiptId) {
     return { recorded: false, duplicate: false, error: "missing_receipt_id" };
+  }
+  if (input.issuanceAuthorizable === false) {
+    return { recorded: false, duplicate: false, error: "issuance_not_finalized" };
+  }
+  if (input.issuanceAuthorizable === undefined) {
+    const { getReceiptById } = await import("@/lib/decisionReceipts/service");
+    const { isReceiptIssuanceAuthorizable } = await import("@/lib/decisionReceipts/issuanceFinalization");
+    const record = await getReceiptById(receiptId);
+    if (!record || !isReceiptIssuanceAuthorizable(record)) {
+      return { recorded: false, duplicate: false, error: "issuance_not_finalized" };
+    }
   }
 
   return recordPartnerMeteringEvent({

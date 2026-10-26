@@ -52,6 +52,7 @@ function mapRow(row: Record<string, unknown>): DecisionReceiptRecord {
     signing_key_id: row.signing_key_id as string,
     anchor_reference: (row.anchor_reference as string | null) ?? null,
     idempotency_key: (row.idempotency_key as string | null) ?? null,
+    issuance_finalized_at: (row.issuance_finalized_at as string | null | undefined) ?? null,
     created_at: row.created_at as string,
   };
 }
@@ -126,6 +127,11 @@ export async function issueDecisionReceipt(
 
   const receiptId = generateReceiptId();
   const evaluatedAt = input.evaluatedAt ?? new Date().toISOString();
+  const pendingEvidence =
+    input.issuanceLifecycle === "pending_evidence_finalization"
+    && input.decisionResult === "approved";
+  const insertStatus = pendingEvidence ? "pending_finalization" : "active";
+  const issuanceFinalizedAt = pendingEvidence ? null : evaluatedAt;
   const walletBindingRef = input.walletBindingRef
     ?? await resolveWalletBindingRefFromClaimRefs(input.evaluatedClaimRefs);
   const pseudonymResult = await resolveReceiptSubjectPseudonym({
@@ -176,7 +182,8 @@ export async function issueDecisionReceipt(
     decision_context: decisionContext,
     evaluated_at: evaluatedAt,
     expires_at: input.expiresAt ?? null,
-    status: "active",
+    status: insertStatus,
+    issuance_finalized_at: issuanceFinalizedAt,
     schema_version: canonical.schema_version,
     payload_hash: payloadHash,
     signature,
@@ -353,6 +360,7 @@ export async function issueReceiptForDecision(input: {
   expiresAt?: string | null;
   decisionContext?: DecisionReceiptContext;
   anchorReference?: string | null;
+  pendingEvidenceFinalization?: boolean;
 }): Promise<DecisionReceiptRecord | null> {
   try {
     return await issueDecisionReceipt({
@@ -371,6 +379,9 @@ export async function issueReceiptForDecision(input: {
       decisionContext: input.decisionContext,
       idempotencyKey: input.decisionId,
       anchorReference: input.anchorReference ?? null,
+      issuanceLifecycle: input.pendingEvidenceFinalization
+        ? "pending_evidence_finalization"
+        : "immediate",
     });
   } catch (e) {
     console.error("[decision_receipt]", e instanceof Error ? e.message : e);

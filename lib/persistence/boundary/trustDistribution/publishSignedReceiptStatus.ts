@@ -3,6 +3,7 @@
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
+import { isReceiptIssuanceAuthorizable } from "@/lib/decisionReceipts/issuanceFinalization";
 import {
   RECEIPT_STATUS_STATEMENT_DOCUMENT,
   RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
@@ -55,6 +56,9 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   if (typeof version !== "number") return { ok: false, reason: version.error };
 
   const stored = resolveReceiptStatus(input.record);
+  if (!isReceiptIssuanceAuthorizable(input.record)) {
+    return { ok: false, reason: "issuance_not_finalized" };
+  }
   const issuedAt = new Date();
   const ttl = input.statementTtlSeconds ?? DEFAULT_TTL_SECONDS;
   const expiresAt = new Date(issuedAt.getTime() + ttl * 1000);

@@ -32,6 +32,7 @@ import {
   verifyAbraxasReceiptIndependently,
   type IndependentVerificationResult,
 } from "@abraxas/independent-verifier";
+import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 
 export type Build820ScenarioResult = {
   id: string;
@@ -144,6 +145,7 @@ function syntheticSandboxReceipt(receiptKey: ReturnType<typeof generateTestSigni
     expires_at: payload.expires_at,
     revoked_at: null,
     status: "active",
+    issuance_finalized_at: payload.evaluated_at,
     schema_version: payload.schema_version,
     payload_hash: payloadHash,
     signature,
@@ -208,7 +210,7 @@ async function verifyThreeLayer(input: {
     statusStatementMaxAgeSeconds: 3600,
   });
   return verifyAbraxasReceiptIndependently({
-    record: input.record,
+    record: toIndependentVerifierRecord(input.record),
     pinnedTrustAnchor: bundle,
     signedIssuerAuthority: signedIssuer,
     relyingParty: {
@@ -396,7 +398,7 @@ export async function runBuild820Acceptance(input: {
     }),
   );
   const wrongAudience = await verifyAbraxasReceiptIndependently({
-    record,
+    record: toIndependentVerifierRecord(record),
     pinnedTrustAnchor: buildTrustAnchorBundleV1({
       anchorKeyId: "build820-trust-anchor",
       anchorPublicJwk: anchorKey.publicKeyJwk,

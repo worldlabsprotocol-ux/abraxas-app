@@ -16,6 +16,10 @@ import {
   isIssuerTrustedForClaim,
 } from "@/lib/trust/issuerFramework";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
+import {
+  isReceiptIssuanceAuthorizable,
+  ISSUANCE_INCOMPLETE_REASON,
+} from "@/lib/decisionReceipts/issuanceFinalization";
 
 export type ReceiptValidityState =
   | "active"
@@ -52,6 +56,17 @@ export async function resolveReceiptValidity(
       stored_status: storedStatus,
       signature_valid: false,
       invalidation_reasons: ["signature_invalid"],
+      dependency_claim_ids: [],
+    };
+  }
+
+  if (!isReceiptIssuanceAuthorizable(record)) {
+    return {
+      validity: "invalidated",
+      currently_valid: false,
+      stored_status: storedStatus,
+      signature_valid: true,
+      invalidation_reasons: [ISSUANCE_INCOMPLETE_REASON],
       dependency_claim_ids: [],
     };
   }

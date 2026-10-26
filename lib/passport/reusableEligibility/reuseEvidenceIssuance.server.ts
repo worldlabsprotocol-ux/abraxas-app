@@ -2,7 +2,12 @@
 import "server-only";
 
 import type { EvaluatedClaimRef } from "@/lib/decisionReceipts/types";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { getReceiptById } from "@/lib/decisionReceipts/service";
+import {
+  activateDecisionReceiptIssuance,
+  markDecisionReceiptIssuanceFailed,
+} from "@/lib/decisionReceipts/issuanceLifecycle.server";
+import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
 import { getSovereignStagingPgPool } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { mirrorReuseEvidenceIntegrityOnSovereignPg } from "@/lib/persistence/boundary/verticalSlice/evidenceIntegrityWrite.server";
 import type { InternalReusableFact } from "./contract";
@@ -15,28 +20,18 @@ export class ReuseEvidenceIssuanceError extends Error {
       | "evidence_dependency_persist_failed"
       | "evidence_source_unavailable"
       | "sovereign_evidence_mirror_failed"
-      | "sovereign_evidence_mirror_required",
+      | "sovereign_evidence_mirror_required"
+      | "issuance_activation_failed"
+      | "issuance_already_finalized",
   ) {
     super(message);
     this.name = "ReuseEvidenceIssuanceError";
   }
 }
 
-async function revokeDerivedReceiptForEvidenceFailure(receiptId: string): Promise<void> {
-  const sb = requireSupabaseAdmin();
-  await sb
-    .from("decision_receipts")
-    .update({
-      status: "revoked",
-      revoked_at: new Date().toISOString(),
-    })
-    .eq("id", receiptId)
-    .eq("status", "active");
-}
-
 /**
- * Persist reuse evidence and mirror to sovereign PG when configured.
- * Fail closed: if sovereign PG is configured, mirror must succeed or the receipt is revoked.
+ * Commit evidence dependencies, sovereign mirror (when required), then activate receipt.
+ * Receipt must be pending_finalization — never authorizable until this succeeds.
  */
 export async function finalizeReuseEvidenceForIssuance(input: {
   fact: InternalReusableFact;
@@ -51,6 +46,20 @@ export async function finalizeReuseEvidenceForIssuance(input: {
 }): Promise<void> {
   const env = input.env ?? process.env;
   const sovereignRequired = Boolean(getSovereignStagingPgPool(env));
+
+  const existing = await getReceiptById(input.derivedReceiptId);
+  if (!existing) {
+    throw new ReuseEvidenceIssuanceError("derived_receipt_missing", "issuance_activation_failed");
+  }
+  if (isReceiptIssuanceFinalized(existing)) {
+    return;
+  }
+  if (existing.status !== "pending_finalization") {
+    throw new ReuseEvidenceIssuanceError(
+      `unexpected_receipt_status:${existing.status}`,
+      "issuance_activation_failed",
+    );
+  }
 
   try {
     await persistReuseDerivation({
@@ -70,31 +79,34 @@ export async function finalizeReuseEvidenceForIssuance(input: {
       env,
     });
 
-    if (mirror.mirrored) return;
-
-    if (mirror.reason === "sovereign_pg_unconfigured") {
-      if (sovereignRequired) {
+    if (!mirror.mirrored) {
+      if (mirror.reason === "sovereign_pg_unconfigured") {
+        if (sovereignRequired) {
+          throw new ReuseEvidenceIssuanceError(
+            "sovereign_pg_pool_missing_after_mirror_skip",
+            "sovereign_evidence_mirror_required",
+          );
+        }
+      } else if (mirror.reason === "source_unavailable") {
         throw new ReuseEvidenceIssuanceError(
-          "sovereign_pg_pool_missing_after_mirror_skip",
-          "sovereign_evidence_mirror_required",
+          "evidence_source_unavailable_for_sovereign_mirror",
+          "evidence_source_unavailable",
+        );
+      } else {
+        throw new ReuseEvidenceIssuanceError(
+          "sovereign_evidence_mirror_failed",
+          "sovereign_evidence_mirror_failed",
         );
       }
-      return;
     }
 
-    if (mirror.reason === "source_unavailable") {
-      throw new ReuseEvidenceIssuanceError(
-        "evidence_source_unavailable_for_sovereign_mirror",
-        "evidence_source_unavailable",
-      );
-    }
-
-    throw new ReuseEvidenceIssuanceError(
-      "sovereign_evidence_mirror_failed",
-      "sovereign_evidence_mirror_failed",
-    );
+    await activateDecisionReceiptIssuance(input.derivedReceiptId);
   } catch (error) {
-    await revokeDerivedReceiptForEvidenceFailure(input.derivedReceiptId);
+    try {
+      await markDecisionReceiptIssuanceFailed(input.derivedReceiptId);
+    } catch {
+      // Pending receipts remain non-authorizable even if mark fails (fail closed).
+    }
     throw error;
   }
 }

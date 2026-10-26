@@ -7,6 +7,7 @@ import {
 } from "@abraxas/independent-verifier";
 import type { PortableVerificationBundle } from "./buildPortableVerificationBundle";
 import { assertBundledAnchorMatchesIntegratorPin } from "./trustAnchorPinning";
+import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 
 export function verifyPortableBundle(input: {
   bundle: PortableVerificationBundle;
@@ -49,8 +50,31 @@ export function verifyPortableBundle(input: {
   const environment = input.bundle.decision_receipt.decision_context === "production"
     ? "production"
     : "demo";
+  let verifierRecord;
+  try {
+    verifierRecord = toIndependentVerifierRecord(input.bundle.decision_receipt);
+  } catch {
+    return {
+      contract_version: "abraxas_independent_verifier/1.1.0",
+      cryptographically_authentic: false,
+      issuer_currently_authorized: false,
+      policy_and_audience_match: false,
+      status_evidence_authentic: false,
+      currently_acceptable: "no",
+      phases: [
+        {
+          id: "issuance_finalization",
+          status: "fail",
+          detail: "Receipt issuance is not finalized — not portable for current acceptability.",
+        },
+      ],
+      failure_codes: ["issuance_incomplete"],
+      disclaimer:
+        "Portable verification requires finalized issuance and signed status evidence.",
+    };
+  }
   return verifyAbraxasReceiptIndependently({
-    record: input.bundle.decision_receipt,
+    record: verifierRecord,
     pinnedTrustAnchor: input.integratorPinnedTrustAnchor,
     signedIssuerAuthority: input.bundle.signed_issuer_authority,
     signedStatusStatement: input.bundle.signed_status_statement,

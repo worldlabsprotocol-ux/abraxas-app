@@ -15,6 +15,7 @@ import { evaluateSovereignCurrentValidity } from "../sovereignCurrentValidity/ev
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "../trustDistribution/publishSignedReceiptStatus";
 import { buildTrustAnchorBundleV1 } from "../trustDistribution/buildTrustAnchorBundle";
 import { verifyAbraxasReceiptIndependently } from "@abraxas/independent-verifier";
+import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 
 export function registryEnv(
   receiptKey: ReceiptSigningKeyPair,
@@ -86,6 +87,7 @@ export function syntheticSandboxReceipt(receiptKey: ReceiptSigningKeyPair): Deci
     expires_at: payload.expires_at,
     revoked_at: null,
     status: "active",
+    issuance_finalized_at: payload.evaluated_at,
     schema_version: payload.schema_version,
     payload_hash: payloadHash,
     signature,
@@ -130,7 +132,7 @@ export async function verifyThreeLayer(input: {
     statusStatementMaxAgeSeconds: 3600,
   });
   return verifyAbraxasReceiptIndependently({
-    record: input.record,
+    record: toIndependentVerifierRecord(input.record),
     pinnedTrustAnchor: bundle,
     signedIssuerAuthority: signedIssuer,
     relyingParty: {
