@@ -3,11 +3,7 @@
 
 import type { DecisionReceiptCanonicalPayload, DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
-import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
-import {
-  attachV11FieldsFromSidecar,
-  buildSignedCanonicalV11,
-} from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0.constants";
 import {
   getReceiptSigningKeyId,
   loadReceiptSigningKey,
@@ -121,13 +117,7 @@ export function verifyRecordSignatureWithRegistry(
   });
   if (!resolved.ok) return false;
   if (record.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
-    const v11Record = attachV11FieldsFromSidecar(record);
-    const { payload } = buildSignedCanonicalV11(v11Record);
-    return verifyReceiptSignature(
-      payload as DecisionReceiptCanonicalPayload,
-      record.signature,
-      resolved.key.public_jwk,
-    );
+    return false;
   }
   const payload: DecisionReceiptCanonicalPayload = buildCanonicalPayload({
     receipt_id: record.id,

@@ -1,11 +1,13 @@
 // FILE: lib/decisionReceipts/v1_1_0/sidecar.ts
 // Persist v1.1.0 signed fields without a schema migration (interim until dedicated columns).
+import "server-only";
 
-import { EVIDENCE_COMMITMENT_SCHEMA } from "@/lib/decisionReceipts/schema/v1_1_0";
+import { EVIDENCE_COMMITMENT_SCHEMA } from "@/lib/decisionReceipts/schema/v1_1_0.constants";
 import type {
   EvidenceCommitmentEntryV1,
   EvidenceCommitmentV1,
-} from "@/lib/decisionReceipts/schema/v1_1_0";
+} from "@/lib/decisionReceipts/schema/v1_1_0.types";
+import { verifyEvidenceCommitment } from "@/lib/decisionReceipts/schema/v1_1_0.server";
 
 export const V1_1_SIDECAR_PREFIX = "abraxas.receipt.v1_1.sidecar:" as const;
 export const V1_1_SIDECAR_SCHEMA = "abraxas.receipt.v1_1.sidecar/v1" as const;
@@ -70,6 +72,12 @@ export function validateReceiptV11Sidecar(parsed: unknown): SidecarDecodeResult 
   if (sidecar.issuance_phase === "final") {
     if (!sidecar.evidence_commitment) return { ok: false, reason: "commitment_inconsistent" };
     if (entryCount !== manifestLen) return { ok: false, reason: "commitment_inconsistent" };
+    const manifest = sidecar.evidence_commitment_manifest ?? [];
+    const digestOk = verifyEvidenceCommitment({
+      commitment: sidecar.evidence_commitment,
+      manifest,
+    });
+    if (!digestOk.ok) return { ok: false, reason: "commitment_inconsistent" };
   }
   if (sidecar.issuance_phase === "pending" && sidecar.evidence_commitment_manifest?.length) {
     return { ok: false, reason: "commitment_inconsistent" };

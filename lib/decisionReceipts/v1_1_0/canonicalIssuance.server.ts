@@ -1,10 +1,11 @@
-// FILE: lib/decisionReceipts/v1_1_0/canonicalIssuance.ts
+// FILE: lib/decisionReceipts/v1_1_0/canonicalIssuance.server.ts
+import "server-only";
 
 import {
   buildCanonicalPayloadV1_1,
   hashCanonicalPayloadV1_1,
   type DecisionReceiptRecordV1_1,
-} from "@/lib/decisionReceipts/schema/v1_1_0";
+} from "@/lib/decisionReceipts/schema/v1_1_0.server";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { decodeReceiptV11Sidecar } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 

@@ -3,7 +3,11 @@
 
 export const DECISION_RECEIPT_SCHEMA_VERSION = "1.0.0";
 
-import type { EvidenceCommitmentV1, EvidenceCommitmentEntryV1 } from "@/lib/decisionReceipts/schema/v1_1_0";
+import type {
+  EvidenceCommitmentV1,
+  EvidenceCommitmentEntryV1,
+} from "@/lib/decisionReceipts/schema/v1_1_0.types";
+
 export type { EvidenceCommitmentV1, EvidenceCommitmentEntryV1 };
 
 export type DecisionReceiptStatus = "active" | "expired" | "revoked" | "pending_finalization";

@@ -13,7 +13,7 @@ import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import { PORTABLE_REVOCATION_KEY_SCHEMA } from "@/lib/protocol/portableRevocation/contract";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
-import { RECEIPT_VERIFICATION_REGISTRY_ENV } from "@/lib/decisionReceipts/verificationKeyLifecycle";
+import { RECEIPT_VERIFICATION_REGISTRY_ENV } from "@/lib/decisionReceipts/verificationKeyLifecycle/contract";
 
 export const BUILD_546_FIXTURE_NOW = new Date("2026-06-15T12:00:00.000Z");
 export const BUILD_546_PARTNER_ID = "institutional-rp-example";

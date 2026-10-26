@@ -7,7 +7,7 @@ import {
   deriveApplicationBindingRef,
   type EvidenceCommitmentEntryV1,
   type EvidenceCommitmentV1,
-} from "@/lib/decisionReceipts/schema/v1_1_0";
+} from "@/lib/decisionReceipts/schema/v1_1_0.server";
 import { deriveApplicationScopeFromAuthoritativeFacts } from "@/lib/decisionReceipts/currentValidity/applicationScopeContract";
 import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
 import type { DecisionReceiptContext } from "@/lib/decisionReceipts/types";

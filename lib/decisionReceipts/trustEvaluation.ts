@@ -9,7 +9,8 @@ import {
   type ReceiptValidityResult,
   type ReceiptValidityState,
 } from "@/lib/decisionReceipts/validityResolver";
-import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
+import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
+import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve.server";
 
 export type TrustValidityState =
   | ReceiptValidityState
@@ -297,7 +298,7 @@ export function evaluateDecisionReceiptTrustSync(
   context?: TrustEvaluationContext,
 ): TrustEvaluationResult {
   const storedStatus = resolveReceiptStatus(record);
-  const signature_valid = verifyRecordSignature(record);
+  const signature_valid = verifyRecordSignatureWithRegistry(record);
 
   let base: Pick<ReceiptValidityResult, "currently_valid" | "signature_valid" | "invalidation_reasons"> & {
     validity: TrustValidityState;

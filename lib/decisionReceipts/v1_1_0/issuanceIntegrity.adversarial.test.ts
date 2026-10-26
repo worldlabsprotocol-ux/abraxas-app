@@ -21,15 +21,15 @@ import {
   attemptResignPublishedReceipt,
   finalizePendingV11ReceiptCryptographic,
 } from "@/lib/decisionReceipts/v1_1_0/finalizePending.server";
-import { attachV11FieldsFromSidecar, buildSignedCanonicalV11 } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance";
+import { attachV11FieldsFromSidecar, buildSignedCanonicalV11 } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
 import { signReceiptPayload } from "@/lib/decisionReceipts/signing";
-import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
+import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve.server";
 import {
   blindEvidenceRef,
   deriveApplicationBindingRef,
   verifyEvidenceCommitment,
   buildEvidenceCommitment,
-} from "@/lib/decisionReceipts/schema/v1_1_0";
+} from "@/lib/decisionReceipts/schema/v1_1_0.server";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { parseDecisionReceiptIssuanceSchemaFromEnv } from "@/lib/decisionReceipts/issuanceSchemaV110";
 import { isReceiptIssuanceAuthorizable } from "@/lib/decisionReceipts/issuanceFinalization";
@@ -226,6 +226,29 @@ describe("v1.1.0 issuance integrity", () => {
         manifest: exported.manifest,
       }).ok).toBe(true);
     }
+  });
+
+  it("rejects final sidecar when manifest digest does not match commitment", () => {
+    const commitment = buildEvidenceCommitment([{
+      dependency_type: "reusable_fact",
+      fact_id: blindEvidenceRef("00000000-0000-4000-8000-00000000fact", BLINDING_KEY),
+      source_credential_id: blindEvidenceRef("dr_source", BLINDING_KEY),
+    }]);
+    const tamperedManifest = [{
+      dependency_type: "reusable_fact" as const,
+      fact_id: blindEvidenceRef("00000000-0000-4000-8000-00000000fact", BLINDING_KEY),
+      source_credential_id: blindEvidenceRef("dr_tampered", BLINDING_KEY),
+    }];
+    // Simulate persisted tampering: encode path rejects inconsistent final sidecars at write time.
+    const tamperedPayload = {
+      schema: V1_1_SIDECAR_SCHEMA,
+      issuance_phase: "final" as const,
+      application_binding_ref: null,
+      evidence_commitment: commitment,
+      evidence_commitment_manifest: tamperedManifest,
+    };
+    const anchor = `abraxas.receipt.v1_1.sidecar:${Buffer.from(JSON.stringify(tamperedPayload), "utf8").toString("base64url")}`;
+    expect(decodeReceiptV11Sidecar(anchor).ok).toBe(false);
   });
 
   it("detects evidence manifest tampering", () => {

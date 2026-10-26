@@ -14,7 +14,7 @@ import {
   buildAuthoritativeEvidenceCommitmentAndManifest,
   resolveAuthoritativeApplicationBindingRef,
 } from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
-import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance";
+import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
 import { decodeReceiptV11Sidecar, encodeReceiptV11Sidecar, V1_1_SIDECAR_SCHEMA } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
 

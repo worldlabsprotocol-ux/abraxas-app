@@ -3,10 +3,8 @@
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import type { DecisionReceiptRecord as VerifierDecisionReceiptRecord } from "@abraxas/independent-verifier";
-import {
-  DECISION_RECEIPT_SCHEMA_V1_1,
-  type EvidenceCommitmentEntryV1,
-} from "@/lib/decisionReceipts/schema/v1_1_0";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0.constants";
+import type { EvidenceCommitmentEntryV1 } from "@/lib/decisionReceipts/schema/v1_1_0.types";
 import { decodeReceiptV11Sidecar } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 

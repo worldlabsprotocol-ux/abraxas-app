@@ -34,7 +34,7 @@ import {
   buildAuthoritativeV11IssuanceFields,
   resolveAuthoritativeApplicationIdForIssuance,
 } from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
-import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance";
+import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
 
 function generateReceiptId(): string {
   return `dr_${randomBytes(12).toString("base64url")}`;
