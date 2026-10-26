@@ -19,10 +19,21 @@ export const WALLET_AUTH_PURPOSE_SANDBOX_ENTER = "abraxas_action_sandbox_enter_v
 export const WALLET_AUTH_PURPOSE_SANDBOX_TEST_VERIFY =
   "abraxas_action_sandbox_test_verify_v1" as const;
 
+/** Scoped trust execution (tenant/app/action) — not sign-in and not sandbox-only action auth. */
+export const WALLET_AUTH_PURPOSE_TRUST_EXECUTION = "abraxas_wallet_trust_execution_v1" as const;
+
 export type WalletAuthorizationPurpose =
   | typeof WALLET_AUTH_PURPOSE_SIGN_IN
   | typeof WALLET_AUTH_PURPOSE_SANDBOX_ENTER
-  | typeof WALLET_AUTH_PURPOSE_SANDBOX_TEST_VERIFY;
+  | typeof WALLET_AUTH_PURPOSE_SANDBOX_TEST_VERIFY
+  | typeof WALLET_AUTH_PURPOSE_TRUST_EXECUTION;
+
+export const WALLET_AUTHORIZATION_PURPOSES = [
+  WALLET_AUTH_PURPOSE_SIGN_IN,
+  WALLET_AUTH_PURPOSE_SANDBOX_ENTER,
+  WALLET_AUTH_PURPOSE_SANDBOX_TEST_VERIFY,
+  WALLET_AUTH_PURPOSE_TRUST_EXECUTION,
+] as const satisfies readonly WalletAuthorizationPurpose[];
 
 export type WalletAuthorizationHumanContext = {
   actionTitle: string;
@@ -188,6 +199,10 @@ export function buildWalletAuthorizationMessage(input: {
       expiresAt: input.expiresAt,
     });
     return [...humanSection, "", "---", "Authorization record", ...technical.slice(2)].join("\n");
+  }
+
+  if (input.purpose === WALLET_AUTH_PURPOSE_TRUST_EXECUTION && !input.human) {
+    return technical.join("\n");
   }
 
   if (!input.human) {

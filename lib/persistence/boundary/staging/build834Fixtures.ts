@@ -14,7 +14,12 @@ import { publishSignedIssuerAuthorityFromRegistry } from "../issuerAuthority/bui
 import { evaluateSovereignCurrentValidity } from "../sovereignCurrentValidity/evaluate";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "../trustDistribution/publishSignedReceiptStatus";
 import { buildTrustAnchorBundleV1 } from "../trustDistribution/buildTrustAnchorBundle";
-import { verifyAbraxasReceiptIndependently } from "@abraxas/independent-verifier";
+import {
+  RECEIPT_STATUS_STATEMENT_DOCUMENT,
+  RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+  signReceiptStatusStatementForTests,
+  verifyAbraxasReceiptIndependently,
+} from "@abraxas/independent-verifier";
 import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 
 export function registryEnv(
@@ -96,6 +101,70 @@ export function syntheticSandboxReceipt(receiptKey: ReceiptSigningKeyPair): Deci
     idempotency_key: null,
     created_at: payload.evaluated_at,
   };
+}
+
+/** Portable contract tests — no authoritative validity store (independent verifier only). */
+export async function verifyThreeLayerPortableFixture(input: {
+  record: DecisionReceiptRecord;
+  env: Record<string, string | undefined>;
+  anchorKey: ReceiptSigningKeyPair;
+  registryVersion: number;
+}) {
+  const signedIssuer = publishSignedIssuerAuthorityFromRegistry({
+    registryVersion: input.registryVersion,
+    anchorKeyId: "build834-trust-anchor",
+    anchorPrivateJwk: input.anchorKey.privateKeyJwk,
+    env: input.env,
+  });
+  if (!("payload" in signedIssuer)) throw new Error(signedIssuer.reason);
+  const statusPrivateRaw = input.env.ABRAXAS_STATUS_SIGNER_PRIVATE_JWK?.trim();
+  if (!statusPrivateRaw) throw new Error("status_signer_private_jwk_missing");
+  const statusSignerPrivateJwk = JSON.parse(statusPrivateRaw) as JsonWebKey;
+  const checkedAt = new Date().toISOString();
+  const issuedAt = new Date();
+  const signedStatus = signReceiptStatusStatementForTests({
+    payload: {
+      document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
+      schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+      receipt_id: input.record.id,
+      status_reference: input.record.id,
+      partner_id: input.record.partner_id,
+      policy_id: input.record.policy_id,
+      policy_version: input.record.policy_version,
+      environment: "demo",
+      status_version: 1,
+      supersedes_status_version: null,
+      receipt_status: "active",
+      superseded: false,
+      partner_operational: true,
+      policy_active: true,
+      claims_current: true,
+      evidence_current: true,
+      effective_at: checkedAt,
+      issued_at: issuedAt.toISOString(),
+      statement_expires_at: new Date(issuedAt.getTime() + 3600_000).toISOString(),
+      status_signer_key_id: input.env.ABRAXAS_STATUS_SIGNER_KEY_ID?.trim() ?? "abraxas-status-signer",
+    },
+    statusSignerPrivateJwk,
+  });
+  const bundle = buildTrustAnchorBundleV1({
+    anchorKeyId: "build834-trust-anchor",
+    anchorPublicJwk: input.anchorKey.publicKeyJwk,
+    environment: "demo",
+    statusStatementMaxAgeSeconds: 3600,
+  });
+  return verifyAbraxasReceiptIndependently({
+    record: toIndependentVerifierRecord(input.record),
+    pinnedTrustAnchor: bundle,
+    signedIssuerAuthority: signedIssuer,
+    relyingParty: {
+      partner_id: input.record.partner_id,
+      policy_id: input.record.policy_id,
+      environment: "demo",
+    },
+    statementObservedAt: new Date().toISOString(),
+    signedStatusStatement: signedStatus,
+  });
 }
 
 export async function verifyThreeLayer(input: {
