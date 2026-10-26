@@ -44,7 +44,7 @@ async function main(): Promise<void> {
 
   const client = await createDemoPgClient({ databaseUrl, env });
   try {
-    await assertBackupSourceReady(client);
+    await assertBackupSourceReady(client, env);
     const snapshot = await collectBackupSnapshot(client);
 
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");

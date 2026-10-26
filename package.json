@@ -88,6 +88,7 @@
     "database-recovery:audit-demo": "tsx scripts/database-recovery/audit-demo-database-access.ts",
     "database-recovery:backup-demo": "tsx scripts/database-recovery/backup-demo-database.ts",
     "database-recovery:restore-verify": "tsx scripts/database-recovery/restore-and-verify-demo-backup.ts",
+    "database-recovery:verify-demo-trust-slice": "tsx scripts/database-recovery/verify-demo-trust-slice.ts",
     "database-recovery:rehearse-idv": "tsx scripts/database-recovery/rehearse-idv-manifest-on-restore.ts",
     "test:database-recovery": "vitest run lib/databaseRecovery/",
     "test:sovereign-runtime": "vitest run lib/persistence/sovereignRuntime.adversarial.test.ts lib/persistence/holderSubjectDirect.concurrency.test.ts lib/persistence/idvLifecycle.sovereign.test.ts lib/persistence/idvIssuance.adversarial.test.ts lib/persistence/build555.sovereignPassport.test.ts lib/persistence/build555Security.adversarial.test.ts lib/persistence/build556.sovereignCertification.test.ts lib/persistence/portability.contract.test.ts",

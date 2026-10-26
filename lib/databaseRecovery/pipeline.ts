@@ -17,6 +17,7 @@ import {
   fetchRecoveryInventory,
   fetchSupabaseMigrationVersions,
   probeRecoveryInventoryReady,
+  resolveRecoveryInventoryProfile,
 } from "./pgInventory";
 import type { PgQueryable } from "./pgInventory";
 import { assertManifestArtifactBinding, assertManifestBackupIdentity } from "./manifestGuard";
@@ -66,11 +67,15 @@ export function runPgDump(
   execFileSync("pg_dump", args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
 }
 
-export async function assertBackupSourceReady(client: PgQueryable): Promise<void> {
-  const ready = await probeRecoveryInventoryReady(client);
+export async function assertBackupSourceReady(
+  client: PgQueryable,
+  env: Record<string, string | undefined> = process.env,
+): Promise<void> {
+  const profile = resolveRecoveryInventoryProfile(env);
+  const ready = await probeRecoveryInventoryReady(client, profile);
   if (!ready) {
     throw new Error(
-      "backup source is missing required recovery inventory tables — pg_dump would not be verifiable",
+      `backup source is missing required recovery inventory tables (profile=${profile}) — pg_dump would not be verifiable`,
     );
   }
 }
