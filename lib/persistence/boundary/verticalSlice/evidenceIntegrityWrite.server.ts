@@ -39,7 +39,7 @@ export async function mirrorReuseEvidenceIntegrityOnSovereignPg(input: {
   const sourceStatus = mapReceiptStatus(String(sourceRow.status ?? "active"));
   const sourceExpires = (sourceRow.expires_at as string | null) ?? input.fact.expires_at;
 
-  await querySovereignStagingPg(
+  const sourceWrite = await querySovereignStagingPg(
     `insert into public.sovereign_evidence_sources (source_credential_id, status, expires_at, revoked_at)
      values ($1, $2, $3, $4)
      on conflict (source_credential_id) do update set
@@ -54,6 +54,9 @@ export async function mirrorReuseEvidenceIntegrityOnSovereignPg(input: {
     ],
     env,
   );
+  if ("error" in sourceWrite) {
+    throw new Error("sovereign_evidence_source_write_failed");
+  }
 
   const depWrite = await querySovereignStagingPg(
     `insert into public.sovereign_receipt_evidence_dependencies (receipt_id, source_credential_id, dependency_type)
@@ -67,7 +70,7 @@ export async function mirrorReuseEvidenceIntegrityOnSovereignPg(input: {
   }
 
   for (const ref of input.derivedClaimRefs) {
-    await querySovereignStagingPg(
+    const claimWrite = await querySovereignStagingPg(
       `insert into public.sovereign_claim_status (claim_id, status, expires_at)
        values ($1, 'active', $2)
        on conflict (claim_id) do update set
@@ -76,6 +79,9 @@ export async function mirrorReuseEvidenceIntegrityOnSovereignPg(input: {
       [ref.claim_id, ref.expires_at ?? input.fact.expires_at],
       env,
     );
+    if ("error" in claimWrite) {
+      throw new Error("sovereign_claim_status_write_failed");
+    }
   }
 
   return { mirrored: true };

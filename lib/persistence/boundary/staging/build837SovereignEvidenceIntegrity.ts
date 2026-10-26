@@ -131,6 +131,28 @@ export async function runBuild837SovereignEvidenceIntegrity(input: {
     }
   });
 
+  await run("claims_without_deps_fail_closed_on_evidence", async () => {
+    const derived = await input.primaryPool.query(
+      `select evaluated_claim_refs from public.decision_receipts where id = $1`,
+      [derivedId],
+    );
+    await input.primaryPool.query(`delete from public.sovereign_receipt_evidence_dependencies where receipt_id = $1`, [
+      derivedId,
+    ]);
+    const ev = await evaluateClaimEvidenceOnSovereignPg(
+      {
+        ...sourceRecord,
+        id: derivedId,
+        evaluated_claim_refs: derived.rows[0].evaluated_claim_refs,
+      },
+      baseEnv,
+    );
+    if (ev.evidence_current) throw new Error("expected_evidence_not_current_without_deps");
+    if (!ev.reasons.includes("source_evidence_missing")) {
+      throw new Error(`expected source_evidence_missing got ${ev.reasons.join(",")}`);
+    }
+  });
+
   await run("unmirrored_claims_fail_closed_via_claim_missing", async () => {
     const isolatedClaimRefs = derivedClaimRefs(
       { ...FACT, fact_id: "fact_isolated", subject_pseudonym_id: "psr_isolated" },
