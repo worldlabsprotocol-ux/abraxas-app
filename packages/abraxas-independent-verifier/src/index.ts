@@ -11,3 +11,4 @@ export * from "./v1_1_0/constants";
 export * from "./v1_1_0/applicationBinding";
 export * from "./v1_1_0/evidenceCommitment";
 export * from "./v1_1_0/canonical";
+export * from "./v1_1_0/enforcement";

@@ -45,15 +45,17 @@ Manifest entries (transported out-of-band with portable bundle, **not** re-provi
 ## 3. Application binding model
 
 - **Issuance:** `deriveApplicationBindingRef(scope, scopeSecret)` where `scope` includes partner, policy, policy_version, decision_context, and authoritative `launchpad_application_id`.
-- **Verify:** Relying party supplies expected ref (from Launchpad onboarding). Verifier compares equality only.
+- **Verify:** Relying party supplies expected ref (from Launchpad onboarding). Verifier compares equality only. Expected ref is **never** taken from the receipt.
+- **Mandatory scope:** `require_application_binding: true` fails closed when expectation or signed receipt binding is missing or mismatched.
+- **Unscoped:** omit `require_application_binding` (and expected ref) for workflows that do not need app authorization.
 - **Privacy:** Raw application id is not required on the public receipt.
-- **Optional:** null ref for flows that do not need app-scoped binding (same as v1.0.0 audience checks).
 
 ## 4. Evidence commitment model
 
 - **Digest:** `SHA256(EVIDENCE_COMMITMENT_DOMAIN || canonical_json({ schema, entries }))` with sorted entries.
 - **Empty set:** Explicit zero `entry_count` and deterministic empty digest.
-- **Low-entropy ids:** Use `blindEvidenceRef()` at issuance for manifest entries when needed; digest binds blinded refs.
+- **Mandatory policy:** `require_evidence_commitment: true` fails closed on missing commitment, missing manifest, digest mismatch, or entry count mismatch.
+- **Low-entropy ids:** Use `blindEvidenceRef()` at issuance; `assessManifestReferencePrivacy()` rejects obvious PII-shaped or short linkable refs in manifests.
 - **Not:** Proof of factual truth, claim validity, or current evidence state (signed status remains authoritative for that).
 
 ## 5. Backward compatibility
