@@ -13,6 +13,9 @@ import {
   statusPayloadMatchesReceiptContext,
   verifySignedReceiptStatusStatement,
 } from "./signedReceiptStatusStatement";
+import { verifyApplicationBindingRef } from "./v1_1_0/applicationBinding";
+import { verifyEvidenceCommitment } from "./v1_1_0/evidenceCommitment";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "./v1_1_0/constants";
 
 export type IndependentVerificationPhase = {
   id: string;
@@ -164,6 +167,49 @@ export function verifyAbraxasReceiptIndependently(input: {
     audienceMatch ? "Partner and policy binding match." : "Partner, policy, or environment mismatch.",
     audienceMatch ? undefined : "audience_mismatch",
   );
+
+  if (input.record.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    if (input.relyingParty.application_binding_ref !== undefined) {
+      const bind = verifyApplicationBindingRef({
+        receiptRef: input.record.application_binding_ref,
+        expectedRef: input.relyingParty.application_binding_ref,
+      });
+      push(
+        "application_binding",
+        bind.ok ? "pass" : "fail",
+        bind.ok ? "Application binding ref matches relying party expectation." : bind.reason,
+        bind.ok ? undefined : bind.reason,
+      );
+    } else {
+      push("application_binding", "skipped", "No application binding expectation supplied.");
+    }
+    if (input.record.evidence_commitment) {
+      const ev = verifyEvidenceCommitment({
+        commitment: input.record.evidence_commitment,
+        manifest: input.relyingParty.evidence_commitment_manifest ?? null,
+      });
+      push(
+        "evidence_commitment",
+        ev.ok ? "pass" : "fail",
+        ev.ok
+          ? "Evidence commitment digest matches supplied manifest (issuance-time set only)."
+          : ev.reason,
+        ev.ok ? undefined : ev.reason,
+      );
+    } else {
+      push("evidence_commitment", "skipped", "Receipt has no evidence commitment.");
+    }
+  } else if (
+    input.record.application_binding_ref != null
+    || input.record.evidence_commitment != null
+  ) {
+    push(
+      "schema_downgrade",
+      "fail",
+      "v1.1.0 fields present on a v1.0.0 schema_version receipt.",
+      "schema_downgrade_rejected",
+    );
+  }
 
   let statusEvidenceAuthentic = false;
   let currentlyAcceptable: IndependentVerificationResult["currently_acceptable"] = "indeterminate";

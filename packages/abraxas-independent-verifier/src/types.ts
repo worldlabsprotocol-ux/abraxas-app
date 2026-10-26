@@ -1,3 +1,5 @@
+import type { EvidenceCommitmentEntryV1, EvidenceCommitmentV1 } from "./v1_1_0/evidenceCommitment";
+
 export const TRUST_ANCHOR_BUNDLE_DOCUMENT = "abraxas_trust_anchor_bundle" as const;
 export const TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -133,6 +135,8 @@ export type DecisionReceiptRecord = {
   payload_hash: string;
   signature: string;
   signing_key_id: string;
+  application_binding_ref?: string | null;
+  evidence_commitment?: EvidenceCommitmentV1 | null;
 };
 
 export type ReceiptStatusEvidenceV1 = {
@@ -152,4 +156,8 @@ export type RelyingPartyExpectations = {
   partner_id: string;
   policy_id: string;
   environment: "demo" | "production";
+  /** v1.1.0 — when set, receipt must carry the same opaque application_binding_ref. */
+  application_binding_ref?: string;
+  /** v1.1.0 — manifest used to recompute evidence_commitment.digest (not proof of current validity). */
+  evidence_commitment_manifest?: EvidenceCommitmentEntryV1[];
 };
