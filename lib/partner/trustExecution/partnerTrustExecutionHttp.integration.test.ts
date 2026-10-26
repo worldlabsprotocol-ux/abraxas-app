@@ -123,7 +123,12 @@ describeProof("Build #854 partner trust execution HTTP", () => {
     const walletSession = await import("@/lib/auth/ephemeralWallet/walletSession");
     vi.mocked(walletSession.requireEphemeralWalletScope).mockResolvedValue({
       ok: true,
-      session: { walletAddress: wallet, solanaNetwork: "devnet" },
+      session: {
+        sessionId: "sess_build854",
+        walletAddress: wallet,
+        solanaNetwork: "devnet",
+        scopes: ["wallet:session"],
+      },
     });
   }, 120_000);
 

@@ -15,7 +15,6 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 import { verifyThreeLayerPortableFixture } from "@/lib/persistence/boundary/staging/build834Fixtures";
-import type { ReceiptSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import {
   RECEIPT_STATUS_STATEMENT_DOCUMENT,

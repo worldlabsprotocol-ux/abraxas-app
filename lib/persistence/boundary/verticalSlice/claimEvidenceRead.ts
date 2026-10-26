@@ -139,15 +139,19 @@ export async function loadSovereignEvidenceIntegrityGraphForReceipt(
     [record.id],
     env,
   );
+  let depRows: { source_credential_id: string }[] = [];
   if ("error" in deps) {
     storeAvailable = false;
     reasons.push("validity_store_unavailable");
-  } else if (record.evaluated_claim_refs.length > 0 && deps.rows.length === 0) {
-    reasons.push("source_evidence_missing");
+  } else {
+    depRows = deps.rows;
+    if (record.evaluated_claim_refs.length > 0 && depRows.length === 0) {
+      reasons.push("source_evidence_missing");
+    }
   }
 
   let source: EvidenceSourceSnapshot | null = null;
-  const sourceIds = Array.from(new Set(deps.rows.map((r) => r.source_credential_id)));
+  const sourceIds = Array.from(new Set(depRows.map((r) => r.source_credential_id)));
   if (sourceIds.length > 1) reasons.push("source_evidence_inconsistent");
   if (sourceIds.length === 1) {
     const loadedSource = await loadSourceSnapshot(sourceIds[0]!, env);
