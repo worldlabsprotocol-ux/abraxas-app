@@ -43,7 +43,11 @@ parity_pg_dump() {
 
 postgres_report_versions() {
   local url="${1:?database url required}"
-  echo "postgres_client_mode: ${POSTGRES_CLIENT_DOCKER_IMAGE:+docker:${POSTGRES_CLIENT_DOCKER_IMAGE}}${POSTGRES_CLIENT_DOCKER_IMAGE:-host}"
+  if [ -n "$POSTGRES_CLIENT_DOCKER_IMAGE" ]; then
+    echo "postgres_client_mode: docker:${POSTGRES_CLIENT_DOCKER_IMAGE}"
+  else
+    echo "postgres_client_mode: host"
+  fi
   echo "postgres_client_pg_dump: $(parity_pg_dump --version)"
   echo "postgres_client_psql: $(parity_psql --version)"
   echo "postgres_server_version: $(parity_psql "$url" -q -t -A -c "show server_version;")"
