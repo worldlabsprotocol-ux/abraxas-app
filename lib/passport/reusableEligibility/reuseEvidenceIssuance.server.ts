@@ -90,7 +90,7 @@ export async function finalizeReuseEvidenceForIssuance(input: {
     }
 
     throw new ReuseEvidenceIssuanceError(
-      `unexpected_mirror_state:${mirror.reason}`,
+      "sovereign_evidence_mirror_failed",
       "sovereign_evidence_mirror_failed",
     );
   } catch (error) {
