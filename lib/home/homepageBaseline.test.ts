@@ -30,11 +30,9 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(shell).toContain("hero");
     expect(shell).toContain("HomeUnifiedProductEntry");
     expect(shell).not.toContain("HomeGoodTroubleActionSection");
-    expect(shell).not.toContain("KineticMarquee");
-    expect(unified).toContain("HomeHowAbraxasWorksSection");
-    expect(unified).toContain("HomeVerifiableTrustChapter");
-    expect(unified).toContain("HomeBuildEntrySection");
+    expect(shell).toContain("HomeProtocolSignalMarquee");
     expect(unified).toContain("HomeNativeSandboxChapter");
+    expect(unified).not.toContain("HomeHowAbraxasWorksSection");
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).toContain("PROTOCOL_HERO_TITLE");
     const positioning = read("lib/home/protocolPositioningCopy.ts");
@@ -62,10 +60,10 @@ describe("homepage baseline (institutional invariants)", () => {
   });
 
   it("motion primitives honor reduced motion", () => {
-    const marquee = read("lib/motion/cinematic/KineticMarquee.tsx");
+    const marquee = read("components/home/HomeProtocolSignalMarquee.tsx");
     expect(marquee).toContain("useReducedMotion");
-    const css = read("app/globals.css");
+    const css = read("app/globals.premium-home.css");
     expect(css).toContain("prefers-reduced-motion: reduce");
-    expect(css).toContain(".abx-kinetic-marquee__track");
+    expect(css).toContain("abx-protocol-marquee-scroll");
   });
 });

@@ -2,11 +2,8 @@ import Link from "next/link";
 import {
   CINEMATIC_HOME_CTA_PRIMARY,
   CINEMATIC_HOME_CTA_PRIMARY_HREF,
-  CINEMATIC_HOME_CTA_SECONDARY,
-  CINEMATIC_HOME_CTA_SECONDARY_HREF,
   CINEMATIC_HOME_HEADLINE,
   CINEMATIC_HOME_LEAD,
-  CINEMATIC_HOME_PRIVACY_SUPPORT,
 } from "@/lib/home/cinematicHomeCopy";
 import { PremiumHomeHeroVisualEnhanced } from "@/components/home/premium/PremiumHomeHeroVisualEnhanced";
 import { PROTOCOL_HERO_TITLE } from "@/lib/home/protocolPositioningCopy";
@@ -37,18 +34,9 @@ export function PremiumHomeHero() {
             ))}
           </h1>
           <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--3">{CINEMATIC_HOME_LEAD}</p>
-          <p className="abx-premium-hero__support abx-premium-hero__reveal abx-premium-hero__reveal--3">
-            {CINEMATIC_HOME_PRIVACY_SUPPORT}
-          </p>
           <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
             <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
               {CINEMATIC_HOME_CTA_PRIMARY}
-            </Link>
-            <Link
-              className="abx-premium-hero__cta abx-premium-hero__cta--secondary"
-              href={CINEMATIC_HOME_CTA_SECONDARY_HREF}
-            >
-              {CINEMATIC_HOME_CTA_SECONDARY}
             </Link>
           </div>
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
