@@ -22,6 +22,8 @@ export type CurrentValidityDecisionInput = {
   not_expired: boolean;
   not_superseded: boolean;
   store_available: boolean;
+  /** When false, operational Launchpad application scope failed. Sovereign slice may omit app checks. */
+  application_scope_satisfied?: boolean;
 };
 
 export type CurrentValidityDecisionResult = {
@@ -59,8 +61,11 @@ export function deriveCurrentValidityDecision(
 ): CurrentValidityDecisionResult {
   const hard_deny_reasons = [...extraReasons].filter((r) => HARD_DENY.has(r) || r.includes("evidence"));
 
+  const applicationOk = input.application_scope_satisfied !== false;
+
   const currently_acceptable =
     input.store_available
+    && applicationOk
     && input.cryptographically_valid
     && input.issuer_authorized
     && input.issued_approved
