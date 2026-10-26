@@ -104,6 +104,7 @@
     "sovereign-runtime:observe-staging-lifecycle-http-559": "tsx scripts/sovereign-runtime/observe-staging-lifecycle-http-559.ts",
     "sovereign-runtime:certify-559": "tsx scripts/sovereign-runtime/certify-build-559.ts",
     "sovereign:build-820-acceptance": "ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF=1 vitest run --no-file-parallelism lib/persistence/boundary/staging/threeLayerTrustAcceptance.integration.test.ts",
+    "sovereign:build-834-validity-parity": "ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF=1 vitest run --no-file-parallelism lib/persistence/boundary/staging/build834SovereignValidityParity.integration.test.ts lib/decisionReceipts/currentValidity/decisionCore.test.ts",
     "test:integration-first-821": "vitest run examples/integration-first-relying-party/integration-first.test.ts",
     "test:partner-flow-portable-822": "vitest run lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts",
     "test:build-823-real-sandbox-receipt": "vitest run lib/partner/portableIndependentVerification/build823RealSandboxReceipt.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts",

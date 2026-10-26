@@ -11,6 +11,7 @@ import { isReceiptSupersededOnSovereignPg } from "../verticalSlice/supersessionR
 import { evaluateClaimEvidenceOnSovereignPg } from "../verticalSlice/claimEvidenceRead";
 import { querySovereignStagingPg } from "../sovereignStagingPg";
 import type { SovereignFreshnessEvaluation } from "../verticalSlice/freshnessEvaluation";
+import { deriveCurrentValidityDecision } from "@/lib/decisionReceipts/currentValidity/unifiedContract";
 
 export type SovereignCurrentValidityResult = SovereignFreshnessEvaluation & {
   cryptographically_valid: boolean;
@@ -100,7 +101,7 @@ export async function evaluateSovereignCurrentValidity(input: {
   const expectedPolicy = input.expectedPolicyId ?? input.record.policy_id;
   const policyAudienceMatch =
     input.record.partner_id === expectedPartner && input.record.policy_id === expectedPolicy;
-  if (!policyAudienceMatch) reasons.push("environment_mismatch");
+  if (!policyAudienceMatch) reasons.push("policy_audience_mismatch");
 
   const storedStatus = resolveReceiptStatus(input.record);
   if (storedStatus === "revoked") reasons.push("receipt_revoked");
@@ -162,36 +163,36 @@ export async function evaluateSovereignCurrentValidity(input: {
     reasons.push(...claimEvidence.reasons);
   }
 
-  const issuedApproved = cryptographicallyValid && input.record.decision_result === "approved";
-  const currentlyAcceptable =
-    issuedApproved
-    && issuerAuthorized
-    && policyAudienceMatch
-    && partnerOperational
-    && policyActive
-    && claimEvidence.claims_current
-    && claimEvidence.evidence_current
-    && storedStatus === "active"
-    && !superseded
-    && storeAvailable
-    && !reasons.some((r) =>
-      r === "receipt_revoked" || r === "receipt_expired" || r === "signature_invalid",
-    );
+  const notExpired =
+    storedStatus !== "expired"
+    && !(input.record.expires_at && new Date(input.record.expires_at).getTime() <= now.getTime());
 
-  let lifecycle: SovereignCurrentValidityResult["lifecycle_status"] = "active";
-  if (superseded) lifecycle = "superseded";
-  else if (storedStatus === "revoked") lifecycle = "revoked";
-  else if (storedStatus === "expired") lifecycle = "expired";
-  else if (!currentlyAcceptable) lifecycle = "invalidated";
+  const decision = deriveCurrentValidityDecision(
+    {
+      cryptographically_valid: cryptographicallyValid,
+      issuer_authorized: issuerAuthorized,
+      issued_approved: cryptographicallyValid && input.record.decision_result === "approved",
+      policy_and_audience_match: policyAudienceMatch,
+      partner_operational: partnerOperational,
+      policy_active: policyActive,
+      claims_current: claimEvidence.claims_current,
+      evidence_current: claimEvidence.evidence_current,
+      receipt_status_active: storedStatus === "active",
+      not_expired: notExpired,
+      not_superseded: !superseded,
+      store_available: storeAvailable,
+    },
+    reasons,
+  );
 
   return {
     signature_authentic: cryptographicallyValid,
     issuer_authorized: issuerAuthorized,
     policy_and_audience_match: policyAudienceMatch,
-    currently_acceptable: currentlyAcceptable,
+    currently_acceptable: decision.currently_acceptable,
     cryptographically_valid: cryptographicallyValid,
     superseded,
-    lifecycle_status: lifecycle,
+    lifecycle_status: decision.lifecycle_status,
     invalidation_reasons: Array.from(new Set(reasons)),
     store_available: storeAvailable,
     checked_at: now.toISOString(),
