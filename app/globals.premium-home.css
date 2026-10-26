@@ -121,6 +121,67 @@
   margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
 }
 
+.abx-home-protocol--diagram-only {
+  gap: 0;
+  margin-bottom: clamp(1.25rem, 3.5vw, 2rem);
+}
+
+.abx-protocol-diagram {
+  width: 100%;
+}
+
+.abx-protocol-diagram__desktop {
+  display: none;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.abx-protocol-diagram__art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.abx-protocol-diagram__mobile {
+  display: block;
+}
+
+@media (min-width: 961px) {
+  .abx-protocol-diagram__desktop {
+    display: block;
+  }
+
+  .abx-protocol-diagram__mobile {
+    display: none;
+  }
+}
+
+.abx-trust-arch-diagram__emblem-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 0.5rem 0 0.65rem;
+}
+
+.abx-trust-arch-diagram__emblem {
+  width: 72px;
+  height: auto;
+  border-radius: 50%;
+}
+
+.abx-trust-arch-diagram--mobile-primary {
+  margin: 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.abx-trust-arch-diagram--mobile-primary .abx-trust-arch-diagram__title {
+  font-size: clamp(1.15rem, 4vw, 1.35rem);
+}
+
 .abx-home-protocol__card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;

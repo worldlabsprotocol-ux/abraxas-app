@@ -8,7 +8,6 @@ import {
   CINEMATIC_HOME_CTA_PRIMARY_HREF,
   CINEMATIC_HOME_LEAD,
 } from "./cinematicHomeCopy";
-import { PROTOCOL_PUBLIC_PILLARS, PROTOCOL_SECTION_TITLE } from "./protocolPositioningCopy";
 
 const ROOT = resolve(__dirname, "../..");
 
@@ -34,12 +33,13 @@ describe("homepage simplification (#homepage-refinement)", () => {
     expect(hero).not.toContain("CINEMATIC_HOME_PRIVACY_SUPPORT");
   });
 
-  it("surfaces three protocol pillars instead of nine permanent cards", () => {
-    expect(PROTOCOL_PUBLIC_PILLARS).toHaveLength(3);
-    expect(PROTOCOL_SECTION_TITLE).toBe("Trust you can verify.");
+  it("replaces protocol text box with diagram beneath marquee", () => {
     const section = read("components/home/HomeProtocolInfrastructureSection.tsx");
-    expect(section).toContain("PROTOCOL_PUBLIC_PILLARS");
-    expect(section).not.toContain("PROTOCOL_GUARANTEES.map");
+    expect(section).toContain("HomeAbraxasProtocolDiagram");
+    expect(section).not.toContain("PROTOCOL_PUBLIC_PILLARS");
+    expect(section).not.toContain("Trust you can verify");
+    read("components/home/HomeAbraxasProtocolDiagram.tsx");
+    read("public/home/abraxas-protocol-architecture.png");
   });
 
   it("places protocol marquee between hero and spine content", () => {
