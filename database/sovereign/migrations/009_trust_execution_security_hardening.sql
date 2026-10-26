@@ -17,7 +17,7 @@ create table if not exists public.wallet_scoped_trust_execution_outcomes (
   challenge_id      text not null unique references public.wallet_scoped_trust_challenges(id),
   partner_id        text not null references public.partners(partner_id),
   application_id    uuid not null,
-  receipt_id        text not null references public.decision_receipts(id),
+  receipt_id        text not null,
   correlation_id    text not null unique,
   decision_result   text not null check (decision_result in ('approved', 'denied', 'indeterminate')),
   finalized_at      timestamptz not null default now()
