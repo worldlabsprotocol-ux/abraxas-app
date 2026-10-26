@@ -239,6 +239,11 @@ jobs:
         env:
           MIGRATION_EVIDENCE_CHAIN_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_evidence_chain
 
+      - name: Demo drift reconciliation parity (093 without 059)
+        run: bash scripts/ci/run-demo-drift-reconciliation-parity.sh
+        env:
+          DEMO_DRIFT_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/demo_drift_reconciliation
+
       - name: Trust slice backup restore parity
         run: bash scripts/ci/run-trust-slice-backup-restore-parity.sh
         env:
