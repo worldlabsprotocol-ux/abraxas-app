@@ -10,7 +10,7 @@ import {
   type ReceiptValidityState,
 } from "@/lib/decisionReceipts/validityResolver";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
-import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve.server";
+import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve";
 
 export type TrustValidityState =
   | ReceiptValidityState
