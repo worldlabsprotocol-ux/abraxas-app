@@ -7,3 +7,7 @@ export * from "./receiptVerify";
 export * from "./verifyIndependent";
 export * from "./signedReceiptStatusStatement";
 export { verifyEd25519Detached } from "./crypto";
+export * from "./v1_1_0/constants";
+export * from "./v1_1_0/applicationBinding";
+export * from "./v1_1_0/evidenceCommitment";
+export * from "./v1_1_0/canonical";
