@@ -22,6 +22,7 @@ describe("evaluateApplicationScopeOnSovereignPg", () => {
 
   it("denies unknown application with application_unbound", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
     const result = await evaluateApplicationScopeOnSovereignPg({
       receiptId: "dr_1",
       partnerId: "partner-a",

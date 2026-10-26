@@ -7,7 +7,6 @@ import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionRecei
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { isReceiptSuperseded } from "@/lib/decisionReceipts/receiptSupersession";
-import { evaluateOperationalApplicationScope } from "./applicationScope";
 import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
 import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
 import {
@@ -17,6 +16,9 @@ import {
 } from "./contract";
 import { mapPartnerSafeReceiptReason } from "./partnerSafeReason";
 import { deriveCurrentValidityDecision } from "./unifiedContract";
+import type { ApplicationScopeResolver } from "./applicationScopeContract";
+
+export type { ApplicationScopeResolver } from "./applicationScopeContract";
 
 export interface EvaluateReceiptCurrentValidityInput {
   record: DecisionReceiptRecord;
@@ -24,6 +26,8 @@ export interface EvaluateReceiptCurrentValidityInput {
   expectedPolicyId?: string;
   expectedEnvironment?: "sandbox" | "production";
   applicationId?: string | null;
+  /** Server boundary: resolves authoritative Launchpad binding (required when applicationId is set). */
+  resolveApplicationScope?: ApplicationScopeResolver;
   now?: Date;
 }
 
@@ -114,17 +118,23 @@ export async function evaluateReceiptCurrentValidity(
 
   let applicationActive: boolean | null = null;
   if (input.applicationId) {
-    const applicationScope = await evaluateOperationalApplicationScope({
-      receiptId: record.id,
-      partnerId: record.partner_id,
-      applicationId: input.applicationId,
-    });
-    if (!applicationScope.store_available) {
+    if (!input.resolveApplicationScope) {
       storeUnavailable = true;
       invalidationReasons.push("validity_store_unavailable");
+      applicationActive = false;
     } else {
-      invalidationReasons.push(...applicationScope.reasons);
-      applicationActive = applicationScope.application_scope_satisfied;
+      const applicationScope = await input.resolveApplicationScope({
+        receiptId: record.id,
+        partnerId: record.partner_id,
+        applicationId: input.applicationId,
+      });
+      if (!applicationScope.store_available) {
+        storeUnavailable = true;
+        invalidationReasons.push("validity_store_unavailable");
+      } else {
+        invalidationReasons.push(...applicationScope.reasons);
+        applicationActive = applicationScope.application_scope_satisfied;
+      }
     }
   }
 

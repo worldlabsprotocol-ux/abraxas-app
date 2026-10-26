@@ -4,7 +4,7 @@
 import type { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
-import { evaluateOperationalApplicationScope } from "@/lib/decisionReceipts/currentValidity/applicationScope";
+import { evaluateOperationalApplicationScope } from "@/lib/decisionReceipts/currentValidity/applicationScope.server";
 import { assertNoUnsafePermit } from "@/lib/decisionReceipts/currentValidity/unifiedContract";
 import { publishSignedIssuerAuthorityFromRegistry } from "../issuerAuthority/buildFromRegistry";
 import { evaluateSovereignCurrentValidity } from "../sovereignCurrentValidity/evaluate";

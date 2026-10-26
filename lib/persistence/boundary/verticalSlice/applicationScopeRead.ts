@@ -1,6 +1,9 @@
 // FILE: lib/persistence/boundary/verticalSlice/applicationScopeRead.ts
 // Launchpad application scope on sovereign PG — authoritative binding, not caller-supplied proof.
 
+import {
+  deriveApplicationScopeFromAuthoritativeFacts,
+} from "@/lib/decisionReceipts/currentValidity/applicationScopeContract";
 import { querySovereignStagingPg } from "../sovereignStagingPg";
 
 export type SovereignApplicationScopeEvaluation = {
@@ -30,7 +33,6 @@ export async function evaluateApplicationScopeOnSovereignPg(input: {
   }
 
   const env = input.env ?? process.env;
-  const reasons: string[] = [];
 
   const appResult = await querySovereignStagingPg<ApplicationRow>(
     `select status, partner_id from public.partner_launchpad_applications
@@ -45,31 +47,6 @@ export async function evaluateApplicationScopeOnSovereignPg(input: {
       application_scope_satisfied: false,
       reasons: ["validity_store_unavailable"],
     };
-  }
-
-  const appRow = appResult.rows[0];
-  if (!appRow) {
-    reasons.push("application_unbound");
-    return {
-      scope_required: true,
-      store_available: true,
-      application_scope_satisfied: false,
-      reasons,
-    };
-  }
-
-  if (appRow.partner_id !== input.partnerId) {
-    reasons.push("application_mismatch");
-    return {
-      scope_required: true,
-      store_available: true,
-      application_scope_satisfied: false,
-      reasons,
-    };
-  }
-
-  if (appRow.status !== "active") {
-    reasons.push("application_inactive");
   }
 
   const bindingResult = await querySovereignStagingPg<BindingRow>(
@@ -87,24 +64,27 @@ export async function evaluateApplicationScopeOnSovereignPg(input: {
     };
   }
 
+  const appRow = appResult.rows[0];
   const binding = bindingResult.rows[0];
-  if (!binding) {
-    reasons.push("application_unbound");
-  } else {
-    if (binding.partner_id !== input.partnerId) {
-      reasons.push("application_mismatch");
-    } else if (String(binding.application_id) !== expected) {
-      reasons.push("application_mismatch");
-    } else if (binding.revoked_at) {
-      reasons.push("application_inactive");
-    }
-  }
+  const decision = deriveApplicationScopeFromAuthoritativeFacts({
+    expectedApplicationId: expected,
+    receiptPartnerId: input.partnerId,
+    store_available: true,
+    facts: {
+      application_row_present: Boolean(appRow),
+      application_partner_id: appRow?.partner_id ?? null,
+      application_status: appRow?.status ?? null,
+      binding_row_present: Boolean(binding),
+      binding_application_id: binding ? String(binding.application_id) : null,
+      binding_partner_id: binding?.partner_id ?? null,
+      binding_revoked_at: binding?.revoked_at ?? null,
+    },
+  });
 
-  const application_scope_satisfied = reasons.length === 0;
   return {
     scope_required: true,
-    store_available: true,
-    application_scope_satisfied,
-    reasons,
+    store_available: decision.store_available,
+    application_scope_satisfied: decision.application_scope_satisfied,
+    reasons: decision.reasons,
   };
 }

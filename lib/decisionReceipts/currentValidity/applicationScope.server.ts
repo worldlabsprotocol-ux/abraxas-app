@@ -1,15 +1,30 @@
-// FILE: lib/decisionReceipts/currentValidity/applicationScope.ts
-// Application scope for operational current-validity (sovereign PG or Launchpad store).
+// FILE: lib/decisionReceipts/currentValidity/applicationScope.server.ts
+import "server-only";
 
 import { evaluateApplicationScopeOnSovereignPg } from "@/lib/persistence/boundary/verticalSlice/applicationScopeRead";
 import { getSovereignStagingPgPool } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import {
+  deriveApplicationScopeFromAuthoritativeFacts,
+  type ApplicationScopeEvaluation,
+} from "./applicationScopeContract";
 
-export type ApplicationScopeEvaluation = {
-  store_available: boolean;
-  application_scope_satisfied: boolean;
-  reasons: string[];
-};
+export type { ApplicationScopeEvaluation, ApplicationScopeResolver } from "./applicationScopeContract";
+
+import type { ApplicationScopeResolver } from "./applicationScopeContract";
+
+export function createOperationalApplicationScopeResolver(input?: {
+  env?: Record<string, string | undefined>;
+}): ApplicationScopeResolver {
+  const env = input?.env;
+  return async (scope) =>
+    evaluateOperationalApplicationScope({
+      receiptId: scope.receiptId,
+      partnerId: scope.partnerId,
+      applicationId: scope.applicationId,
+      env,
+    });
+}
 
 export async function evaluateOperationalApplicationScope(input: {
   receiptId: string;
@@ -45,40 +60,27 @@ export async function evaluateOperationalApplicationScope(input: {
       "@/lib/partner/launchpad/resolveLaunchpadApplication.server"
     );
     const app = await getLaunchpadApplicationForPartner(applicationId, input.partnerId);
-    if (!app) {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_unbound"],
-      };
-    }
-    if (app.status !== "active") {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_inactive"],
-      };
-    }
-    const bound = await pgGetSignedReceiptForApplication({
-      applicationId,
-      partnerId: input.partnerId,
-      receiptId: input.receiptId,
+    const bound = app
+      ? await pgGetSignedReceiptForApplication({
+        applicationId,
+        partnerId: input.partnerId,
+        receiptId: input.receiptId,
+      })
+      : null;
+    return deriveApplicationScopeFromAuthoritativeFacts({
+      expectedApplicationId: applicationId,
+      receiptPartnerId: input.partnerId,
+      store_available: true,
+      facts: {
+        application_row_present: Boolean(app),
+        application_partner_id: app?.partner_id ?? null,
+        application_status: app?.status ?? null,
+        binding_row_present: Boolean(bound),
+        binding_application_id: bound ? applicationId : null,
+        binding_partner_id: bound ? input.partnerId : null,
+        binding_revoked_at: bound?.revoked_at ?? null,
+      },
     });
-    if (!bound) {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_unbound"],
-      };
-    }
-    if (bound.revoked_at) {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_inactive"],
-      };
-    }
-    return { store_available: true, application_scope_satisfied: true, reasons: [] };
   }
 
   try {
@@ -86,13 +88,6 @@ export async function evaluateOperationalApplicationScope(input: {
       "@/lib/partner/launchpad/resolveLaunchpadApplication.server"
     );
     const app = await getLaunchpadApplicationForPartner(applicationId, input.partnerId);
-    if (!app || app.status !== "active") {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: [app ? "application_inactive" : "application_unbound"],
-      };
-    }
     const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb
@@ -107,31 +102,20 @@ export async function evaluateOperationalApplicationScope(input: {
         reasons: ["validity_store_unavailable"],
       };
     }
-    if (!data) {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_unbound"],
-      };
-    }
-    if (
-      String(data.partner_id) !== input.partnerId
-      || String(data.application_id) !== applicationId
-    ) {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_mismatch"],
-      };
-    }
-    if (data.revoked_at) {
-      return {
-        store_available: true,
-        application_scope_satisfied: false,
-        reasons: ["application_inactive"],
-      };
-    }
-    return { store_available: true, application_scope_satisfied: true, reasons: [] };
+    return deriveApplicationScopeFromAuthoritativeFacts({
+      expectedApplicationId: applicationId,
+      receiptPartnerId: input.partnerId,
+      store_available: true,
+      facts: {
+        application_row_present: Boolean(app),
+        application_partner_id: app?.partner_id ?? null,
+        application_status: app?.status ?? null,
+        binding_row_present: Boolean(data),
+        binding_application_id: data ? String(data.application_id) : null,
+        binding_partner_id: data ? String(data.partner_id) : null,
+        binding_revoked_at: data?.revoked_at ? String(data.revoked_at) : null,
+      },
+    });
   } catch {
     return {
       store_available: false,

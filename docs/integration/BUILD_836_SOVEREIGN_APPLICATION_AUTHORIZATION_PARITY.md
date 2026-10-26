@@ -6,7 +6,9 @@ A genuine gap existed on the **sovereign current-validity** path: `evaluateSover
 
 Operational `evaluateReceiptCurrentValidity` already accepted an optional `applicationId`, but only checked application **status**, not authoritative **receipt binding** in `partner_launchpad_signed_receipts`.
 
-Signed receipt payloads still do **not** embed `application_id` (protocol unchanged). Scope is enforced from **issuer-side authoritative state** on sovereign PG (or Launchpad store), never from caller-supplied identifiers alone.
+Signed receipt payloads still do **not** embed `application_id` (protocol unchanged). Scope is enforced from **issuer-side authoritative state** on sovereign PG (or Launchpad store), never from caller-supplied identifiers alone. That is **issuer-side authorization**, not independent cryptographic application binding in the receipt.
+
+Operational scope persistence resolves in `applicationScope.server.ts` (server-only). Shared evaluation imports the pure contract in `applicationScopeContract.ts`; `evaluate.ts` dynamically loads the server adapter only when `applicationId` is supplied.
 
 ## Enforcement points
 
