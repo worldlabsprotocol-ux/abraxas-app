@@ -17,6 +17,8 @@ import {
 import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
 import { decodeReceiptV11Sidecar, encodeReceiptV11Sidecar, V1_1_SIDECAR_SCHEMA } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
+import { persistV11FinalizationAtomic } from "@/lib/decisionReceipts/v1_1_0/atomicFinalization.server";
+import { resolveV11PersistenceCapability } from "@/lib/decisionReceipts/v1_1_0/v11PersistenceCapability.server";
 
 /**
  * Atomically transition pending → active with the final v1.1.0 signature.
@@ -94,6 +96,25 @@ export async function finalizePendingV11ReceiptCryptographic(input: {
   );
 
   const finalizedAt = new Date().toISOString();
+  const persistenceCap = await resolveV11PersistenceCapability(input.env);
+
+  if (persistenceCap.atomicFinalizeEnabled && persistenceCap.dedicatedColumnsEnabled) {
+    return persistV11FinalizationAtomic({
+      receiptId: existing.id,
+      expectedProvisionalPayloadHash: existing.payload_hash,
+      write: {
+        payload_hash: payloadHash,
+        signature,
+        anchor_reference,
+        application_binding_ref,
+        evidence_commitment: commitment as Record<string, unknown>,
+        evidence_commitment_manifest: manifest,
+        issuance_finalized_at: finalizedAt,
+        v11_issuance_phase: "final",
+      },
+    });
+  }
+
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("decision_receipts")
