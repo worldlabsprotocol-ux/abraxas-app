@@ -12,7 +12,10 @@ import { toPublicView, verifyRecordSignature, resolveReceiptStatus } from "@/lib
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
 import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
-import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import {
+  EvidenceDependencyStoreUnavailableError,
+  getReceiptEvidenceDependencies,
+} from "@/lib/decisionReceipts/evidenceDependencies";
 import { getDerivationByDerivedReceipt } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   isRevocationReasonCode,
@@ -38,8 +41,18 @@ export async function GET(
   const validity = await resolveReceiptValidity(record);
   const currentValidity = await evaluateReceiptCurrentValidity({ record });
   const dependencies = await getReceiptDependencies(receiptId);
-  const evidenceDependencies = await getReceiptEvidenceDependencies(receiptId);
+  let evidenceDependencies: Awaited<ReturnType<typeof getReceiptEvidenceDependencies>> | { store_unavailable: true } = [];
+  try {
+    evidenceDependencies = await getReceiptEvidenceDependencies(receiptId);
+  } catch (error) {
+    if (error instanceof EvidenceDependencyStoreUnavailableError) {
+      evidenceDependencies = { store_unavailable: true };
+    } else {
+      throw error;
+    }
+  }
   const reuseDerivation = await getDerivationByDerivedReceipt(receiptId).catch(() => null);
+  const evidenceDependencyCount = Array.isArray(evidenceDependencies) ? evidenceDependencies.length : null;
 
   return NextResponse.json({
     receipt: {
@@ -62,9 +75,9 @@ export async function GET(
           derived_from_source: true,
           requesting_partner_id: reuseDerivation.requesting_partner_id,
           requesting_policy_id: reuseDerivation.requesting_policy_id,
-          evidence_dependency_count: evidenceDependencies.length,
+          evidence_dependency_count: evidenceDependencyCount,
         }
-      : { derived_from_source: false, evidence_dependency_count: evidenceDependencies.length },
+      : { derived_from_source: false, evidence_dependency_count: evidenceDependencyCount },
     audit_timeline: audit,
   });
 }

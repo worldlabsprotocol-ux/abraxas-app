@@ -7,7 +7,11 @@ import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionRecei
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { isReceiptSuperseded } from "@/lib/decisionReceipts/receiptSupersession";
-import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import {
+  EvidenceDependencyStoreUnavailableError,
+  getReceiptEvidenceDependencies,
+  receiptRequiresEvidenceDependencyGraph,
+} from "@/lib/decisionReceipts/evidenceDependencies";
 import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   RECEIPT_CURRENT_VALIDITY_VERSION,
@@ -94,7 +98,11 @@ export async function evaluateReceiptCurrentValidity(
   invalidationReasons.push(...trust.invalidation_reasons);
 
   try {
+    const requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id);
     const evidenceDeps = await getReceiptEvidenceDependencies(record.id);
+    if (requiresEvidenceGraph && evidenceDeps.length === 0) {
+      invalidationReasons.push("evidence_dependency_missing");
+    }
     const sourceId = evidenceDeps.find((d) => d.dependency_type === "source_receipt")?.source_credential_id
       ?? evidenceDeps[0]?.source_credential_id;
     if (sourceId) {
@@ -110,9 +118,17 @@ export async function evaluateReceiptCurrentValidity(
         invalidationReasons.push("source_evidence_expired");
       }
     }
-  } catch {
-    storeUnavailable = true;
-    invalidationReasons.push("validity_store_unavailable");
+  } catch (error) {
+    if (error instanceof EvidenceDependencyStoreUnavailableError) {
+      const requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id).catch(() => true);
+      if (requiresEvidenceGraph) {
+        storeUnavailable = true;
+        invalidationReasons.push("evidence_dependency_store_unavailable");
+      }
+    } else {
+      storeUnavailable = true;
+      invalidationReasons.push("validity_store_unavailable");
+    }
   }
 
   const policyVersionActive = await resolvePolicyVersionActive(record.policy_id, record.policy_version, now);
