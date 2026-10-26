@@ -6,10 +6,14 @@ import {
   buildWalletAuthorizationMessage,
   type WalletAuthorizationHumanContext,
   WALLET_AUTH_PURPOSE_SANDBOX_TEST_VERIFY,
+  WALLET_AUTH_PURPOSE_TRUST_EXECUTION,
 } from "@/lib/auth/ephemeralWallet/protocolEnvelope";
+import {
+  assertPurposeAllowedForTrustExecutionVerification,
+  parseWalletAuthorizationPurposeFromMessage,
+} from "@/lib/auth/ephemeralWallet/walletAuthorizationPurpose";
 
-/** Scoped trust execution (not sign-in). */
-export const WALLET_AUTH_PURPOSE_TRUST_EXECUTION = "abraxas_wallet_trust_execution_v1" as const;
+export { WALLET_AUTH_PURPOSE_TRUST_EXECUTION };
 
 export type WalletScopedTrustBinding = {
   domain: string;
@@ -67,6 +71,11 @@ export function buildWalletScopedTrustExecutionMessage(input: WalletScopedTrustB
 }
 
 export function parseWalletScopedTrustExecutionBinding(message: string): WalletScopedTrustBinding | null {
+  const purpose = parseWalletAuthorizationPurposeFromMessage(message);
+  if (assertPurposeAllowedForTrustExecutionVerification(purpose).ok === false) {
+    return null;
+  }
+
   const tenantLine = message
     .split("\n")
     .find((l) => l.startsWith(TENANT_PREFIX));

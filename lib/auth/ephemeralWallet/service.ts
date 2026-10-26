@@ -11,6 +11,10 @@ import { verifyPassportSolanaPersonalMessage } from "@/lib/auth/passportSolanaAu
 import { canonicalizeSolanaNetwork, resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
 import { buildEphemeralWalletSignInMessage } from "./message";
 import { WALLET_AUTH_PURPOSE_SIGN_IN } from "./protocolEnvelope";
+import {
+  assertPurposeAllowedForSignInVerification,
+  parseWalletAuthorizationPurposeFromMessage,
+} from "./walletAuthorizationPurpose";
 import { buildWalletSignInChallengeDisplay } from "./signInDisplayContext";
 import {
   commitEphemeralWalletChallenge,
@@ -150,6 +154,11 @@ export async function verifyEphemeralWalletAuth(input: {
     throw error;
   }
   if (!row) return { ok: false, code: "replay" };
+  const purposeFromMessage = parseWalletAuthorizationPurposeFromMessage(row.message);
+  const purposeCheck = assertPurposeAllowedForSignInVerification(
+    row.purpose ?? purposeFromMessage,
+  );
+  if (!purposeCheck.ok) return { ok: false, code: purposeCheck.code };
   if (row.wallet_address !== wallet) return { ok: false, code: "wrong_signer" };
   if (row.session_context_hash !== hashEphemeralSessionContext(input.sessionContext)) {
     return { ok: false, code: "session_context_mismatch" };

@@ -3,6 +3,10 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import type { WalletScopedTrustBinding } from "./scopedExecutionEnvelope";
+import {
+  assertPurposeAllowedForTrustExecutionVerification,
+  parseWalletAuthorizationPurposeFromMessage,
+} from "@/lib/auth/ephemeralWallet/walletAuthorizationPurpose";
 
 export type ScopedChallengeRecord = WalletScopedTrustBinding & {
   challengeId: string;
@@ -73,6 +77,10 @@ export function createInMemoryScopedChallengeStore(): ScopedChallengeStore {
         return { ok: false, reason: "challenge_expired" };
       }
       if (record.consumedAt) return { ok: false, reason: "challenge_already_consumed" };
+      const purpose = parseWalletAuthorizationPurposeFromMessage(input.message);
+      if (!assertPurposeAllowedForTrustExecutionVerification(purpose).ok) {
+        return { ok: false, reason: "action_mismatch" };
+      }
       const messageSha256 = hashWalletAuthorizationMessage(input.message);
       if (messageSha256 !== record.messageSha256) {
         return { ok: false, reason: "message_hash_mismatch" };

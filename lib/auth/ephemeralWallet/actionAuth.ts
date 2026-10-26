@@ -13,6 +13,10 @@ import {
   type WalletAuthorizationPurpose,
 } from "./protocolEnvelope";
 import {
+  assertPurposeAllowedForSandboxActionVerification,
+  parseWalletAuthorizationPurposeFromMessage,
+} from "./walletAuthorizationPurpose";
+import {
   commitEphemeralWalletChallenge,
   hashEphemeralSessionContext,
   peekEphemeralWalletChallenge,
@@ -189,6 +193,11 @@ export async function verifyWalletActionAuthorization(input: {
     throw error;
   }
   if (!row) return { ok: false, code: "replay" };
+  const purposeFromMessage = parseWalletAuthorizationPurposeFromMessage(row.message);
+  const purposeCheck = assertPurposeAllowedForSandboxActionVerification(
+    row.purpose ?? purposeFromMessage,
+  );
+  if (!purposeCheck.ok) return { ok: false, code: purposeCheck.code };
   if (row.operation !== input.expectedOperation) return { ok: false, code: "wrong_operation" };
   if (input.expectedResource && row.resource !== input.expectedResource) {
     return { ok: false, code: "wrong_resource" };
