@@ -25,6 +25,7 @@ Diagrams illustrate protocol behavior. They are not live network status or produ
 ## Implementation map
 
 - Marquee: `components/home/HomeProtocolSignalMarquee.tsx`
-- Public pillars: `components/home/HomeProtocolInfrastructureSection.tsx`
-- System diagram: `components/home/HomeAbraxasSystemArchitectureDiagram.tsx`
+- Protocol diagram (marquee → diagram → sandbox): `components/home/HomeAbraxasProtocolDiagram.tsx`
+- Mobile stack diagram: `components/home/HomeAbraxasSystemArchitectureDiagram.tsx`
+- Desktop artwork: `public/home/abraxas-protocol-architecture.png`
 - Copy: `lib/home/protocolPositioningCopy.ts`

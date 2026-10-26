@@ -1,7 +1,10 @@
 // FILE: components/home/HomeAbraxasSystemArchitectureDiagram.tsx
 // Canonical four stage trust architecture (public storytelling, not live network state).
 
+import Image from "next/image";
 import { HomeProtocolVisualDisclosure } from "@/components/home/HomeProtocolVisualDisclosure";
+
+const EMBLEM = "/brand/official/abraxas-emblem-protocol-640.webp";
 
 const INPUTS = ["Wallet", "Evidence", "Consent", "Policy request"] as const;
 
@@ -15,11 +18,22 @@ const DECISION_RING = [
 
 const VERIFICATION = ["Trust anchor", "SIAS", "Signed status", "Independent verifier"] as const;
 
-const ENFORCEMENT = ["Permit", "Deny", "Indeterminate"] as const;
+const ENFORCEMENT = ["Permit", "Deny", "Indeterminate", "Trust continuity"] as const;
 
-export function HomeAbraxasSystemArchitectureDiagram() {
+type DiagramVariant = "default" | "mobilePrimary";
+
+export function HomeAbraxasSystemArchitectureDiagram({
+  variant = "default",
+}: {
+  variant?: DiagramVariant;
+}) {
+  const rootClass =
+    variant === "mobilePrimary"
+      ? "abx-trust-arch-diagram abx-trust-arch-diagram--mobile-primary"
+      : "abx-trust-arch-diagram";
+
   return (
-    <figure className="abx-trust-arch-diagram" aria-labelledby="abx-trust-arch-title">
+    <figure className={rootClass} aria-labelledby="abx-trust-arch-title">
       <figcaption className="abx-trust-arch-diagram__caption">
         <p className="abx-v2-eyebrow">Abraxas trust architecture</p>
         <h3 id="abx-trust-arch-title" className="abx-trust-arch-diagram__title">
@@ -51,6 +65,16 @@ export function HomeAbraxasSystemArchitectureDiagram() {
             <span className="abx-trust-arch-diagram__stage-name">Abraxas decision layer</span>
           </header>
           <p className="abx-trust-arch-diagram__stage-lead">Process, sign, and attest</p>
+          <div className="abx-trust-arch-diagram__emblem-wrap">
+            <Image
+              src={EMBLEM}
+              alt=""
+              width={120}
+              height={120}
+              className="abx-trust-arch-diagram__emblem"
+              aria-hidden
+            />
+          </div>
           <ul className="abx-trust-arch-diagram__list abx-trust-arch-diagram__list--ring">
             {DECISION_RING.map((item) => (
               <li key={item}>{item}</li>
