@@ -38,9 +38,9 @@ export function mapReceiptRow(row: Record<string, unknown>): DecisionReceiptReco
   };
   if (mapped.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
     const sidecar = decodeReceiptV11Sidecar(mapped.anchor_reference);
-    if (sidecar) {
-      mapped.application_binding_ref = sidecar.application_binding_ref;
-      mapped.evidence_commitment = sidecar.evidence_commitment;
+    if (sidecar.ok) {
+      mapped.application_binding_ref = sidecar.sidecar.application_binding_ref;
+      mapped.evidence_commitment = sidecar.sidecar.evidence_commitment;
     }
   }
   return mapped;

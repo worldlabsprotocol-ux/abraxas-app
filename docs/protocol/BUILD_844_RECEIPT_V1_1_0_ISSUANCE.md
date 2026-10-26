@@ -25,7 +25,15 @@ Registry keys must list `"1.1.0"` in `schema_versions` before v1.1.0 issuance su
 
 ## Persistence (interim)
 
-v1.1.0 signed fields are stored in `anchor_reference` sidecar (`abraxas.receipt.v1_1.sidecar:`) until optional dedicated columns ship. External chain anchors and v1.1 sidecar are mutually exclusive (fail closed).
+v1.1.0 signed fields and the portable evidence manifest are stored in a validated sidecar on `anchor_reference` (`abraxas.receipt.v1_1.sidecar/v1`) until optional dedicated columns ship. External chain anchors and v1.1 sidecar are mutually exclusive (fail closed). Malformed sidecars fail closed at decode.
+
+## Immutability
+
+Final v1.1.0 signatures are written in a **single compare-and-swap** update: `status = pending_finalization` plus matching `payload_hash` → `active` with final `payload_hash`, `signature`, and sidecar (`issuance_phase: final`). Active, revoked, or expired receipts are never re-signed.
+
+## Independent verification boundary
+
+Operational `pending_finalization` receipts are **not** projected to the standalone verifier type. Export uses `projectOperationalReceiptForIndependentVerification` and `exportPortableEvidenceCommitmentManifest` so relying parties receive the blinded manifest that reconstructs the signed commitment.
 
 ## Activation requirements (founder gate)
 

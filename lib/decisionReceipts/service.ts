@@ -32,8 +32,9 @@ import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1
 import {
   AuthoritativeIssuanceError,
   buildAuthoritativeV11IssuanceFields,
+  resolveAuthoritativeApplicationIdForIssuance,
 } from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
-import { buildSignedCanonicalV11 } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance";
+import { buildSignedCanonicalV11, attachV11FieldsFromSidecar } from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance";
 
 function generateReceiptId(): string {
   return `dr_${randomBytes(12).toString("base64url")}`;
@@ -144,6 +145,11 @@ export async function issueDecisionReceipt(
 
   if (issuanceSchemaVersion === DECISION_RECEIPT_SCHEMA_V1_1) {
     let v11Fields;
+    const appScope = await resolveAuthoritativeApplicationIdForIssuance({
+      verificationDecisionId: input.verificationDecisionId,
+      partnerId: input.partnerId,
+      callerApplicationId: input.applicationId,
+    });
     try {
       v11Fields = await buildAuthoritativeV11IssuanceFields({
         receiptId,
@@ -151,8 +157,9 @@ export async function issueDecisionReceipt(
         policyId: input.policyId,
         policyVersion: input.policyVersion,
         decisionContext,
-        applicationId: input.applicationId,
-        pendingEvidenceFinalization: pendingEvidence,
+        applicationId: appScope.applicationId,
+        applicationScopeRequired: appScope.applicationScopeRequired,
+        issuancePhase: pendingEvidence ? "pending" : "final",
         externalAnchorReference: input.anchorReference,
       });
     } catch (error) {
@@ -160,7 +167,7 @@ export async function issueDecisionReceipt(
       throw error;
     }
     anchorReference = v11Fields.anchor_reference;
-    const recordForSign = {
+    const recordForSign = attachV11FieldsFromSidecar({
       id: receiptId,
       verification_decision_id: input.verificationDecisionId,
       consent_receipt_id: input.consentReceiptId ?? null,
@@ -184,9 +191,8 @@ export async function issueDecisionReceipt(
       anchor_reference: anchorReference,
       idempotency_key: input.idempotencyKey ?? input.verificationDecisionId,
       created_at: evaluatedAt,
-      application_binding_ref: v11Fields.application_binding_ref,
-      evidence_commitment: v11Fields.evidence_commitment,
-    } satisfies DecisionReceiptRecord;
+      revoked_at: null,
+    });
     const { payload } = buildSignedCanonicalV11(recordForSign);
     ({ payloadHash, signature } = signReceiptPayload(
       payload as Parameters<typeof signReceiptPayload>[0],
@@ -438,7 +444,10 @@ export async function issueReceiptForDecision(input: {
         : "immediate",
     });
   } catch (e) {
-    if (e instanceof StagedIssuanceUnavailableError || e instanceof AuthoritativeIssuanceError) {
+    if (
+      e instanceof StagedIssuanceUnavailableError
+      || e instanceof AuthoritativeIssuanceError
+    ) {
       throw e;
     }
     console.error("[decision_receipt]", e instanceof Error ? e.message : e);

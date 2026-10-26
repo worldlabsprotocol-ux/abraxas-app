@@ -10,7 +10,12 @@ import {
 } from "@/lib/decisionReceipts/issuanceSchemaCapability.server";
 import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
 import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
-import { resignDecisionReceiptV11AfterFinalization } from "@/lib/decisionReceipts/v1_1_0/resign.server";
+import {
+  finalizePendingV11ReceiptCryptographic,
+} from "@/lib/decisionReceipts/v1_1_0/finalizePending.server";
+import {
+  resolveAuthoritativeApplicationIdForIssuance,
+} from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
 
 export class IssuanceLifecycleError extends Error {
   constructor(
@@ -56,6 +61,26 @@ export async function activateDecisionReceiptIssuance(receiptId: string): Promis
   if (!capability.stagedIssuanceEnabled) {
     throw new StagedIssuanceUnavailableError("staged_issuance_activation_unavailable");
   }
+
+  const pending = await getReceiptById(receiptId);
+  if (!pending) {
+    throw new IssuanceLifecycleError("receipt_not_found", "receipt_not_found");
+  }
+
+  if (pending.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const authoritativeAppId = await resolveLaunchpadApplicationIdForReceipt(pending);
+    const appScope = await resolveAuthoritativeApplicationIdForIssuance({
+      verificationDecisionId: pending.verification_decision_id,
+      partnerId: pending.partner_id,
+      callerApplicationId: authoritativeAppId,
+    });
+    return finalizePendingV11ReceiptCryptographic({
+      receiptId,
+      applicationId: appScope.applicationId,
+      applicationScopeRequired: appScope.applicationScopeRequired,
+    });
+  }
+
   const sb = requireSupabaseAdmin();
   const finalizedAt = new Date().toISOString();
   const { data, error } = await sb
@@ -80,15 +105,7 @@ export async function activateDecisionReceiptIssuance(receiptId: string): Promis
     throw new IssuanceLifecycleError("receipt_not_pending", "receipt_not_pending");
   }
 
-  const activated = await mapUpdatedReceipt(receiptId);
-  if (activated.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
-    const applicationId = await resolveLaunchpadApplicationIdForReceipt(activated);
-    return resignDecisionReceiptV11AfterFinalization({
-      receiptId,
-      applicationId,
-    });
-  }
-  return activated;
+  return mapUpdatedReceipt(receiptId);
 }
 
 /** Permanent ineligibility when finalization cannot complete. Pending receipts stay non-authorizable even if this fails. */

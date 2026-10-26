@@ -3,12 +3,8 @@
 
 export const DECISION_RECEIPT_SCHEMA_VERSION = "1.0.0";
 
-/** Signed v1.1.0 fields (persisted via sidecar until optional DB columns). */
-export type EvidenceCommitmentV1 = {
-  schema: string;
-  digest: string;
-  entry_count: number;
-};
+import type { EvidenceCommitmentV1, EvidenceCommitmentEntryV1 } from "@/lib/decisionReceipts/schema/v1_1_0";
+export type { EvidenceCommitmentV1, EvidenceCommitmentEntryV1 };
 
 export type DecisionReceiptStatus = "active" | "expired" | "revoked" | "pending_finalization";
 export type DecisionReceiptContext = "production" | "sandbox_only";
