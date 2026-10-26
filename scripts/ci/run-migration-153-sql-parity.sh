@@ -19,4 +19,6 @@ psql "$MIGRATION_153_PG_URL" -v ON_ERROR_STOP=1 -c "
   GRANT SELECT, INSERT ON public.verification_decisions TO service_role;
 "
 
-npx vitest run lib/decisionReceipts/v1_1_0/migration153.sqlParity.test.ts
+export MIGRATION_151_153_PG_URL="${MIGRATION_151_153_PG_URL:-$MIGRATION_153_PG_URL}"
+
+npx vitest run lib/decisionReceipts/v1_1_0/migration153.sqlParity.test.ts lib/decisionReceipts/v1_1_0/migration151153Chain.sqlParity.test.ts
