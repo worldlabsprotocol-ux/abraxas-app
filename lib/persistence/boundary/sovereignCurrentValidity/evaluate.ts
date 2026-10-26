@@ -12,6 +12,7 @@ import { evaluateClaimEvidenceOnSovereignPg } from "../verticalSlice/claimEviden
 import { querySovereignStagingPg } from "../sovereignStagingPg";
 import type { SovereignFreshnessEvaluation } from "../verticalSlice/freshnessEvaluation";
 import { deriveCurrentValidityDecision } from "@/lib/decisionReceipts/currentValidity/unifiedContract";
+import { evaluateApplicationScopeOnSovereignPg } from "../verticalSlice/applicationScopeRead";
 
 export type SovereignCurrentValidityResult = SovereignFreshnessEvaluation & {
   cryptographically_valid: boolean;
@@ -32,6 +33,8 @@ export async function evaluateSovereignCurrentValidity(input: {
   expectedPartnerId?: string;
   expectedPolicyId?: string;
   expectedEnvironment?: "demo" | "production";
+  /** When set, requires authoritative Launchpad binding on sovereign PG (fail closed). */
+  expectedApplicationId?: string | null;
   now?: Date;
   env?: Record<string, string | undefined>;
 }): Promise<SovereignCurrentValidityResult> {
@@ -163,6 +166,19 @@ export async function evaluateSovereignCurrentValidity(input: {
     reasons.push(...claimEvidence.reasons);
   }
 
+  const applicationScope = await evaluateApplicationScopeOnSovereignPg({
+    receiptId: input.record.id,
+    partnerId: input.record.partner_id,
+    expectedApplicationId: input.expectedApplicationId,
+    env,
+  });
+  if (!applicationScope.store_available) {
+    storeAvailable = false;
+    reasons.push("validity_store_unavailable");
+  } else {
+    reasons.push(...applicationScope.reasons);
+  }
+
   const notExpired =
     storedStatus !== "expired"
     && !(input.record.expires_at && new Date(input.record.expires_at).getTime() <= now.getTime());
@@ -181,6 +197,7 @@ export async function evaluateSovereignCurrentValidity(input: {
       not_expired: notExpired,
       not_superseded: !superseded,
       store_available: storeAvailable,
+      application_scope_satisfied: applicationScope.application_scope_satisfied,
     },
     reasons,
   );

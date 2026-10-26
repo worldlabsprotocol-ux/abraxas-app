@@ -92,6 +92,25 @@ create table if not exists public.sovereign_receipt_evidence_dependencies (
   primary key (receipt_id, source_credential_id)
 );
 
+-- Launchpad application scope (minimal slice — mirrors sovereign migration binding, no PII).
+create table if not exists public.partner_launchpad_applications (
+  id uuid primary key,
+  partner_id text not null references public.partners(partner_id),
+  status text not null default 'active' check (status in ('active', 'suspended', 'pending')),
+  policy_id text not null,
+  policy_version int not null default 1
+);
+
+create table if not exists public.partner_launchpad_signed_receipts (
+  receipt_id text primary key references public.decision_receipts(id),
+  application_id uuid not null references public.partner_launchpad_applications(id),
+  partner_id text not null references public.partners(partner_id),
+  revoked_at timestamptz
+);
+
+create index if not exists partner_launchpad_signed_receipts_app_idx
+  on public.partner_launchpad_signed_receipts (application_id);
+
 create table if not exists public.partner_metering_events (
   id bigserial primary key,
   partner_id text not null references public.partners(partner_id),
