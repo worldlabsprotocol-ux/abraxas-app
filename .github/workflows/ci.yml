@@ -234,6 +234,18 @@ jobs:
         env:
           MIGRATION_153_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_153_parity
 
+      - name: Evidence migration chain parity (059→093→113→151→153)
+        run: bash scripts/ci/run-migration-evidence-chain-parity.sh
+        env:
+          MIGRATION_EVIDENCE_CHAIN_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_evidence_chain
+
+      - name: Trust slice backup restore parity
+        run: bash scripts/ci/run-trust-slice-backup-restore-parity.sh
+        env:
+          TRUST_SLICE_BACKUP_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_evidence_chain
+          POSTGRES_CLIENT_DOCKER_IMAGE: postgres:16-alpine
+          PARITY_REPO_ROOT: ${{ github.workspace }}
+
       - name: Decision receipt backup restore parity
         run: bash scripts/ci/run-decision-receipt-backup-restore-parity.sh
         env:

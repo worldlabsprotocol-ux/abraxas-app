@@ -3,8 +3,19 @@
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
+import { getDerivationByDerivedReceipt } from "@/lib/passport/reusableEligibility/invalidation";
 
 export type EvidenceDependencyType = "reusable_fact" | "source_receipt" | "derived_from";
+
+/** Thrown when the evidence dependency store is unavailable (missing table or query failure). */
+export class EvidenceDependencyStoreUnavailableError extends Error {
+  readonly code = "evidence_dependency_store_unavailable" as const;
+
+  constructor(message = "evidence_dependency_store_unavailable") {
+    super(message);
+    this.name = "EvidenceDependencyStoreUnavailableError";
+  }
+}
 
 /** Row shape for inserts. Matches migration 113 nullability. */
 export interface EvidenceDependencyInsertRow {
@@ -22,6 +33,20 @@ export interface ReceiptEvidenceDependency {
   source_credential_id: string | null;
   dependency_type: EvidenceDependencyType;
   created_at: string;
+}
+
+function isSchemaUnavailableMessage(message: string): boolean {
+  return /does not exist|schema cache|relation .* does not exist/i.test(message);
+}
+
+/** Reuse-derived receipts must have persisted dependency rows before authorization. */
+export async function receiptRequiresEvidenceDependencyGraph(receiptId: string): Promise<boolean> {
+  try {
+    const derivation = await getDerivationByDerivedReceipt(receiptId);
+    return derivation !== null;
+  } catch {
+    return true;
+  }
 }
 
 export async function recordReceiptEvidenceDependencies(input: {
@@ -57,7 +82,7 @@ export async function recordReceiptEvidenceDependencies(input: {
     ignoreDuplicates: true,
   });
   if (error) {
-    if (/does not exist|schema/i.test(error.message)) {
+    if (isSchemaUnavailableMessage(error.message)) {
       return { ok: false, reason: "schema_unavailable" };
     }
     console.error("[decision_receipt_evidence_dependencies]", error.message);
@@ -78,12 +103,16 @@ export async function getReceiptEvidenceDependencies(receiptId: string): Promise
       .order("created_at", { ascending: true });
     data = result.data as Record<string, unknown>[] | null;
     error = result.error;
-  } catch {
-    return [];
+  } catch (err) {
+    throw new EvidenceDependencyStoreUnavailableError(
+      err instanceof Error ? err.message : "evidence_dependency_store_unavailable",
+    );
   }
   if (error) {
-    if (/does not exist|schema/i.test(error.message)) return [];
-    return [];
+    if (isSchemaUnavailableMessage(error.message)) {
+      throw new EvidenceDependencyStoreUnavailableError(error.message);
+    }
+    throw new EvidenceDependencyStoreUnavailableError(error.message);
   }
   return (data ?? []).map((row) => ({
     id: String(row.id),

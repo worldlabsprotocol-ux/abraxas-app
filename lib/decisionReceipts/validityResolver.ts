@@ -4,7 +4,11 @@
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
-import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import {
+  EvidenceDependencyStoreUnavailableError,
+  getReceiptEvidenceDependencies,
+  receiptRequiresEvidenceDependencyGraph,
+} from "@/lib/decisionReceipts/evidenceDependencies";
 import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   getClaimById,
@@ -122,7 +126,37 @@ export async function resolveReceiptValidity(
     };
   }
 
-  const evidenceDeps = await getReceiptEvidenceDependencies(record.id);
+  const requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id);
+  let evidenceDeps;
+  try {
+    evidenceDeps = await getReceiptEvidenceDependencies(record.id);
+  } catch (error) {
+    if (error instanceof EvidenceDependencyStoreUnavailableError) {
+      if (requiresEvidenceGraph) {
+        return buildInvalidResult(
+          record,
+          storedStatus,
+          "invalidated",
+          ["evidence_dependency_store_unavailable"],
+          [],
+        );
+      }
+      evidenceDeps = [];
+    } else {
+      throw error;
+    }
+  }
+
+  if (requiresEvidenceGraph && evidenceDeps.length === 0) {
+    return buildInvalidResult(
+      record,
+      storedStatus,
+      "invalidated",
+      ["evidence_dependency_missing"],
+      [],
+    );
+  }
+
   if (evidenceDeps.length > 0) {
     const sourceId = evidenceDeps.find((d) => d.dependency_type === "source_receipt")?.source_credential_id
       ?? evidenceDeps[0]?.source_credential_id;

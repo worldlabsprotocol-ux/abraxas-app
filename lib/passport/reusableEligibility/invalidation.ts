@@ -118,9 +118,19 @@ export async function sourceEvidenceStillValidForReceipt(
   subjectId: string,
   now = new Date(),
 ): Promise<{ valid: boolean; reasons: string[] }> {
+  let derivation: Awaited<ReturnType<typeof getDerivationByDerivedReceipt>> = null;
+  try {
+    derivation = await getDerivationByDerivedReceipt(derivedReceiptId);
+  } catch {
+    return { valid: false, reasons: ["evidence_derivation_store_unavailable"] };
+  }
+  if (!derivation) {
+    return { valid: true, reasons: [] };
+  }
+
   const fact = await resolveSourceFactForDerivedReceipt(derivedReceiptId, subjectId, now);
   if (!fact) {
-    return { valid: true, reasons: [] };
+    return { valid: false, reasons: ["source_evidence_missing"] };
   }
   if (fact.status === "revoked") {
     return { valid: false, reasons: ["source_evidence_revoked"] };
