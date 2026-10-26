@@ -163,19 +163,23 @@ export async function loadSovereignEvidenceIntegrityGraphForReceipt(
     }
   }
 
-  const integrity = deriveEvidenceIntegrityVerdict({
-    receipt_id: record.id,
-    subject_pseudonym_id: record.subject_pseudonym_id,
-    expected_subject_pseudonym_id: record.subject_pseudonym_id,
-    partner_id: record.partner_id,
-    policy_id: record.policy_id,
-    source,
-    claims: claimSnapshots,
-    store_available: storeAvailable,
-  });
+  let integrityReasons: string[] = [];
+  if (record.evaluated_claim_refs.length > 0 || depRows.length > 0) {
+    const integrity = deriveEvidenceIntegrityVerdict({
+      receipt_id: record.id,
+      subject_pseudonym_id: record.subject_pseudonym_id,
+      expected_subject_pseudonym_id: record.subject_pseudonym_id,
+      partner_id: record.partner_id,
+      policy_id: record.policy_id,
+      source,
+      claims: claimSnapshots,
+      store_available: storeAvailable,
+    });
+    integrityReasons = integrity.reasons;
+  }
   const summary = summarizeGraphReasons({
     storeAvailable,
-    reasons: [...reasons, ...integrity.reasons],
+    reasons: [...reasons, ...integrityReasons],
   });
   return {
     store_available: summary.store_available,
