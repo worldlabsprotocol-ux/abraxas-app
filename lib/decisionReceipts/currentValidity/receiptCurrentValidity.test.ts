@@ -46,9 +46,14 @@ vi.mock("@/lib/decisionReceipts/dependencies", () => ({
   getReceiptDependencies: vi.fn(async () => []),
 }));
 
-vi.mock("@/lib/decisionReceipts/evidenceDependencies", () => ({
-  getReceiptEvidenceDependencies: vi.fn(async () => []),
-}));
+vi.mock("@/lib/decisionReceipts/evidenceDependencies", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/lib/decisionReceipts/evidenceDependencies")>();
+  return {
+    ...mod,
+    getReceiptEvidenceDependencies: vi.fn(async () => []),
+    receiptRequiresEvidenceDependencyGraph: vi.fn(async () => false),
+  };
+});
 
 vi.mock("@/lib/passport/reusableEligibility/invalidation", () => ({
   loadSourceReceiptRow: vi.fn(async () => null),
