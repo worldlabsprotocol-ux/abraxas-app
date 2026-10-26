@@ -1,5 +1,5 @@
 // FILE: lib/decisionReceipts/schema/v1_1_0.ts
-// Isolated v1.1.0 helpers — not wired to Production issuance (Build #842).
+// v1.1.0 helpers — verifier + gated issuer issuance (Build #842 / #844).
 
 export {
   DECISION_RECEIPT_SCHEMA_V1_0,

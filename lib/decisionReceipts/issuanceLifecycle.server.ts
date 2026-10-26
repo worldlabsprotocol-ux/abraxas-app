@@ -9,6 +9,8 @@ import {
   StagedIssuanceUnavailableError,
 } from "@/lib/decisionReceipts/issuanceSchemaCapability.server";
 import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0";
+import { resignDecisionReceiptV11AfterFinalization } from "@/lib/decisionReceipts/v1_1_0/resign.server";
 
 export class IssuanceLifecycleError extends Error {
   constructor(
@@ -22,6 +24,24 @@ export class IssuanceLifecycleError extends Error {
     super(message);
     this.name = "IssuanceLifecycleError";
   }
+}
+
+async function resolveLaunchpadApplicationIdForReceipt(
+  record: DecisionReceiptRecord,
+): Promise<string | null> {
+  const sb = requireSupabaseAdmin();
+  const { data: decision } = await sb
+    .from("verification_decisions")
+    .select("request_id")
+    .eq("id", record.verification_decision_id)
+    .maybeSingle();
+  if (!decision?.request_id) return null;
+  const { data: request } = await sb
+    .from("verification_requests")
+    .select("launchpad_application_id")
+    .eq("id", decision.request_id as string)
+    .maybeSingle();
+  return (request?.launchpad_application_id as string | null) ?? null;
 }
 
 async function mapUpdatedReceipt(receiptId: string): Promise<DecisionReceiptRecord> {
@@ -59,7 +79,16 @@ export async function activateDecisionReceiptIssuance(receiptId: string): Promis
     }
     throw new IssuanceLifecycleError("receipt_not_pending", "receipt_not_pending");
   }
-  return mapUpdatedReceipt(receiptId);
+
+  const activated = await mapUpdatedReceipt(receiptId);
+  if (activated.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const applicationId = await resolveLaunchpadApplicationIdForReceipt(activated);
+    return resignDecisionReceiptV11AfterFinalization({
+      receiptId,
+      applicationId,
+    });
+  }
+  return activated;
 }
 
 /** Permanent ineligibility when finalization cannot complete. Pending receipts stay non-authorizable even if this fails. */

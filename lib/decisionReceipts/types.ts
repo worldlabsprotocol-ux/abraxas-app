@@ -3,6 +3,13 @@
 
 export const DECISION_RECEIPT_SCHEMA_VERSION = "1.0.0";
 
+/** Signed v1.1.0 fields (persisted via sidecar until optional DB columns). */
+export type EvidenceCommitmentV1 = {
+  schema: string;
+  digest: string;
+  entry_count: number;
+};
+
 export type DecisionReceiptStatus = "active" | "expired" | "revoked" | "pending_finalization";
 export type DecisionReceiptContext = "production" | "sandbox_only";
 export type DecisionReceiptResult = "approved" | "denied" | "manual_review";
@@ -64,6 +71,8 @@ export interface DecisionReceiptRecord {
   anchor_reference: string | null;
   idempotency_key: string | null;
   created_at: string;
+  application_binding_ref?: string | null;
+  evidence_commitment?: EvidenceCommitmentV1 | null;
 }
 
 /** Public-safe view — no PII, no raw claim values */
