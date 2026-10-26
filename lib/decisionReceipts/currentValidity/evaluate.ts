@@ -16,6 +16,7 @@ import {
   type ReceiptLifecycleStatus,
 } from "./contract";
 import { mapPartnerSafeReceiptReason } from "./partnerSafeReason";
+import { deriveCurrentValidityDecision } from "./unifiedContract";
 
 export interface EvaluateReceiptCurrentValidityInput {
   record: DecisionReceiptRecord;
@@ -60,18 +61,6 @@ async function resolveApplicationActive(applicationId: string, partnerId: string
   } catch {
     return false;
   }
-}
-
-function lifecycleFromStates(input: {
-  storedStatus: string;
-  superseded: boolean;
-  trustValid: boolean;
-}): ReceiptLifecycleStatus {
-  if (input.superseded) return "superseded";
-  if (input.storedStatus === "revoked") return "revoked";
-  if (input.storedStatus === "expired") return "expired";
-  if (!input.trustValid) return "invalidated";
-  return "active";
 }
 
 export async function evaluateReceiptCurrentValidity(
@@ -154,20 +143,32 @@ export async function evaluateReceiptCurrentValidity(
     invalidationReasons.push("environment_mismatch");
   }
 
-  const currentlyValid = issuedValid
-    && trust.currently_valid
-    && !superseded
-    && policyVersionActive
-    && partnerOperational
-    && (applicationActive !== false)
-    && environmentCompatible
-    && !storeUnavailable;
+  const issuerAuthorized =
+    trust.currently_valid
+    && !trust.invalidation_reasons.some((r) => r === "issuer_not_authorized" || r.includes("issuer"));
 
-  const lifecycleStatus = lifecycleFromStates({
-    storedStatus,
-    superseded,
-    trustValid: currentlyValid,
-  });
+  const decision = deriveCurrentValidityDecision(
+    {
+      cryptographically_valid: signatureValid,
+      issuer_authorized: issuerAuthorized,
+      issued_approved: issuedValid,
+      policy_and_audience_match: environmentCompatible
+        && !trust.invalidation_reasons.some((r) => r === "partner_mismatch" || r === "policy_mismatch"),
+      partner_operational: partnerOperational,
+      policy_active: policyVersionActive,
+      claims_current: claimsCurrent,
+      evidence_current: !invalidationReasons.some((r) => r.includes("evidence")),
+      receipt_status_active: storedStatus === "active",
+      not_expired: notExpired,
+      not_superseded: !superseded,
+      store_available: !storeUnavailable,
+      application_scope_satisfied: applicationActive !== false,
+    },
+    invalidationReasons,
+  );
+
+  const currentlyValid = decision.currently_acceptable;
+  const lifecycleStatus = decision.lifecycle_status;
 
   const uniqueReasons = Array.from(new Set(invalidationReasons));
   const partnerSafeReason = currentlyValid

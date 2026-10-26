@@ -359,6 +359,14 @@ jobs:
           ABRAXAS_BACKUP_ENCRYPTION_KEY: CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=
           NEXT_PUBLIC_SUPABASE_URL: ""
           SUPABASE_SERVICE_ROLE_KEY: ""
+      - name: Build #835 sovereign authority resilience
+        run: npm run sovereign:build-835-authority-resilience
+        env:
+          ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
+          ABRAXAS_BUILD_835_CI_CONTRACT: "1"
+          ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          SUPABASE_SERVICE_ROLE_KEY: ""
 
   ephemeral-wallet-auth:
     name: ephemeral-wallet-auth
