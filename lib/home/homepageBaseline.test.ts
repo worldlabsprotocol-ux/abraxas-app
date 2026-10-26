@@ -36,8 +36,12 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(unified).toContain("HomeBuildEntrySection");
     expect(unified).toContain("HomeNativeSandboxChapter");
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
-    expect(hero).toContain("Prove what matters");
+    expect(hero).toContain("PROTOCOL_HERO_TITLE");
+    const positioning = read("lib/home/protocolPositioningCopy.ts");
+    expect(positioning).toContain("Trust decisions. Independently verified.");
     expect(hero).toContain("abx-premium-hero--enhanced");
+    const protocol = read("components/home/HomeProtocolInfrastructureSection.tsx");
+    expect(protocol).toContain("HomeProtocolInfrastructureSection");
   });
 
   it("homepage typography CSS tokens exist", () => {

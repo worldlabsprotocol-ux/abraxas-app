@@ -57,6 +57,8 @@ export async function evaluateClaimEvidenceOnSovereignPg(
   if ("error" in deps) {
     storeAvailable = false;
     reasons.push("validity_store_unavailable");
+  } else if (record.evaluated_claim_refs.length > 0 && deps.rows.length === 0) {
+    reasons.push("source_evidence_missing");
   } else {
     for (const dep of deps.rows) {
       const ev = await querySovereignStagingPg<EvidenceRow>(

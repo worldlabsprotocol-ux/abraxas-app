@@ -4,6 +4,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { HomeUnifiedProductEntry } from "@/components/home/HomeUnifiedProductEntry";
+import { HomeProtocolInfrastructureSection } from "@/components/home/HomeProtocolInfrastructureSection";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
 import { ABX_V2_SHELL_CLASS } from "@/lib/design/institutionalV2Tokens";
 import { abxMotionCssVars } from "@/lib/design/abraxasMotion";
@@ -27,6 +28,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
         className="abx-premium-home__spine abx-premium-home__spine--shell abx-premium-home__spine--unified"
         style={SHELL}
       >
+        <HomeProtocolInfrastructureSection />
         <HomeUnifiedProductEntry />
       </div>
     </main>

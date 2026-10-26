@@ -32,7 +32,7 @@ import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
-import { derivedClaimRefs, derivedReasonCodes, persistReuseDerivation } from "@/lib/passport/reusableEligibility/issue";
+import { derivedClaimRefs, derivedReasonCodes } from "@/lib/passport/reusableEligibility/issue";
 import { recordEvidenceReuseTelemetry } from "@/lib/passport/reusableEligibility/observability";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
 import { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
@@ -398,7 +398,10 @@ export async function consentAndDecide(input: {
   }
 
   if (reuseFact && evaluation.decision === "approved") {
-    await persistReuseDerivation({
+    const { finalizeReuseEvidenceForIssuance } = await import(
+      "@/lib/passport/reusableEligibility/reuseEvidenceIssuance.server"
+    );
+    await finalizeReuseEvidenceForIssuance({
       fact: reuseFact,
       derivedReceiptId: receipt.id,
       derivedDecisionId: String(decisionRow?.id ?? ""),
@@ -406,6 +409,7 @@ export async function consentAndDecide(input: {
       requestingPolicyId: policy.id,
       requestingPolicyVersion: policy.version,
       verifyRequestId: input.requestId,
+      derivedClaimRefs: evaluatedClaimRefs,
     });
   }
 

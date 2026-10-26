@@ -27,7 +27,7 @@ export interface ReceiptEvidenceDependency {
 export async function recordReceiptEvidenceDependencies(input: {
   receiptId: string;
   fact: InternalReusableFact;
-}): Promise<void> {
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
   const sb = requireSupabaseAdmin();
   const rows: EvidenceDependencyInsertRow[] = [
     {
@@ -56,9 +56,14 @@ export async function recordReceiptEvidenceDependencies(input: {
     onConflict: "receipt_id,dependency_type",
     ignoreDuplicates: true,
   });
-  if (error && !/does not exist|schema/i.test(error.message)) {
+  if (error) {
+    if (/does not exist|schema/i.test(error.message)) {
+      return { ok: false, reason: "schema_unavailable" };
+    }
     console.error("[decision_receipt_evidence_dependencies]", error.message);
+    return { ok: false, reason: error.message };
   }
+  return { ok: true };
 }
 
 export async function getReceiptEvidenceDependencies(receiptId: string): Promise<ReceiptEvidenceDependency[]> {

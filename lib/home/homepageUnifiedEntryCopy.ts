@@ -1,9 +1,9 @@
 // FILE: lib/home/homepageUnifiedEntryCopy.ts
 
-export const HOMEPAGE_UNIFIED_EYEBROW = "Start with Abraxas";
+export const HOMEPAGE_UNIFIED_EYEBROW = "Integrate Abraxas";
 
 export const HOMEPAGE_UNIFIED_LEAD =
-  "Build or resume an application, understand how verification works, and inspect a legitimate result — without leaving one continuous workspace.";
+  "Start a sandbox application, follow the protocol flow, and inspect a signed result. No sign in is required to explore the developer entry points.";
 
 export type HomeUnifiedEntryPanel = "workspace" | "how" | "evidence" | "build";
 
