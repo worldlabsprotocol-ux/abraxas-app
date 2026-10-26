@@ -2,13 +2,16 @@
 -- Single-transaction v1.1.0 finalization with dedicated-column authority (proposal — NOT applied in Build #847).
 --
 -- OPERATOR: apply manually only after migrations 151 and 152 and founder authorization.
--- Prerequisite: 151_decision_receipt_issuance_finalization.sql, 152_decision_receipt_v1_1_signed_fields.sql
+-- Prerequisite: 033_decision_receipts.sql, 151_decision_receipt_issuance_finalization.sql,
+--               152_decision_receipt_v1_1_signed_fields.sql
+--
+-- decision_receipts.id is text (dr_… base64url), not uuid — see 033_decision_receipts.sql.
 --
 -- Invariant: pending_finalization → active commits hash, signature, sidecar anchor, and the full
 -- dedicated v1.1.0 field set in one UPDATE (no partially authoritative active receipts).
 
 create or replace function public.abraxas_finalize_v11_receipt_atomic(
-  p_receipt_id uuid,
+  p_receipt_id text,
   p_expected_payload_hash text,
   p_payload_hash text,
   p_signature text,
@@ -27,7 +30,7 @@ as $$
 declare
   v_row public.decision_receipts%rowtype;
 begin
-  if p_receipt_id is null
+  if p_receipt_id is null or btrim(p_receipt_id) = ''
     or p_expected_payload_hash is null or btrim(p_expected_payload_hash) = ''
     or p_payload_hash is null or btrim(p_payload_hash) = ''
     or p_signature is null or btrim(p_signature) = ''
@@ -38,6 +41,17 @@ begin
     or p_issuance_finalized_at is null
   then
     return jsonb_build_object('ok', false, 'code', 'invalid_input');
+  end if;
+
+  if jsonb_typeof(p_evidence_commitment_manifest) is distinct from 'array' then
+    return jsonb_build_object('ok', false, 'code', 'invalid_manifest');
+  end if;
+
+  if coalesce(p_evidence_commitment->>'schema', '') is distinct from 'abraxas.evidence_commitment/v1'
+    or btrim(coalesce(p_evidence_commitment->>'digest', '')) = ''
+    or (p_evidence_commitment->>'entry_count') is null
+  then
+    return jsonb_build_object('ok', false, 'code', 'invalid_commitment');
   end if;
 
   select * into v_row
@@ -89,8 +103,20 @@ end;
 $$;
 
 revoke all on function public.abraxas_finalize_v11_receipt_atomic(
-  uuid, text, text, text, text, text, jsonb, jsonb, text, timestamptz
+  text, text, text, text, text, text, jsonb, jsonb, text, timestamptz
 ) from public;
 
+revoke all on function public.abraxas_finalize_v11_receipt_atomic(
+  text, text, text, text, text, text, jsonb, jsonb, text, timestamptz
+) from anon;
+
+revoke all on function public.abraxas_finalize_v11_receipt_atomic(
+  text, text, text, text, text, text, jsonb, jsonb, text, timestamptz
+) from authenticated;
+
+grant execute on function public.abraxas_finalize_v11_receipt_atomic(
+  text, text, text, text, text, text, jsonb, jsonb, text, timestamptz
+) to service_role;
+
 comment on function public.abraxas_finalize_v11_receipt_atomic is
-  'Atomically finalize a pending v1.1.0 receipt with dedicated signed fields. Service-role only.';
+  'Atomically finalize a pending v1.1.0 receipt with dedicated signed fields. service_role execute only.';

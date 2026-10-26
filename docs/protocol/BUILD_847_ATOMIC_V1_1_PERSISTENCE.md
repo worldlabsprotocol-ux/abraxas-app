@@ -21,7 +21,9 @@ Classification: `persistenceState.ts` (`classifyStorageSchemaEpoch`, `classifyV1
 
 **Application (`assertAtomicFinalizationWritePayload`):** a single finalization commit must include payload hash, signature, anchor sidecar, evidence commitment, manifest array, `issuance_finalized_at`, and `v11_issuance_phase=final`. Application binding may be null when scope does not require it.
 
-**Database (`153_decision_receipt_v11_finalize_atomic.sql`):** one `UPDATE` under row lock from `pending_finalization`, matching provisional `payload_hash`. Writes every dedicated column together with status `active`. Returns `{ ok, code, row }`.
+**Database (`153_decision_receipt_v11_finalize_atomic.sql`):** `p_receipt_id text` (matches `decision_receipts.id` / `dr_…` identifiers in `033_decision_receipts.sql`). One `UPDATE` under row lock from `pending_finalization`, matching provisional `payload_hash`. Writes every dedicated column together with status `active`. Returns `{ ok, code, row }`. `EXECUTE` granted to `service_role` only; revoked from `PUBLIC`, `anon`, and `authenticated`.
+
+**CI:** `scripts/ci/run-migration-153-sql-parity.sh` applies 033→151→152→153 on disposable Postgres and runs `migration153.sqlParity.test.ts` (real `dr_` IDs, authorization denial, atomic success).
 
 **Activation gates (all required):**
 
