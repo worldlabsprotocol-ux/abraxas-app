@@ -13,9 +13,12 @@ import {
   statusPayloadMatchesReceiptContext,
   verifySignedReceiptStatusStatement,
 } from "./signedReceiptStatusStatement";
-import { verifyApplicationBindingRef } from "./v1_1_0/applicationBinding";
-import { verifyEvidenceCommitment } from "./v1_1_0/evidenceCommitment";
 import { DECISION_RECEIPT_SCHEMA_V1_1 } from "./v1_1_0/constants";
+import {
+  assessManifestReferencePrivacy,
+  evaluateApplicationBindingRequirement,
+  evaluateEvidenceCommitmentRequirement,
+} from "./v1_1_0/enforcement";
 
 export type IndependentVerificationPhase = {
   id: string;
@@ -168,47 +171,47 @@ export function verifyAbraxasReceiptIndependently(input: {
     audienceMatch ? undefined : "audience_mismatch",
   );
 
-  if (input.record.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
-    if (input.relyingParty.application_binding_ref !== undefined) {
-      const bind = verifyApplicationBindingRef({
-        receiptRef: input.record.application_binding_ref,
-        expectedRef: input.relyingParty.application_binding_ref,
-      });
-      push(
-        "application_binding",
-        bind.ok ? "pass" : "fail",
-        bind.ok ? "Application binding ref matches relying party expectation." : bind.reason,
-        bind.ok ? undefined : bind.reason,
-      );
-    } else {
-      push("application_binding", "skipped", "No application binding expectation supplied.");
-    }
-    if (input.record.evidence_commitment) {
-      const ev = verifyEvidenceCommitment({
-        commitment: input.record.evidence_commitment,
-        manifest: input.relyingParty.evidence_commitment_manifest ?? null,
-      });
-      push(
-        "evidence_commitment",
-        ev.ok ? "pass" : "fail",
-        ev.ok
-          ? "Evidence commitment digest matches supplied manifest (issuance-time set only)."
-          : ev.reason,
-        ev.ok ? undefined : ev.reason,
-      );
-    } else {
-      push("evidence_commitment", "skipped", "Receipt has no evidence commitment.");
-    }
-  } else if (
-    input.record.application_binding_ref != null
-    || input.record.evidence_commitment != null
-  ) {
+  let v11ScopeSatisfied = true;
+
+  const appBinding = evaluateApplicationBindingRequirement({
+    record: input.record,
+    policy: {
+      require_application_binding: input.relyingParty.require_application_binding,
+      application_binding_ref: input.relyingParty.application_binding_ref,
+    },
+  });
+  push(
+    "application_binding",
+    appBinding.status,
+    appBinding.detail,
+    appBinding.status === "fail" ? appBinding.code : undefined,
+  );
+  if (appBinding.status === "fail") v11ScopeSatisfied = false;
+
+  const evidenceBinding = evaluateEvidenceCommitmentRequirement({
+    record: input.record,
+    policy: {
+      require_evidence_commitment: input.relyingParty.require_evidence_commitment,
+      evidence_commitment_manifest: input.relyingParty.evidence_commitment_manifest,
+    },
+  });
+  push(
+    "evidence_commitment",
+    evidenceBinding.status,
+    evidenceBinding.detail,
+    evidenceBinding.status === "fail" ? evidenceBinding.code : undefined,
+  );
+  if (evidenceBinding.status === "fail") v11ScopeSatisfied = false;
+
+  if (input.relyingParty.evidence_commitment_manifest?.length) {
+    const privacy = assessManifestReferencePrivacy(input.relyingParty.evidence_commitment_manifest);
     push(
-      "schema_downgrade",
-      "fail",
-      "v1.1.0 fields present on a v1.0.0 schema_version receipt.",
-      "schema_downgrade_rejected",
+      "evidence_manifest_privacy",
+      privacy.status,
+      privacy.detail,
+      privacy.status === "fail" ? privacy.code : undefined,
     );
+    if (privacy.status === "fail") v11ScopeSatisfied = false;
   }
 
   let statusEvidenceAuthentic = false;
@@ -263,6 +266,7 @@ export function verifyAbraxasReceiptIndependently(input: {
             cryptographicallyAuthentic
             && issuerAuthorized
             && audienceMatch
+            && v11ScopeSatisfied
             && p.receipt_status === "active"
             && !p.superseded
             && p.partner_operational

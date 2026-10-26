@@ -156,8 +156,12 @@ export type RelyingPartyExpectations = {
   partner_id: string;
   policy_id: string;
   environment: "demo" | "production";
-  /** v1.1.0 — when set, receipt must carry the same opaque application_binding_ref. */
+  /** When true, verification fails closed unless expected + signed application_binding_ref match (v1.1.0). */
+  require_application_binding?: boolean;
+  /** Expected opaque ref from authoritative onboarding — never read from the receipt. */
   application_binding_ref?: string;
-  /** v1.1.0 — manifest used to recompute evidence_commitment.digest (not proof of current validity). */
+  /** When true, verification fails closed unless receipt commitment matches manifest (v1.1.0). */
+  require_evidence_commitment?: boolean;
+  /** Manifest used to recompute evidence_commitment.digest (not proof of current validity). */
   evidence_commitment_manifest?: EvidenceCommitmentEntryV1[];
 };

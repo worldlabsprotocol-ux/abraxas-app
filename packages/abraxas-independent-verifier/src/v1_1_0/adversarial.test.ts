@@ -350,4 +350,160 @@ describe("receipt v1.1.0 cryptographic binding", () => {
     expect(commitment.entry_count).toBe(0);
     expect(commitment.digest).toMatch(/^[a-f0-9]{64}$/);
   });
+
+  it("fails closed when application binding is required but expectation omitted", () => {
+    const record = signV11Record(receiptKey, { application_binding_ref: appRef });
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 2),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record,
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: {
+        partner_id: "partner-842",
+        policy_id: "policy-842",
+        environment: "production",
+        require_application_binding: true,
+      },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
+    });
+    expect(result.failure_codes).toContain("application_binding_expectation_missing");
+    expect(result.currently_acceptable).toBe("no");
+  });
+
+  it("fails closed when evidence commitment is required but receipt has none", () => {
+    const record = signV11Record(receiptKey, { evidence_commitment: null });
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 2),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record,
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: {
+        partner_id: "partner-842",
+        policy_id: "policy-842",
+        environment: "production",
+        require_evidence_commitment: true,
+        evidence_commitment_manifest: manifest,
+      },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
+    });
+    expect(result.failure_codes).toContain("evidence_commitment_missing");
+    expect(result.currently_acceptable).toBe("no");
+  });
+
+  it("rejects legacy receipt under strict v1.1.0 application binding policy", () => {
+    const legacy = signedReceipt(receiptKey);
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 2),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record: legacy,
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: {
+        partner_id: "partner-818",
+        policy_id: "policy-818",
+        environment: "production",
+        require_application_binding: true,
+        application_binding_ref: appRef,
+      },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(legacy, statusSigner),
+    });
+    expect(result.failure_codes).toContain("legacy_receipt_insufficient_for_application_binding");
+    expect(result.currently_acceptable).toBe("no");
+  });
+
+  it("allows unscoped v1.1.0 verify without mandatory binding flags", () => {
+    const record = signV11Record(receiptKey, {});
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 2),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record,
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: {
+        partner_id: "partner-842",
+        policy_id: "policy-842",
+        environment: "production",
+      },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
+    });
+    expect(result.phases.find((p) => p.id === "application_binding")?.status).toBe("skipped");
+    expect(result.currently_acceptable).toBe("yes");
+  });
+
+  it("passes mandatory binding and commitment when correctly supplied", () => {
+    const commitment = buildEvidenceCommitment(manifest);
+    const record = signV11Record(receiptKey, {
+      application_binding_ref: appRef,
+      evidence_commitment: commitment,
+    });
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 2),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record,
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: {
+        partner_id: "partner-842",
+        policy_id: "policy-842",
+        environment: "production",
+        require_application_binding: true,
+        application_binding_ref: appRef,
+        require_evidence_commitment: true,
+        evidence_commitment_manifest: manifest,
+      },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(record, statusSigner),
+    });
+    expect(result.failure_codes).not.toContain("application_binding_expectation_missing");
+    expect(result.currently_acceptable).toBe("yes");
+  });
 });
+
+function signedReceipt(receiptKey: ReturnType<typeof keyPair>): DecisionReceiptRecord {
+  const base: DecisionReceiptRecord = {
+    id: "dr_indep818",
+    verification_decision_id: "00000000-0000-4000-8000-000000008818",
+    consent_receipt_id: null,
+    partner_id: "partner-818",
+    policy_id: "policy-818",
+    policy_version: 1,
+    subject_pseudonym_id: "subj-818",
+    wallet_binding_ref: null,
+    decision_result: "approved",
+    reason_codes: ["ok"],
+    evaluated_claim_refs: [{ claim_id: "claim-1", claim_type: "age21", status: "active" }],
+    issuer_refs: [],
+    decision_context: "production",
+    evaluated_at: "2026-06-01T12:00:00.000Z",
+    expires_at: "2027-06-01T12:00:00.000Z",
+    status: "active",
+    schema_version: "1.0.0",
+    payload_hash: "",
+    signature: "",
+    signing_key_id: receiptKey.signingKeyId,
+  };
+  const payload = buildCanonicalPayloadFromRecord(base);
+  const payload_hash = hashCanonicalPayload(payload);
+  const message = Buffer.from(payload_hash, "hex");
+  const sig = nacl.sign.detached(
+    message,
+    nacl.sign.keyPair.fromSeed(Buffer.from(receiptKey.privateKeyJwk.d!, "base64url")).secretKey,
+  );
+  return { ...base, payload_hash, signature: Buffer.from(sig).toString("base64url") };
+}
