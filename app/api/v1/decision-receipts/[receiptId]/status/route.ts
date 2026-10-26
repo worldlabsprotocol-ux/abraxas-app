@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
 import { appendAuditEvent } from "@/lib/verification/audit";

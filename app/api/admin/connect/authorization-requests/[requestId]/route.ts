@@ -5,7 +5,7 @@ import { checkAdmin } from "@/lib/adminAuth";
 import { getAuthorizationRequest } from "@/lib/connect/authorizationService";
 import { getPartnerAuthorizationStatus } from "@/lib/connect/authorizationService";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
 
 export async function GET(
   req: NextRequest,

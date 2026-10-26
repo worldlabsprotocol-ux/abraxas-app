@@ -9,8 +9,8 @@ import {
   type ReceiptValidityResult,
   type ReceiptValidityState,
 } from "@/lib/decisionReceipts/validityResolver";
-import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
-import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve";
+import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
+import type { ResolveReceiptValidityOptions } from "@/lib/decisionReceipts/validityResolver";
 
 export type TrustValidityState =
   | ReceiptValidityState
@@ -164,15 +164,27 @@ function applyTrustGates(
   };
 }
 
+export type DecisionReceiptTrustDeps = {
+  resolveValidity?: typeof resolveReceiptValidity;
+  validityOptions?: ResolveReceiptValidityOptions;
+  verifySync?: (record: DecisionReceiptRecord) => boolean;
+};
+
 /** Full async evaluation — claim/issuer dependencies + decision gates. */
 export async function evaluateDecisionReceiptTrust(
   record: DecisionReceiptRecord,
   context?: TrustEvaluationContext,
+  deps?: DecisionReceiptTrustDeps,
 ): Promise<TrustEvaluationResult> {
-  const base = await resolveReceiptValidity(record, {
-    partnerId: context?.partnerId,
-    policyId: context?.policyId,
-  });
+  const resolveValidity = deps?.resolveValidity ?? resolveReceiptValidity;
+  const base = await resolveValidity(
+    record,
+    {
+      partnerId: context?.partnerId,
+      policyId: context?.policyId,
+    },
+    deps?.validityOptions,
+  );
   return applyTrustGates(base, record, context);
 }
 
@@ -296,9 +308,10 @@ export function evaluatePublicReceiptTrust(
 export function evaluateDecisionReceiptTrustSync(
   record: DecisionReceiptRecord,
   context?: TrustEvaluationContext,
+  verifySync: (record: DecisionReceiptRecord) => boolean = verifyRecordSignature,
 ): TrustEvaluationResult {
   const storedStatus = resolveReceiptStatus(record);
-  const signature_valid = verifyRecordSignatureWithRegistry(record);
+  const signature_valid = verifySync(record);
 
   let base: Pick<ReceiptValidityResult, "currently_valid" | "signature_valid" | "invalidation_reasons"> & {
     validity: TrustValidityState;

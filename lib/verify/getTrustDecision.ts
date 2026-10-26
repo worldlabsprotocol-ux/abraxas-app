@@ -3,7 +3,7 @@
 
 import { getDecisionStatus } from "@/lib/verification/requestsService";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
-import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation.server";
 import { buildTrustDecision } from "@/lib/verify/trustDecision";
 
 export async function getTrustDecisionForRelyingParty(

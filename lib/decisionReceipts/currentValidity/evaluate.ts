@@ -2,8 +2,8 @@
 // Canonical current-validity evaluation — issuance truth vs authorization-now truth.
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
-import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation.server";
+import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views.server";
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { isReceiptSuperseded } from "@/lib/decisionReceipts/receiptSupersession";

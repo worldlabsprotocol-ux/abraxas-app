@@ -14,7 +14,7 @@ import {
   claimTypesFromEvaluation,
 } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
-import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getActiveWalletBinding } from "@/lib/walletAuthority/service";

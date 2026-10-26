@@ -3,7 +3,7 @@
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation.server";
 import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
