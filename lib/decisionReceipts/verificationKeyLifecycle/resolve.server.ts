@@ -31,7 +31,8 @@ export function verifyRecordSignatureWithRegistry(
   });
   if (!resolved.ok) return false;
   const v11Record = attachV11FieldsFromSidecar(record);
-  const { payload } = buildSignedCanonicalV11(v11Record);
+  const { payload, payloadHash } = buildSignedCanonicalV11(v11Record);
+  if (record.payload_hash !== payloadHash) return false;
   return verifyReceiptSignature(
     payload as DecisionReceiptCanonicalPayload,
     record.signature,

@@ -3,7 +3,10 @@
 
 import type { DecisionReceiptPublicView, DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { isReceiptIssuanceAuthorizable } from "@/lib/decisionReceipts/issuanceFinalization";
-import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
+import {
+  verifyRecordSignatureClientSafe,
+  type ReceiptSignatureVerifier,
+} from "@/lib/decisionReceipts/receiptSignatureVerify";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
@@ -25,13 +28,19 @@ export function isReceiptCurrentlyValid(record: DecisionReceiptRecord): boolean 
   return true;
 }
 
-export function verifyRecordSignature(record: DecisionReceiptRecord): boolean {
-  return verifyRecordSignatureWithRegistry(record);
+export function verifyRecordSignature(
+  record: DecisionReceiptRecord,
+  verify: ReceiptSignatureVerifier = verifyRecordSignatureClientSafe,
+): boolean {
+  return verify(record);
 }
 
-export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPublicView {
+export function toPublicView(
+  record: DecisionReceiptRecord,
+  verify: ReceiptSignatureVerifier = verifyRecordSignatureClientSafe,
+): DecisionReceiptPublicView {
   const status = resolveReceiptStatus(record);
-  const signatureValid = verifyRecordSignature(record);
+  const signatureValid = verifyRecordSignature(record, verify);
   const view = {
     receipt_id: record.id,
     verification_decision_id: record.verification_decision_id,

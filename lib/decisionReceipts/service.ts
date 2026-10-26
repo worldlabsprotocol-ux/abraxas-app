@@ -11,10 +11,10 @@ import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKe
 import { recordReceiptClaimDependencies } from "@/lib/decisionReceipts/dependencies";
 import { parseWalletControlEvidenceRef } from "@/lib/walletControl/contract";
 import { resolveReceiptSubjectPseudonym } from "@/lib/decisionReceipts/receiptSubjectPseudonym";
-import { toPublicView } from "@/lib/decisionReceipts/views";
+import { toPublicView } from "@/lib/decisionReceipts/views.server";
 import { toPartnerView } from "@/lib/decisionReceipts/viewsPartner";
-import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
-import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation.server";
 import { buildPublicReceiptWithLiveTrust } from "@/lib/decisionReceipts/publicReceiptLiveTrust";
 import { mapReceiptRow } from "@/lib/decisionReceipts/mapReceiptRow";
 import {
@@ -457,4 +457,7 @@ export async function issueReceiptForDecision(input: {
 
 export { resolveReceiptStatus, toPublicView } from "@/lib/decisionReceipts/views";
 export { toPartnerView } from "@/lib/decisionReceipts/viewsPartner";
-export { resolveReceiptValidity, isReceiptCurrentlyValidSync as isReceiptCurrentlyValid } from "@/lib/decisionReceipts/validityResolver";
+export {
+  resolveReceiptValidity,
+  isReceiptCurrentlyValidSync as isReceiptCurrentlyValid,
+} from "@/lib/decisionReceipts/validityResolver.server";

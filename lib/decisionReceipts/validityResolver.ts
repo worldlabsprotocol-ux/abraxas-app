@@ -39,20 +39,40 @@ export interface ReceiptValidityResult {
   dependency_claim_ids: string[];
 }
 
+export type ResolveReceiptValidityOptions = {
+  verifySignature?: (record: DecisionReceiptRecord) => boolean;
+  /** Additional invalidation reasons after signature verifies (server v1.1 integrity). */
+  postSignatureInvalidation?: (record: DecisionReceiptRecord) => string[];
+};
+
 export async function resolveReceiptValidity(
   record: DecisionReceiptRecord,
   trustContext?: { partnerId?: string; policyId?: string },
+  options?: ResolveReceiptValidityOptions,
 ): Promise<ReceiptValidityResult> {
   const invalidationReasons: string[] = [];
   const storedStatus = resolveReceiptStatus(record);
+  const verifySignature = options?.verifySignature ?? verifyRecordSignature;
 
-  if (!verifyRecordSignature(record)) {
+  if (!verifySignature(record)) {
     return {
       validity: "signature_invalid",
       currently_valid: false,
       stored_status: storedStatus,
       signature_valid: false,
       invalidation_reasons: ["signature_invalid"],
+      dependency_claim_ids: [],
+    };
+  }
+
+  const postSignature = options?.postSignatureInvalidation?.(record) ?? [];
+  if (postSignature.length > 0) {
+    return {
+      validity: "invalidated",
+      currently_valid: false,
+      stored_status: storedStatus,
+      signature_valid: true,
+      invalidation_reasons: postSignature,
       dependency_claim_ids: [],
     };
   }

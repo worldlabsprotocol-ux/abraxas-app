@@ -1,9 +1,15 @@
 // FILE: lib/persistence/boundary/sovereignCurrentValidity/evaluate.ts
 // Complete current-validity on sovereign path — issuer trust from signed statements, not DB alone.
 
-import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import type { DecisionReceiptCanonicalPayload, DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
+import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0.constants";
 import { verifyReceiptSignature } from "@/lib/decisionReceipts/signing";
+import {
+  attachV11FieldsFromSidecar,
+  buildSignedCanonicalV11,
+} from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
+import { assertV11OperationalIntegrity } from "@/lib/decisionReceipts/v1_1_0/operationalIntegrity.server";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import {
   isReceiptIssuanceAuthorizable,
@@ -50,24 +56,6 @@ export async function evaluateSovereignCurrentValidity(input: {
   const runtimeEnv = input.expectedEnvironment
     ?? (input.record.decision_context === "production" ? "production" : "demo");
 
-  const payload = buildCanonicalPayload({
-    receipt_id: input.record.id,
-    decision_id: input.record.verification_decision_id,
-    policy_id: input.record.policy_id,
-    policy_version: input.record.policy_version,
-    partner_id: input.record.partner_id,
-    subject_pseudonym_id: input.record.subject_pseudonym_id,
-    wallet_binding_ref: input.record.wallet_binding_ref,
-    consent_receipt_id: input.record.consent_receipt_id,
-    decision_result: input.record.decision_result,
-    reason_codes: input.record.reason_codes,
-    evaluated_claim_refs: input.record.evaluated_claim_refs,
-    issuer_refs: input.record.issuer_refs,
-    decision_context: input.record.decision_context,
-    evaluated_at: input.record.evaluated_at,
-    expires_at: input.record.expires_at,
-  });
-
   const sigKey = resolveIssuerKeyFromSignedStatement({
     statement: input.signedIssuerAuthority,
     trustAnchorPublicJwk: input.trustAnchorPublicJwk,
@@ -80,14 +68,49 @@ export async function evaluateSovereignCurrentValidity(input: {
   });
 
   let cryptographicallyValid = false;
-  if (sigKey.ok) {
-    cryptographicallyValid = verifyReceiptSignature(
-      payload,
-      input.record.signature,
-      sigKey.key.public_jwk,
-    );
+  if (input.record.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const integrity = assertV11OperationalIntegrity(input.record);
+    if (!integrity.ok) reasons.push(...integrity.reasons);
+    const v11Record = attachV11FieldsFromSidecar(input.record);
+    const { payload, payloadHash } = buildSignedCanonicalV11(v11Record);
+    if (input.record.payload_hash !== payloadHash) reasons.push("payload_hash_mismatch");
+    if (sigKey.ok) {
+      cryptographicallyValid = input.record.payload_hash === payloadHash
+        && verifyReceiptSignature(
+          payload as DecisionReceiptCanonicalPayload,
+          input.record.signature,
+          sigKey.key.public_jwk,
+        );
+    } else {
+      reasons.push(sigKey.reason);
+    }
   } else {
-    reasons.push(sigKey.reason);
+    const payload = buildCanonicalPayload({
+      receipt_id: input.record.id,
+      decision_id: input.record.verification_decision_id,
+      policy_id: input.record.policy_id,
+      policy_version: input.record.policy_version,
+      partner_id: input.record.partner_id,
+      subject_pseudonym_id: input.record.subject_pseudonym_id,
+      wallet_binding_ref: input.record.wallet_binding_ref,
+      consent_receipt_id: input.record.consent_receipt_id,
+      decision_result: input.record.decision_result,
+      reason_codes: input.record.reason_codes,
+      evaluated_claim_refs: input.record.evaluated_claim_refs,
+      issuer_refs: input.record.issuer_refs,
+      decision_context: input.record.decision_context,
+      evaluated_at: input.record.evaluated_at,
+      expires_at: input.record.expires_at,
+    });
+    if (sigKey.ok) {
+      cryptographicallyValid = verifyReceiptSignature(
+        payload,
+        input.record.signature,
+        sigKey.key.public_jwk,
+      );
+    } else {
+      reasons.push(sigKey.reason);
+    }
   }
   if (!cryptographicallyValid) reasons.push("signature_invalid");
 

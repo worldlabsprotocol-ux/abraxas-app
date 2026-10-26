@@ -9,7 +9,7 @@ import {
   getReceiptIdsForClaim,
 } from "@/lib/trust/credentialStatusRegistry";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
 
 export async function GET(
   req: NextRequest,

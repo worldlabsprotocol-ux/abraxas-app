@@ -37,10 +37,22 @@ export function mapReceiptRow(row: Record<string, unknown>): DecisionReceiptReco
     created_at: row.created_at as string,
   };
   if (mapped.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const hasDedicatedBinding = Object.prototype.hasOwnProperty.call(row, "application_binding_ref");
+    const hasDedicatedCommitment = Object.prototype.hasOwnProperty.call(row, "evidence_commitment");
+    if (hasDedicatedBinding) {
+      mapped.application_binding_ref = (row.application_binding_ref as string | null) ?? null;
+    }
+    if (hasDedicatedCommitment) {
+      mapped.evidence_commitment = (row.evidence_commitment as DecisionReceiptRecord["evidence_commitment"]) ?? null;
+    }
     const sidecar = decodeReceiptV11Sidecar(mapped.anchor_reference);
     if (sidecar.ok) {
-      mapped.application_binding_ref = sidecar.sidecar.application_binding_ref;
-      mapped.evidence_commitment = sidecar.sidecar.evidence_commitment;
+      if (!hasDedicatedBinding) {
+        mapped.application_binding_ref = sidecar.sidecar.application_binding_ref;
+      }
+      if (!hasDedicatedCommitment) {
+        mapped.evidence_commitment = sidecar.sidecar.evidence_commitment;
+      }
     }
   }
   return mapped;

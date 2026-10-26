@@ -9,7 +9,7 @@ import {
   getReceiptById,
 } from "@/lib/decisionReceipts/service";
 import { toPublicView, verifyRecordSignature, resolveReceiptStatus } from "@/lib/decisionReceipts/views";
-import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver.server";
 import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
 import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";

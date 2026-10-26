@@ -32,7 +32,7 @@ import {
   type PartnerFlowReceiptResolution,
 } from "@/lib/partner/partnerFlowReceiptOutcome";
 import { resolvePartnerFlowReceiptCorrelation } from "@/lib/partner/partnerFlowCompleteCorrelation";
-import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation.server";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
