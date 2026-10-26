@@ -16,7 +16,7 @@ function read(rel: string): string {
 describe("homepage alignment (#550–#565)", () => {
   it("surfaces consolidated trust narrative on unified homepage entry", () => {
     const unified = read("components/home/HomeUnifiedProductEntry.tsx");
-    expect(unified).toContain("HomeHowAbraxasWorksSection");
+    expect(unified).toContain("HomeNativeSandboxChapter");
     expect(HOMEPAGE_FOUR_PILLARS).toHaveLength(4);
     expect(HOMEPAGE_FOUR_PILLARS.map((p) => p.id)).toEqual([
       "passport",
@@ -26,13 +26,13 @@ describe("homepage alignment (#550–#565)", () => {
     ]);
   });
 
-  it("hero prioritizes sandbox entry and how-it-works anchor", () => {
+  it("hero prioritizes sandbox entry without redundant secondary CTA", () => {
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).toContain("CINEMATIC_HOME_CTA_PRIMARY_HREF");
+    expect(hero).not.toContain("CINEMATIC_HOME_CTA_SECONDARY");
     const copy = read("lib/home/cinematicHomeCopy.ts");
     expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY = "Start building"');
     expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox"');
-    expect(copy).toContain("#how-abraxas-works");
     expect(copy).not.toMatch(/full decentral/i);
     expect(copy).not.toMatch(/universal institutional acceptance/i);
   });

@@ -17,7 +17,7 @@ export const HOMEPAGE_WORKSPACE_STEPS = [
   { id: "test", label: "Run a test" },
 ] as const;
 
-export const HOMEPAGE_WORKSPACE_DEMO_LINK = "Try the public demo — no account required";
+export const HOMEPAGE_WORKSPACE_DEMO_LINK = "Try the public demo. No account required.";
 
 /** When self-serve workspace enrollment is unavailable — one working path, no internal rollout detail. */
 export const HOMEPAGE_WORKSPACE_STUDIO_CTA = "Open Integration Studio";

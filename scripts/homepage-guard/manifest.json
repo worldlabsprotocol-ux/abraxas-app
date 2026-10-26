@@ -70,7 +70,7 @@
     {
       "id": "command-center-map",
       "file": "components/home/HomeUnifiedProductEntry.tsx",
-      "mustContain": ["HomeVerifiableTrustChapter", "HomeBuildEntrySection", "HomeNativeSandboxChapter", "HomeHowAbraxasWorksSection"]
+      "mustContain": ["HomeNativeSandboxChapter", "HOMEPAGE_UNIFIED_RESOURCE_LINKS", "start-sandbox"]
     },
     {
       "id": "how-abraxas-works-depth",

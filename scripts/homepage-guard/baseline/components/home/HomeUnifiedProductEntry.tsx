@@ -1,57 +1,34 @@
 "use client";
 // FILE: components/home/HomeUnifiedProductEntry.tsx
-// Single cohesive product-entry region below the approved hero.
+// Sandbox-first entry below protocol explanation.
 
-import { useCallback, useEffect, useState } from "react";
-import { HomeHowAbraxasWorksSection } from "@/components/home/HomeHowAbraxasWorksSection";
-import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
-import { HomeBuildEntrySection } from "@/components/home/HomeBuildEntrySection";
+import { useEffect } from "react";
+import Link from "next/link";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
-import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomeNativeSandboxChapter } from "@/components/home/HomeNativeSandboxChapter";
+import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import {
   HOMEPAGE_UNIFIED_EYEBROW,
   HOMEPAGE_UNIFIED_LEAD,
-  HOMEPAGE_UNIFIED_PANELS,
-  type HomeUnifiedEntryPanel,
+  HOMEPAGE_UNIFIED_RESOURCE_LINKS,
 } from "@/lib/home/homepageUnifiedEntryCopy";
 
-const PANEL_TO_HASH: Record<HomeUnifiedEntryPanel, string> = {
-  workspace: "start-sandbox",
-  how: "how-abraxas-works",
-  evidence: "chapter-evidence",
-  build: "chapter-build-wrap",
+const LEGACY_HASH_REDIRECTS: Record<string, string> = {
+  "how-abraxas-works": "protocol-infrastructure",
+  "chapter-how": "protocol-infrastructure",
+  "chapter-evidence": "protocol-infrastructure",
+  "chapter-build-wrap": "start-sandbox",
 };
 
-function panelFromHash(hash: string): HomeUnifiedEntryPanel {
-  const id = hash.replace(/^#/, "");
-  if (id === "how-abraxas-works" || id === "chapter-how") return "how";
-  if (id === "chapter-evidence") return "evidence";
-  if (id === "chapter-build-wrap") return "build";
-  return "workspace";
-}
-
 export function HomeUnifiedProductEntry() {
-  const [active, setActive] = useState<HomeUnifiedEntryPanel>("workspace");
-
-  const syncFromLocation = useCallback(() => {
-    if (typeof window === "undefined") return;
-    setActive(panelFromHash(window.location.hash));
-  }, []);
-
   useEffect(() => {
-    syncFromLocation();
-    window.addEventListener("hashchange", syncFromLocation);
-    return () => window.removeEventListener("hashchange", syncFromLocation);
-  }, [syncFromLocation]);
-
-  function selectPanel(id: HomeUnifiedEntryPanel) {
-    setActive(id);
-    if (typeof window !== "undefined") {
-      const hash = PANEL_TO_HASH[id];
-      window.history.replaceState(null, "", hash ? `#${hash}` : "/");
+    if (typeof window === "undefined") return;
+    const id = window.location.hash.replace(/^#/, "");
+    const target = LEGACY_HASH_REDIRECTS[id];
+    if (target && window.location.hash !== `#${target}`) {
+      window.history.replaceState(null, "", `#${target}`);
     }
-  }
+  }, []);
 
   return (
     <section
@@ -62,48 +39,24 @@ export function HomeUnifiedProductEntry() {
       <header className="abx-home-unified-entry__header">
         <p className="abx-home-unified-entry__eyebrow">{HOMEPAGE_UNIFIED_EYEBROW}</p>
         <h2 id="home-unified-heading" className="abx-v2-section-title">
-          {HOMEPAGE_UNIFIED_EYEBROW}
+          Start sandbox
         </h2>
         <p className="abx-v2-section-lead abx-v2-section-lead--tight">{HOMEPAGE_UNIFIED_LEAD}</p>
       </header>
 
       <HomeSignedInModule />
 
-      <nav className="abx-home-unified-entry__nav" aria-label="Product entry">
-        {HOMEPAGE_UNIFIED_PANELS.map((panel) => (
-          <button
-            key={panel.id}
-            type="button"
-            className={`abx-home-unified-entry__tab${active === panel.id ? " abx-home-unified-entry__tab--active" : ""}`}
-            aria-current={active === panel.id ? "true" : undefined}
-            onClick={() => selectPanel(panel.id)}
-          >
-            <span className="abx-home-unified-entry__tab-label">{panel.label}</span>
-            <span className="abx-home-unified-entry__tab-desc">{panel.description}</span>
-          </button>
+      <LazyHomeSection minHeight="10rem" eager>
+        <HomeNativeSandboxChapter />
+      </LazyHomeSection>
+
+      <nav className="abx-home-unified-entry__resources" aria-label="Supporting developer resources">
+        {HOMEPAGE_UNIFIED_RESOURCE_LINKS.map((link) => (
+          <Link key={link.href} className="abx-home-unified-entry__resource-link" href={link.href}>
+            {link.label}
+          </Link>
         ))}
       </nav>
-
-      <div className="abx-home-unified-entry__panel">
-        {active === "workspace" ? (
-          <LazyHomeSection minHeight="10rem" eager>
-            <HomeNativeSandboxChapter />
-          </LazyHomeSection>
-        ) : null}
-        {active === "how" ? <HomeHowAbraxasWorksSection /> : null}
-        {active === "evidence" ? (
-          <div id="chapter-evidence">
-            <LazyHomeSection minHeight="22rem" eager>
-              <HomeVerifiableTrustChapter />
-            </LazyHomeSection>
-          </div>
-        ) : null}
-        {active === "build" ? (
-          <div id="chapter-build-wrap">
-            <HomeBuildEntrySection />
-          </div>
-        ) : null}
-      </div>
     </section>
   );
 }

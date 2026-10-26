@@ -65,20 +65,22 @@ export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 export const CINEMATIC_HOME_HEADLINE = "Trust decisions. Independently verified.";
 
 export const CINEMATIC_HOME_LEAD =
-  "Abraxas turns authoritative evidence into signed, policy bound decisions that applications and protocols can verify independently, without exposing unnecessary personal data.";
+  "Abraxas turns authoritative evidence into signed trust decisions that applications can independently verify.";
 
+/** Privacy principle lives in product surfaces, not repeated under the hero. */
 export const CINEMATIC_HOME_PRIVACY_SUPPORT =
   "Prove only what a service needs. Holders keep documents private while partners receive a current, policy specific result.";
 
 export const CINEMATIC_HOME_CTA_PRIMARY = "Start building";
 export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox";
 
+/** @deprecated Removed from hero — protocol section follows immediately below. */
 export const CINEMATIC_HOME_CTA_SECONDARY = "See how it works";
-export const CINEMATIC_HOME_CTA_SECONDARY_HREF = "#how-abraxas-works";
+export const CINEMATIC_HOME_CTA_SECONDARY_HREF = "#protocol-infrastructure";
 
-/** @deprecated Hero uses primary/secondary only — kept for deep links and copy tests */
+/** @deprecated Kept for legacy deep links that redirect to protocol section. */
 export const CINEMATIC_HOME_CTA_TERTIARY = "See how it works";
-export const CINEMATIC_HOME_CTA_TERTIARY_HREF = "#how-abraxas-works";
+export const CINEMATIC_HOME_CTA_TERTIARY_HREF = "#protocol-infrastructure";
 
 export const CINEMATIC_HOME_CTA_SANDBOX = "Start building";
 export const CINEMATIC_HOME_CTA_SANDBOX_HREF = "#start-sandbox";

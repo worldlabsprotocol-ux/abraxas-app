@@ -11,18 +11,23 @@ function read(rel: string): string {
 }
 
 describe("homepage journey sequence", () => {
-  it("places unified product entry immediately after hero", () => {
+  it("orders hero, protocol signal, protocol section, then sandbox entry", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     const body = shell.slice(shell.indexOf("function HomeContent"));
     const heroIdx = body.indexOf("{hero}");
+    const marqueeIdx = body.indexOf("<HomeProtocolSignalMarquee");
+    const protocolIdx = body.indexOf("<HomeProtocolInfrastructureSection");
     const unifiedIdx = body.indexOf("<HomeUnifiedProductEntry");
     expect(heroIdx).toBeGreaterThan(-1);
-    expect(unifiedIdx).toBeGreaterThan(heroIdx);
+    expect(marqueeIdx).toBeGreaterThan(heroIdx);
+    expect(protocolIdx).toBeGreaterThan(marqueeIdx);
+    expect(unifiedIdx).toBeGreaterThan(protocolIdx);
   });
 
-  it("keeps evidence chapter before build capabilities in unified entry", () => {
+  it("unified entry leads with sandbox workspace only", () => {
     const unified = read("components/home/HomeUnifiedProductEntry.tsx");
-    expect(unified.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(unified.indexOf("HomeVerifiableTrustChapter"));
-    expect(unified.indexOf("HomeVerifiableTrustChapter")).toBeLessThan(unified.indexOf("HomeBuildEntrySection"));
+    expect(unified).toContain("HomeNativeSandboxChapter");
+    expect(unified).not.toContain("HomeHowAbraxasWorksSection");
+    expect(unified).not.toContain("abx-home-unified-entry__nav");
   });
 });
