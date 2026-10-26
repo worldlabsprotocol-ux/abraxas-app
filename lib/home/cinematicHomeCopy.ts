@@ -62,10 +62,13 @@ export const FOOTER_THESIS_LINE_1 = CINEMATIC_THESIS_LINE_1;
 export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 
 /** Build #545 public homepage hero and scroll chapters */
-export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
+export const CINEMATIC_HOME_HEADLINE = "Trust decisions. Independently verified.";
 
 export const CINEMATIC_HOME_LEAD =
-  "Your application can check a signed yes-or-no answer without receiving someone's personal documents.";
+  "Abraxas turns authoritative evidence into signed, policy bound decisions that applications and protocols can verify independently, without exposing unnecessary personal data.";
+
+export const CINEMATIC_HOME_PRIVACY_SUPPORT =
+  "Prove only what a service needs. Holders keep documents private while partners receive a current, policy specific result.";
 
 export const CINEMATIC_HOME_CTA_PRIMARY = "Start building";
 export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox";

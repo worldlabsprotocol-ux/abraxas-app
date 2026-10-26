@@ -407,6 +407,17 @@ export async function consentAndDecide(input: {
       requestingPolicyVersion: policy.version,
       verifyRequestId: input.requestId,
     });
+    const { mirrorReuseEvidenceIntegrityOnSovereignPg } = await import(
+      "@/lib/persistence/boundary/verticalSlice/evidenceIntegrityWrite.server"
+    );
+    const mirror = await mirrorReuseEvidenceIntegrityOnSovereignPg({
+      derivedReceiptId: receipt.id,
+      fact: reuseFact,
+      derivedClaimRefs: evaluatedClaimRefs,
+    });
+    if (mirror.mirrored === false && mirror.reason === "source_unavailable") {
+      throw new Error("evidence_source_unavailable_for_sovereign_mirror");
+    }
   }
 
   void auditPartnerFlowStepBestEffort({

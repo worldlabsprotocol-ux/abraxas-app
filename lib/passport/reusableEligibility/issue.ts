@@ -43,8 +43,11 @@ export async function persistReuseDerivation(input: {
   verifyRequestId: string;
 }): Promise<void> {
   await recordDerivation(input);
-  await recordReceiptEvidenceDependencies({
+  const deps = await recordReceiptEvidenceDependencies({
     receiptId: input.derivedReceiptId,
     fact: input.fact,
   });
+  if (!deps.ok) {
+    throw new Error(`evidence_dependency_persist_failed:${deps.reason}`);
+  }
 }

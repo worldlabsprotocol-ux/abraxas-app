@@ -6,10 +6,14 @@ import {
   CINEMATIC_HOME_CTA_SECONDARY_HREF,
   CINEMATIC_HOME_HEADLINE,
   CINEMATIC_HOME_LEAD,
+  CINEMATIC_HOME_PRIVACY_SUPPORT,
 } from "@/lib/home/cinematicHomeCopy";
 import { PremiumHomeHeroVisualEnhanced } from "@/components/home/premium/PremiumHomeHeroVisualEnhanced";
+import { PROTOCOL_HERO_TITLE } from "@/lib/home/protocolPositioningCopy";
 
-const HEADLINE_LINES = ["Prove what matters.", "Keep what's yours."];
+const HEADLINE_LINES = PROTOCOL_HERO_TITLE.split(". ").map((part, i, arr) =>
+  i < arr.length - 1 ? `${part}.` : part,
+).filter(Boolean);
 
 /** Server-rendered hero copy for LCP; emblem hydrates client-side after first paint. */
 export function PremiumHomeHero() {
@@ -33,6 +37,9 @@ export function PremiumHomeHero() {
             ))}
           </h1>
           <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--3">{CINEMATIC_HOME_LEAD}</p>
+          <p className="abx-premium-hero__support abx-premium-hero__reveal abx-premium-hero__reveal--3">
+            {CINEMATIC_HOME_PRIVACY_SUPPORT}
+          </p>
           <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
             <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
               {CINEMATIC_HOME_CTA_PRIMARY}

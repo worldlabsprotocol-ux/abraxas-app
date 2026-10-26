@@ -5,9 +5,9 @@ import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Abraxas | Holder-controlled trust & verification protocol",
+  title: "Abraxas | Independent trust and verification infrastructure",
   description:
-    "Abraxas Passport, portable credentials, and cryptographically verifiable partner decisions, without sharing underlying identity documents or Abraxas identity databases at authorization time.",
+    "Evidence backed trust decisions with cryptographic receipts that relying parties verify independently, with privacy minimizing disclosure.",
   path: "/",
 });
 
