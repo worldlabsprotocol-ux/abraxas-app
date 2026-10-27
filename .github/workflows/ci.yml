@@ -91,6 +91,9 @@ jobs:
       - name: Homepage invariant tests
         run: npm run check:homepage
 
+      - name: Build #865 evidence continuity + #868 portable relying party (contract)
+        run: npm run test:build-865-evidence-continuity && npm run test:build-868-portable-relying-party
+
       - name: Trust contract drift check (report-only)
         run: npm run check:trust-contract-drift
 
