@@ -613,6 +613,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Internal receipt-to-reusable-evidence dependency records for verify-once current validity. Service role only; no raw evidence.",
   },
   {
+    file: "154_evidence_continuity_service_role_grants.sql",
+    tier: "recommended",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "PostgREST service_role SELECT on reuse derivations/facts and SELECT/INSERT on evidence dependency rows (Build 865).",
+  },
+  {
     file: "114_partner_value_operator_state.sql",
     tier: "recommended",
     creates: [

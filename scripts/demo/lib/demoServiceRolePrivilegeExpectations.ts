@@ -153,6 +153,19 @@ export const DEMO_SERVICE_ROLE_PRIVILEGE_EXPECTATIONS: readonly ServiceRolePrivi
     ],
   },
   {
+    table: "decision_receipt_evidence_dependencies",
+    privileges: ["SELECT", "INSERT"],
+    evidence: [
+      "lib/decisionReceipts/evidenceDependencies.ts#getReceiptEvidenceDependencies",
+      "lib/decisionReceipts/evidenceDependencies.ts#recordReceiptEvidenceDependencies",
+    ],
+  },
+  {
+    table: "reusable_eligibility_derivations",
+    privileges: ["SELECT"],
+    evidence: ["lib/decisionReceipts/evidenceDependencies.ts#receiptRequiresEvidenceDependencyGraph"],
+  },
+  {
     table: "partner_metering_events",
     privileges: ["SELECT", "INSERT"],
     evidence: [

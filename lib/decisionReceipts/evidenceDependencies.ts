@@ -41,12 +41,8 @@ function isSchemaUnavailableMessage(message: string): boolean {
 
 /** Reuse-derived receipts must have persisted dependency rows before authorization. */
 export async function receiptRequiresEvidenceDependencyGraph(receiptId: string): Promise<boolean> {
-  try {
-    const derivation = await getDerivationByDerivedReceipt(receiptId);
-    return derivation !== null;
-  } catch {
-    return true;
-  }
+  const derivation = await getDerivationByDerivedReceipt(receiptId);
+  return derivation !== null;
 }
 
 export async function recordReceiptEvidenceDependencies(input: {
