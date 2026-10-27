@@ -9,16 +9,23 @@ import { IntegrationStudioStageGuide } from "@/components/developers/Integration
 import { IntegrationStudioStageProvider } from "@/lib/developers/integrationStudioStageContext";
 import type { IntegrationStudioStageId } from "@/lib/developers/useIntegrationStudioStage";
 import { integrationStudioStageFromHash } from "@/lib/developers/useIntegrationStudioStage";
+import { buildIntegrationStageUrl } from "@/lib/developers/unifiedWorkspaceContinuity";
+import { useUnifiedWorkspaceEmbed } from "@/lib/developers/unifiedWorkspaceEmbedContext";
 
-const STEPS: Array<{ id: IntegrationStudioStageId | "receipt" | "verify" | "production"; label: string; href: string }> = [
-  { id: "policy", label: "Policy", href: "/developers/integration-studio" },
-  { id: "sandbox", label: "Sandbox", href: "/developers/integration-studio#sandbox" },
-  { id: "configuration", label: "Configuration", href: "/developers/integration-studio#configuration" },
-  { id: "request", label: "Request", href: "/developers/integration-studio#request" },
-  { id: "receipt", label: "Receipt", href: "/verify?mode=receipt" },
-  { id: "verify", label: "Verification", href: "/verify" },
-  { id: "production", label: "Production review", href: "/developers/launchpad" },
-] as const;
+function buildStudioSteps(input: {
+  basePath: string;
+  query: Record<string, string>;
+}): Array<{ id: IntegrationStudioStageId | "receipt" | "verify" | "production"; label: string; href: string }> {
+  return [
+    { id: "policy", label: "Policy", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "policy", query: input.query }) },
+    { id: "sandbox", label: "Sandbox", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "sandbox", query: input.query }) },
+    { id: "configuration", label: "Configuration", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "configuration", query: input.query }) },
+    { id: "request", label: "Request", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "request", query: input.query }) },
+    { id: "receipt", label: "Receipt", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "receipt", query: input.query }) },
+    { id: "verify", label: "Verification", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "verify", query: input.query }) },
+    { id: "production", label: "Production review", href: buildIntegrationStageUrl({ basePath: input.basePath, stage: "production", query: input.query }) },
+  ];
+}
 
 function activeStepFromHash(hash: string): IntegrationStudioStageId | "receipt" | "verify" | "production" {
   if (hash === "#sandbox") return "sandbox";
@@ -35,6 +42,8 @@ export function IntegrationStudioWorkspace({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const { workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
+  const STEPS = buildStudioSteps({ basePath: workspaceBasePath, query: preservedQuery });
   const [hashStep, setHashStep] = useState<IntegrationStudioStageId | "receipt" | "verify" | "production">("policy");
 
   useEffect(() => {
@@ -49,13 +58,15 @@ export function IntegrationStudioWorkspace({
   }, []);
 
   function navigateInStudioStage(stepId: string, href: string, event: MouseEvent) {
-    if (pathname !== "/developers/integration-studio") return;
+    if (pathname !== workspaceBasePath) return;
     const hashIndex = href.indexOf("#");
     if (hashIndex === -1) {
       if (stepId === "policy") {
         event.preventDefault();
-        if (window.location.hash) {
-          window.history.replaceState(null, "", "/developers/integration-studio");
+        const qs = new URLSearchParams(preservedQuery).toString();
+        const target = `${workspaceBasePath}${qs ? `?${qs}` : ""}`;
+        if (window.location.pathname + window.location.search !== target || window.location.hash) {
+          window.history.replaceState(null, "", target);
         }
         setHashStep("policy");
       }
@@ -82,7 +93,7 @@ export function IntegrationStudioWorkspace({
           {STEPS.map((step, index) => {
             const active =
               step.id === hashStep
-              || (step.id === "policy" && pathname === "/developers/integration-studio" && hashStep === "policy");
+              || (step.id === "policy" && pathname === workspaceBasePath && hashStep === "policy");
             return (
               <Link
                 key={step.id}

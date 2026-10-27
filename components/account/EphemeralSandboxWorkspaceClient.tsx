@@ -2,6 +2,7 @@
 // FILE: components/account/EphemeralSandboxWorkspaceClient.tsx
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   fetchWalletActionChallenge,
@@ -47,6 +48,9 @@ import { WalletScopedAuthorizationReviewCard } from "@/components/wallet/WalletA
 import { buildEphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
 import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { EphemeralSandboxVerificationCompletion } from "./EphemeralSandboxVerificationCompletion";
+import { EmbeddedIntegrationStudioPanel } from "@/components/developers/EmbeddedIntegrationStudioPanel";
+import { UnifiedWorkspaceJourneyBar } from "@/components/developers/UnifiedWorkspaceJourneyBar";
+import { isUnifiedWorkspaceIntegrationSearch } from "@/lib/developers/unifiedWorkspaceContinuity";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -143,6 +147,8 @@ function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
 }
 
 export function EphemeralSandboxWorkspaceClient() {
+  const searchParams = useSearchParams();
+  const integrationContinuityActive = isUnifiedWorkspaceIntegrationSearch(searchParams);
   const { signMessage, publicKey, connected: walletAdapterConnected } = useWallet();
   const [signInDialogOpen, setSignInDialogOpen] = useState(false);
   const [phase, setPhase] = useState<WorkspacePhase>("loading");
@@ -883,6 +889,34 @@ export function EphemeralSandboxWorkspaceClient() {
             <p className={styles.technicalDetails}>Code: {userError.technicalCode}</p>
           ) : null}
         </div>
+      </div>
+    );
+  }
+
+  if (integrationContinuityActive && result && sandboxCompletionView) {
+    return (
+      <div className={styles.shell}>
+        <EphemeralWorkspaceSessionRail
+          state={sessionRailState}
+          walletAddress={walletAddress}
+          sessionExpiresAt={sessionExpiresAt}
+          workspaceExpiresAt={workspace?.expires_at ?? null}
+        />
+        <UnifiedWorkspaceJourneyBar currentStepId="create_test_app" />
+        <div className={styles.panel}>
+          <p className={styles.completionEyebrow}>{sandboxCompletionView.statusEyebrow}</p>
+          <h2 className={styles.sectionTitle}>{sandboxCompletionView.headline}</h2>
+          <p className={styles.muted}>{sandboxCompletionView.summary}</p>
+          <p className={styles.note}>{sandboxCompletionView.sandboxOnlyNote}</p>
+          <details className={styles.completionDetailsCollapsible}>
+            <summary>Wallet proof vs application enforcement</summary>
+            <p className={styles.muted}>
+              Wallet control confirmed for this sandbox test. Partner authorization requires your application to
+              verify and enforce a portable receipt — configured in the steps below.
+            </p>
+          </details>
+        </div>
+        <EmbeddedIntegrationStudioPanel />
       </div>
     );
   }

@@ -130,6 +130,7 @@
     "build873:integration-adoption-acceptance": "tsx scripts/build-873/integration-adoption-acceptance.ts",
     "build873:live-external-node-adoption": "tsx scripts/build-873/live-external-node-adoption.ts",
     "build873:demo-external-node-live-adoption": "tsx scripts/build-873/demo-external-node-live-adoption.ts",
+    "test:build-877-unified-workspace-continuity": "vitest run lib/developers/unifiedWorkspaceContinuity.test.ts lib/developers/sandboxIntegrationHandoff.test.ts lib/developers/ephemeralWorkspaceCompletion.test.ts",
     "test:build-874-security-operations": "vitest run lib/securityOperations/operationalGapAudit.test.ts",
     "build874:security-operations-drills": "tsx scripts/build-874/run-security-operations-drills.ts",
     "test:build-826-portable-relying-party": "vitest run lib/partner/integrationKit/standalonePortableOutcome.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/portableIndependentVerification/build823RealSandboxReceipt.test.ts",

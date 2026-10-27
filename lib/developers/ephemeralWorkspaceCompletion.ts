@@ -241,7 +241,7 @@ export function buildEphemeralSandboxCompletionView(input: {
     {
       id: "integrate",
       label: integrateEligible
-        ? "Next: Create your test app in Integration Studio"
+        ? "Next: Create your test app in this workspace"
         : approved
           ? "Next: Check your proof, then build your test app"
           : "Next: Review what this policy requires or run another test",
