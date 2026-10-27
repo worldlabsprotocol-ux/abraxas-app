@@ -129,8 +129,8 @@ export function PublicNavConnectPrimary(props: {
 }) {
   const className = [
     "public-nav-connect__trigger",
-    "public-nav-connect__trigger--primary",
-    props.prominent ? "public-nav-connect__trigger--prominent" : "",
+    props.prominent ? "public-nav-connect__trigger--primary" : "public-nav-connect__trigger--secondary",
+    props.prominent ? "public-nav-connect__trigger--prominent" : "public-nav-connect__trigger--compact",
   ]
     .filter(Boolean)
     .join(" ");

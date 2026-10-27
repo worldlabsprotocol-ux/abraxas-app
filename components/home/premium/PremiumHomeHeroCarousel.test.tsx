@@ -28,9 +28,15 @@ describe("PremiumHomeHeroCarousel", () => {
 
   it("keeps Start building accessible while on the architecture slide", () => {
     render(<PremiumHomeHeroCarousel />);
-    fireEvent.click(screen.getByRole("button", { name: /02/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Show slide 2/i }));
     expect(screen.getByRole("link", { name: CINEMATIC_HOME_CTA_PRIMARY })).toHaveAttribute("href", "#start-sandbox");
     expect(screen.getByRole("link", { name: /Start sandbox/i })).toHaveAttribute("href", "#start-sandbox");
+  });
+
+  it("exposes architecture stage scroll controls on slide 2", () => {
+    render(<PremiumHomeHeroCarousel />);
+    fireEvent.click(screen.getByRole("button", { name: /Show slide 2/i }));
+    expect(screen.getByRole("button", { name: /Scroll architecture stages right/i })).toBeInTheDocument();
   });
 
   it("supports keyboard navigation between slides", () => {
