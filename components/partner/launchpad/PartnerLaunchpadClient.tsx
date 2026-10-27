@@ -27,6 +27,7 @@ import {
 import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
 import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
+import { PartnerSovereignTrustExecutionPanel } from "@/components/partner/launchpad/PartnerSovereignTrustExecutionPanel";
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
 import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/PartnerIntegrationHandoffPanel";
 import { PartnerStarterKitPanel } from "@/components/partner/launchpad/PartnerStarterKitPanel";
@@ -1259,6 +1260,7 @@ export function PartnerLaunchpadClient({
                 )}
               </ContentCard>
             )}
+            <PartnerSovereignTrustExecutionPanel applicationId={activeApp.id} />
             <ContentCard title="Run a customer verification">
               <p style={bodyText}>
                 Confirm the customer experience works end to end. You should receive the eligibility result on your server, not date of birth, documents, or identity images.
