@@ -120,6 +120,8 @@
     "build824:live-demo-portable-acceptance": "tsx scripts/build824/live-demo-portable-acceptance.ts",
     "build864:demo-institutional-receipt-acceptance": "tsx scripts/build-864/demo-institutional-receipt-acceptance.ts",
     "build866:demo-institutional-partner-repeatability": "tsx scripts/build-866/demo-institutional-partner-repeatability.ts",
+    "test:build-875-commercial-pilot-readiness": "vitest run lib/commercial/pilotReadiness/commercialValidationGates.test.ts",
+    "build875:commercial-pilot-readiness-acceptance": "tsx scripts/build-875/commercial-pilot-readiness-acceptance.ts",
     "build868:demo-external-relying-party-verification": "tsx scripts/build-868/demo-external-relying-party-verification.ts",
     "test:build-865-evidence-continuity": "vitest run lib/decisionReceipts/evidenceDependencies.graph.test.ts lib/decisionReceipts/evidenceDependencyIntegrity.adversarial.test.ts",
     "test:build-868-portable-relying-party": "vitest run examples/portable-relying-party/portable-relying-party.test.ts",
