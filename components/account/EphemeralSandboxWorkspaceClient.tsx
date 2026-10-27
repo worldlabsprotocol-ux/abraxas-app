@@ -2,7 +2,7 @@
 // FILE: components/account/EphemeralSandboxWorkspaceClient.tsx
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   fetchWalletActionChallenge,
@@ -45,7 +45,11 @@ import {
 import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
 import { WalletScopedAuthorizationReviewCard } from "@/components/wallet/WalletAuthorizationReviewCard";
-import { buildEphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
+import {
+  buildEphemeralSandboxCompletionView,
+  sandboxIntegrationStudioEligible,
+} from "@/lib/developers/ephemeralWorkspaceCompletion";
+import { buildUnifiedWorkspaceIntegrationUrl } from "@/lib/developers/unifiedWorkspaceContinuity";
 import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { EphemeralSandboxVerificationCompletion } from "./EphemeralSandboxVerificationCompletion";
 import { EmbeddedIntegrationStudioPanel } from "@/components/developers/EmbeddedIntegrationStudioPanel";
@@ -149,8 +153,10 @@ function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
 }
 
 export function EphemeralSandboxWorkspaceClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const integrationContinuityActive = isUnifiedWorkspaceIntegrationSearch(searchParams);
+  const integrationUrlSyncedRef = useRef(false);
   const integrationHandoffLanding =
     integrationContinuityActive
     && Boolean(searchParams.get("pack"))
@@ -909,6 +915,29 @@ export function EphemeralSandboxWorkspaceClient() {
       })
     : null;
 
+  const walletProofReadyForStudio =
+    phase === "result"
+    && sandboxIntegrationStudioEligible({ decision, receiptValidation });
+
+  useEffect(() => {
+    if (!walletProofReadyForStudio || !selectedPolicy) return;
+    if (integrationContinuityActive && searchParams.get("pack")) return;
+    if (integrationUrlSyncedRef.current) return;
+    integrationUrlSyncedRef.current = true;
+    router.replace(
+      buildUnifiedWorkspaceIntegrationUrl({
+        policyId: selectedPolicy,
+        focusCreateSandbox: true,
+      }),
+    );
+  }, [
+    integrationContinuityActive,
+    router,
+    searchParams,
+    selectedPolicy,
+    walletProofReadyForStudio,
+  ]);
+
   if (phase === "loading") {
     return (
       <div className={styles.shell}>
@@ -942,8 +971,9 @@ export function EphemeralSandboxWorkspaceClient() {
   }
 
   const unifiedIntegrationExperienceActive =
-    integrationContinuityActive
-    && (integrationHandoffLanding || Boolean(result && sandboxCompletionView));
+    integrationHandoffLanding
+    || (integrationContinuityActive && Boolean(result && sandboxCompletionView))
+    || walletProofReadyForStudio;
 
   if (unifiedIntegrationExperienceActive) {
     const journeyStepId: GuidedIntegrationJourneyStepId =
@@ -982,7 +1012,10 @@ export function EphemeralSandboxWorkspaceClient() {
             </p>
           </div>
         )}
-        <EmbeddedIntegrationStudioPanel />
+        <EmbeddedIntegrationStudioPanel
+          authoritativePolicyId={selectedPolicy || null}
+          walletProofRecorded={walletProofReadyForStudio}
+        />
       </div>
     );
   }

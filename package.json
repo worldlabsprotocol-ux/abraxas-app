@@ -139,6 +139,7 @@
     "build878:deployed-environment-probe": "tsx scripts/build-878/deployed-environment-probe.ts",
     "build878:engineering-report": "tsx scripts/build-878/generate-engineering-report.ts",
     "build878:full-transaction-continuity": "tsx scripts/build-878/full-transaction-continuity.ts",
+    "build879:continuous-transaction-closure": "tsx scripts/build-879/continuous-transaction-closure.ts",
     "test:build-878-playwright": "playwright test tests/staging/unified-workspace-continuity.spec.ts tests/staging/unified-workspace-acceptance.spec.ts",
     "test:build-874-security-operations": "vitest run lib/securityOperations/operationalGapAudit.test.ts",
     "build874:security-operations-drills": "tsx scripts/build-874/run-security-operations-drills.ts",

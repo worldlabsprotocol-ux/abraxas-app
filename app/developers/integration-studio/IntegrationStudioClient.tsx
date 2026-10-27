@@ -150,7 +150,13 @@ export function IntegrationStudioClient({
   variant?: "standalone" | "embedded_workspace";
 }) {
   const searchParams = useSearchParams();
-  const { embeddedInDeveloperWorkspace, workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
+  const {
+    embeddedInDeveloperWorkspace,
+    workspaceBasePath,
+    preservedQuery,
+    authoritativePolicyId,
+    walletProofRecorded,
+  } = useUnifiedWorkspaceEmbed();
   const studioStageHref = useCallback(
     (stage: "policy" | "sandbox" | "configuration" | "request") =>
       buildIntegrationStageUrl({
@@ -375,6 +381,21 @@ export function IntegrationStudioClient({
       setHandoffNotice(`Planning catalog version ${catalogVersion} is preselected. Creating a sandbox still uses the current Launchpad pin, not an automatic upgrade.`);
     }
   }, [variant]);
+
+  useEffect(() => {
+    if (!embeddedInDeveloperWorkspace || variant !== "embedded_workspace") return;
+    if (authoritativePolicyId && isPolicyPackId(authoritativePolicyId)) {
+      setPackId((current) => current ?? authoritativePolicyId);
+    }
+    if (walletProofRecorded && typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash !== "#sandbox" && hash !== "#configuration" && hash !== "#request") {
+        window.requestAnimationFrame(() => {
+          document.getElementById("sandbox")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    }
+  }, [authoritativePolicyId, embeddedInDeveloperWorkspace, variant, walletProofRecorded]);
 
   const refreshLaunchpadSession = useCallback(async () => {
     try {

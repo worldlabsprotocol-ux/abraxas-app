@@ -7,22 +7,31 @@ export type UnifiedWorkspaceEmbedValue = {
   embeddedInDeveloperWorkspace: boolean;
   workspaceBasePath: string;
   preservedQuery: Record<string, string>;
+  /** Server-restored sandbox policy — not an authorization credential. */
+  authoritativePolicyId: string | null;
+  walletProofRecorded: boolean;
 };
 
 const UnifiedWorkspaceEmbedContext = createContext<UnifiedWorkspaceEmbedValue>({
   embeddedInDeveloperWorkspace: false,
   workspaceBasePath: "/developers/integration-studio",
   preservedQuery: {},
+  authoritativePolicyId: null,
+  walletProofRecorded: false,
 });
 
 export function UnifiedWorkspaceEmbedProvider({
   children,
   embeddedInDeveloperWorkspace,
   preservedQuery = {},
+  authoritativePolicyId = null,
+  walletProofRecorded = false,
 }: {
   children: ReactNode;
   embeddedInDeveloperWorkspace: boolean;
   preservedQuery?: Record<string, string>;
+  authoritativePolicyId?: string | null;
+  walletProofRecorded?: boolean;
 }) {
   return (
     <UnifiedWorkspaceEmbedContext.Provider
@@ -32,6 +41,8 @@ export function UnifiedWorkspaceEmbedProvider({
           ? UNIFIED_DEVELOPER_WORKSPACE_PATH
           : "/developers/integration-studio",
         preservedQuery,
+        authoritativePolicyId,
+        walletProofRecorded,
       }}
     >
       {children}
