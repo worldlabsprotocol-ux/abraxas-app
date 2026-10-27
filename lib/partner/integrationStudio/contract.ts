@@ -74,11 +74,20 @@ export const INTEGRATION_STUDIO_CHECKLIST = [
   },
 ] as const;
 
+/** Sandbox create stage heading (Integration Studio Step 2). */
+export const INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE = "Create your sandbox" as const;
+
+/** Primary button on sandbox create — not duplicated in the stage title. */
+export const INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON = "Create sandbox" as const;
+
+export const INTEGRATION_STUDIO_CALLBACK_FIELD_HELP =
+  "Where Abraxas redirects or posts verification results for your integration. This is not required to be your public marketing homepage." as const;
+
 export const INTEGRATION_STUDIO_PROVISION = {
   requires_partner_session: true as const,
   self_serve_sandbox: true as const,
   self_serve_production: false as const,
-  create_sandbox_cta: "Create a sandbox integration",
+  create_sandbox_cta: INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON,
   production_upgrade_cta: "Upgrade to Production after readiness review",
   apply_href: "/design-partner",
   launchpad_href: "/developers/launchpad",

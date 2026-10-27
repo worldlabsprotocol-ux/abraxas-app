@@ -26,7 +26,7 @@ test.describe("Integration Studio session resilience", () => {
     await page.getByRole("link", { name: /Step 2:.*Sandbox/i }).click();
     await page.getByLabel(/Sandbox application name/i).fill(appName);
     await page.getByLabel(/Development callback/i).fill(`${base}/partner/callback`);
-    await page.getByRole("button", { name: /Create a sandbox integration/i }).click();
+    await page.getByRole("button", { name: /^Create sandbox$/i }).click();
     await expect(page.getByText(/Session active/i).first()).toBeVisible({ timeout: 90_000 });
 
     await page.reload({ waitUntil: "networkidle" });
@@ -47,7 +47,7 @@ test.describe("Integration Studio session resilience", () => {
     await page.getByRole("link", { name: /Step 2:.*Sandbox/i }).click();
     await page.getByLabel(/Sandbox application name/i).fill(appName);
     await page.getByLabel(/Development callback/i).fill(`${base}/partner/callback`);
-    await page.getByRole("button", { name: /Create a sandbox integration/i }).click();
+    await page.getByRole("button", { name: /^Create sandbox$/i }).click();
     await expect(page.getByText(/Session active/i).first()).toBeVisible({ timeout: 90_000 });
 
     const foreignRes = await request.get(`${base}/api/launchpad/applications/${foreignApp}`, {
