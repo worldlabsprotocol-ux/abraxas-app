@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
+import { HomeSandboxAccountAuth } from "@/components/home/HomeSandboxAccountAuth";
 import { HomeWorkspaceProgressSteps } from "@/components/home/HomeWorkspaceProgressSteps";
 import {
   HOMEPAGE_CTA_OPEN_WORKSPACE,
@@ -14,40 +15,63 @@ import {
   HOMEPAGE_WORKSPACE_DEMO_LINK,
   HOMEPAGE_WORKSPACE_STUDIO_CTA,
   HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD,
-  HOMEPAGE_WORKSPACE_WALLET_OPTIONAL_NOTE,
 } from "@/lib/home/homepagePlainCopy";
+import { mapSandboxEnrollError } from "@/lib/home/mapSandboxEnrollError";
+import {
+  SANDBOX_EPHEMERAL_CTA,
+  SANDBOX_EPHEMERAL_SIGNED_IN_LEAD,
+  SANDBOX_WORKSPACE_STEP_LEAD,
+} from "@/lib/home/sandboxOnboardingCopy";
+import { hasPersistentAccountSession, useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 import { PUBLIC_NAV_EXPLORE_HREF } from "@/lib/nav/publicNavConnectBehavior";
-import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 
 export function HomeSandboxSessionEntry() {
   const router = useRouter();
-  const { mode, refresh } = useHomeWorkspaceSession();
+  const { authMode, mode, overview, walletOnlyWithoutAccount, refresh } = useHomeWorkspaceSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const enrollSandbox = useCallback(async () => {
     setError(null);
+    if (!overview || !hasPersistentAccountSession(overview)) {
+      setError(mapSandboxEnrollError("account_session_required"));
+      await refresh();
+      return;
+    }
+
     setBusy(true);
     try {
+      const sessionProbe = await fetch("/api/auth/native/session", { credentials: "include" });
+      const sessionJson = (await sessionProbe.json()) as { authenticated?: boolean; account_id?: string };
+      if (!sessionProbe.ok || !sessionJson.authenticated || !sessionJson.account_id) {
+        setError(mapSandboxEnrollError("account_session_required"));
+        await refresh();
+        return;
+      }
+
       const res = await fetch("/api/sandbox/enroll", {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ application_name: "Sandbox application" }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as { code?: string };
       if (!res.ok) {
-        setError(json.code ?? "Could not set up workspace.");
+        const code = json.code;
+        if (code === "account_session_required") {
+          await refresh();
+        }
+        setError(mapSandboxEnrollError(code));
         return;
       }
       await refresh();
       router.push("/developers/launchpad");
     } catch {
-      setError("Could not set up workspace.");
+      setError(mapSandboxEnrollError(undefined));
     } finally {
       setBusy(false);
     }
-  }, [refresh, router]);
+  }, [overview, refresh, router]);
 
   const demoLink = (
     <Link className="abx-sandbox-entry__demo-link" href="/try">
@@ -83,14 +107,30 @@ export function HomeSandboxSessionEntry() {
       ) : null}
 
       {mode === "needs_account" ? (
-        <div className="abx-sandbox-entry__auth">
-          <NativeAccountSolanaPanel onSuccess={() => void refresh()} />
-          <p className="abx-sandbox-entry__alt">{HOMEPAGE_WORKSPACE_WALLET_OPTIONAL_NOTE}</p>
+        authMode === "ephemeral_wallet" ? (
+          <div className="abx-sandbox-entry__auth">
+            <NativeAccountSolanaPanel onSuccess={() => void refresh()} />
+          </div>
+        ) : (
+          <HomeSandboxAccountAuth
+            walletOnlyHint={walletOnlyWithoutAccount}
+            onAccountReady={() => refresh()}
+          />
+        )
+      ) : null}
+
+      {mode === "ephemeral_sandbox_ready" ? (
+        <div className="abx-sandbox-entry__sandbox">
+          <p className="abx-sandbox-entry__auth-lead">{SANDBOX_EPHEMERAL_SIGNED_IN_LEAD}</p>
+          <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="/developers/ephemeral-sandbox">
+            {SANDBOX_EPHEMERAL_CTA}
+          </Link>
         </div>
       ) : null}
 
       {mode === "needs_workspace" ? (
         <div className="abx-sandbox-entry__sandbox">
+          <p className="abx-sandbox-entry__auth-lead">{SANDBOX_WORKSPACE_STEP_LEAD}</p>
           <Btn size="sm" disabled={busy} onClick={() => void enrollSandbox()}>
             {busy ? "Setting up…" : HOMEPAGE_CTA_SET_UP_WORKSPACE}
           </Btn>
