@@ -6,6 +6,7 @@ import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthoriza
 import { loadScopedTrustChallenge } from "@/lib/auth/walletAuthorization/scopedChallengePostgresStore";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import {
+  authorizePartnerTrustExecution,
   issuePartnerTrustExecutionChallenge,
   resolvePartnerApplicationScope,
 } from "./partnerTrustExecutionService";
@@ -222,6 +223,65 @@ export async function executePartnerTrustExecutionJourney(input: {
       evidence_mode: executed.evidence_mode,
       independent_verification_material: executed.verification_material,
     },
+  };
+}
+
+export async function authorizePartnerTrustExecutionAndContinue(input: {
+  challengeId: string;
+  walletAddress: string;
+  signature: string;
+  solanaNetwork: string;
+  continueEvaluation?: boolean;
+  env?: Record<string, string | undefined>;
+}): Promise<
+  | {
+      ok: true;
+      authorization_ref: string;
+      correlation_id: string;
+      evaluation_continued: boolean;
+      execution?: Awaited<ReturnType<typeof executePartnerTrustExecutionJourney>>;
+    }
+  | { ok: false; code: string; phase: "authorize" | "execution" }
+> {
+  const authorized = await authorizePartnerTrustExecution({
+    challengeId: input.challengeId,
+    walletAddress: input.walletAddress,
+    signature: input.signature,
+    solanaNetwork: input.solanaNetwork,
+  });
+  if (!authorized.ok) {
+    return { ok: false, code: authorized.code, phase: "authorize" };
+  }
+
+  const shouldContinue = input.continueEvaluation !== false;
+  if (!shouldContinue) {
+    return {
+      ok: true,
+      authorization_ref: authorized.authorization_ref,
+      correlation_id: authorized.correlation_id,
+      evaluation_continued: false,
+    };
+  }
+
+  const row = await loadScopedTrustChallenge(input.challengeId);
+  const applicationId = row?.applicationId?.trim() ?? "";
+  if (!applicationId) {
+    return { ok: false, code: "application_missing", phase: "execution" };
+  }
+
+  const execution = await executePartnerTrustExecutionJourney({
+    partnerId: row!.partnerId,
+    applicationId,
+    challengeId: input.challengeId,
+    env: input.env,
+  });
+
+  return {
+    ok: true,
+    authorization_ref: authorized.authorization_ref,
+    correlation_id: authorized.correlation_id,
+    evaluation_continued: true,
+    execution,
   };
 }
 

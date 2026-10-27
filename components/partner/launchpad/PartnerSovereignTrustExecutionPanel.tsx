@@ -110,8 +110,8 @@ export function PartnerSovereignTrustExecutionPanel({ applicationId }: { applica
   return (
     <ContentCard title="Sovereign trust execution (sandbox)">
       <p style={{ marginTop: 0, color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "0.875rem" }}>
-        One connected journey: partner request → holder wallet authorization → signed decision → portable verification material.
-        Uses the same routes as production Partner Flow trust execution (#854).
+        One connected journey: partner request → hosted holder authorization → automatic evaluation on the same scoped challenge → durable receipt.
+        Holder signing continues evaluation (authorization is not eligibility). Partner execute remains an idempotent retry.
       </p>
 
       <label style={{ display: "grid", gap: "0.35rem", marginBottom: "0.75rem", fontSize: "0.875rem" }}>
