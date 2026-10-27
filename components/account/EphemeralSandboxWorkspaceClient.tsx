@@ -2,6 +2,7 @@
 // FILE: components/account/EphemeralSandboxWorkspaceClient.tsx
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   fetchWalletActionChallenge,
@@ -47,6 +48,11 @@ import { WalletScopedAuthorizationReviewCard } from "@/components/wallet/WalletA
 import { buildEphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
 import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { EphemeralSandboxVerificationCompletion } from "./EphemeralSandboxVerificationCompletion";
+import { EmbeddedIntegrationStudioPanel } from "@/components/developers/EmbeddedIntegrationStudioPanel";
+import { UnifiedWorkspaceJourneyBar } from "@/components/developers/UnifiedWorkspaceJourneyBar";
+import { isUnifiedWorkspaceIntegrationSearch } from "@/lib/developers/unifiedWorkspaceContinuity";
+import { mapGuidedProgressReceiptValidation } from "@/lib/developers/mapGuidedProgressRestore";
+import type { GuidedIntegrationJourneyStepId } from "@/lib/developers/guidedIntegrationJourney";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -143,6 +149,12 @@ function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
 }
 
 export function EphemeralSandboxWorkspaceClient() {
+  const searchParams = useSearchParams();
+  const integrationContinuityActive = isUnifiedWorkspaceIntegrationSearch(searchParams);
+  const integrationHandoffLanding =
+    integrationContinuityActive
+    && Boolean(searchParams.get("pack"))
+    && searchParams.get("step") === "create_sandbox";
   const { signMessage, publicKey, connected: walletAdapterConnected } = useWallet();
   const [signInDialogOpen, setSignInDialogOpen] = useState(false);
   const [phase, setPhase] = useState<WorkspacePhase>("loading");
@@ -250,9 +262,31 @@ export function EphemeralSandboxWorkspaceClient() {
         credentials: "same-origin",
         cache: "no-store",
       });
-      const workspaceBody = (await workspaceRes.json()) as { workspace?: Workspace | null; code?: string };
+      const workspaceBody = (await workspaceRes.json()) as {
+        workspace?: Workspace | null;
+        code?: string;
+        guided_progress?: {
+          policy_id: string;
+          decision: string;
+          receipt_id: string;
+          receipt_validation?: Parameters<typeof mapGuidedProgressReceiptValidation>[0];
+        } | null;
+        guided_result?: TestResult | null;
+      };
       if (workspaceBody.workspace) {
         setWorkspace(workspaceBody.workspace);
+        if (workspaceBody.guided_result && workspaceBody.guided_progress) {
+          setResult(workspaceBody.guided_result);
+          setDecision(workspaceBody.guided_progress.decision ?? null);
+          setSelectedPolicy(workspaceBody.guided_progress.policy_id);
+          setReceiptValidation(
+            mapGuidedProgressReceiptValidation(workspaceBody.guided_progress.receipt_validation),
+          );
+          if (!protectedPhases.includes(phaseRef.current)) {
+            setPhase("result");
+          }
+          return;
+        }
         if (!protectedPhases.includes(phaseRef.current)) {
           setPhase("workspace");
         }
@@ -697,7 +731,27 @@ export function EphemeralSandboxWorkspaceClient() {
         });
         return;
       }
-      setReceiptValidation(mapReceiptValidationApiResponse(json));
+      const mapped = mapReceiptValidationApiResponse(json);
+      setReceiptValidation(mapped);
+      if (mapped.status === "validated" && result?.receipt_id) {
+        void fetch("/api/auth/wallet/sandbox/guided-progress", {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            receipt_id: result.receipt_id,
+            validation: {
+              status: "validated",
+              checked_at: mapped.checkedAt,
+              signature_authentic: mapped.signatureAuthentic,
+              currently_acceptable: mapped.currentlyAcceptable,
+              invalidation_reasons: mapped.invalidationReasons,
+              standalone_cryptographic_verification: mapped.standaloneCryptographicVerification,
+              verification_summary: mapped.verificationSummary ?? null,
+            },
+          }),
+        });
+      }
     } catch {
       setReceiptValidation({
         status: "failed",
@@ -883,6 +937,52 @@ export function EphemeralSandboxWorkspaceClient() {
             <p className={styles.technicalDetails}>Code: {userError.technicalCode}</p>
           ) : null}
         </div>
+      </div>
+    );
+  }
+
+  const unifiedIntegrationExperienceActive =
+    integrationContinuityActive
+    && (integrationHandoffLanding || Boolean(result && sandboxCompletionView));
+
+  if (unifiedIntegrationExperienceActive) {
+    const journeyStepId: GuidedIntegrationJourneyStepId =
+      result && sandboxCompletionView
+        ? "create_test_app"
+        : integrationHandoffLanding
+          ? "create_test_app"
+          : "prove_wallet_control";
+    return (
+      <div className={styles.shell}>
+        <EphemeralWorkspaceSessionRail
+          state={sessionRailState}
+          walletAddress={walletAddress}
+          sessionExpiresAt={sessionExpiresAt}
+          workspaceExpiresAt={workspace?.expires_at ?? null}
+        />
+        <UnifiedWorkspaceJourneyBar currentStepId={journeyStepId} />
+        {result && sandboxCompletionView ? (
+          <div className={styles.panel}>
+            <p className={styles.completionEyebrow}>{sandboxCompletionView.statusEyebrow}</p>
+            <h2 className={styles.sectionTitle}>{sandboxCompletionView.headline}</h2>
+            <p className={styles.muted}>{sandboxCompletionView.summary}</p>
+            <p className={styles.note}>{sandboxCompletionView.sandboxOnlyNote}</p>
+            <details className={styles.completionDetailsCollapsible}>
+              <summary>Wallet proof vs application enforcement</summary>
+              <p className={styles.muted}>
+                Wallet control confirmed for this sandbox test. Partner authorization requires your application to
+                verify and enforce a portable receipt — configured in the steps below.
+              </p>
+            </details>
+          </div>
+        ) : (
+          <div className={styles.panel}>
+            <p className={styles.note} role="status">
+              Illustrative workflow. Actual completion must come from authorized server state.
+            </p>
+          </div>
+        )}
+        <EmbeddedIntegrationStudioPanel />
       </div>
     );
   }

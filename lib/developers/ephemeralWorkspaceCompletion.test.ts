@@ -5,7 +5,7 @@ import { buildEphemeralSandboxCompletionView } from "./ephemeralWorkspaceComplet
 import { DEVELOPER_WORKSPACE_STUDIO_SOURCE } from "./sandboxIntegrationHandoff";
 
 describe("buildEphemeralSandboxCompletionView", () => {
-  it("links approved wallet control results to Integration Studio with pack, path, and create focus", () => {
+  it("links approved wallet control results to unified workspace with pack, path, and create focus", () => {
     const view = buildEphemeralSandboxCompletionView({
       policyId: "wallet_control",
       policyLabel: "Wallet Control",
@@ -16,7 +16,8 @@ describe("buildEphemeralSandboxCompletionView", () => {
     expect(view.primaryAction?.label).toBe("Check your proof");
     expect(view.primaryAction?.href).toBe("#check-proof");
     expect(view.secondaryAction?.label).toBe("Build my test app");
-    expect(view.secondaryAction?.href).toContain("/developers/integration-studio");
+    expect(view.secondaryAction?.href).toContain("/developers/ephemeral-sandbox");
+    expect(view.secondaryAction?.href).toContain("integration=1");
     expect(view.secondaryAction?.href).toContain(`source=${DEVELOPER_WORKSPACE_STUDIO_SOURCE}`);
     expect(view.secondaryAction?.href).toContain("pack=wallet_control");
     expect(view.acceptabilityLine).toMatch(/not checked yet/i);

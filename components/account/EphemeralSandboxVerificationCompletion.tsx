@@ -73,7 +73,7 @@ export function EphemeralSandboxVerificationCompletion({
             ))}
           </ol>
           <Link className={styles.completionSecondaryLink} href={view.applicationHandoff.studioHref}>
-            Open Integration Studio for this policy
+            Continue application setup in this workspace
           </Link>
         </div>
       ) : null}
@@ -86,7 +86,7 @@ export function EphemeralSandboxVerificationCompletion({
         </p>
         <p className={styles.muted}>
           {view.primaryAction?.label === "Build my test app"
-            ? "Integration Studio lets you create a test application and experiment with policy-based verification — separate from your wallet demonstration."
+            ? "Create a test application here to request verification and enforce the signed result in your own code — separate from your wallet demonstration."
             : "An application can use this verification result to decide whether to allow a specific action. In this sandbox, no live access or eligibility is granted."}
         </p>
         <p className={styles.journeyNextLabel} aria-hidden>
@@ -111,9 +111,11 @@ export function EphemeralSandboxVerificationCompletion({
           ) : (
             <Link className={styles.completionPrimaryLink} href={view.primaryAction.href}>
               {view.primaryAction.label}
-              <span aria-hidden className={styles.completionPrimaryArrow}>
-                ↗
-              </span>
+              {view.primaryAction.href.includes("/developers/integration-studio") ? (
+                <span aria-hidden className={styles.completionPrimaryArrow}>
+                  ↗
+                </span>
+              ) : null}
             </Link>
           )}
           <p className={styles.muted}>{view.primaryAction.description}</p>

@@ -1,9 +1,9 @@
 // FILE: lib/developers/ephemeralWorkspaceCopy.ts
 
-export const EPHEMERAL_WORKSPACE_PAGE_TITLE = "Developer Workspace";
-export const EPHEMERAL_WORKSPACE_PAGE_EYEBROW = "Developers";
+export const EPHEMERAL_WORKSPACE_PAGE_TITLE = "Your Abraxas workspace";
+export const EPHEMERAL_WORKSPACE_PAGE_EYEBROW = "Sandbox";
 export const EPHEMERAL_WORKSPACE_PAGE_SUBTITLE =
-  "Build, verify, and validate with Abraxas.";
+  "One continuous journey: prove wallet control, create your test app, run verification, and check the result independently.";
 
 export const EPHEMERAL_WORKSPACE_SANDBOX_BADGE = "Sandbox";
 /** Retention for sandbox workspace metadata and test result records in ephemeral storage (see EPHEMERAL_TTL). */

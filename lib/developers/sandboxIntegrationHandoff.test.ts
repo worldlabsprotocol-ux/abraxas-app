@@ -11,7 +11,8 @@ describe("sandboxIntegrationHandoff", () => {
   it("builds a safe Integration Studio URL with pack, path, and create focus", () => {
     const href = buildIntegrationStudioHandoffUrl({ policyId: "wallet_control" });
     const url = new URL(href, "https://example.test");
-    expect(url.pathname).toBe("/developers/integration-studio");
+    expect(url.pathname).toBe("/developers/ephemeral-sandbox");
+    expect(url.searchParams.get("integration")).toBe("1");
     expect(url.searchParams.get("source")).toBe(DEVELOPER_WORKSPACE_STUDIO_SOURCE);
     expect(url.searchParams.get("pack")).toBe("wallet_control");
     expect(url.searchParams.get("path")).toBe("verify_with_abraxas");

@@ -66,6 +66,8 @@ import {
   DEVELOPER_WORKSPACE_STUDIO_SOURCE,
   developerWorkspaceStudioHandoffNotice,
 } from "@/lib/developers/sandboxIntegrationHandoff";
+import { buildIntegrationStageUrl } from "@/lib/developers/unifiedWorkspaceContinuity";
+import { useUnifiedWorkspaceEmbed } from "@/lib/developers/unifiedWorkspaceEmbedContext";
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
@@ -142,8 +144,22 @@ type ResumableApp = {
   policy_version: number;
 };
 
-export function IntegrationStudioClient() {
+export function IntegrationStudioClient({
+  variant = "standalone",
+}: {
+  variant?: "standalone" | "embedded_workspace";
+}) {
   const searchParams = useSearchParams();
+  const { embeddedInDeveloperWorkspace, workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
+  const studioStageHref = useCallback(
+    (stage: "policy" | "sandbox" | "configuration" | "request") =>
+      buildIntegrationStageUrl({
+        basePath: workspaceBasePath,
+        stage,
+        query: preservedQuery,
+      }),
+    [workspaceBasePath, preservedQuery],
+  );
   const packs = listStudioPackSummaries();
   const [packId, setPackId] = useState<PolicyPackId | null>(() => {
     const requested = searchParams.get("pack");
@@ -341,7 +357,7 @@ export function IntegrationStudioClient() {
     if (appParam) setUrlAppId(appParam);
     if (params.get("source") === "browser-builder") {
       setHandoffNotice("Your browser-built plan is loaded. Review it, then generate the starter kit or continue to the hosted sandbox. No terminal is required.");
-    } else if (params.get("source") === DEVELOPER_WORKSPACE_STUDIO_SOURCE) {
+    } else if (params.get("source") === DEVELOPER_WORKSPACE_STUDIO_SOURCE && variant !== "embedded_workspace") {
       setHandoffNotice(
         developerWorkspaceStudioHandoffNotice({
           policyId: pack,
@@ -358,7 +374,7 @@ export function IntegrationStudioClient() {
     } else if (pack && catalogVersion) {
       setHandoffNotice(`Planning catalog version ${catalogVersion} is preselected. Creating a sandbox still uses the current Launchpad pin, not an automatic upgrade.`);
     }
-  }, []);
+  }, [variant]);
 
   const refreshLaunchpadSession = useCallback(async () => {
     try {
@@ -714,7 +730,7 @@ export function IntegrationStudioClient() {
               <code style={{ fontFamily: MONO, fontSize: "0.88em" }}>{contract.disclosed_result}</code>{" "}
               with your application.
             </p>
-            <Btn href="/developers/integration-studio#sandbox" size="sm">
+            <Btn href={studioStageHref("sandbox")} size="sm">
               Continue to sandbox →
             </Btn>
           </div>
@@ -1113,7 +1129,7 @@ export function IntegrationStudioClient() {
               Step 1 chooses the policy Abraxas will bind to this sandbox. Nothing is provisioned until a pack is selected.
             </p>
             <div style={{ marginTop: "0.65rem" }}>
-              <Btn href="/developers/integration-studio" size="sm">
+              <Btn href={studioStageHref("policy")} size="sm">
                 Back to policy selection
               </Btn>
             </div>
@@ -1326,10 +1342,10 @@ export function IntegrationStudioClient() {
           ]}
           action={
             <>
-              <Btn href="/developers/integration-studio#sandbox" size="sm">
+              <Btn href={studioStageHref("sandbox")} size="sm">
                 Create sandbox application
               </Btn>
-              <Btn href="/developers/integration-studio" variant="secondary" size="sm">
+              <Btn href={studioStageHref("policy")} variant="secondary" size="sm">
                 Review policy packs
               </Btn>
             </>
@@ -1389,7 +1405,7 @@ export function IntegrationStudioClient() {
             "Run a harness scenario here, then verify receipts independently on the workbench.",
           ]}
           action={
-            <Btn href="/developers/integration-studio#sandbox" size="sm">
+            <Btn href={studioStageHref("sandbox")} size="sm">
               Go to sandbox provisioning
             </Btn>
           }
