@@ -26,7 +26,10 @@ function run(cmd: string): { ok: boolean; output: string } {
 const unit877 = run("npm run test:build-877-unified-workspace-continuity");
 const unit878 = run("npm run test:build-878-unified-workspace-acceptance");
 const enforce870 = run("npm run test:build-870-verifier-enforcement");
+const evidence865 = run("npm run test:build-865-evidence-continuity");
+const enforce873 = run("npm run test:build-873-integration-adoption");
 const tsc = run("npm run validate:typescript");
+const deployProbe = run("npm run build878:deployed-environment-probe");
 
 const payload = {
   build: 878,
@@ -37,7 +40,10 @@ const payload = {
     build_877_unit: unit877.ok,
     build_878_unit: unit878.ok,
     build_870_freshness_enforcement: enforce870.ok,
+    build_865_evidence_continuity: evidence865.ok,
+    build_873_integration_adoption: enforce873.ok,
     typescript: tsc.ok,
+    deployed_environment_probe: deployProbe.ok,
   },
   notes: [
     "Deployed Playwright and founder walkthrough remain required for completion.",
@@ -58,7 +64,10 @@ const allOk =
   payload.checks.build_877_unit
   && payload.checks.build_878_unit
   && payload.checks.build_870_freshness_enforcement
-  && payload.checks.typescript;
+  && payload.checks.build_865_evidence_continuity
+  && payload.checks.build_873_integration_adoption
+  && payload.checks.typescript
+  && payload.checks.deployed_environment_probe;
 
 console.log(JSON.stringify({ ok: allOk, artifact: artifactPath, checks: payload.checks }, null, 2));
 process.exit(allOk ? 0 : 1);
