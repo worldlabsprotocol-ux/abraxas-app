@@ -25,6 +25,16 @@ Evidence, Proof, Authority, and Continuity semantics unchanged; Build **870** ma
 | `operational_dependency` | Operator runbook / external assessment |
 | `missing` | Not implemented (none claimed closed in this build) |
 
+**Evidence tier** (Build 874 acceptance — do not conflate with status):
+
+| Tier | Meaning |
+| --- | --- |
+| `simulated_ci` | Vitest/adversarial proof in repo (this drill runner) |
+| `deployed_demo` | Authorized Demo/staging failure injection with recovery artifact |
+| `requires_operator` | External assessment or scheduled operator drill |
+
+Nine passing drill suites prove **simulated** behavior unless tier is explicitly `deployed_demo`.
+
 ## Security drills (reused suites)
 
 Run:
