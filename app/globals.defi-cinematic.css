@@ -1397,6 +1397,21 @@
   display: none;
 }
 
+.public-nav-connect {
+  position: relative;
+}
+
+.rd-nav-section-menu__trigger {
+  font-size: 0.78rem;
+  padding: 0.42rem 0.55rem;
+}
+
+.rd-nav-section-menu__panel {
+  left: 0;
+  right: auto;
+  min-width: 12.5rem;
+}
+
 @media (min-width: 920px) {
   .rd-nav-explore-desktop {
     display: inline-flex;

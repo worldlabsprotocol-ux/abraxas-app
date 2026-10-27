@@ -1,29 +1,31 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Primary public header — logo · Language · Connect · Launch App (secondary routes in footer / mobile More).
+// Primary public header — Product · Developers · Solutions · Start building · Connect · Launch App.
 
 import Link from "next/link";
 import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
-import { PublicNavExploreLink } from "@/components/nav/PublicNavExploreLink";
 import { PublicNavLaunchAppLink } from "@/components/nav/PublicNavLaunchAppLink";
-import { PUBLIC_FONT_SANS, PUBLIC_NAV_DOCS_CTA, PUBLIC_NAV_EXPLORE_LINKS, PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
+import { PublicNavSectionMenu } from "@/components/nav/PublicNavSectionMenu";
 import {
-  CINEMATIC_HOME_CTA_PRIMARY,
-  CINEMATIC_HOME_CTA_PRIMARY_HREF,
-} from "@/lib/home/cinematicHomeCopy";
+  PUBLIC_FONT_SANS,
+  PUBLIC_NAV_MENUS,
+  PUBLIC_NAV_START_BUILDING,
+} from "@/lib/design/publicSurface";
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const FONT = PUBLIC_FONT_SANS;
 
-export function RedesignNav({ showHomeStartBuilding = false }: { showHomeStartBuilding?: boolean }) {
+export function RedesignNav({ showHomeStartBuilding = true }: { showHomeStartBuilding?: boolean }) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const startBuildingHref = showHomeStartBuilding ? "#start-sandbox" : PUBLIC_NAV_START_BUILDING.href;
 
   return (
     <nav
+      className="rd-nav-root"
       style={{
         position: "sticky",
         top: 0,
@@ -39,30 +41,33 @@ export function RedesignNav({ showHomeStartBuilding = false }: { showHomeStartBu
     >
       <AbraxasLogo variant="lockup" emblemSize={32} href="/" />
 
+      <div className="rd-nav-menus-desktop" aria-label="Site sections">
+        {PUBLIC_NAV_MENUS.map((menu) => (
+          <PublicNavSectionMenu key={menu.id} menu={menu} />
+        ))}
+      </div>
+
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
       <div className="rd-nav-right rd-nav-actions" style={{ display: "none" }}>
         <LanguageSelector />
-        <span className="rd-nav-explore-desktop">
-          <PublicNavExploreLink prominent />
-        </span>
         <PublicNavConnectButton prominent />
-        {showHomeStartBuilding ? (
-          <Link href={CINEMATIC_HOME_CTA_PRIMARY_HREF} className="rd-nav-start-building">
-            {CINEMATIC_HOME_CTA_PRIMARY}
-          </Link>
-        ) : null}
+        <Link href={startBuildingHref} className="rd-nav-start-building">
+          {PUBLIC_NAV_START_BUILDING.label}
+        </Link>
         <PublicNavLaunchAppLink />
       </div>
 
       <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
         <LanguageSelector />
         <PublicNavConnectButton />
-        <PublicNavLaunchAppLink />
+        <Link href={startBuildingHref} className="rd-nav-start-building rd-nav-start-building--compact">
+          {PUBLIC_NAV_START_BUILDING.label}
+        </Link>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          aria-label="More navigation"
+          aria-label="Open navigation menu"
           aria-expanded={open}
           aria-controls="rd-nav-mobile-drawer"
           style={{
@@ -106,40 +111,22 @@ export function RedesignNav({ showHomeStartBuilding = false }: { showHomeStartBu
               gap: "0.35rem",
             }}
           >
-            <p style={mobileSectionLabel}>Product</p>
-            {PUBLIC_NAV_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
-                {l.label}
-              </Link>
+            {PUBLIC_NAV_MENUS.map((menu) => (
+              <div key={menu.id}>
+                <p style={mobileSectionLabel}>{menu.label}</p>
+                {menu.links.map((link) => (
+                  <Link key={link.href} href={link.href} onClick={() => setOpen(false)} style={mobileSubLink}>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             ))}
-            <Link href="/developers/integration-studio" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Explore Integration Studio
+            <p style={mobileSectionLabel}>Account</p>
+            <Link href="/passport" onClick={() => setOpen(false)} style={mobileSubLink}>
+              Launch App
             </Link>
-            {showHomeStartBuilding ? (
-              <Link href={CINEMATIC_HOME_CTA_PRIMARY_HREF} onClick={() => setOpen(false)} style={mobileSubLink}>
-                {CINEMATIC_HOME_CTA_PRIMARY}
-              </Link>
-            ) : null}
-            <Link href="/#start-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Start sandbox
-            </Link>
-            <Link href="/#start-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Create Abraxas account
-            </Link>
-            <Link href="/try" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Verification demo
-            </Link>
-            <p style={mobileSectionLabel}>Resources</p>
-            <Link href={PUBLIC_NAV_DOCS_CTA.href} onClick={() => setOpen(false)} style={mobileSubLink}>
-              {PUBLIC_NAV_DOCS_CTA.label}
-            </Link>
-            {PUBLIC_NAV_EXPLORE_LINKS.map((l) => (
-              <Link key={`explore-${l.href}`} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
-                {l.label}
-              </Link>
-            ))}
-            <Link href="/account" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Account settings
+            <Link href={startBuildingHref} onClick={() => setOpen(false)} style={mobileSubLink}>
+              {PUBLIC_NAV_START_BUILDING.label}
             </Link>
           </motion.div>
         )}
@@ -149,6 +136,21 @@ export function RedesignNav({ showHomeStartBuilding = false }: { showHomeStartBu
         @media (min-width: 920px) {
           .rd-nav-right { display: flex !important; }
           .rd-nav-mobile { display: none !important; }
+          .rd-nav-menus-desktop { display: flex; align-items: center; gap: 0.15rem; margin-left: 0.75rem; }
+        }
+        @media (max-width: 919px) {
+          .rd-nav-menus-desktop { display: none; }
+        }
+        .rd-nav-root { position: sticky; flex-wrap: wrap; }
+        .rd-nav-start-building--compact {
+          display: none;
+        }
+        @media (max-width: 919px) {
+          .rd-nav-start-building--compact {
+            display: inline-flex;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.72rem;
+          }
         }
       `}</style>
     </nav>

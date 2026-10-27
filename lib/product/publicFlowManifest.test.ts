@@ -1,7 +1,11 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PUBLIC_NAV_EXPLORE_LINKS, PUBLIC_NAV_LINKS, PUBLIC_NAV_MAP_LINKS } from "@/lib/design/publicSurface";
+import {
+  PUBLIC_NAV_EXPLORE_LINKS,
+  PUBLIC_NAV_MAP_LINKS,
+  PUBLIC_NAV_MENUS,
+} from "@/lib/design/publicSurface";
 import { PUBLIC_PRODUCT_ROUTES, publicPageFile } from "./publicRouteManifest";
 import {
   PUBLIC_FLOW_FORBIDDEN_CLAIM,
@@ -65,7 +69,10 @@ describe("public home flow manifest", () => {
   });
 
   it("keeps former top-level nav destinations one click away", () => {
-    expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual(["Home", "Passport", "Studio"]);
+    const menuLabels = PUBLIC_NAV_MENUS.flatMap((g) => g.links.map((l) => l.label));
+    expect(menuLabels).toContain("Documentation");
+    expect(menuLabels).toContain("Independent verifier");
+    expect(menuLabels).toContain("Public demo");
     expect(PUBLIC_NAV_EXPLORE_LINKS.map((link) => link.label)).toEqual([
       "Verification",
       "Pricing",

@@ -3,7 +3,7 @@
 export const HOMEPAGE_UNIFIED_EYEBROW = "Integrate Abraxas";
 
 export const HOMEPAGE_UNIFIED_LEAD =
-  "Create a sandbox application to run verification against Abraxas policy. Solana wallet sign in is required when you create or continue a workspace. Explore documentation and the public demo without a workspace.";
+  "Create a sandbox application to run verification against Abraxas policy. Solana wallet sign in is required when you create or continue a workspace.";
 
 export const HOMEPAGE_UNIFIED_RESOURCE_LINKS = [
   { label: "Developer documentation", href: "/developers" },

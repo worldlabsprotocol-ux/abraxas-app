@@ -3,15 +3,10 @@
 // Sandbox-first entry below protocol explanation.
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { HomeNativeSandboxChapter } from "@/components/home/HomeNativeSandboxChapter";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
-import {
-  HOMEPAGE_UNIFIED_EYEBROW,
-  HOMEPAGE_UNIFIED_LEAD,
-  HOMEPAGE_UNIFIED_RESOURCE_LINKS,
-} from "@/lib/home/homepageUnifiedEntryCopy";
+import { HOMEPAGE_UNIFIED_EYEBROW, HOMEPAGE_UNIFIED_LEAD } from "@/lib/home/homepageUnifiedEntryCopy";
 
 const LEGACY_HASH_REDIRECTS: Record<string, string> = {
   "how-abraxas-works": "protocol-infrastructure",
@@ -49,14 +44,6 @@ export function HomeUnifiedProductEntry() {
       <LazyHomeSection minHeight="10rem" eager>
         <HomeNativeSandboxChapter />
       </LazyHomeSection>
-
-      <nav className="abx-home-unified-entry__resources" aria-label="Supporting developer resources">
-        {HOMEPAGE_UNIFIED_RESOURCE_LINKS.map((link) => (
-          <Link key={link.href} className="abx-home-unified-entry__resource-link" href={link.href}>
-            {link.label}
-          </Link>
-        ))}
-      </nav>
     </section>
   );
 }

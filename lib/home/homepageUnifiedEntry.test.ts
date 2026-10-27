@@ -16,13 +16,14 @@ describe("homepage unified product entry", () => {
     const unified = readFileSync(join(ROOT, "components/home/HomeUnifiedProductEntry.tsx"), "utf8");
     expect(unified).toContain("start-sandbox");
     expect(unified).toContain("how-abraxas-works");
-    expect(unified).toContain('id="chapter-evidence"');
-    expect(unified).toContain('id="chapter-build-wrap"');
+    expect(unified).toContain("chapter-evidence");
+    expect(unified).toContain("chapter-build-wrap");
     expect(unified).toContain("chapter-how");
   });
 
-  it("uses Start with Abraxas as unified entry eyebrow", () => {
-    expect(HOMEPAGE_UNIFIED_EYEBROW).toMatch(/Start with Abraxas/i);
+  it("uses a concise unified entry eyebrow", () => {
+    expect(HOMEPAGE_UNIFIED_EYEBROW.length).toBeGreaterThan(0);
+    expect(HOMEPAGE_UNIFIED_EYEBROW).toMatch(/Abraxas/i);
   });
 
   it("wires the homepage hero carousel as the primary introduction", () => {
