@@ -25,9 +25,9 @@ describe("homepage unified product entry", () => {
     expect(HOMEPAGE_UNIFIED_EYEBROW).toMatch(/Start with Abraxas/i);
   });
 
-  it("does not modify the hero component wiring on the homepage", () => {
+  it("wires the homepage hero carousel as the primary introduction", () => {
     const page = readFileSync(join(ROOT, "app/page.tsx"), "utf8");
-    expect(page).toContain("PremiumHomeHero");
-    expect(page).toContain("<RedesignHome hero={<PremiumHomeHero />} />");
+    expect(page).toContain("PremiumHomeHeroCarousel");
+    expect(page).toContain("<RedesignHome hero={<PremiumHomeHeroCarousel />} />");
   });
 });

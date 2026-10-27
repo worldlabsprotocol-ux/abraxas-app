@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   CINEMATIC_HOME_CTA_PRIMARY,
@@ -13,9 +15,20 @@ const HEADLINE_LINES = PROTOCOL_HERO_TITLE.split(". ").map((part, i, arr) =>
 ).filter(Boolean);
 
 /** Server-rendered hero copy for LCP; emblem hydrates client-side after first paint. */
-export function PremiumHomeHero() {
+export function PremiumHomeHero({
+  emblemActive = true,
+  variant = "standalone",
+}: {
+  emblemActive?: boolean;
+  variant?: "standalone" | "carousel";
+}) {
+  const heroClass =
+    variant === "carousel"
+      ? "abx-premium-hero abx-premium-hero--enhanced abx-premium-hero--carousel"
+      : "abx-premium-hero abx-premium-hero--enhanced";
+
   return (
-    <header className="abx-premium-hero abx-premium-hero--enhanced" aria-label="Abraxas: prove what matters">
+    <header className={heroClass} aria-label="Abraxas: prove what matters">
       <div className="abx-premium-hero__atmosphere" aria-hidden="true" />
       <div className="abx-premium-hero__depth-plane" aria-hidden="true" />
       <div className="abx-premium-hero__grid" aria-hidden="true" />
@@ -34,15 +47,17 @@ export function PremiumHomeHero() {
             ))}
           </h1>
           <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--3">{CINEMATIC_HOME_LEAD}</p>
-          <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
-            <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
-              {CINEMATIC_HOME_CTA_PRIMARY}
-            </Link>
-          </div>
+          {variant === "standalone" ? (
+            <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
+              <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
+                {CINEMATIC_HOME_CTA_PRIMARY}
+              </Link>
+            </div>
+          ) : null}
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
         </div>
         <div className="abx-premium-hero__visual-wrap abx-premium-hero__reveal abx-premium-hero__reveal--2">
-          <PremiumHomeHeroVisualEnhanced />
+          {emblemActive ? <PremiumHomeHeroVisualEnhanced /> : null}
         </div>
       </div>
       <div className="abx-premium-hero__baseline" aria-hidden="true" />

@@ -9,12 +9,16 @@ import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton"
 import { PublicNavExploreLink } from "@/components/nav/PublicNavExploreLink";
 import { PublicNavLaunchAppLink } from "@/components/nav/PublicNavLaunchAppLink";
 import { PUBLIC_FONT_SANS, PUBLIC_NAV_DOCS_CTA, PUBLIC_NAV_EXPLORE_LINKS, PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
+import {
+  CINEMATIC_HOME_CTA_PRIMARY,
+  CINEMATIC_HOME_CTA_PRIMARY_HREF,
+} from "@/lib/home/cinematicHomeCopy";
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const FONT = PUBLIC_FONT_SANS;
 
-export function RedesignNav() {
+export function RedesignNav({ showHomeStartBuilding = false }: { showHomeStartBuilding?: boolean }) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
 
@@ -43,6 +47,11 @@ export function RedesignNav() {
           <PublicNavExploreLink prominent />
         </span>
         <PublicNavConnectButton prominent />
+        {showHomeStartBuilding ? (
+          <Link href={CINEMATIC_HOME_CTA_PRIMARY_HREF} className="rd-nav-start-building">
+            {CINEMATIC_HOME_CTA_PRIMARY}
+          </Link>
+        ) : null}
         <PublicNavLaunchAppLink />
       </div>
 
@@ -105,6 +114,14 @@ export function RedesignNav() {
             ))}
             <Link href="/developers/integration-studio" onClick={() => setOpen(false)} style={mobileSubLink}>
               Explore Integration Studio
+            </Link>
+            {showHomeStartBuilding ? (
+              <Link href={CINEMATIC_HOME_CTA_PRIMARY_HREF} onClick={() => setOpen(false)} style={mobileSubLink}>
+                {CINEMATIC_HOME_CTA_PRIMARY}
+              </Link>
+            ) : null}
+            <Link href="/#start-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
+              Start sandbox
             </Link>
             <Link href="/#start-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
               Create Abraxas account
