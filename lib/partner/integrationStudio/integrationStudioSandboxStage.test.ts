@@ -13,7 +13,7 @@ describe("Integration Studio sandbox stage", () => {
   it("uses a single clear heading and primary CTA", () => {
     expect(INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE).toBe("Give your integration a name");
     expect(INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON).toBe("Create my test app");
-    expect(INTEGRATION_STUDIO_CALLBACK_FIELD_HELP.toLowerCase()).toContain("callback");
+    expect(INTEGRATION_STUDIO_CALLBACK_FIELD_HELP.toLowerCase()).toContain("allowlisted");
   });
 
   it("binds provision to selected policy pack and advances after create", () => {
