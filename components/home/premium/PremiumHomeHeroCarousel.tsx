@@ -115,6 +115,7 @@ export function PremiumHomeHeroCarousel() {
             aria-roledescription="slide"
             aria-label={`${SLIDES[0].label}. ${SLIDES[0].description}`}
             aria-hidden={activeIndex !== 0}
+            inert={activeIndex !== 0}
           >
             <PremiumHomeHero emblemActive={activeIndex === 0} variant="carousel" />
           </div>
@@ -125,13 +126,16 @@ export function PremiumHomeHeroCarousel() {
             aria-roledescription="slide"
             aria-label={`${SLIDES[1].label}. ${SLIDES[1].description}`}
             aria-hidden={activeIndex !== 1}
-            {...(activeIndex !== 1 ? { inert: "" as const } : {})}
+            inert={activeIndex !== 1}
           >
             <div className="abx-premium-hero-carousel__diagram-shell">
               <header className="abx-premium-hero-carousel__diagram-intro">
                 <p className="abx-v2-eyebrow">02 · How Abraxas works</p>
                 <p className="abx-premium-hero-carousel__diagram-lead">
                   Evidence → Decision → Verification — full architecture at readable scale.
+                </p>
+                <p className="abx-premium-hero-carousel__diagram-scroll-hint">
+                  Swipe horizontally to explore the full diagram.
                 </p>
               </header>
               <div className="abx-premium-hero-carousel__diagram-scroll">
@@ -157,6 +161,7 @@ export function PremiumHomeHeroCarousel() {
                       className={`abx-premium-hero-carousel__nav-btn${selected ? " abx-premium-hero-carousel__nav-btn--active" : ""}`}
                       aria-current={selected ? "true" : undefined}
                       aria-controls={regionId}
+                      aria-label={`Show slide ${index + 1}: ${slide.label}`}
                       onClick={() => goTo(index)}
                     >
                       <span className="abx-premium-hero-carousel__nav-index">{String(index + 1).padStart(2, "0")}</span>

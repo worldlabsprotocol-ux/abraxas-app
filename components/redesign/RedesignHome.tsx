@@ -44,7 +44,7 @@ export function RedesignHome({ hero }: { hero: ReactNode }) {
       className={`abx-institutional-shell abx-command-center abx-v2-shell ${ABX_V2_SHELL_CLASS}`}
       style={{ ...abxMotionCssVars(), ...abxAccentCssVars("neutral") }}
     >
-      <RedesignNav />
+      <RedesignNav showHomeStartBuilding />
       <HomeContent hero={hero} />
       <RedesignFooter />
     </div>
