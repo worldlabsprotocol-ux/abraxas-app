@@ -25,7 +25,7 @@ test.describe("Integration Studio browser provisioned journey", () => {
 
     await page.getByLabel(/Sandbox application name/i).fill(appName);
     await page.getByLabel(/Development callback/i).fill(callbackUrl);
-    await page.getByRole("button", { name: /Create a sandbox integration/i }).click();
+    await page.getByRole("button", { name: /^Create sandbox$/i }).click();
 
     await expect(page.getByText(/Session active/i).first()).toBeVisible({
       timeout: 90_000,

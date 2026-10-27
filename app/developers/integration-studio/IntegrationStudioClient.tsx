@@ -10,8 +10,11 @@ import { Reveal } from "@/lib/motion/Reveal";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
+  INTEGRATION_STUDIO_CALLBACK_FIELD_HELP,
+  INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON,
   INTEGRATION_STUDIO_PATHS,
   INTEGRATION_STUDIO_PROVISION,
+  INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE,
   isIntegrationStudioPathId,
   listStudioPackSummaries,
   studioPackContract,
@@ -44,7 +47,6 @@ import {
   type StarterKitPlatform,
 } from "@/lib/partner/starterKit/contract";
 import {
-  PARTNER_ACTIVATION_CREATE_CTA,
   PARTNER_ACTIVATION_PRODUCTION,
   PARTNER_ACTIVATION_RESUME_CTA,
   buildPartnerActivationChecklist,
@@ -69,6 +71,7 @@ import { IntegrationStudioConfigurationPanel } from "@/components/developers/Int
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
 import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
+import { integrationStudioStageHref } from "@/lib/developers/useIntegrationStudioStage";
 import type { ModeCCommandRailItem } from "@/components/product/ModeCCommandRail";
 import {
   POLICY_FIT_ACTIONS,
@@ -480,11 +483,26 @@ export function IntegrationStudioClient() {
         return;
       }
       if (data.application) {
+        if (packId && data.application.policy_template_id !== packId) {
+          setError(
+            "The provisioned sandbox policy does not match your selected pack. Return to Policy, confirm your selection, and try again.",
+          );
+          setSubmitting(false);
+          return;
+        }
+        if (isPolicyPackId(data.application.policy_template_id)) {
+          setPackId(data.application.policy_template_id);
+        }
         setCreated(data.application);
         void recordGtmClientEvent("sandbox_created", {
           recommended_path: pathId,
           environment: "sandbox",
         });
+        if (typeof window !== "undefined" && !data.idempotency_replay) {
+          const next = integrationStudioStageHref("configuration");
+          window.history.replaceState(null, "", next);
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
+        }
       }
       if (data.api_key) {
         setRevealedKey(data.api_key);
@@ -1059,10 +1077,31 @@ export function IntegrationStudioClient() {
 
       {stage === "sandbox" && (
       <>
-      <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`} id="sandbox">
+      <ContentCard title={INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE} id="sandbox">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
-          Create an isolated sandbox directly in the browser. No wallet, zkLogin, or existing API key is required. A secure cookie keeps the new sandbox attached to this browser.
+          Name your test application and allowlist where Abraxas may return verification results. A secure browser session keeps the sandbox attached without collecting holder identity.
         </p>
+        {!packId ? (
+          <div style={{ ...body, marginBottom: "0.85rem", padding: "0.75rem", borderRadius: 12, border: "1px solid var(--border)" }}>
+            <p style={{ margin: "0 0 0.5rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              Select a policy pack first
+            </p>
+            <p style={{ margin: 0 }}>
+              Step 1 chooses the policy Abraxas will bind to this sandbox. Nothing is provisioned until a pack is selected.
+            </p>
+            <div style={{ marginTop: "0.65rem" }}>
+              <Btn href="/developers/integration-studio" size="sm">
+                Back to policy selection
+              </Btn>
+            </div>
+          </div>
+        ) : (
+          <p style={{ ...body, marginBottom: "0.75rem" }}>
+            Selected policy: <strong style={{ color: "var(--text-primary)" }}>{contract?.display_name ?? packId}</strong>
+            {" · "}
+            <span style={{ fontFamily: MONO, fontSize: "0.82em" }}>{packId}</span>
+          </p>
+        )}
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -1076,6 +1115,7 @@ export function IntegrationStudioClient() {
                 value={applicationName}
                 onChange={(event) => setApplicationName(event.target.value)}
                 required
+                disabled={!packId}
                 autoComplete="off"
                 style={{
                   display: "block",
@@ -1091,12 +1131,14 @@ export function IntegrationStudioClient() {
               />
             </label>
             <label style={body}>
-              Development callback (allowlisted)
+              Integration callback URL (allowlisted)
               <input
                 value={returnUrl}
                 onChange={(event) => setReturnUrl(event.target.value)}
                 required
+                disabled={!packId}
                 autoComplete="off"
+                placeholder="http://localhost:3000/callback"
                 style={{
                   display: "block",
                   width: "100%",
@@ -1110,14 +1152,15 @@ export function IntegrationStudioClient() {
                 }}
               />
             </label>
-            <p style={body}>Policy pack: {contract?.display_name ?? packId}. Environment: sandbox only.</p>
+            <p style={{ ...body, margin: 0, fontSize: "0.78rem" }}>{INTEGRATION_STUDIO_CALLBACK_FIELD_HELP}</p>
+            <p style={{ ...body, margin: 0 }}>Environment: sandbox only.</p>
             <Btn
               size="sm"
               disabled={submitting || !applicationName.trim() || !packId}
               loading={submitting}
               onClick={() => void createSandbox()}
             >
-              {PARTNER_ACTIVATION_CREATE_CTA}
+              {INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON}
             </Btn>
           </form>
         {error && <p style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{error}</p>}
@@ -1128,27 +1171,53 @@ export function IntegrationStudioClient() {
           </div>
         )}
         {created && (
-          <p style={{ ...body, marginBottom: "0.85rem" }}>
-            App {created.public_slug} · prefix {created.key_prefix} · policy {created.policy_id}
-          </p>
+          <div style={{ ...body, marginBottom: "0.85rem" }}>
+            <p style={{ margin: "0 0 0.45rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              Sandbox ready — {created.public_slug}
+            </p>
+            <p style={{ margin: 0 }}>
+              Policy {created.policy_id} (pack {created.policy_template_id}) · key prefix {created.key_prefix}
+            </p>
+          </div>
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          {!signedIn && (
-            <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="secondary" size="sm">Open an existing sandbox →</Btn>
-          )}
-          {created && hostedDocs?.hosted_link && (
-            <Btn href={hostedDocs.hosted_link} size="sm">Run hosted sandbox test →</Btn>
-          )}
           {created && (
-            <Btn href={launchpadResumeHref(created.application_id)} variant="secondary" size="sm">
-              Open saved sandbox →
+            <Btn href={integrationStudioStageHref("request")} size="sm">
+              Run test verification →
             </Btn>
           )}
-          <Btn href={created ? launchpadResumeHref(created.application_id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="secondary" size="sm">
-            {INTEGRATION_STUDIO_PROVISION.production_upgrade_cta} →
-          </Btn>
-          <Btn href={INTEGRATION_STUDIO_PROVISION.partner_portal_href} variant="ghost" size="sm">Partner portal →</Btn>
+          {created && (
+            <Btn href={integrationStudioStageHref("configuration")} variant="secondary" size="sm">
+              Review configuration →
+            </Btn>
+          )}
+          {created && hostedDocs?.hosted_link && (
+            <Btn href={hostedDocs.hosted_link} variant="secondary" size="sm">
+              Hosted sandbox test →
+            </Btn>
+          )}
+          {!signedIn && !created && (
+            <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="ghost" size="sm">
+              Open an existing sandbox →
+            </Btn>
+          )}
         </div>
+        <details style={{ marginTop: "0.85rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 700, color: "var(--text-muted)" }}>
+            Production review and portal (later)
+          </summary>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
+            {created && (
+              <Btn href={launchpadResumeHref(created.application_id)} variant="ghost" size="sm">
+                Open in Launchpad →
+              </Btn>
+            )}
+            <Btn href={INTEGRATION_STUDIO_PROVISION.partner_portal_href} variant="ghost" size="sm">
+              Partner portal →
+            </Btn>
+            <span style={{ ...body, alignSelf: "center" }}>{INTEGRATION_STUDIO_PROVISION.production_upgrade_cta}</span>
+          </div>
+        </details>
       </ContentCard>
 
       <IntegrationStudioSessionHandoff
