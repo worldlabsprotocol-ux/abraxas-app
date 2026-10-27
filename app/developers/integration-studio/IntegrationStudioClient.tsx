@@ -10,6 +10,7 @@ import { Reveal } from "@/lib/motion/Reveal";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
+  INTEGRATION_STUDIO_CALLBACK_DEFAULT_HINT,
   INTEGRATION_STUDIO_CALLBACK_FIELD_HELP,
   INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON,
   INTEGRATION_STUDIO_PATHS,
@@ -1171,10 +1172,30 @@ export function IntegrationStudioClient() {
               <p style={{ ...body, margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
                 {INTEGRATION_STUDIO_CALLBACK_FIELD_HELP}
               </p>
+              {returnUrl.trim().startsWith("http://localhost") || returnUrl.trim().startsWith("https://localhost") ? (
+                <p
+                  style={{
+                    ...body,
+                    margin: "0.5rem 0 0",
+                    fontSize: "0.78rem",
+                    padding: "0.55rem 0.65rem",
+                    borderRadius: 8,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-inset)",
+                  }}
+                  role="note"
+                >
+                  {INTEGRATION_STUDIO_CALLBACK_DEFAULT_HINT}
+                </p>
+              ) : null}
               <p style={{ ...body, margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
                 Policy identifier: <span style={{ fontFamily: MONO }}>{packId}</span> · Environment: sandbox only
               </p>
             </details>
+            <p style={{ ...body, margin: 0, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+              You can create your test app with the default callback while exploring. Open Advanced above to change
+              where results are delivered when you connect your own server.
+            </p>
             <Btn
               size="sm"
               disabled={submitting || !applicationName.trim() || !packId}

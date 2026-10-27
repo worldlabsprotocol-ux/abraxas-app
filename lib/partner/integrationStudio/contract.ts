@@ -80,8 +80,11 @@ export const INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE = "Give your integration a n
 /** Primary button on sandbox create — not duplicated in the stage title. */
 export const INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON = "Create my test app" as const;
 
+export const INTEGRATION_STUDIO_CALLBACK_DEFAULT_HINT =
+  "The default http://localhost:3000/callback is for local development on your machine — Abraxas does not host this URL. Replace it with your app’s public callback when you deploy." as const;
+
 export const INTEGRATION_STUDIO_CALLBACK_FIELD_HELP =
-  "The address where your app receives a verification result after a holder completes a check. Use your local dev URL while experimenting, or your server callback when you connect a real app." as const;
+  "After a holder completes verification, Abraxas sends the result to this allowlisted URL on your application. It is not an Abraxas-hosted page." as const;
 
 export const INTEGRATION_STUDIO_PROVISION = {
   requires_partner_session: true as const,
