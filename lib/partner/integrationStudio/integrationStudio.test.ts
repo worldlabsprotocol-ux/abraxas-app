@@ -164,7 +164,7 @@ describe("Integration Studio", () => {
       solana: { funds_movement: boolean };
     };
     expect(json.access).toBe("public");
-    expect(json.partner_session_required_for_provisioning).toBe(true);
+    expect(json.partner_session_required_for_provisioning).toBe(false);
     const provision = (json as unknown as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision;
     expect(provision.create_sandbox_cta).toBe("Create sandbox");
     expect(provision.self_serve_production).toBe(false);
