@@ -46,6 +46,18 @@ describe("classifyStandalonePortableVerification", () => {
     expect(r.outcome).toBe("permitted");
   });
 
+  it("denies when issuer statement_stale is recorded even if acceptability were yes", () => {
+    const r = classifyStandalonePortableVerification({
+      pinConfigured: true,
+      verification: baseVerification({
+        currently_acceptable: "yes",
+        failure_codes: ["statement_stale"],
+      }),
+    });
+    expect(r.action).toBe("deny");
+    expect(r.permit_protocol_action).toBe(false);
+  });
+
   it("returns deny for authentic expired authorization (not indeterminate)", () => {
     const r = classifyStandalonePortableVerification({
       pinConfigured: true,

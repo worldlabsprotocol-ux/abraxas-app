@@ -92,6 +92,7 @@ export function verifyAbraxasReceiptIndependently(input: {
   }
   push("anchor_binding", "pass", "Statement anchor matches integrator-pinned anchor (no substitution).");
 
+  let issuerStatementFreshnessOk = false;
   if (input.statementObservedAt) {
     const observed = Date.parse(input.statementObservedAt);
     if (
@@ -99,12 +100,15 @@ export function verifyAbraxasReceiptIndependently(input: {
       || now.getTime() - observed > input.pinnedTrustAnchor.statement_cache_max_age_seconds * 1000
     ) {
       push("statement_freshness", "fail", "Signed issuer authority statement is stale.", "statement_stale");
+      issuerStatementFreshnessOk = false;
     } else {
       push("statement_freshness", "pass", "Statement within cache max-age policy.");
+      issuerStatementFreshnessOk = true;
     }
   } else {
     push("statement_freshness", "blocked", "Statement observation time not provided — freshness not established.");
     failure_codes.push("statement_freshness_unknown");
+    issuerStatementFreshnessOk = false;
   }
 
   const runtimeEnv = input.relyingParty.environment;
@@ -265,6 +269,7 @@ export function verifyAbraxasReceiptIndependently(input: {
           const liveOk =
             cryptographicallyAuthentic
             && issuerAuthorized
+            && issuerStatementFreshnessOk
             && audienceMatch
             && v11ScopeSatisfied
             && p.receipt_status === "active"

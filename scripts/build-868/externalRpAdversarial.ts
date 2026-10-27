@@ -69,9 +69,7 @@ function casePassed(c: AdversarialCase & { id: string }): boolean {
   if (c.expect_permit) {
     return c.action === "permit" && c.currently_acceptable === "yes";
   }
-  if (c.currently_acceptable !== "yes") return true;
-  if (c.action !== "permit") return true;
-  return c.failure_codes.length > 0;
+  return c.action !== "permit" && c.currently_acceptable !== "yes";
 }
 
 export function runExternalRpAdversarialMatrix(input: {

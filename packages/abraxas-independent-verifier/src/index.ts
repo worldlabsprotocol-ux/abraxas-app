@@ -5,6 +5,7 @@ export * from "./trustAnchorBundle";
 export * from "./issuerAuthorityStatement";
 export * from "./receiptVerify";
 export * from "./verifyIndependent";
+export * from "./enforceIndependent";
 export * from "./signedReceiptStatusStatement";
 export { verifyEd25519Detached } from "./crypto";
 export * from "./v1_1_0/constants";
