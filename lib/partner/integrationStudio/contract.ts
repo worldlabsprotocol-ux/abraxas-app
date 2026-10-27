@@ -75,13 +75,13 @@ export const INTEGRATION_STUDIO_CHECKLIST = [
 ] as const;
 
 /** Sandbox create stage heading (Integration Studio Step 2). */
-export const INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE = "Create your sandbox" as const;
+export const INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE = "Give your integration a name" as const;
 
 /** Primary button on sandbox create — not duplicated in the stage title. */
-export const INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON = "Create sandbox" as const;
+export const INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON = "Create my test app" as const;
 
 export const INTEGRATION_STUDIO_CALLBACK_FIELD_HELP =
-  "Where Abraxas redirects or posts verification results for your integration. This is not required to be your public marketing homepage." as const;
+  "The address where your app receives a verification result after a holder completes a check. Use your local dev URL while experimenting, or your server callback when you connect a real app." as const;
 
 export const INTEGRATION_STUDIO_PROVISION = {
   requires_partner_session: true as const,

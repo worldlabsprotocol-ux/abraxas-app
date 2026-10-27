@@ -149,7 +149,7 @@ export function IntegrationStudioInspectorRail() {
   return (
     <div className="abx-studio-inspector" aria-label="Integration inspector">
       <div className="abx-studio-inspector__operations">
-        <h2 className="abx-studio-inspector__header">Partner operations</h2>
+        <h2 className="abx-studio-inspector__header">Your progress</h2>
         {operationsRail.length > 0 ? (
           <ModeCCommandRail items={operationsRail} />
         ) : (

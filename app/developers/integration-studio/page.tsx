@@ -16,8 +16,8 @@ export default function IntegrationStudioPage() {
     <RedesignPage accent="developer" maxWidth={1320}>
       <PageHeader
         eyebrow="Developers · Integration Studio"
-        title="Partner integration workspace"
-        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Policy → sandbox → request → receipt → verification → production review.`}
+        title="Your first integration"
+        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose what to verify, create a test app, send a request, receive a signed proof, and check it independently.`}
       />
       <IntegrationStudioOperationalProvider>
         <IntegrationStudioWorkspace inspector={<IntegrationStudioInspectorRail />}>

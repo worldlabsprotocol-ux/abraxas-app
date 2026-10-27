@@ -11,9 +11,9 @@ const ROOT = process.cwd();
 
 describe("Integration Studio sandbox stage", () => {
   it("uses a single clear heading and primary CTA", () => {
-    expect(INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE).toBe("Create your sandbox");
-    expect(INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON).toBe("Create sandbox");
-    expect(INTEGRATION_STUDIO_CALLBACK_FIELD_HELP.toLowerCase()).toContain("redirect");
+    expect(INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE).toBe("Give your integration a name");
+    expect(INTEGRATION_STUDIO_CREATE_SANDBOX_BUTTON).toBe("Create my test app");
+    expect(INTEGRATION_STUDIO_CALLBACK_FIELD_HELP.toLowerCase()).toContain("callback");
   });
 
   it("binds provision to selected policy pack and advances after create", () => {

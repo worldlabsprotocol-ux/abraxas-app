@@ -565,6 +565,39 @@
   border-color: rgba(94, 184, 255, 0.25);
 }
 
+.journeyKicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.journeyNextLabel {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ws-cyan);
+}
+
+.completionDetailsCollapsible {
+  margin-top: 0.75rem;
+}
+
+.completionDetailsCollapsible summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  list-style: none;
+}
+
+.completionDetailsCollapsible summary::-webkit-details-marker {
+  display: none;
+}
+
 .completionEyebrow {
   margin: 0 0 0.45rem;
   font-size: 0.68rem;

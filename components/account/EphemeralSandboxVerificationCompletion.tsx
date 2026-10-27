@@ -3,6 +3,10 @@
 
 import Link from "next/link";
 import type { EphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
+import {
+  GUIDED_INTEGRATION_JOURNEY,
+  guidedJourneyProgressLabel,
+} from "@/lib/developers/guidedIntegrationJourney";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 function ChecklistIcon({ state }: { state: "done" | "next" | "pending" | "blocked" }) {
@@ -24,13 +28,21 @@ export function EphemeralSandboxVerificationCompletion({
         ? styles.completionCaution
         : styles.completionNeutral;
 
+  const journeyStep = view.primaryAction?.label === "Build my test app" ? 2 : 1;
+  const journeyLabel = GUIDED_INTEGRATION_JOURNEY[journeyStep - 1]?.title ?? "Prove wallet control";
+
   return (
     <div className={`${styles.completionHero} ${toneClass}`}>
+      <p className={styles.journeyKicker}>
+        Abraxas · Your first integration · {guidedJourneyProgressLabel(journeyStep)}
+      </p>
       <p className={styles.completionEyebrow}>{view.statusEyebrow}</p>
       <h3 className={styles.completionHeadline}>{view.headline}</h3>
       <p className={styles.completionSummary}>{view.summary}</p>
       <p className={styles.note}>{view.sandboxOnlyNote}</p>
 
+      <details className={styles.completionDetailsCollapsible}>
+        <summary>Technical details</summary>
       <div className={styles.completionDetails}>
         <p className={styles.resultLine}>
           <strong>What was verified:</strong> {view.whatVerified}
@@ -46,12 +58,21 @@ export function EphemeralSandboxVerificationCompletion({
         <p className={styles.muted}>{view.receiptUseLine}</p>
         {view.validationModeLine ? <p className={styles.muted}>{view.validationModeLine}</p> : null}
       </div>
+      </details>
 
       <div className={styles.completionNext}>
-        <p className={styles.completionNextTitle}>What happens next?</p>
+        <p className={styles.completionNextTitle}>
+          {view.primaryAction?.label === "Build my test app"
+            ? "Your wallet is verified. Now see how Abraxas works in your app."
+            : "What happens next?"}
+        </p>
         <p className={styles.muted}>
-          An application can use this verification result to decide whether to allow a specific action. In
-          this sandbox, no live access or eligibility is granted.
+          {view.primaryAction?.label === "Build my test app"
+            ? "Integration Studio lets you create a test application and experiment with policy-based verification — separate from your wallet demonstration."
+            : "An application can use this verification result to decide whether to allow a specific action. In this sandbox, no live access or eligibility is granted."}
+        </p>
+        <p className={styles.journeyNextLabel} aria-hidden>
+          Next · {journeyLabel}
         </p>
         <ul className={styles.completionChecklist}>
           {view.checklist.map((item) => (
@@ -65,12 +86,18 @@ export function EphemeralSandboxVerificationCompletion({
 
       {view.primaryAction ? (
         <div className={styles.completionPrimaryWrap}>
-          <Link className={styles.completionPrimaryLink} href={view.primaryAction.href}>
-            {view.primaryAction.label}
-            <span aria-hidden className={styles.completionPrimaryArrow}>
-              ↗
-            </span>
-          </Link>
+          {view.primaryAction.inPageAnchor ? (
+            <a className={styles.completionPrimaryLink} href={view.primaryAction.href}>
+              {view.primaryAction.label}
+            </a>
+          ) : (
+            <Link className={styles.completionPrimaryLink} href={view.primaryAction.href}>
+              {view.primaryAction.label}
+              <span aria-hidden className={styles.completionPrimaryArrow}>
+                ↗
+              </span>
+            </Link>
+          )}
           <p className={styles.muted}>{view.primaryAction.description}</p>
           {view.secondaryAction ? (
             <Link className={styles.completionSecondaryLink} href={view.secondaryAction.href}>

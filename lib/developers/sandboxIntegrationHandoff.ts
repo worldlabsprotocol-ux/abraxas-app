@@ -44,7 +44,7 @@ export function developerWorkspaceStudioHandoffNotice(input: {
   const label =
     input.policyLabel?.trim()
     || (input.policyId ? input.policyId.replace(/_/g, " ") : "sandbox policy");
-  return `You completed a Developer Workspace sandbox test for ${label}. The matching policy pack and integration path are preselected below. Create a private sandbox application to run the same verification from your server — Production access still requires partner review.`;
+  return `Your wallet is verified. Now see how Abraxas works in your app. Create a test application in an isolated sandbox to request and check verification — no coding required to explore. This does not reuse your wallet proof as partner admin access. Production still requires review.`;
 }
 
 export function integrationStudioReturnToWorkspaceHref(): string {
