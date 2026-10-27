@@ -1,0 +1,12 @@
+{
+  "_instructions": "Copy outside git. Set evidence_class to unaided_external_developer only for real external integrators. Never commit API keys or PII.",
+  "evidence_class": "not_recorded",
+  "recorded_at": null,
+  "setup_wall_clock_ms": null,
+  "time_to_first_independent_verify_ms": null,
+  "callback_configuration_failures": null,
+  "operator_interventions": null,
+  "integrator_enforced_permit": null,
+  "integrator_enforced_deny_or_indeterminate": null,
+  "notes": null
+}
