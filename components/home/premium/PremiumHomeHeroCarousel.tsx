@@ -78,8 +78,32 @@ export function PremiumHomeHeroCarousel() {
     touchStartX.current = event.changedTouches[0]?.clientX ?? null;
   }, []);
 
+  const diagramScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeIndex !== 1) return;
+    const el = diagramScrollRef.current;
+    if (!el || typeof el.scrollTo !== "function") return;
+    el.scrollTo({ left: 0, behavior: "auto" });
+  }, [activeIndex]);
+
+  const scrollDiagramStages = useCallback((direction: -1 | 1) => {
+    const el = diagramScrollRef.current;
+    if (!el) return;
+    const step = Math.max(el.clientWidth * 0.72, 220);
+    if (typeof el.scrollBy === "function") {
+      el.scrollBy({ left: direction * step, behavior: "smooth" });
+      return;
+    }
+    el.scrollLeft += direction * step;
+  }, []);
+
   const onTouchEnd = useCallback(
     (event: TouchEvent<HTMLDivElement>) => {
+      if (activeIndex === 1) {
+        touchStartX.current = null;
+        return;
+      }
       const start = touchStartX.current;
       touchStartX.current = null;
       if (start == null) return;
@@ -93,7 +117,9 @@ export function PremiumHomeHeroCarousel() {
   );
 
   return (
-    <div className="abx-premium-hero-carousel">
+    <div
+      className={`abx-premium-hero-carousel${activeIndex === 1 ? " abx-premium-hero-carousel--architecture" : ""}`}
+    >
       <div
         id={regionId}
         className="abx-premium-hero-carousel__region"
@@ -134,16 +160,44 @@ export function PremiumHomeHeroCarousel() {
                 <p className="abx-premium-hero-carousel__diagram-lead">
                   Evidence → Decision → Verification — full architecture at readable scale.
                 </p>
-                <p className="abx-premium-hero-carousel__diagram-scroll-hint">
-                  Swipe horizontally to explore the full diagram.
+                <p className="abx-premium-hero-carousel__diagram-scroll-hint" id={`${regionId}-diagram-hint`}>
+                  Swipe the architecture stages horizontally — Evidence through Verification.
                 </p>
               </header>
-              <div className="abx-premium-hero-carousel__diagram-scroll">
-                {diagramMounted ? (
-                  <HomeProtocolInfrastructureSection diagramPriority={false} />
-                ) : (
-                  <div className="abx-premium-hero-carousel__diagram-placeholder" aria-hidden="true" />
-                )}
+              <div className="abx-premium-hero-carousel__diagram-scroll-wrap">
+                <div
+                  ref={diagramScrollRef}
+                  className="abx-premium-hero-carousel__diagram-scroll"
+                  role="group"
+                  aria-roledescription="scrollable architecture stages"
+                  aria-label="Abraxas trust architecture stages"
+                  aria-describedby={`${regionId}-diagram-hint`}
+                  tabIndex={0}
+                >
+                  {diagramMounted ? (
+                    <HomeProtocolInfrastructureSection diagramPriority={false} />
+                  ) : (
+                    <div className="abx-premium-hero-carousel__diagram-placeholder" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="abx-premium-hero-carousel__diagram-scroll-controls" aria-hidden="false">
+                  <button
+                    type="button"
+                    className="abx-premium-hero-carousel__diagram-scroll-btn"
+                    aria-label="Scroll architecture stages left"
+                    onClick={() => scrollDiagramStages(-1)}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    className="abx-premium-hero-carousel__diagram-scroll-btn"
+                    aria-label="Scroll architecture stages right"
+                    onClick={() => scrollDiagramStages(1)}
+                  >
+                    ›
+                  </button>
+                </div>
               </div>
             </div>
           </div>

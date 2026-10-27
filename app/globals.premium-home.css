@@ -1586,6 +1586,9 @@
 
 .abx-premium-hero-carousel__slide--diagram {
   background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(76, 187, 146, 0.08), transparent 70%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .abx-premium-hero--carousel {
@@ -1630,12 +1633,110 @@
   }
 }
 
+.abx-premium-hero-carousel__diagram-scroll-wrap {
+  position: relative;
+}
+
 .abx-premium-hero-carousel__diagram-scroll {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 0.35rem;
   scroll-padding-inline: 1rem;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+
+.abx-premium-hero-carousel__diagram-scroll-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0.35rem;
+  width: clamp(2rem, 12vw, 3.5rem);
+  pointer-events: none;
+  background: linear-gradient(270deg, rgba(5, 5, 5, 0.92) 0%, transparent 100%);
+  opacity: 0.85;
+}
+
+.abx-premium-hero-carousel__diagram-scroll-controls {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .abx-premium-hero-carousel__diagram-scroll-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll-btn:focus-visible {
+    outline: 2px solid rgba(76, 187, 146, 0.55);
+    outline-offset: 2px;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-home-protocol--diagram-only {
+    margin-bottom: 0;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram--mobile-primary {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__grid {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.65rem;
+    width: max-content;
+    min-width: 100%;
+    padding-right: 1.25rem;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__stage {
+    flex: 0 0 min(78vw, 17.5rem);
+    scroll-snap-align: start;
+    min-height: 100%;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__caption .abx-v2-eyebrow {
+    display: none;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__title {
+    font-size: 1rem;
+    margin-top: 0;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__lead {
+    display: none;
+  }
+
+  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__footer {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    margin-top: 0.5rem;
+  }
 }
 
 .abx-premium-hero-carousel__diagram-scroll .abx-protocol-diagram__art {
@@ -1698,6 +1799,66 @@
 @media (prefers-reduced-motion: reduce) {
   .abx-premium-hero-carousel__track {
     transition: none;
+  }
+}
+
+@media (max-width: 719px) {
+  .abx-premium-hero--carousel {
+    min-height: auto;
+    padding: clamp(0.65rem, 2.5vw, 1rem) clamp(0.85rem, 3vw, 1.25rem)
+      clamp(0.85rem, 2.5vw, 1.15rem);
+  }
+
+  .abx-premium-hero-carousel__track {
+    min-height: min(56vh, 540px);
+  }
+
+  .abx-premium-hero-carousel--architecture .abx-premium-hero-carousel__track {
+    min-height: min(48vh, 460px);
+  }
+
+  .abx-premium-hero__layout {
+    gap: 0.85rem;
+  }
+
+  .abx-premium-hero__title {
+    margin-bottom: 0.55rem;
+  }
+
+  .abx-premium-hero__title-line {
+    font-size: clamp(1.75rem, 8.5vw, 2.35rem);
+  }
+
+  .abx-premium-hero__lead {
+    margin-bottom: 0.65rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .abx-premium-hero__visual-wrap {
+    width: min(100%, 17.5rem);
+  }
+
+  .abx-premium-hero-carousel__diagram-shell {
+    padding: clamp(0.65rem, 2vw, 1rem) clamp(0.85rem, 3vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
+  }
+
+  .abx-premium-hero-carousel__diagram-lead {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .abx-premium-hero-carousel__diagram-intro {
+    margin-bottom: 0.45rem;
+  }
+
+  .abx-premium-hero-carousel__footer {
+    padding-top: 0.35rem;
+  }
+
+  .abx-premium-hero-carousel__nav-btn {
+    padding: 0.38rem 0.6rem;
+    font-size: 0.7rem;
   }
 }
 

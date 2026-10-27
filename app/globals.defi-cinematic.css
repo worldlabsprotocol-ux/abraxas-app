@@ -1570,7 +1570,38 @@
     max-width: 9.5rem;
   }
 
+  .public-nav-connect__trigger--compact {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    max-width: 4.75rem;
+  }
+
+  .public-nav-connect__trigger--secondary.public-nav-connect__trigger--compact {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+  }
+
+  .rd-nav-start-building--compact {
+    padding: 0.38rem 0.7rem !important;
+    font-size: 0.74rem !important;
+    font-weight: 700;
+  }
+
   .rd-nav-actions {
-    gap: 0.35rem;
+    gap: 0.28rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .public-nav-connect__trigger--compact .public-nav-connect__trigger-label {
+    font-size: 0.64rem;
+  }
+
+  .rd-nav-start-building--compact {
+    padding: 0.35rem 0.55rem !important;
+    font-size: 0.68rem !important;
   }
 }
