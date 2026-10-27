@@ -5,6 +5,7 @@ import { createHostedHandoff, fetchPortableVerificationBundle } from "./src/abra
 import { parseCallbackQuery } from "./src/callback.js";
 import { loadPinnedTrustAnchor, verifyPortableBundle } from "./src/verifyPortable.js";
 import { loadTestFixtures } from "./fixtures/loadTestFixtures.js";
+import { enforcementFromVerification } from "./src/enforce.js";
 
 describe("Build #830 external HTTP partner", () => {
   it("creates handoff via fetch without @/lib", async () => {
@@ -97,6 +98,17 @@ describe("Build #830 external HTTP partner", () => {
       const text = readFileSync(join(dir, f), "utf8");
       expect(text).not.toMatch(/@\/lib/);
     }
+  });
+
+  it("never permits when mandatory failure codes include statement_stale (Build 870)", () => {
+    const enforced = enforcementFromVerification({
+      cryptographically_authentic: true,
+      status_evidence_authentic: true,
+      currently_acceptable: "no",
+      failure_codes: ["statement_stale"],
+    });
+    expect(enforced.action).not.toBe("permit");
+    expect(enforced.action).toBe("deny");
   });
 
   it("portable fetch errors map to retryable failure", async () => {
