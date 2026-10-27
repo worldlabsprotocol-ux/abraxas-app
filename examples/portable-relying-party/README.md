@@ -16,6 +16,17 @@ This is an internally controlled reference implementation, not external customer
 
 **Runtime dependencies:** Node 20+, `@abraxas/independent-verifier`, `fetch`.
 
+## Offline bundle file (Build #868 external RP)
+
+After fetching a portable bundle once, verify without network:
+
+```bash
+export RP_PARTNER_ID=<partner_id>
+export RP_POLICY_ID=<policy_id>
+export RP_TRUST_ANCHOR_PATH=examples/portable-relying-party/trust-config.demo.template.json
+npx tsx examples/portable-relying-party/verifyPortableReceiptFromFile.ts ./bundle.json
+```
+
 ## Live Demo (optional)
 
 ```bash
