@@ -84,7 +84,7 @@ async function main() {
   });
 
   const enforcement = enforcementFromVerification(verified);
-  const receiptId = bundle.decision_receipt.receipt_id ?? null;
+  const receiptId = bundle.decision_receipt.id;
   console.log(
     JSON.stringify(
       {
