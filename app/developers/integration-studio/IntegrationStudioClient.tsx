@@ -69,6 +69,11 @@ import {
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
+import { IntegrationAdoptionReadinessPanel } from "@/components/developers/IntegrationAdoptionReadinessPanel";
+import {
+  isLocalReferenceCallbackUrl,
+  LOCAL_REFERENCE_CALLBACK_URL,
+} from "@/lib/developers/integrationAdoptionPath";
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
 import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
@@ -557,6 +562,10 @@ export function IntegrationStudioClient() {
       : null;
 
   const fromDeveloperWorkspace = searchParams.get("source") === DEVELOPER_WORKSPACE_STUDIO_SOURCE;
+
+  const applyLocalReferenceCallback = useCallback(() => {
+    setReturnUrl(LOCAL_REFERENCE_CALLBACK_URL);
+  }, []);
 
   const studioNextAction = created
     ? {
@@ -1172,6 +1181,20 @@ export function IntegrationStudioClient() {
               <p style={{ ...body, margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
                 {INTEGRATION_STUDIO_CALLBACK_FIELD_HELP}
               </p>
+              {isLocalReferenceCallbackUrl(returnUrl) ? (
+                <p
+                  style={{
+                    ...body,
+                    margin: "0.35rem 0 0",
+                    fontSize: "0.78rem",
+                    color: "var(--warning, #f59e0b)",
+                  }}
+                  role="note"
+                >
+                  Local reference server only ({LOCAL_REFERENCE_CALLBACK_URL}). Not for hosted or production
+                  applications.
+                </p>
+              ) : null}
               {returnUrl.trim().startsWith("http://localhost") || returnUrl.trim().startsWith("https://localhost") ? (
                 <p
                   style={{
@@ -1315,6 +1338,18 @@ export function IntegrationStudioClient() {
       ) : (
         <>
           <IntegrationStudioConfigurationPanel applicationId={configuredAppId} signedIn={signedIn} />
+          {configuredAppId && (
+            <IntegrationAdoptionReadinessPanel
+              baseUrl={typeof window !== "undefined" ? window.location.origin : "https://demo.abraxasworld.xyz"}
+              applicationId={configuredAppId}
+              partnerId={walletApp?.partnerId ?? null}
+              policyId={walletApp?.policyId ?? packId}
+              callbackUrl={returnUrl}
+              apiKeyRevealedOnce={Boolean(revealedKey)}
+              fromDeveloperWorkspace={fromDeveloperWorkspace}
+              onRequestLocalReferenceCallback={applyLocalReferenceCallback}
+            />
+          )}
           {configuredAppId && signedIn && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
               <Btn href={launchpadConfigureHref(configuredAppId)} size="sm">
