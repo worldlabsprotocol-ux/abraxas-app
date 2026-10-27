@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { resetLaunchpadRateLimitStoreForTests } from "@/lib/partner/launchpad/rateLimit";
 import { studioPayloadLeaks } from "@/lib/partner/integrationStudio/safety";
+import { buildLaunchpadPolicyId } from "@/lib/partner/launchpad/policyCatalog";
 
 const resolvePartnerConsoleSessionMock = vi.fn();
 const provisionMock = vi.fn();
@@ -69,7 +70,14 @@ describe("Integration Studio self-service sandbox create", () => {
       apiKeyId: "key-1",
       environment: "sandbox",
     });
-    provisionMock.mockResolvedValue(sandboxResult);
+    provisionMock.mockImplementation(async (input: { partnerId: string; policyTemplateId: string }) => ({
+      ...sandboxResult,
+      result: {
+        ...sandboxResult.result,
+        partner_id: input.partnerId,
+        policy_id: buildLaunchpadPolicyId(input.partnerId, input.policyTemplateId),
+      },
+    }));
     recordActivityMock.mockResolvedValue(undefined);
     issueTokenMock.mockResolvedValue("token");
   });
@@ -128,7 +136,7 @@ describe("Integration Studio self-service sandbox create", () => {
       policyTemplateId: "age_21_retail",
     }));
     expect(issueTokenMock).toHaveBeenCalledWith(expect.objectContaining({
-      partnerId: "acme",
+      partnerId: "studio-retail-sandbox-1234567890ab",
       environment: "sandbox",
     }));
   });
@@ -143,6 +151,34 @@ describe("Integration Studio self-service sandbox create", () => {
     }, false));
     expect(res.status).toBe(400);
     expect(provisionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects client-supplied policy_id overrides", async () => {
+    const { POST } = await import("@/app/api/developers/integration-studio/route");
+    const res = await POST(post({
+      application_name: "Retail sandbox",
+      policy_template_id: "age_21_retail",
+      return_url: "http://localhost:3000/callback",
+      policy_id: "acme-forged-policy-v99",
+    }));
+    expect(res.status).toBe(403);
+    expect(provisionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects provision results whose policy pin does not match the catalog template", async () => {
+    provisionMock.mockResolvedValue({
+      ...sandboxResult,
+      result: { ...sandboxResult.result, policy_id: "forged-policy-pin" },
+    });
+    const { POST } = await import("@/app/api/developers/integration-studio/route");
+    const res = await POST(post({
+      application_name: "Retail sandbox",
+      policy_template_id: "age_21_retail",
+      return_url: "http://localhost:3000/callback",
+    }));
+    expect(res.status).toBe(400);
+    const json = await res.json() as { code?: string };
+    expect(json.code).toMatch(/policy_template_invalid/);
   });
 
   it("rejects cross-tenant partner_id", async () => {
