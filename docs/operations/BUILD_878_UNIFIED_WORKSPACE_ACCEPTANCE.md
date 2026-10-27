@@ -37,6 +37,14 @@ Artifacts under `/opt/cursor/artifacts/build-878/`:
 
 Usability (human): `docs/operations/BUILD_878_USABILITY_SCENARIO_v1.md`
 
+Full partner transaction (authorized Demo staging + Production wallet host matrix):
+
+```bash
+BUILD878_FULL_TRANSACTION=1 npm run build878:full-transaction-continuity
+```
+
+Demo wallet disabled explanation: `docs/operations/BUILD_878_DEMO_WALLET_ENVIRONMENT.md`
+
 ## Completion criterion (product)
 
 A user completes wallet → application integration **in one workspace** with authorized state preserved through refresh and recovery, **on production or staging deployment**, without duplicate onboarding and without security regression.

@@ -27,6 +27,7 @@ function gitSha(): string {
 const sha = gitSha();
 const acceptance = readJson(resolve(artifactDir, "unified-workspace-acceptance.json"));
 const deployProbe = readJson(resolve(artifactDir, "deployed-environment-probe.json"));
+const fullTransaction = readJson(resolve(artifactDir, "full-transaction-continuity.json"));
 const walletGate = readJson(resolve(artifactDir, "playwright/deployment-wallet-gate.json"));
 
 const report = {
@@ -53,6 +54,7 @@ const report = {
   ],
   automated_acceptance: acceptance,
   deployed_probe: deployProbe,
+  full_transaction: fullTransaction,
   playwright_wallet_gate: walletGate,
   journey_stages_automated: [
     "Stage 1 homepage → workspace (Playwright when LAUNCHPAD_STAGING_URL set)",
