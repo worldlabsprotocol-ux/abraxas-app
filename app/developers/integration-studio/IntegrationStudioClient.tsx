@@ -69,6 +69,8 @@ import {
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
+import { IntegrationAdoptionReadinessPanel } from "@/components/developers/IntegrationAdoptionReadinessPanel";
+import { EXTERNAL_NODE_PARTNER_REFERENCE } from "@/lib/developers/integrationAdoptionPath";
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
 import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
@@ -343,6 +345,11 @@ export function IntegrationStudioClient() {
           policyLabel: null,
         }),
       );
+      if (pack === "wallet_control") {
+        setReturnUrl(
+          `${EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackBase}${EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackPath}`,
+        );
+      }
       const step = params.get("step");
       const hash = window.location.hash;
       if (step === "create_sandbox" || hash === "#sandbox") {
@@ -1315,6 +1322,17 @@ export function IntegrationStudioClient() {
       ) : (
         <>
           <IntegrationStudioConfigurationPanel applicationId={configuredAppId} signedIn={signedIn} />
+          {configuredAppId && (
+            <IntegrationAdoptionReadinessPanel
+              baseUrl={typeof window !== "undefined" ? window.location.origin : "https://demo.abraxasworld.xyz"}
+              applicationId={configuredAppId}
+              partnerId={walletApp?.partnerId ?? null}
+              policyId={walletApp?.policyId ?? packId}
+              callbackUrl={returnUrl}
+              apiKeyRevealedOnce={Boolean(revealedKey)}
+              fromDeveloperWorkspace={searchParams.get("source") === DEVELOPER_WORKSPACE_STUDIO_SOURCE}
+            />
+          )}
           {configuredAppId && signedIn && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
               <Btn href={launchpadConfigureHref(configuredAppId)} size="sm">

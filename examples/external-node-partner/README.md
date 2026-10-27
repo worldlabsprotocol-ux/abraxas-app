@@ -7,6 +7,10 @@ Uses only:
 - `POST /api/v1/partner-handoff` (sandbox API key, server-side)
 - Public portable export + `@abraxas/independent-verifier`
 
+## Adoption runbook
+
+See [ADOPTION_RUNBOOK.md](./ADOPTION_RUNBOOK.md) for the full Build 873 checklist (10 steps, CI acceptance).
+
 ## Quick start (5 steps)
 
 1. Copy this folder into your project (or clone the repo once and work here).

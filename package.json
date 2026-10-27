@@ -124,6 +124,8 @@
     "test:build-865-evidence-continuity": "vitest run lib/decisionReceipts/evidenceDependencies.graph.test.ts lib/decisionReceipts/evidenceDependencyIntegrity.adversarial.test.ts",
     "test:build-868-portable-relying-party": "vitest run examples/portable-relying-party/portable-relying-party.test.ts",
     "test:build-870-verifier-enforcement": "vitest run packages/abraxas-independent-verifier/src/issuerFreshnessEnforcement.test.ts",
+    "test:build-873-integration-adoption": "vitest run lib/developers/integrationAdoptionPath.test.ts lib/partner/universalIntegration/integrationAdoptionSecurityAudit.test.ts examples/external-node-partner/externalPartner.test.ts examples/integration-first-relying-party/integration-first.test.ts",
+    "build873:integration-adoption-acceptance": "tsx scripts/build-873/integration-adoption-acceptance.ts",
     "test:build-826-portable-relying-party": "vitest run lib/partner/integrationKit/standalonePortableOutcome.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/portableIndependentVerification/build823RealSandboxReceipt.test.ts",
     "test:build-827-partner-trust-continuity": "vitest run lib/partner/integrationKit/trustContinuity/trustContinuity.adversarial.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/integrationKit/standalonePortableOutcome.test.ts",
     "test:build-828-design-partner-readiness": "vitest run examples/design-partner-sandbox/independenceProof.test.ts examples/integration-first-relying-party/integration-first.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/integrationKit/trustContinuity/trustContinuity.adversarial.test.ts lib/partner/integrationKit/standalonePortableOutcome.test.ts",
