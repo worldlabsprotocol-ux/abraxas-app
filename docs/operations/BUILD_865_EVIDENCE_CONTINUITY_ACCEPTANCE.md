@@ -43,9 +43,7 @@ Demo app commit remains `f6234e1c…` until Vercel custom-env promotion; **datab
 
 ## Branch / PR reconciliation
 
-- **#864** — acceptance runner (reuse for verification).
-- **#863 / #862 / #861** — still open; merge sequence unchanged. Do not close until commits land on `main`.
-- **#865** — evidence continuity code + migration 154 + Demo DB apply documented here.
+- **#861–#865** — merged to `main` (2026-10-27). Build 866 continues repeatability from this baseline.
 
 ## Next priority
 
