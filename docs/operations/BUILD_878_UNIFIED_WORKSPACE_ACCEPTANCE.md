@@ -22,14 +22,20 @@ Query parameters (`integration=1`, `pack`, `step`) **deep-link UI only**. They d
 ## Engineering gate
 
 ```bash
-npm run test:build-877-unified-workspace-continuity
-npm run test:build-878-unified-workspace-acceptance
 npm run build878:unified-workspace-acceptance
-npm run test:build-870-verifier-enforcement
-npx playwright test tests/staging/unified-workspace-continuity.spec.ts
+npm run build878:deployed-environment-probe
+LAUNCHPAD_STAGING_URL=https://<wallet-operational-host> npm run test:build-878-playwright
+npm run build878:engineering-report
 ```
 
-Artifact: `/opt/cursor/artifacts/build-878/unified-workspace-acceptance.json`
+Artifacts under `/opt/cursor/artifacts/build-878/`:
+
+- `unified-workspace-acceptance.json` — unit + security regression bundle
+- `deployed-environment-probe.json` — host SHA + wallet operational gate
+- `BUILD_878_ENGINEERING_REPORT.json` — aggregated report
+- `playwright/` — screenshots when wallet-operational host is configured
+
+Usability (human): `docs/operations/BUILD_878_USABILITY_SCENARIO_v1.md`
 
 ## Completion criterion (product)
 
