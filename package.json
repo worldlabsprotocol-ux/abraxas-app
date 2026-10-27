@@ -118,6 +118,7 @@
     "test:build-823-real-sandbox-receipt": "vitest run lib/partner/portableIndependentVerification/build823RealSandboxReceipt.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts",
     "build823:probe-live-demo-export": "tsx scripts/build823/attempt-live-sandbox-export.ts",
     "build824:live-demo-portable-acceptance": "tsx scripts/build824/live-demo-portable-acceptance.ts",
+    "build864:demo-institutional-receipt-acceptance": "tsx scripts/build-864/demo-institutional-receipt-acceptance.ts",
     "test:build-826-portable-relying-party": "vitest run lib/partner/integrationKit/standalonePortableOutcome.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/portableIndependentVerification/build823RealSandboxReceipt.test.ts",
     "test:build-827-partner-trust-continuity": "vitest run lib/partner/integrationKit/trustContinuity/trustContinuity.adversarial.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/integrationKit/standalonePortableOutcome.test.ts",
     "test:build-828-design-partner-readiness": "vitest run examples/design-partner-sandbox/independenceProof.test.ts examples/integration-first-relying-party/integration-first.test.ts examples/portable-relying-party/portable-relying-party.test.ts lib/partner/integrationKit/trustContinuity/trustContinuity.adversarial.test.ts lib/partner/integrationKit/standalonePortableOutcome.test.ts",
