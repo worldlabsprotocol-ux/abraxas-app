@@ -29,7 +29,7 @@ Eliminates a specific 9/10 blocker: **external developers cannot see how their o
 **Gaps found (actual, not assumed new API):**
 
 - Developer Workspace wallet demo was easy to confuse with partner integration → explicit gap detection + copy
-- Default callback did not match copy-ready reference → wallet_control handoff pre-fills `http://127.0.0.1:3847/callback`
+- Local reference callback was easy to confuse with production → explicit “Use local reference server” (never auto-applied on Studio handoff)
 - Studio lacked a single “external application integration” checklist → `IntegrationAdoptionReadinessPanel`
 - No repeatable adoption acceptance artifact → `build873:integration-adoption-acceptance`
 
@@ -79,8 +79,22 @@ Live metrics (time to first verification, time to independent receipt) are **nul
 
 ## Live adoption (Track A)
 
+**Automated Demo reference run** (provisions sandbox, holder path, portable fetch, `examples/external-node-partner` verify + permit/deny enforcement):
+
 ```bash
-# Optional — requires operator credentials; does not fabricate success
+BUILD873_DEMO_LIVE_ADOPTION=1 \
+  LAUNCHPAD_STAGING_URL=https://demo.abraxasworld.xyz \
+  LAUNCHPAD_EXPECTED_SUPABASE_REF=<demo-ref> \
+  npm run build873:demo-external-node-live-adoption
+```
+
+Artifact: `/opt/cursor/artifacts/build-873/demo-external-node-live-adoption.json`
+
+Evidence class is **automated_reference_run** — does not raise institutional adoption score without unaided external-developer execution.
+
+**Operator-owned credentials** (existing sandbox app, handoff timing only):
+
+```bash
 BUILD873_LIVE_ADOPTION=1 ABRAXAS_BASE_URL=... ABRAXAS_API_KEY=... ABRAXAS_APPLICATION_ID=... \
   npm run build873:live-external-node-adoption
 ```
