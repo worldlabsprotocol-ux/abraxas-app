@@ -1213,6 +1213,37 @@
   color: var(--text-secondary);
 }
 
+.abx-sandbox-entry__auth-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.abx-sandbox-entry__auth-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.abx-sandbox-entry__auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.abx-sandbox-entry__auth-wallet {
+  margin-top: 0.35rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
 .abx-sandbox-entry__link {
   background: none;
   border: none;

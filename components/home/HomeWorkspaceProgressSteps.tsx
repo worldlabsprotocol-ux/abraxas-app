@@ -11,10 +11,12 @@ function stepState(
   if (mode === "loading" || mode === "native_disabled" || mode === "native_unavailable") return "upcoming";
   if (stepId === "account") {
     if (mode === "needs_account") return "current";
-    return mode === "needs_workspace" || mode === "has_workspace" ? "complete" : "upcoming";
+    return mode === "needs_workspace" || mode === "has_workspace" || mode === "ephemeral_sandbox_ready"
+      ? "complete"
+      : "upcoming";
   }
   if (stepId === "workspace") {
-    if (mode === "needs_workspace") return "current";
+    if (mode === "needs_workspace" || mode === "ephemeral_sandbox_ready") return "current";
     if (mode === "has_workspace") return "complete";
     return "upcoming";
   }
