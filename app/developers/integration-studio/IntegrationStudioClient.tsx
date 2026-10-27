@@ -463,6 +463,14 @@ export function IntegrationStudioClient() {
           setError("Production credentials are not self-service.");
           return;
         }
+        if (data.code === "launchpad_console_session_unconfigured") {
+          setError(
+            "Launchpad browser session signing is not configured on this deployment. "
+              + "Set ABRAXAS_BROWSER_SESSION_SECRET (≥16 characters) for Preview/staging, redeploy, then retry. "
+              + "Your sandbox application and API key are still valid.",
+          );
+          return;
+        }
         if (data.code === "launchpad_not_configured") {
           setError(
             "Sandbox provisioning is not connected to Launchpad persistence in this environment. "

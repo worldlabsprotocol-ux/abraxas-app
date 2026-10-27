@@ -3,6 +3,8 @@
 
 export const LAUNCHPAD_PUBLIC_ERRORS = {
   not_configured: "launchpad_not_configured",
+  /** Partner console JWT minting — ABRAXAS_BROWSER_SESSION_SECRET missing or too short on this deployment. */
+  console_session_unconfigured: "launchpad_console_session_unconfigured",
   unauthorized: "launchpad_unauthorized",
   forbidden: "launchpad_forbidden",
   invalid_input: "launchpad_invalid_input",
