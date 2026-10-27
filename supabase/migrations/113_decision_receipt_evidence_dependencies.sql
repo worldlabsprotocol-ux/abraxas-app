@@ -24,3 +24,5 @@ CREATE INDEX IF NOT EXISTS decision_receipt_evidence_dependencies_source_idx
   WHERE source_credential_id IS NOT NULL;
 
 ALTER TABLE public.decision_receipt_evidence_dependencies ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT ON public.decision_receipt_evidence_dependencies TO postgres, service_role;

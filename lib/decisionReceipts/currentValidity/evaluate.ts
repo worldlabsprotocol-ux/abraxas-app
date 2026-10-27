@@ -97,30 +97,34 @@ export async function evaluateReceiptCurrentValidity(
   });
   invalidationReasons.push(...trust.invalidation_reasons);
 
+  let requiresEvidenceGraph = false;
   try {
-    const requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id);
-    const evidenceDeps = await getReceiptEvidenceDependencies(record.id);
-    if (requiresEvidenceGraph && evidenceDeps.length === 0) {
-      invalidationReasons.push("evidence_dependency_missing");
-    }
-    const sourceId = evidenceDeps.find((d) => d.dependency_type === "source_receipt")?.source_credential_id
-      ?? evidenceDeps[0]?.source_credential_id;
-    if (sourceId) {
-      const sourceRow = await loadSourceReceiptRow(sourceId);
-      if (!sourceRow) {
-        invalidationReasons.push("source_evidence_missing");
-      } else if (sourceRow.status === "revoked" || sourceRow.revoked_at) {
-        invalidationReasons.push("source_evidence_revoked");
-      } else if (
-        sourceRow.status === "expired"
-        || (sourceRow.expires_at && new Date(sourceRow.expires_at).getTime() <= now.getTime())
-      ) {
-        invalidationReasons.push("source_evidence_expired");
+    requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id);
+    if (!requiresEvidenceGraph) {
+      // Primary wallet-control and other non-reuse receipts do not use migration-113 rows.
+    } else {
+      const evidenceDeps = await getReceiptEvidenceDependencies(record.id);
+      if (evidenceDeps.length === 0) {
+        invalidationReasons.push("evidence_dependency_missing");
+      }
+      const sourceId = evidenceDeps.find((d) => d.dependency_type === "source_receipt")?.source_credential_id
+        ?? evidenceDeps[0]?.source_credential_id;
+      if (sourceId) {
+        const sourceRow = await loadSourceReceiptRow(sourceId);
+        if (!sourceRow) {
+          invalidationReasons.push("source_evidence_missing");
+        } else if (sourceRow.status === "revoked" || sourceRow.revoked_at) {
+          invalidationReasons.push("source_evidence_revoked");
+        } else if (
+          sourceRow.status === "expired"
+          || (sourceRow.expires_at && new Date(sourceRow.expires_at).getTime() <= now.getTime())
+        ) {
+          invalidationReasons.push("source_evidence_expired");
+        }
       }
     }
   } catch (error) {
     if (error instanceof EvidenceDependencyStoreUnavailableError) {
-      const requiresEvidenceGraph = await receiptRequiresEvidenceDependencyGraph(record.id).catch(() => true);
       if (requiresEvidenceGraph) {
         storeUnavailable = true;
         invalidationReasons.push("evidence_dependency_store_unavailable");
