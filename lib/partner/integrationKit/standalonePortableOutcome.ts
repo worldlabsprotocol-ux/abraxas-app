@@ -1,7 +1,10 @@
 // FILE: lib/partner/integrationKit/standalonePortableOutcome.ts
 // Map offline portable verification to explicit permit / deny / indeterminate enforcement.
 
-import type { IndependentVerificationResult } from "@abraxas/independent-verifier";
+import {
+  MANDATORY_DENY_FAILURE_CODES,
+  type IndependentVerificationResult,
+} from "@abraxas/independent-verifier";
 import type { PartnerIntegrationOutcome } from "@/lib/partner/integrationKit/contract";
 import { outcomeFromValidationErrors } from "@/lib/partner/integrationKit/outcomes";
 
@@ -80,6 +83,21 @@ export function classifyStandalonePortableVerification(input: {
 
   const v = input.verification!;
   const failure_codes = v.failure_codes;
+
+  if (failure_codes.some((code) => MANDATORY_DENY_FAILURE_CODES.has(code))) {
+    return {
+      action: "deny",
+      outcome: outcomeFromValidationErrors(failure_codes),
+      permit_protocol_action: false,
+      cryptographically_authentic: v.cryptographically_authentic,
+      status_evidence_authentic: v.status_evidence_authentic,
+      policy_and_audience_match: v.policy_and_audience_match,
+      currently_acceptable: v.currently_acceptable === "yes" ? "no" : v.currently_acceptable,
+      failure_codes,
+      partner_safe_diagnostics: partnerSafeDiagnostics(failure_codes),
+      verified_offline: true,
+    };
+  }
 
   if (v.currently_acceptable === "indeterminate") {
     return {
