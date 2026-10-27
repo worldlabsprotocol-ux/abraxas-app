@@ -18,13 +18,17 @@ This is **missing Preview environment configuration**, not a protocol or Launchp
 2. **Code:** Session route returns `launchpad_console_session_unconfigured` when auth succeeded but the browser session secret is absent (vs generic `launchpad_not_configured`).
 3. **UX:** Integration Studio maps the new code to operator-safe recovery copy.
 
-## Verification checklist
+## Verification (Build 863 — commit `252dfe63`, Preview redeploy)
 
-After Preview redeploy:
+| Check | Result |
+| --- | --- |
+| Session attach after sandbox create | **200** on Preview alias `abraxas-app-git-cursor-bu-0e7c60-…` |
+| Playwright desktop journey | **Pass** (`integration-studio-provisioned-e2e.spec.ts`) |
+| Playwright mobile viewport | **Pass** (`playwright.mobile-staging.config.ts`) |
+| Local adversarial (546 + sandbox contract) | **Pass** |
+| Sovereign trust execution + independent verifier | **Pass** with `ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF=1` |
 
-- `POST /api/launchpad/auth/session` with valid sandbox key → **200** + `Set-Cookie: abraxas_partner_console_session=…`
-- Integration Studio create → **Session active** without manual key paste
-- Playwright `integration-studio-provisioned-e2e.spec.ts` against Preview URL
+**Remaining for founder gate on Demo/production host:** holder-complete live receipt retrieved from the Studio harness and verified via public `/verify` without trusting Studio local state (Preview harness proves session + request path; not a substitute for Demo issuance parity after merge).
 
 ## Related docs
 
