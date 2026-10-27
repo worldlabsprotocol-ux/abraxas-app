@@ -264,8 +264,8 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Verify with Phantom/i })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
 
-    await waitFor(() => expect(screen.getByText(/Wallet control verified/i)).toBeTruthy());
-    const studioHref = screen.getByRole("link", { name: /Continue in Integration Studio/i }).getAttribute("href");
+    await waitFor(() => expect(screen.getByText(/Wallet control confirmed/i)).toBeTruthy());
+    const studioHref = screen.getByRole("link", { name: /Build my test app/i }).getAttribute("href");
     expect(studioHref).toContain("/developers/integration-studio");
     expect(studioHref).toContain("source=developer-workspace");
     expect(studioHref).toContain("pack=wallet_control");
@@ -273,10 +273,10 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     expect(screen.getByText(/Independent validation not run yet/i)).toBeTruthy();
     expect(screen.queryByText(/Receipt validated/i)).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: /Validate receipt/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Check your proof/i }));
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 4, name: "Receipt validated" })).toBeTruthy(),
+      expect(screen.getByRole("heading", { level: 4, name: "Your proof checks out" })).toBeTruthy(),
     );
     expect(screen.getByText(/Signature authentic:/i)).toBeTruthy();
     const callsAfterValidate = signMessage.mock.calls.length;

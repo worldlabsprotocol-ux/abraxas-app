@@ -142,7 +142,7 @@ export function SiteFooter() {
           color: "var(--text-muted)",
           lineHeight: 1.6,
         }}>
-          © {new Date().getFullYear()} Abraxas Protocol, World Labs Protocol. Not investment advice.
+          © {new Date().getFullYear()} Abraxas
         </div>
       </div>
     </footer>

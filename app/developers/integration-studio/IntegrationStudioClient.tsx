@@ -573,22 +573,22 @@ export function IntegrationStudioClient() {
         }
       : fromDeveloperWorkspace
         ? {
-            action: "Create your sandbox application",
+            action: "Create your test app",
             detail:
-              "Your Developer Workspace test proved the policy in-browser. Name a test application and allowlisted callback below to call the same verification from your server. Integration Studio uses a separate browser session — no wallet signature is required to create a sandbox app.",
+              "Step 2 of your first integration. Name a safe sandbox application — advanced callback settings stay optional until you connect your own server.",
             href: "#sandbox",
-            buttonLabel: "Go to create form",
+            buttonLabel: "Create my test app",
           }
         : {
-            action: "Choose a policy and create a sandbox",
-            detail: "Pick what customers must prove, review the privacy contract, then create a private test application.",
+            action: "Choose what to verify",
+            detail: "Pick what your app needs to check, then create a private test application.",
             href: undefined,
-            buttonLabel: "Create sandbox below",
+            buttonLabel: "Start below",
           };
 
   const stage = useIntegrationStudioStageFromContext();
 
-  const railEnvironment = created || resumeApp ? "Sandbox" : "Not provisioned";
+  const railEnvironment = created || resumeApp ? "Sandbox (safe to experiment)" : "Not started";
   const railApplication =
     resumeApp?.application_name
     ?? (created ? `${created.public_slug} (${created.application_id.slice(0, 8)}…)` : "None yet");
@@ -598,18 +598,18 @@ export function IntegrationStudioClient() {
   const operationsRail: ModeCCommandRailItem[] = useMemo(
     () => [
       {
-        id: "env",
-        label: "Environment",
-        value: railEnvironment,
-        tone: created || resumeApp ? "sandbox" : "neutral",
-      },
-      { id: "policy", label: "Policy", value: railPolicyLabel, tone: "neutral" },
-      { id: "app", label: "Application", value: railApplication, tone: "neutral" },
-      {
         id: "readiness",
-        label: "Readiness",
+        label: "Next step",
         value: railReadiness,
         tone: created || resumeApp ? "ready" : "neutral",
+      },
+      { id: "policy", label: "Verifying", value: railPolicyLabel, tone: "neutral" },
+      { id: "app", label: "Test app", value: railApplication, tone: "neutral" },
+      {
+        id: "env",
+        label: "Test environment",
+        value: railEnvironment,
+        tone: created || resumeApp ? "sandbox" : "neutral",
       },
     ],
     [railEnvironment, railPolicyLabel, railApplication, railReadiness, created, resumeApp],
@@ -1087,7 +1087,12 @@ export function IntegrationStudioClient() {
       <>
       <ContentCard title={INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE} id="sandbox">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
-          Name your test application and allowlist where Abraxas may return verification results. A secure browser session keeps the sandbox attached without collecting holder identity.
+          This is where you try Abraxas as a developer. Your first application runs safely in a test environment — you
+          can change the name later.
+        </p>
+        <p style={{ ...body, marginBottom: "0.75rem", fontSize: "0.82rem" }}>
+          <strong style={{ color: "var(--text-primary)" }}>Safe to experiment.</strong> Your test app will not affect a
+          live protocol. Advanced connection settings appear when you need them.
         </p>
         {!packId ? (
           <div style={{ ...body, marginBottom: "0.85rem", padding: "0.75rem", borderRadius: 12, border: "1px solid var(--border)" }}>
@@ -1105,9 +1110,8 @@ export function IntegrationStudioClient() {
           </div>
         ) : (
           <p style={{ ...body, marginBottom: "0.75rem" }}>
-            Selected policy: <strong style={{ color: "var(--text-primary)" }}>{contract?.display_name ?? packId}</strong>
-            {" · "}
-            <span style={{ fontFamily: MONO, fontSize: "0.82em" }}>{packId}</span>
+            What your app will verify:{" "}
+            <strong style={{ color: "var(--text-primary)" }}>{contract?.display_name ?? packId}</strong>
           </p>
         )}
           <form
@@ -1118,7 +1122,7 @@ export function IntegrationStudioClient() {
             style={{ display: "grid", gap: "0.7rem", marginBottom: "0.9rem" }}
           >
             <label style={body}>
-              Sandbox application name
+              Application name
               <input
                 value={applicationName}
                 onChange={(event) => setApplicationName(event.target.value)}
@@ -1138,30 +1142,39 @@ export function IntegrationStudioClient() {
                 }}
               />
             </label>
-            <label style={body}>
-              Integration callback URL (allowlisted)
-              <input
-                value={returnUrl}
-                onChange={(event) => setReturnUrl(event.target.value)}
-                required
-                disabled={!packId}
-                autoComplete="off"
-                placeholder="http://localhost:3000/callback"
-                style={{
-                  display: "block",
-                  width: "100%",
-                  marginTop: "0.3rem",
-                  padding: "0.55rem 0.7rem",
-                  borderRadius: 10,
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-inset)",
-                  color: "var(--text-primary)",
-                  fontFamily: FONT,
-                }}
-              />
-            </label>
-            <p style={{ ...body, margin: 0, fontSize: "0.78rem" }}>{INTEGRATION_STUDIO_CALLBACK_FIELD_HELP}</p>
-            <p style={{ ...body, margin: 0 }}>Environment: sandbox only.</p>
+            <details style={{ ...body, margin: 0 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text-primary)" }}>
+                Advanced: callback URL (where your app receives results)
+              </summary>
+              <label style={{ ...body, display: "block", marginTop: "0.55rem" }}>
+                Allowlisted callback URL
+                <input
+                  value={returnUrl}
+                  onChange={(event) => setReturnUrl(event.target.value)}
+                  required
+                  disabled={!packId}
+                  autoComplete="off"
+                  placeholder="http://localhost:3000/callback"
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    marginTop: "0.3rem",
+                    padding: "0.55rem 0.7rem",
+                    borderRadius: 10,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-inset)",
+                    color: "var(--text-primary)",
+                    fontFamily: FONT,
+                  }}
+                />
+              </label>
+              <p style={{ ...body, margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
+                {INTEGRATION_STUDIO_CALLBACK_FIELD_HELP}
+              </p>
+              <p style={{ ...body, margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
+                Policy identifier: <span style={{ fontFamily: MONO }}>{packId}</span> · Environment: sandbox only
+              </p>
+            </details>
             <Btn
               size="sm"
               disabled={submitting || !applicationName.trim() || !packId}

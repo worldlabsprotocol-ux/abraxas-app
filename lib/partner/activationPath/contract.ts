@@ -15,7 +15,7 @@ export const PARTNER_ACTIVATION_STAGES = [
 ] as const;
 export type PartnerActivationStage = (typeof PARTNER_ACTIVATION_STAGES)[number];
 
-export const PARTNER_ACTIVATION_CREATE_CTA = "Create sandbox" as const;
+export const PARTNER_ACTIVATION_CREATE_CTA = "Create my test app" as const;
 export const PARTNER_ACTIVATION_RESUME_CTA = "Resume your sandbox app" as const;
 
 export const PARTNER_ACTIVATION_PRODUCTION = {

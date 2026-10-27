@@ -1201,9 +1201,9 @@ export function EphemeralSandboxWorkspaceClient() {
             {sandboxCompletionView ? (
               <EphemeralSandboxVerificationCompletion view={sandboxCompletionView} />
             ) : null}
-            <p className={styles.note}>
-              Validate receipt runs an independent check of the signed receipt. No additional wallet signature is
-              required.
+            <p className={styles.note} id="check-proof">
+              Check your proof runs an independent check of your verification receipt. See whether it is authentic
+              and still valid — no additional wallet signature required.
             </p>
             <div className={styles.validationPanel} aria-live="polite">
               {receiptValidation.status === "idle" ? (
@@ -1217,7 +1217,7 @@ export function EphemeralSandboxWorkspaceClient() {
               ) : null}
               {receiptValidation.status === "validated" ? (
                 <>
-                  <h4 className={styles.validationTitle}>Receipt validated</h4>
+                  <h4 className={styles.validationTitle}>Your proof checks out</h4>
                   {receiptValidation.verificationSummary ? (
                     <p className={styles.note}>{receiptValidation.verificationSummary}</p>
                   ) : null}
@@ -1270,7 +1270,7 @@ export function EphemeralSandboxWorkspaceClient() {
                 disabled={busy || !result.receipt_id || receiptValidation.status === "checking"}
                 onClick={() => void validateReceiptIndependent()}
               >
-                Validate receipt
+                Check your proof
               </button>
               {receiptValidation.status === "failed" ? (
                 <button

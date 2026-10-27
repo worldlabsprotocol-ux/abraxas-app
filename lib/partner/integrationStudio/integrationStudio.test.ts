@@ -48,7 +48,7 @@ describe("Integration Studio", () => {
     expect(INTEGRATION_STUDIO_PROVISION.requires_partner_session).toBe(true);
     expect(INTEGRATION_STUDIO_PROVISION.self_serve_sandbox).toBe(true);
     expect(INTEGRATION_STUDIO_PROVISION.self_serve_production).toBe(false);
-    expect(INTEGRATION_STUDIO_PROVISION.create_sandbox_cta).toBe("Create sandbox");
+    expect(INTEGRATION_STUDIO_PROVISION.create_sandbox_cta).toBe("Create my test app");
     expect(INTEGRATION_STUDIO_PROVISION.production_upgrade_cta).toBe(
       "Upgrade to Production after readiness review",
     );
@@ -150,7 +150,7 @@ describe("Integration Studio", () => {
     expect(catalog.network_readiness.executes_action).toBe(false);
     expect(catalog.wallet_standard.identity_verification).toBe(false);
     expect(catalog.activation.issues_production_key).toBe(false);
-    expect(catalog.activation.create_cta).toBe("Create sandbox");
+    expect(catalog.activation.create_cta).toBe("Create my test app");
     expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, wallet, portable, evm, onchain, solanaOnchain, evmOnchain, presentation, crossChain, testnetKit, institutional, verifier, catalog })).toEqual([]);
   });
 
@@ -166,7 +166,7 @@ describe("Integration Studio", () => {
     expect(json.access).toBe("public");
     expect(json.partner_session_required_for_provisioning).toBe(false);
     const provision = (json as unknown as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision;
-    expect(provision.create_sandbox_cta).toBe("Create sandbox");
+    expect(provision.create_sandbox_cta).toBe("Create my test app");
     expect(provision.self_serve_production).toBe(false);
     expect(json.contract.pack_id).toBe("age_21_retail");
     expect(json.solana.funds_movement).toBe(false);

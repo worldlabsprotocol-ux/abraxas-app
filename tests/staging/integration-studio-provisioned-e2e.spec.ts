@@ -25,7 +25,7 @@ test.describe("Integration Studio browser provisioned journey", () => {
 
     await page.getByLabel(/Sandbox application name/i).fill(appName);
     await page.getByLabel(/Integration callback URL/i).fill(callbackUrl);
-    await page.getByRole("button", { name: /^Create sandbox$/i }).click();
+    await page.getByRole("button", { name: /^Create my test app$/i }).click();
 
     // Successful create advances hash to #configuration (Build 861).
     await expect(page).toHaveURL(/#configuration/, { timeout: 90_000 });

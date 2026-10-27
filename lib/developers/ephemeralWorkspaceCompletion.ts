@@ -16,6 +16,8 @@ export type SandboxCompletionPrimaryAction = {
   label: string;
   href: string;
   description: string;
+  /** When set, UI may scroll to an in-page anchor instead of treating as external navigation. */
+  inPageAnchor?: boolean;
 };
 
 export type EphemeralSandboxCompletionView = {
@@ -37,6 +39,7 @@ export type EphemeralSandboxCompletionView = {
 };
 
 const DOCS_HREF = "/docs";
+const EXPLORE_VERIFICATION_HREF = "/docs#verification";
 
 function normalizeDecision(decision: string | null | undefined): string {
   return (decision ?? "unknown").trim().toLowerCase();
@@ -55,7 +58,7 @@ function policyVerifiedLabel(policyId: string, policyLabel: string): string {
 function headlineForDecision(policyId: string, policyLabel: string, decision: string): string {
   const subject = policyVerifiedLabel(policyId, policyLabel);
   if (isApprovedDecision(decision)) {
-    if (policyId === "wallet_control") return "Wallet control verified";
+    if (policyId === "wallet_control") return "Wallet control confirmed";
     if (policyId === "age_21_retail") return "Age 21 demonstration complete";
     return `${subject} verified`;
   }
@@ -79,21 +82,21 @@ function validationModeLineFromState(receiptValidation: ReceiptValidationUiState
 
 function acceptabilityLine(receiptValidation: ReceiptValidationUiState): string {
   if (receiptValidation.status === "idle") {
-    return "Current acceptability: not checked yet. Run Validate receipt before relying on this result.";
+    return "Proof status: not checked yet. Use Check your proof to confirm the receipt is authentic and still valid.";
   }
   if (receiptValidation.status === "checking") {
-    return "Current acceptability: checking…";
+    return "Proof status: checking…";
   }
   if (receiptValidation.status === "failed") {
-    return "Current acceptability: could not be established. Do not use this receipt for an application action.";
+    return "Proof status: could not be established. Do not use this receipt for an application action.";
   }
   if (receiptValidation.currentlyAcceptable) {
-    return "Current acceptability: yes for this sandbox test context.";
+    return "Your proof checks out — authentic, authorized, and currently valid for this sandbox test.";
   }
   const reasons = receiptValidation.invalidationReasons?.length
     ? ` Reasons: ${receiptValidation.invalidationReasons.join(", ")}.`
     : "";
-  return `Current acceptability: no — this receipt should not authorize an action right now.${reasons}`;
+  return `This proof is not currently valid for reliance.${reasons}`;
 }
 
 export function buildEphemeralSandboxCompletionView(input: {
@@ -122,10 +125,10 @@ export function buildEphemeralSandboxCompletionView(input: {
         ? "A sandbox Age 21 policy evaluation using demonstration evidence only."
         : `Policy evaluation for ${subject}.`;
 
-  const policyLine = `Policy evaluated: ${input.policyLabel || input.policyId}`;
+  const policyLine = `What was checked: ${input.policyLabel || input.policyId}`;
   const decisionLine = approved
-    ? "Decision: approved for this sandbox test."
-    : `Decision: ${decisionNorm} (sandbox test only).`;
+    ? "Result: approved for this sandbox test only."
+    : `Result: ${decisionNorm} (sandbox test only).`;
 
   const receiptRepresents =
     "A signed eligibility decision receipt your application can verify before allowing an action.";
@@ -143,20 +146,23 @@ export function buildEphemeralSandboxCompletionView(input: {
       "The receipt checked out cryptographically or against sandbox records, but it is not currently acceptable for reliance. Run a new test or review expiry and policy gates.";
   } else if (validated && approved) {
     summary =
-      "Your signed request was evaluated and the resulting receipt passed an independent validation check.";
+      "Abraxas confirmed your verification receipt is authentic and currently valid. This proves wallet control for this test — not broader identity or live eligibility.";
   } else if (validated && !approved) {
     summary =
-      "The receipt was checked successfully, but the policy decision is not approval. Do not treat this as authorization for a live action.";
+      "The proof checked out technically, but the policy decision is not approval. Do not treat this as authorization for a live action.";
   } else if (approved) {
     summary =
-      "Your signed request was evaluated. Run Validate receipt for an independent check before relying on this result.";
+      "Your wallet signed the request successfully. Check your proof next to confirm the receipt before you rely on it.";
   } else {
     summary =
       "Review the decision and receipt details. Run another test or adjust your integration policy if you expected approval.";
   }
 
   const integrateEligible =
-    approved && !failedValidation && (currentlyAcceptable === null || currentlyAcceptable === true);
+    approved
+    && !failedValidation
+    && validated
+    && currentlyAcceptable !== false;
 
   const checklist: SandboxCompletionChecklistItem[] = [
     {
@@ -168,20 +174,20 @@ export function buildEphemeralSandboxCompletionView(input: {
       id: "receipt",
       label: validated
         ? currentlyAcceptable === false
-          ? "Receipt checked — not currently acceptable"
-          : "Sandbox receipt validated"
+          ? "Proof checked — not currently valid"
+          : "Proof checked independently"
         : failedValidation
-          ? "Sandbox receipt check failed"
-          : "Sandbox receipt ready to validate",
+          ? "Proof check failed"
+          : "Proof ready to check",
       state: validated ? (currentlyAcceptable === false ? "blocked" : "done") : failedValidation ? "blocked" : "pending",
     },
     {
       id: "integrate",
       label: integrateEligible
-        ? "Next: Create a sandbox application with the same policy"
+        ? "Next: Create your test app in Integration Studio"
         : approved
-          ? "Next: Validate receipt, then connect to your application"
-          : "Next: Review policy requirements or run another test",
+          ? "Next: Check your proof, then build your test app"
+          : "Next: Review what this policy requires or run another test",
       state: integrateEligible ? "next" : approved && !validated ? "pending" : "next",
     },
   ];
@@ -191,22 +197,28 @@ export function buildEphemeralSandboxCompletionView(input: {
 
   if (integrateEligible) {
     primaryAction = {
-      label: "Continue in Integration Studio",
+      label: "Build my test app",
       href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
       description:
-        "Policy pack and integration path are preselected. Create a private sandbox application to verify from your server (no Production access until review).",
+        "Create a test application and see how Abraxas requests and checks verification in an isolated sandbox. No coding needed to explore.",
     };
     secondaryAction = {
-      label: "Back to Developer Workspace",
-      href: integrationStudioReturnToWorkspaceHref(),
-      description: "Run another sandbox test or validate the receipt again.",
+      label: "Explore how verification works",
+      href: EXPLORE_VERIFICATION_HREF,
+      description: "Read how signed receipts and independent checks fit together.",
     };
   } else if (approved && !validated && !failedValidation) {
     primaryAction = {
-      label: "Continue in Integration Studio",
-      href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
+      label: "Check your proof",
+      href: "#check-proof",
+      inPageAnchor: true,
       description:
-        "Prepare your application integration while you validate the receipt here, or validate first if you plan to rely on this result immediately.",
+        "Confirm the receipt is authentic and still valid before you continue.",
+    };
+    secondaryAction = {
+      label: "Build my test app",
+      href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
+      description: "Skip ahead to Integration Studio when you are ready to experiment with your own app.",
     };
   } else if (!approved && !failedValidation) {
     primaryAction = {

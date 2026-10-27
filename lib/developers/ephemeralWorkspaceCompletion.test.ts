@@ -12,13 +12,13 @@ describe("buildEphemeralSandboxCompletionView", () => {
       decision: "approved",
       receiptValidation: { status: "idle" },
     });
-    expect(view.headline).toBe("Wallet control verified");
-    expect(view.primaryAction?.label).toBe("Continue in Integration Studio");
-    expect(view.primaryAction?.href).toContain("/developers/integration-studio");
-    expect(view.primaryAction?.href).toContain(`source=${DEVELOPER_WORKSPACE_STUDIO_SOURCE}`);
-    expect(view.primaryAction?.href).toContain("pack=wallet_control");
-    expect(view.primaryAction?.href).toContain("path=verify_with_abraxas");
-    expect(view.primaryAction?.href).toContain("#sandbox");
+    expect(view.headline).toBe("Wallet control confirmed");
+    expect(view.primaryAction?.label).toBe("Check your proof");
+    expect(view.primaryAction?.href).toBe("#check-proof");
+    expect(view.secondaryAction?.label).toBe("Build my test app");
+    expect(view.secondaryAction?.href).toContain("/developers/integration-studio");
+    expect(view.secondaryAction?.href).toContain(`source=${DEVELOPER_WORKSPACE_STUDIO_SOURCE}`);
+    expect(view.secondaryAction?.href).toContain("pack=wallet_control");
     expect(view.acceptabilityLine).toMatch(/not checked yet/i);
   });
 
@@ -56,7 +56,7 @@ describe("buildEphemeralSandboxCompletionView", () => {
     });
     expect(view.primaryAction?.label).toBe("Run another sandbox test");
     expect(view.tone).toBe("caution");
-    expect(view.acceptabilityLine).toMatch(/should not authorize/i);
+    expect(view.acceptabilityLine).toMatch(/not currently valid/i);
   });
 
   it("surfaces sandbox record validation mode when standalone crypto is false", () => {
@@ -75,7 +75,7 @@ describe("buildEphemeralSandboxCompletionView", () => {
     });
     expect(view.validationModeLine).toMatch(/sandbox records/i);
     expect(view.tone).toBe("success");
-    expect(view.primaryAction?.label).toBe("Continue in Integration Studio");
+    expect(view.primaryAction?.label).toBe("Build my test app");
   });
 
   it("handles receipt storage failures without implying production authorization", () => {
