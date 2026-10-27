@@ -11,6 +11,7 @@ import {
   issuePartnerConsoleSessionToken,
   resolvePartnerConsoleSession,
 } from "@/lib/partner/launchpad/partnerConsoleSession";
+import { isPartnerConsoleSessionConfigured } from "@/lib/partner/launchpad/partnerConsoleSessionSecret";
 import {
   issueOperatorSessionForAccountMembership,
   resolveOperatorPartnerForAccountMembership,
@@ -76,7 +77,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!token) {
-      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503);
+      const code = isPartnerConsoleSessionConfigured()
+        ? LAUNCHPAD_PUBLIC_ERRORS.not_configured
+        : LAUNCHPAD_PUBLIC_ERRORS.console_session_unconfigured;
+      return launchpadError(code, 503);
     }
 
     const res = launchpadJson({
@@ -142,7 +146,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (!token) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503);
+    const code = isPartnerConsoleSessionConfigured()
+      ? LAUNCHPAD_PUBLIC_ERRORS.not_configured
+      : LAUNCHPAD_PUBLIC_ERRORS.console_session_unconfigured;
+    return launchpadError(code, 503);
   }
 
   const res = launchpadJson({
