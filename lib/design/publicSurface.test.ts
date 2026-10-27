@@ -3,17 +3,17 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { describe, expect, it } from "vitest";
-import { PUBLIC_NAV_LINKS } from "./publicSurface";
+import { PUBLIC_NAV_LINKS, PUBLIC_NAV_MENUS, PUBLIC_NAV_START_BUILDING } from "./publicSurface";
 
 const ROOT = resolve(__dirname, "../..");
 
 describe("public surface tokens", () => {
-  it("exposes every public product surface for secondary navigation", () => {
-    expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
-      "Home",
-      "Passport",
-      "Studio",
-    ]);
+  it("exposes primary destinations in top navigation menus", () => {
+    const labels = PUBLIC_NAV_MENUS.flatMap((g) => g.links.map((l) => l.label));
+    expect(labels).toContain("Public demo");
+    expect(labels).toContain("Documentation");
+    expect(labels).toContain("Independent verifier");
+    expect(PUBLIC_NAV_START_BUILDING.href).toBe("/#start-sandbox");
     const hrefs = PUBLIC_NAV_LINKS.map((link) => link.href);
     expect(hrefs).toContain("/passport");
     expect(hrefs).not.toContain("/judge-demo");
@@ -30,9 +30,12 @@ describe("public surface tokens", () => {
     const nav = readFileSync(resolve(ROOT, "components/redesign/RedesignNav.tsx"), "utf8");
     expect(nav).toContain("PublicNavConnectButton");
     expect(nav).toContain("PublicNavLaunchAppLink");
+    expect(nav).toContain("PublicNavSectionMenu");
+    expect(nav).toContain("PUBLIC_NAV_MENUS");
     expect(nav).toContain("LanguageSelector");
     expect(nav).not.toContain("NavSignInButton");
     expect(nav).not.toContain("PublicNavWalletButton");
+    expect(nav).not.toContain("PublicNavExploreLink");
     expect(nav).not.toContain("rd-nav-links");
   });
 });

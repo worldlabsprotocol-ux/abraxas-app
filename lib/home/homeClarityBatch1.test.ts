@@ -85,10 +85,10 @@ describe("homepage clarity batch 1 static guards", () => {
   it("exposes product navigation for Passport, partners, docs, and verification", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     const surface = read("lib/design/publicSurface.ts");
-    expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(surface).toContain('label: "Build"');
-    expect(surface).toContain('label: "Launchpad"');
-    expect(surface).toContain('label: "Docs"');
+    expect(nav).toContain("PUBLIC_NAV_MENUS");
+    expect(surface).toContain('label: "Documentation"');
+    expect(surface).toContain('label: "Independent verifier"');
+    expect(surface).toContain('label: "Public demo"');
     expect(surface).toContain('href: "/verification"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
@@ -146,21 +146,20 @@ describe("AbraxasBootScreen accessibility and persistence", () => {
 });
 
 describe("RedesignNav mobile discoverability", () => {
-  it("shows product links in the mobile drawer", () => {
+  it("shows primary menu destinations in the mobile drawer", () => {
     render(React.createElement(RedesignNav));
 
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByRole("button", { name: "Menu" })).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation menu" }));
+    expect(screen.getByRole("button", { name: "Open navigation menu" })).toHaveAttribute("aria-expanded", "true");
 
-    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Overview" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Public demo" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Build" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Verify" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Launchpad" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Documentation" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Independent verifier" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Integration Studio" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Partner Flow" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Docs" })).toBeInTheDocument();
-    expect(screen.getAllByText("Explore").length).toBeGreaterThan(0);
-    expect(screen.getByRole("link", { name: "Capability map" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Explore more Abraxas surfaces")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "For businesses" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start building" })).toBeInTheDocument();
   });
 });
