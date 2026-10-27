@@ -76,6 +76,8 @@ describe("buildEphemeralSandboxCompletionView", () => {
     expect(view.validationModeLine).toMatch(/sandbox records/i);
     expect(view.tone).toBe("success");
     expect(view.primaryAction?.label).toBe("Build my test app");
+    expect(view.applicationHandoff?.title).toBe("Put it in your app");
+    expect(view.applicationHandoff?.steps.some((s) => s.state === "current")).toBe(true);
   });
 
   it("handles receipt storage failures without implying production authorization", () => {

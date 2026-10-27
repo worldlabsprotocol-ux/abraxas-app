@@ -1,27 +1,26 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Primary public header — Product · Developers · Solutions · Start building · Connect · Launch App.
+// Primary public header — Product · Developers · Solutions · one primary build CTA · account · language.
 
 import Link from "next/link";
 import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
-import { PublicNavLaunchAppLink } from "@/components/nav/PublicNavLaunchAppLink";
+import { PublicNavPrimaryActionLink } from "@/components/nav/PublicNavPrimaryActionLink";
 import { PublicNavSectionMenu } from "@/components/nav/PublicNavSectionMenu";
 import {
   PUBLIC_FONT_SANS,
   PUBLIC_NAV_MENUS,
-  PUBLIC_NAV_START_BUILDING,
+  PUBLIC_NAV_PRIMARY_CTA,
 } from "@/lib/design/publicSurface";
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const FONT = PUBLIC_FONT_SANS;
 
-export function RedesignNav({ showHomeStartBuilding = true }: { showHomeStartBuilding?: boolean }) {
+export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
-  const startBuildingHref = showHomeStartBuilding ? "#start-sandbox" : PUBLIC_NAV_START_BUILDING.href;
 
   return (
     <nav
@@ -51,19 +50,14 @@ export function RedesignNav({ showHomeStartBuilding = true }: { showHomeStartBui
 
       <div className="rd-nav-right rd-nav-actions" style={{ display: "none" }}>
         <LanguageSelector />
-        <PublicNavConnectButton prominent />
-        <Link href={startBuildingHref} className="rd-nav-start-building">
-          {PUBLIC_NAV_START_BUILDING.label}
-        </Link>
-        <PublicNavLaunchAppLink />
+        <PublicNavConnectButton />
+        <PublicNavPrimaryActionLink />
       </div>
 
       <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
-        <LanguageSelector />
+        <LanguageSelector compact />
         <PublicNavConnectButton />
-        <Link href={startBuildingHref} className="rd-nav-start-building rd-nav-start-building--compact">
-          {PUBLIC_NAV_START_BUILDING.label}
-        </Link>
+        <PublicNavPrimaryActionLink compact />
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -121,12 +115,13 @@ export function RedesignNav({ showHomeStartBuilding = true }: { showHomeStartBui
                 ))}
               </div>
             ))}
-            <p style={mobileSectionLabel}>Account</p>
-            <Link href="/passport" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Launch App
+            <p style={mobileSectionLabel}>Product</p>
+            <Link href={PUBLIC_NAV_PRIMARY_CTA.href} onClick={() => setOpen(false)} style={mobileSubLink}>
+              {PUBLIC_NAV_PRIMARY_CTA.label}
             </Link>
-            <Link href={startBuildingHref} onClick={() => setOpen(false)} style={mobileSubLink}>
-              {PUBLIC_NAV_START_BUILDING.label}
+            <p style={mobileSectionLabel}>Account</p>
+            <Link href="/developers/ephemeral-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
+              Developer Workspace
             </Link>
           </motion.div>
         )}
@@ -142,11 +137,11 @@ export function RedesignNav({ showHomeStartBuilding = true }: { showHomeStartBui
           .rd-nav-menus-desktop { display: none; }
         }
         .rd-nav-root { position: sticky; flex-wrap: wrap; }
-        .rd-nav-start-building--compact {
+        .rd-nav-primary-action--compact {
           display: none;
         }
         @media (max-width: 919px) {
-          .rd-nav-start-building--compact {
+          .rd-nav-primary-action--compact {
             display: inline-flex;
             padding: 0.35rem 0.65rem;
             font-size: 0.72rem;

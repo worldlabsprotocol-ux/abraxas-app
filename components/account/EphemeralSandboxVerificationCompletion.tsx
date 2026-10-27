@@ -60,6 +60,24 @@ export function EphemeralSandboxVerificationCompletion({
       </div>
       </details>
 
+      {view.applicationHandoff ? (
+        <div className={styles.integrationHandoff}>
+          <p className={styles.completionNextTitle}>{view.applicationHandoff.title}</p>
+          <p className={styles.muted}>{view.applicationHandoff.summary}</p>
+          <ol className={styles.integrationHandoffSteps}>
+            {view.applicationHandoff.steps.map((step) => (
+              <li key={step.id} data-state={step.state}>
+                <span className={styles.integrationHandoffStepLabel}>{step.label}</span>
+                <span className={styles.muted}>{step.detail}</span>
+              </li>
+            ))}
+          </ol>
+          <Link className={styles.completionSecondaryLink} href={view.applicationHandoff.studioHref}>
+            Open Integration Studio for this policy
+          </Link>
+        </div>
+      ) : null}
+
       <div className={styles.completionNext}>
         <p className={styles.completionNextTitle}>
           {view.primaryAction?.label === "Build my test app"

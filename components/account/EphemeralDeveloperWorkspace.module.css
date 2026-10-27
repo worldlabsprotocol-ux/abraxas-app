@@ -632,10 +632,46 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.integrationHandoff {
+  margin-top: 0.85rem;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.integrationHandoffSteps {
+  margin: 0.65rem 0 0.75rem;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.integrationHandoffSteps li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.integrationHandoffSteps li[data-state="done"] .integrationHandoffStepLabel {
+  color: var(--text-primary);
+}
+
+.integrationHandoffSteps li[data-state="current"] .integrationHandoffStepLabel {
+  color: var(--ws-teal);
+  font-weight: 650;
+}
+
+.integrationHandoffStepLabel {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .completionNext {
   margin-top: 0.85rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 0.08);
 }
 
 .completionNextTitle {

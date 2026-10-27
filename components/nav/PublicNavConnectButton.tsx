@@ -18,6 +18,10 @@ import {
   PUBLIC_SIGN_IN_UNAVAILABLE_TITLE,
   resolvePublicNavSignInPhase,
 } from "@/lib/nav/publicNavConnectBehavior";
+import {
+  capturePostAuthResumePath,
+  consumePostAuthResumePath,
+} from "@/lib/nav/postAuthResume";
 
 type NativeSession = { authenticated: boolean };
 
@@ -112,6 +116,11 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   const finishSuccess = useCallback(async () => {
     notifyEphemeralWalletSessionChanged();
     await refreshNavState();
+    const resume = consumePostAuthResumePath();
+    if (resume) {
+      router.push(resume);
+      return;
+    }
     try {
       const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
       const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
@@ -127,6 +136,11 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   const openSignIn = useCallback(() => {
     setError(null);
+    if (typeof window !== "undefined") {
+      capturePostAuthResumePath(
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      );
+    }
     setSignInOpen(true);
     notifyWalletSignInDialogChanged(true);
   }, []);
