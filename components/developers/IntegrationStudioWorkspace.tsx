@@ -42,7 +42,7 @@ export function IntegrationStudioWorkspace({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const { workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
+  const { embeddedInDeveloperWorkspace, workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
   const STEPS = buildStudioSteps({ basePath: workspaceBasePath, query: preservedQuery });
   const [hashStep, setHashStep] = useState<IntegrationStudioStageId | "receipt" | "verify" | "production">("policy");
 
@@ -88,7 +88,15 @@ export function IntegrationStudioWorkspace({
 
   return (
     <IntegrationStudioStageProvider stage={studioStage}>
-      <AbxInstitutionalWorkspaceShell className="abx-studio-workspace" aria-label="Integration Studio workspace">
+      <AbxInstitutionalWorkspaceShell
+        className={
+          embeddedInDeveloperWorkspace
+            ? "abx-studio-workspace abx-studio-workspace--embedded"
+            : "abx-studio-workspace"
+        }
+        aria-label="Integration Studio workspace"
+      >
+        {!embeddedInDeveloperWorkspace ? (
         <nav className="abx-studio-workspace__nav" aria-label="Integration lifecycle">
           {STEPS.map((step, index) => {
             const active =
@@ -112,10 +120,13 @@ export function IntegrationStudioWorkspace({
             );
           })}
         </nav>
+        ) : null}
         <div className="abx-studio-workspace__main">
+          {!embeddedInDeveloperWorkspace ? (
           <div className="abx-studio-workspace__guide">
             <IntegrationStudioStageGuide stageId={studioStage} />
           </div>
+          ) : null}
           <div className="abx-studio-workspace__canvas">{children}</div>
           {inspector ? <aside className="abx-studio-workspace__inspector">{inspector}</aside> : null}
         </div>

@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
 import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
+import { getEphemeralSandboxGuidedProgressForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspaceGuidedProgress";
+import { loadEphemeralSandboxTestResult } from "@/lib/auth/ephemeralWallet/sandboxTestVerification";
 import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +17,24 @@ export async function GET(req: NextRequest) {
 
   try {
     const workspace = await getEphemeralSandboxForSession(auth.session.sessionId);
+    const guidedProgress = await getEphemeralSandboxGuidedProgressForSession(auth.session.sessionId);
+    let guidedResult: Record<string, unknown> | null = null;
+    if (
+      workspace
+      && guidedProgress
+      && guidedProgress.workspace_id === workspace.workspace_id
+      && guidedProgress.receipt_id
+    ) {
+      const stored = await loadEphemeralSandboxTestResult(guidedProgress.receipt_id);
+      if (stored && String(stored.workspace_id) === workspace.workspace_id) {
+        guidedResult = stored as Record<string, unknown>;
+      }
+    }
     return NextResponse.json({
       ok: true,
       workspace,
+      guided_progress: guidedProgress,
+      guided_result: guidedResult,
       test_only: true,
     });
   } catch (error) {

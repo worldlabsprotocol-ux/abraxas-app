@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { IntegrationStudioClient } from "@/app/developers/integration-studio/IntegrationStudioClient";
 import { IntegrationStudioOperationalProvider } from "@/components/developers/integrationStudioOperationalContext";
-import { IntegrationStudioInspectorRail } from "@/components/developers/IntegrationStudioInspectorRail";
 import { IntegrationStudioWorkspace } from "@/components/developers/IntegrationStudioWorkspace";
 import { UnifiedWorkspaceEmbedProvider } from "@/lib/developers/unifiedWorkspaceEmbedContext";
 import { isUnifiedWorkspaceIntegrationSearch } from "@/lib/developers/unifiedWorkspaceContinuity";
@@ -27,7 +26,7 @@ export function EmbeddedIntegrationStudioPanel() {
   return (
     <UnifiedWorkspaceEmbedProvider embeddedInDeveloperWorkspace preservedQuery={preservedQuery}>
       <IntegrationStudioOperationalProvider>
-        <IntegrationStudioWorkspace inspector={<IntegrationStudioInspectorRail />}>
+        <IntegrationStudioWorkspace>
           <IntegrationStudioClient variant="embedded_workspace" />
         </IntegrationStudioWorkspace>
       </IntegrationStudioOperationalProvider>

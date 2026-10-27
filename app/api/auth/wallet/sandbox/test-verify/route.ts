@@ -16,6 +16,7 @@ import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/acti
 import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
 import { resolveEphemeralSandboxTestPolicy } from "@/lib/auth/ephemeralWallet/sandboxTestPolicies";
 import { consumeSandboxPresentationCommit } from "@/lib/auth/ephemeralWallet/sandboxPresentationCommitStore";
+import { recordEphemeralSandboxGuidedProgress } from "@/lib/auth/ephemeralWallet/sandboxWorkspaceGuidedProgress";
 import { verifySandboxPresentationCommitAgainstSubmission } from "@/lib/protocolVerification/verifySandboxPresentationCommit";
 import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
 import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
@@ -159,6 +160,16 @@ export async function POST(req: NextRequest) {
         { status },
       );
     }
+
+    await recordEphemeralSandboxGuidedProgress({
+      workspace_id: workspace.workspace_id,
+      session_id: auth.session.sessionId,
+      policy_id: policyId,
+      decision: String(outcome.decision ?? "approved"),
+      receipt_id: String(outcome.result.receipt_id),
+      recorded_at: new Date().toISOString(),
+      receipt_validation: null,
+    });
 
     return NextResponse.json({
       ok: true,
