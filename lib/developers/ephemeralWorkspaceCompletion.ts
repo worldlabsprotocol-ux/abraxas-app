@@ -60,6 +60,22 @@ function normalizeDecision(decision: string | null | undefined): string {
   return (decision ?? "unknown").trim().toLowerCase();
 }
 
+/** Wallet demo complete with validated receipt — safe to continue into embedded Studio (same workspace). */
+export function sandboxIntegrationStudioEligible(input: {
+  decision: string | null;
+  receiptValidation: ReceiptValidationUiState;
+}): boolean {
+  const decisionNorm = normalizeDecision(input.decision);
+  const approved = isApprovedDecision(decisionNorm);
+  const validated = input.receiptValidation.status === "validated";
+  const failedValidation = input.receiptValidation.status === "failed" ? input.receiptValidation : null;
+  const currentlyAcceptable =
+    validated && input.receiptValidation.status === "validated"
+      ? input.receiptValidation.currentlyAcceptable
+      : null;
+  return approved && !failedValidation && validated && currentlyAcceptable !== false;
+}
+
 function isApprovedDecision(decision: string): boolean {
   return decision === "approved" || decision === "allow" || decision === "granted";
 }
@@ -215,11 +231,10 @@ export function buildEphemeralSandboxCompletionView(input: {
       "Review the decision and receipt details. Run another test or adjust your integration policy if you expected approval.";
   }
 
-  const integrateEligible =
-    approved
-    && !failedValidation
-    && validated
-    && currentlyAcceptable !== false;
+  const integrateEligible = sandboxIntegrationStudioEligible({
+    decision: input.decision,
+    receiptValidation: input.receiptValidation,
+  });
 
   const checklist: SandboxCompletionChecklistItem[] = [
     {

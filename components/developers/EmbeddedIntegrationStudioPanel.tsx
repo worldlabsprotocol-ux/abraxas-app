@@ -7,8 +7,15 @@ import { IntegrationStudioOperationalProvider } from "@/components/developers/in
 import { IntegrationStudioWorkspace } from "@/components/developers/IntegrationStudioWorkspace";
 import { UnifiedWorkspaceEmbedProvider } from "@/lib/developers/unifiedWorkspaceEmbedContext";
 import { isUnifiedWorkspaceIntegrationSearch } from "@/lib/developers/unifiedWorkspaceContinuity";
+import { mergeUnifiedWorkspacePreservedQuery } from "@/lib/developers/unifiedWorkspacePreservedQuery";
 
-export function EmbeddedIntegrationStudioPanel() {
+export function EmbeddedIntegrationStudioPanel({
+  authoritativePolicyId = null,
+  walletProofRecorded = false,
+}: {
+  authoritativePolicyId?: string | null;
+  walletProofRecorded?: boolean;
+}) {
   const searchParams = useSearchParams();
   const preservedQuery = useMemo(() => {
     const out: Record<string, string> = {};
@@ -20,11 +27,20 @@ export function EmbeddedIntegrationStudioPanel() {
         out[key] = value;
       });
     }
-    return out;
-  }, [searchParams]);
+    return mergeUnifiedWorkspacePreservedQuery({
+      existing: out,
+      authoritativePolicyId,
+      walletProofRecorded,
+    });
+  }, [authoritativePolicyId, searchParams, walletProofRecorded]);
 
   return (
-    <UnifiedWorkspaceEmbedProvider embeddedInDeveloperWorkspace preservedQuery={preservedQuery}>
+    <UnifiedWorkspaceEmbedProvider
+      embeddedInDeveloperWorkspace
+      preservedQuery={preservedQuery}
+      authoritativePolicyId={authoritativePolicyId}
+      walletProofRecorded={walletProofRecorded}
+    >
       <IntegrationStudioOperationalProvider>
         <IntegrationStudioWorkspace>
           <IntegrationStudioClient variant="embedded_workspace" />
