@@ -13,7 +13,6 @@ import { provisionLaunchpadSandbox } from "@/lib/partner/launchpad/provisionSand
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { buildLaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrationDocs";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
-import { resolveLaunchpadPolicyTemplate } from "@/lib/partner/launchpad/policyCatalog";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   attachPartnerConsoleSessionCookie,
@@ -22,6 +21,11 @@ import {
 import { studioSnippetForApplication } from "@/lib/partner/integrationStudio/snippets";
 import { launchpadResumeHref, partnerActivationPublicView } from "@/lib/partner/activationPath";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
+import {
+  assertAuthoritativeProvisionBinding,
+  clientPolicyIdOverrideRejected,
+  resolveStudioPolicyTemplateId,
+} from "@/lib/partner/integrationStudio/provisionPolicyAuthority";
 
 export const STUDIO_CREATE_ROUTE = "/api/developers/integration-studio" as const;
 
@@ -126,9 +130,13 @@ export async function createStudioSandbox(req: NextRequest) {
   );
   if (tenantLimited) return tenantLimited;
 
-  const policyTemplateId = String(body.policy_template_id ?? body.pack_id ?? "");
-  if (!resolveLaunchpadPolicyTemplate(policyTemplateId)) {
+  const policyTemplateId = resolveStudioPolicyTemplateId(body);
+  if (!policyTemplateId) {
     return studioError("policy_template_invalid", 400);
+  }
+
+  if (clientPolicyIdOverrideRejected(body, partnerId, policyTemplateId)) {
+    return studioError("forbidden", 403);
   }
 
   const result = await provisionLaunchpadSandbox({
@@ -150,6 +158,17 @@ export async function createStudioSandbox(req: NextRequest) {
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 409, "conflict");
     }
     return studioError("provision_failed", result.code === "provision_failed" ? 500 : 400);
+  }
+
+  if (
+    !assertAuthoritativeProvisionBinding({
+      partnerId,
+      policyTemplateId,
+      provisionedPartnerId: result.result.partner_id,
+      provisionedPolicyId: result.result.policy_id,
+    })
+  ) {
+    return studioError("policy_template_invalid", 400);
   }
 
   const application = safeApplicationView({
