@@ -1,6 +1,8 @@
-# External Node partner — adoption runbook (Build 873)
+# External Node partner — adoption runbook (Build 873 / 876)
 
 Use this after Integration Studio provisions a sandbox application.
+
+**Pilot focus (876):** enforce a **policy-bound, independently verifiable trust decision** in your app — not wallet-connect alone. See [WALLET_VS_TRUST_DECISION.md](./WALLET_VS_TRUST_DECISION.md) and [PILOT_ACTIVATION_KIT.md](../../docs/integration/external-developer/PILOT_ACTIVATION_KIT.md).
 
 ## Manual setup steps (10)
 

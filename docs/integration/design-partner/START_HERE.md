@@ -2,7 +2,7 @@
 
 ## What you are integrating
 
-Abraxas **wallet-control verification**: your app requests a decision, the holder authorizes on Abraxas, you receive a **signed receipt** and enforce **permit**, **deny**, or **indeterminate** locally.
+**Policy-bound trust decisions** your application enforces locally: your server creates an authorized verification request, the holder completes required steps (wallet control may qualify the policy), you receive a **signed receipt** with **current status evidence**, verify with the **independent verifier**, and enforce **permit**, **deny**, or **indeterminate** — without treating Abraxas hosted UI as your authorization engine.
 
 No Abraxas application code. No `@/lib` imports.
 
