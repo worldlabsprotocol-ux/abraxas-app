@@ -72,9 +72,24 @@ Artifact: `/opt/cursor/artifacts/build-873/integration-adoption-acceptance.json`
 
 Live metrics (time to first verification, time to independent receipt) are **null until a deployed sandbox run** — not fabricated.
 
+## Studio UX (founder review)
+
+- **One primary action** at a time via `resolveIntegrationAdoptionFocus` — full 10-step contract hidden behind “Show full integration contract”.
+- **Local callback** `127.0.0.1:3847` only when the developer explicitly chooses “Use local reference server” — not auto-applied on Developer Workspace handoff; warned as non-production.
+
+## Live adoption (Track A)
+
+```bash
+# Optional — requires operator credentials; does not fabricate success
+BUILD873_LIVE_ADOPTION=1 ABRAXAS_BASE_URL=... ABRAXAS_API_KEY=... ABRAXAS_APPLICATION_ID=... \
+  npm run build873:live-external-node-adoption
+```
+
+Artifact: `/opt/cursor/artifacts/build-873/live-external-node-adoption.json`
+
 ## Coordination with Build 872
 
-- 872: unified workspace journey (parallel founder testing)
+- 872: unified workspace journey (parallel founder testing) — **merged to main**
 - 873: Studio + reference integration adoption (this PR)
 - UI overlap limited to Integration Studio configuration stage panel
 

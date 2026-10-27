@@ -11,6 +11,110 @@ export const EXTERNAL_NODE_PARTNER_REFERENCE = {
   defaultCallbackPath: "/callback",
 } as const;
 
+/** Local reference server only — never a production or hosted-app default. */
+export const LOCAL_REFERENCE_CALLBACK_URL = `${EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackBase}${EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackPath}` as const;
+
+export function isLocalReferenceCallbackUrl(url: string | null | undefined): boolean {
+  const normalized = (url ?? "").trim().toLowerCase();
+  return (
+    normalized.startsWith("http://127.0.0.1:3847")
+    || normalized.startsWith("http://localhost:3847")
+  );
+}
+
+export type IntegrationAdoptionFocus = {
+  step: IntegrationAdoptionStep;
+  stepIndex: number;
+  totalSteps: number;
+  primaryLabel: string;
+  primaryKind: "configure_callback" | "copy_credentials" | "run_handoff" | "verify_independently" | "production_review";
+  detail: string;
+};
+
+/** One relevant Studio action — full ladder remains in engineering contract / details. */
+export function resolveIntegrationAdoptionFocus(input: {
+  hasSandboxApplication: boolean;
+  callbackUrl: string | null;
+  apiKeyRevealedOnce: boolean;
+  completedPartnerHandoff: boolean;
+  completedIndependentVerify: boolean;
+}): IntegrationAdoptionFocus {
+  const totalSteps = INTEGRATION_ADOPTION_STEPS.length;
+  const stepById = (id: IntegrationAdoptionStepId) =>
+    INTEGRATION_ADOPTION_STEPS.find((s) => s.id === id)!;
+
+  if (!input.hasSandboxApplication) {
+    const step = stepById("configure_application");
+    return {
+      step,
+      stepIndex: 1,
+      totalSteps,
+      primaryLabel: "Create sandbox application",
+      primaryKind: "configure_callback",
+      detail: step.integratorAction,
+    };
+  }
+
+  const callback = input.callbackUrl?.trim() ?? "";
+  if (!callback) {
+    const step = stepById("callback_return");
+    return {
+      step,
+      stepIndex: step.order,
+      totalSteps,
+      primaryLabel: "Set your application callback URL",
+      primaryKind: "configure_callback",
+      detail: "Use your server’s HTTPS return URL. For the copy-ready local reference only, choose “Use local reference server”.",
+    };
+  }
+
+  if (!input.apiKeyRevealedOnce) {
+    const step = stepById("server_credentials");
+    return {
+      step,
+      stepIndex: step.order,
+      totalSteps,
+      primaryLabel: "Copy sandbox API key to your server",
+      primaryKind: "copy_credentials",
+      detail: step.integratorAction,
+    };
+  }
+
+  if (!input.completedPartnerHandoff) {
+    const step = stepById("verification_request");
+    return {
+      step,
+      stepIndex: step.order,
+      totalSteps,
+      primaryLabel: "Run verification request from your backend",
+      primaryKind: "run_handoff",
+      detail: step.integratorAction,
+    };
+  }
+
+  if (!input.completedIndependentVerify) {
+    const step = stepById("independent_verify");
+    return {
+      step,
+      stepIndex: step.order,
+      totalSteps,
+      primaryLabel: "Verify the signed receipt independently",
+      primaryKind: "verify_independently",
+      detail: step.integratorAction,
+    };
+  }
+
+  const step = stepById("production_gate");
+  return {
+    step,
+    stepIndex: step.order,
+    totalSteps,
+    primaryLabel: "Review production authorization requirements",
+    primaryKind: "production_review",
+    detail: step.integratorAction,
+  };
+}
+
 export type IntegrationAdoptionStepId =
   | "configure_application"
   | "server_credentials"

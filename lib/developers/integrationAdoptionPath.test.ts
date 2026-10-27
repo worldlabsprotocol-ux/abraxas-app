@@ -6,6 +6,8 @@ import {
   detectIntegrationAdoptionGaps,
   EXTERNAL_NODE_PARTNER_REFERENCE,
   INTEGRATION_ADOPTION_STEPS,
+  isLocalReferenceCallbackUrl,
+  resolveIntegrationAdoptionFocus,
 } from "./integrationAdoptionPath";
 
 describe("integrationAdoptionPath", () => {
@@ -35,6 +37,23 @@ describe("integrationAdoptionPath", () => {
       completedPartnerHandoff: false,
     });
     expect(gaps.some((g) => g.id === "confuses_wallet_demo_with_partner_integration")).toBe(true);
+  });
+
+  it("surfaces one primary action at a time for Studio", () => {
+    const next = resolveIntegrationAdoptionFocus({
+      hasSandboxApplication: true,
+      callbackUrl: "https://app.example/callback",
+      apiKeyRevealedOnce: false,
+      completedPartnerHandoff: false,
+      completedIndependentVerify: false,
+    });
+    expect(next.primaryLabel).toMatch(/API key/i);
+    expect(next.stepIndex).toBe(2);
+  });
+
+  it("detects local reference callback URLs", () => {
+    expect(isLocalReferenceCallbackUrl("http://127.0.0.1:3847/callback")).toBe(true);
+    expect(isLocalReferenceCallbackUrl("https://app.example/callback")).toBe(false);
   });
 
   it("builds external-node env template without embedding secrets", () => {

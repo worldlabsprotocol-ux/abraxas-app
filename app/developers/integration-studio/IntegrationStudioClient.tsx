@@ -70,7 +70,10 @@ import { IntegrationStudioRequestWorkbench } from "@/components/developers/Integ
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
 import { IntegrationAdoptionReadinessPanel } from "@/components/developers/IntegrationAdoptionReadinessPanel";
-import { EXTERNAL_NODE_PARTNER_REFERENCE } from "@/lib/developers/integrationAdoptionPath";
+import {
+  isLocalReferenceCallbackUrl,
+  LOCAL_REFERENCE_CALLBACK_URL,
+} from "@/lib/developers/integrationAdoptionPath";
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
 import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
@@ -345,11 +348,6 @@ export function IntegrationStudioClient() {
           policyLabel: null,
         }),
       );
-      if (pack === "wallet_control") {
-        setReturnUrl(
-          `${EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackBase}${EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackPath}`,
-        );
-      }
       const step = params.get("step");
       const hash = window.location.hash;
       if (step === "create_sandbox" || hash === "#sandbox") {
@@ -564,6 +562,10 @@ export function IntegrationStudioClient() {
       : null;
 
   const fromDeveloperWorkspace = searchParams.get("source") === DEVELOPER_WORKSPACE_STUDIO_SOURCE;
+
+  const applyLocalReferenceCallback = useCallback(() => {
+    setReturnUrl(LOCAL_REFERENCE_CALLBACK_URL);
+  }, []);
 
   const studioNextAction = created
     ? {
@@ -1179,6 +1181,20 @@ export function IntegrationStudioClient() {
               <p style={{ ...body, margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
                 {INTEGRATION_STUDIO_CALLBACK_FIELD_HELP}
               </p>
+              {isLocalReferenceCallbackUrl(returnUrl) ? (
+                <p
+                  style={{
+                    ...body,
+                    margin: "0.35rem 0 0",
+                    fontSize: "0.78rem",
+                    color: "var(--warning, #f59e0b)",
+                  }}
+                  role="note"
+                >
+                  Local reference server only ({LOCAL_REFERENCE_CALLBACK_URL}). Not for hosted or production
+                  applications.
+                </p>
+              ) : null}
               {returnUrl.trim().startsWith("http://localhost") || returnUrl.trim().startsWith("https://localhost") ? (
                 <p
                   style={{
@@ -1330,7 +1346,8 @@ export function IntegrationStudioClient() {
               policyId={walletApp?.policyId ?? packId}
               callbackUrl={returnUrl}
               apiKeyRevealedOnce={Boolean(revealedKey)}
-              fromDeveloperWorkspace={searchParams.get("source") === DEVELOPER_WORKSPACE_STUDIO_SOURCE}
+              fromDeveloperWorkspace={fromDeveloperWorkspace}
+              onRequestLocalReferenceCallback={applyLocalReferenceCallback}
             />
           )}
           {configuredAppId && signedIn && (
