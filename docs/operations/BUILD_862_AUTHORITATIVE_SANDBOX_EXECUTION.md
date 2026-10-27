@@ -5,6 +5,9 @@
 | Field | Value |
 | --- | --- |
 | Build | 862 |
+| Commit | `407d271bbce6e85b0281031d82162ec64d03bbb3` |
+| PR | [#862](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/862) |
+| Preview | `https://abraxas-app-git-cursor-bu-7e7434-worldlabsprotocol-uxs-projects.vercel.app` (READY) |
 | Branch | `cursor/build-862-authoritative-sandbox-execution-5ffe` |
 | Base | `main` @ `f6234e1c` (includes merged #859, #860) |
 | Supersedes | #861 UX polish (same Studio path; #862 adds server authority) |
@@ -57,12 +60,17 @@ Command: `./node_modules/.bin/vitest run lib/partner/integrationStudio/ lib/part
 
 ## Phase 3 — Live E2E partner journey
 
-**Status:** **Not executed as authoritative acceptance in this run.**
+**Status:** **Partial on PR #862 Vercel preview** (`407d271b`); **not** full independent verification.
 
-**Blockers:**
+**Executed (preview + Playwright):**
 
-1. `LAUNCHPAD_STAGING_URL` / Playwright `baseURL` not set in the cloud agent environment (only `VERCEL_PROTECTION_BYPASS` present).
-2. Full holder verification → signed receipt → independent verify requires Launchpad-connected Postgres + signing infrastructure on the target host; preview URL alone does not prove receipt issuance without running the Playwright spec to completion against that host.
+- Policy → sandbox create → configuration: **pass** (application provisioned; inspector shows “ready in sandbox”).
+- Harness request + receipt + independent verify: **blocked** — `POST /api/launchpad/auth/session` returns **503** `launchpad_not_configured` on preview despite successful create + API key (see `/opt/cursor/artifacts/build-862-preview-probes.log`).
+
+**Blockers for completion criterion:**
+
+1. Launchpad session/auth must be configured on the target host (Demo returns 401 for bad keys; preview returns 503).
+2. Holder verification → signed receipt → `verifyReceiptIndependently` on that same environment (not mocked).
 
 **Required to close gate:** Run `tests/staging/integration-studio-provisioned-e2e.spec.ts` (and holder-complete path if separate) with:
 
