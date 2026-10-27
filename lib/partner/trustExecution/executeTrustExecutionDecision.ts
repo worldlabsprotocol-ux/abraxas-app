@@ -61,6 +61,7 @@ export async function loadConsumedAuthorization(input: {
 
 export async function executeTrustExecutionDecision(input: {
   partnerId: string;
+  applicationId?: string;
   authorizationRef: string;
   controlledTestEvidence?: boolean;
   env?: Record<string, string | undefined>;
@@ -71,6 +72,13 @@ export async function executeTrustExecutionDecision(input: {
     partnerId: input.partnerId,
   });
   if (!loaded.ok) return { ok: false, code: loaded.code };
+  if (input.applicationId?.trim()) {
+    const expected = input.applicationId.trim();
+    const stored = loaded.auth.application_id?.trim() ?? "";
+    if (!stored || stored !== expected) {
+      return { ok: false, code: "application_mismatch", decision_result: "denied" };
+    }
+  }
 
   const fixtureRequested = input.controlledTestEvidence === true;
   if (fixtureRequested) {

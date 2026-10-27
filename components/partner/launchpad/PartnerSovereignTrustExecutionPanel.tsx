@@ -6,6 +6,25 @@ import Link from "next/link";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 
+type IndependentVerificationView =
+  | { currently_acceptable?: string; cryptographically_authentic?: boolean }
+  | {
+      scope?: string;
+      disclaimer?: string;
+      result?: { currently_acceptable?: string; cryptographically_authentic?: boolean };
+    };
+
+function resolveIndependentVerification(iv: IndependentVerificationView): {
+  disclaimer: string | null;
+  result: { currently_acceptable?: string; cryptographically_authentic?: boolean };
+} {
+  if ("result" in iv && iv.result) {
+    return { disclaimer: iv.disclaimer ?? null, result: iv.result };
+  }
+  const flat = iv as { currently_acceptable?: string; cryptographically_authentic?: boolean };
+  return { disclaimer: null, result: flat };
+}
+
 type Journey = {
   phase: string;
   challenge_id: string;
@@ -17,7 +36,7 @@ type Journey = {
   decision_result: string | null;
   evidence_mode: string | null;
   independent_verification_material?: unknown;
-  independent_verification?: { currently_acceptable?: string; cryptographically_authentic?: boolean };
+  independent_verification?: IndependentVerificationView;
 };
 
 export function PartnerSovereignTrustExecutionPanel({ applicationId }: { applicationId: string }) {
@@ -146,10 +165,22 @@ export function PartnerSovereignTrustExecutionPanel({ applicationId }: { applica
           )}
           {journey.independent_verification && (
             <div>
-              <dt>Independent verifier</dt>
+              <dt>Illustrative verifier (Launchpad)</dt>
               <dd>
-                authentic={String(journey.independent_verification.cryptographically_authentic)} · acceptable=
-                {journey.independent_verification.currently_acceptable}
+                {(() => {
+                  const { disclaimer, result } = resolveIndependentVerification(
+                    journey.independent_verification!,
+                  );
+                  return (
+                    <>
+                      {disclaimer && (
+                        <p style={{ margin: "0 0 0.35rem", color: "var(--text-secondary)" }}>{disclaimer}</p>
+                      )}
+                      authentic={String(result.cryptographically_authentic)} · acceptable=
+                      {result.currently_acceptable}
+                    </>
+                  );
+                })()}
               </dd>
             </div>
           )}
