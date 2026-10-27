@@ -32,6 +32,8 @@ export function PartnerTrustExecutionHolderClient() {
   const [error, setError] = useState<string | null>(null);
   const [authorized, setAuthorized] = useState(false);
   const [authorizationRef, setAuthorizationRef] = useState<string | null>(null);
+  const [executionReceiptId, setExecutionReceiptId] = useState<string | null>(null);
+  const [decisionResult, setDecisionResult] = useState<string | null>(null);
 
   const walletAddress = publicKey?.toBase58() ?? "";
 
@@ -94,13 +96,30 @@ export function PartnerTrustExecutionHolderClient() {
           solana_network: "devnet",
         }),
       });
-      const body = await res.json() as { ok?: boolean; authorization_ref?: string; code?: string };
+      const body = await res.json() as {
+        ok?: boolean;
+        authorization_ref?: string;
+        code?: string;
+        evaluation_continued?: boolean;
+        execution?: {
+          ok?: boolean;
+          receipt_id?: string | null;
+          decision_result?: string | null;
+          code?: string;
+        } | null;
+      };
       if (!res.ok || !body.ok) {
         setError(body.code ?? "Authorization failed");
         return;
       }
       setAuthorized(true);
       setAuthorizationRef(body.authorization_ref ?? null);
+      if (body.execution?.ok && body.execution.receipt_id) {
+        setExecutionReceiptId(body.execution.receipt_id);
+        setDecisionResult(body.execution.decision_result ?? null);
+      } else if (body.execution && !body.execution.ok) {
+        setError(body.execution.code ?? "Evaluation did not complete");
+      }
       await loadChallenge();
     } catch {
       setError("Wallet signature was not completed.");
@@ -166,10 +185,18 @@ export function PartnerTrustExecutionHolderClient() {
       {error && <p style={{ color: "var(--danger, #f87171)" }}>{error}</p>}
 
       {authorized ? (
-        <p style={{ color: "var(--text-primary)" }}>
-          Authorization complete. You can return to the partner application
-          {authorizationRef ? ` (reference ${authorizationRef.slice(0, 12)}…)` : ""}.
-        </p>
+        <div style={{ color: "var(--text-primary)", fontSize: "0.875rem", lineHeight: 1.6 }}>
+          <p style={{ margin: "0 0 0.5rem" }}>
+            Wallet authorization recorded
+            {authorizationRef ? ` (${authorizationRef.slice(0, 12)}…)` : ""}.
+            Evaluation continued on the same scoped request when evidence permits.
+          </p>
+          {executionReceiptId ? (
+            <p style={{ margin: 0 }}>
+              Durable outcome: {decisionResult ?? "approved"} · receipt {executionReceiptId.slice(0, 16)}…
+            </p>
+          ) : null}
+        </div>
       ) : (
         walletSessionOk && challenge?.status === "pending" && (
           <button

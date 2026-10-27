@@ -21,16 +21,53 @@ import {
   projectPublic,
 } from "@/lib/partner/hostedHandoff";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
+import { createSovereignHostedTrustHandoff } from "@/lib/partner/trustExecution/sovereignHostedTrustHandoff";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
-const SOVEREIGN_HANDOFF_MESSAGE =
-  "Live hosted holder handoff is not yet available on sovereign PostgreSQL. Use the verification harness and follow-up live-verification PR.";
-
 export async function POST(req: NextRequest, { params }: RouteContext) {
   if (launchpadUsesSovereignPostgres()) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 501, SOVEREIGN_HANDOFF_MESSAGE);
+    const auth = await requireLaunchpadSession(req);
+    if (!auth.ok) return auth.response;
+    const limited = await enforceLaunchpadTenantRateLimit(
+      req,
+      "/api/launchpad/hosted-handoff",
+      auth.session.partnerId,
+      20,
+    );
+    if (limited) return limited;
+
+    let body: { holder_wallet_address?: string; solana_network?: string; correlation_id?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400);
+    }
+    const wallet = String(body.holder_wallet_address ?? "").trim();
+    if (!wallet) {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+    }
+    const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+    if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+    if (app.environment === "production") {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, "production_denied");
+    }
+
+    const origin = getPublicAppOriginFromRequest(req);
+    const handoff = await createSovereignHostedTrustHandoff({
+      partnerId: auth.session.partnerId,
+      applicationId: params.id,
+      holderWalletAddress: wallet,
+      origin,
+      solanaNetwork: String(body.solana_network ?? "devnet"),
+      correlationId: body.correlation_id,
+    });
+    if (!handoff.ok) {
+      return launchpadJson({ ok: false, code: handoff.code }, handoff.code === "application_scope_invalid" ? 403 : 400);
+    }
+    return launchpadJson({ ok: true, ...handoff.handoff });
   }
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
@@ -97,7 +134,32 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
   if (launchpadUsesSovereignPostgres()) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 501, SOVEREIGN_HANDOFF_MESSAGE);
+    const auth = await requireLaunchpadSession(req);
+    if (!auth.ok) return auth.response;
+    const ref = req.nextUrl.searchParams.get("handoff_ref")?.trim() ?? "";
+    if (!ref) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "missing_ref");
+    const { loadPartnerTrustExecutionJourney } = await import(
+      "@/lib/partner/trustExecution/partnerTrustExecutionJourney"
+    );
+    const loaded = await loadPartnerTrustExecutionJourney({
+      partnerId: auth.session.partnerId,
+      applicationId: params.id,
+      challengeId: ref,
+    });
+    if (!loaded.ok) {
+      const status = loaded.code === "application_mismatch" || loaded.code === "tenant_mismatch" ? 403 : 404;
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, status, loaded.code);
+    }
+    return launchpadJson({
+      ok: true,
+      handoff_ref: ref,
+      verify_request: ref,
+      application_id: loaded.journey.application_id,
+      phase: loaded.journey.phase,
+      receipt_id: loaded.journey.receipt_id,
+      decision_result: loaded.journey.decision_result,
+      correlation_id: loaded.journey.correlation_id,
+    });
   }
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;

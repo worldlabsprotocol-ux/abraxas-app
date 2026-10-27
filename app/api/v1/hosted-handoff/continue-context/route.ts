@@ -9,6 +9,10 @@ import {
 } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
 import {
+  isSovereignTrustExecutionVerifyRef,
+  resolveSovereignTrustExecutionForContinue,
+} from "@/lib/partner/trustExecution/resolveSovereignTrustExecutionForContinue";
+import {
   attachPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
@@ -30,6 +34,39 @@ export async function GET(request: NextRequest) {
   const verifyRequest = request.nextUrl.searchParams.get("verify_request")?.trim() ?? "";
   if (!verifyRequest) {
     const res = NextResponse.json({ ok: false, code: "missing" }, { status: 400 });
+    attachContinueContextTraceHeader(res.headers, trace);
+    return res;
+  }
+
+  if (isSovereignTrustExecutionVerifyRef(verifyRequest)) {
+    const sovereign = await resolveSovereignTrustExecutionForContinue(verifyRequest);
+    if (!sovereign.ok) {
+      const res = NextResponse.json(
+        { ok: false, code: sovereign.code },
+        { status: httpStatusForCode(sovereign.code) },
+      );
+      attachContinueContextTraceHeader(res.headers, trace);
+      return res;
+    }
+    const { preview } = sovereign;
+    const res = NextResponse.json({
+      ok: true,
+      verify_request: preview.verify_request,
+      partner_id: preview.partner_id,
+      policy_id: preview.policy_id,
+      policy_version: preview.policy_version,
+      purpose: preview.purpose,
+      application_id: preview.application_id,
+      display_label: preview.display_label,
+      environment: preview.environment,
+      action: preview.action,
+      result_family: preview.result_family,
+      expires_at: preview.expires_at,
+      return_url: preview.return_url,
+      holder_path: preview.holder_path,
+      callback_bound: true,
+      sovereign_trust_execution: true,
+    });
     attachContinueContextTraceHeader(res.headers, trace);
     return res;
   }
