@@ -77,14 +77,25 @@ export async function startPartnerTrustExecutionJourney(input: {
 
   const journey = await loadPartnerTrustExecutionJourney({
     partnerId: input.partnerId,
+    applicationId: input.applicationId,
     challengeId: issued.challenge_id,
   });
   if (!journey.ok) return { ok: false, code: journey.code };
   return { ok: true, journey: journey.journey };
 }
 
+function challengeApplicationMatches(
+  storedApplicationId: string | null | undefined,
+  expectedApplicationId: string,
+): boolean {
+  const expected = expectedApplicationId.trim();
+  const stored = storedApplicationId?.trim() ?? "";
+  return stored.length > 0 && stored === expected;
+}
+
 export async function loadPartnerTrustExecutionJourney(input: {
   partnerId: string;
+  applicationId: string;
   challengeId: string;
 }): Promise<
   | { ok: true; journey: PartnerTrustExecutionJourneyView }
@@ -93,6 +104,9 @@ export async function loadPartnerTrustExecutionJourney(input: {
   const row = await loadScopedTrustChallenge(input.challengeId);
   if (!row) return { ok: false, code: "not_found" };
   if (row.partnerId !== input.partnerId) return { ok: false, code: "tenant_mismatch" };
+  if (!challengeApplicationMatches(row.applicationId, input.applicationId)) {
+    return { ok: false, code: "application_mismatch" };
+  }
 
   let phase: PartnerTrustExecutionJourneyPhase = "awaiting_holder_authorization";
   if (row.consumedAt && row.authorizationRef) {
@@ -151,6 +165,7 @@ export async function loadPartnerTrustExecutionJourney(input: {
 
 export async function executePartnerTrustExecutionJourney(input: {
   partnerId: string;
+  applicationId: string;
   challengeId: string;
   env?: Record<string, string | undefined>;
 }): Promise<
@@ -159,6 +174,7 @@ export async function executePartnerTrustExecutionJourney(input: {
 > {
   const loaded = await loadPartnerTrustExecutionJourney({
     partnerId: input.partnerId,
+    applicationId: input.applicationId,
     challengeId: input.challengeId,
   });
   if (!loaded.ok) return loaded;
@@ -176,6 +192,7 @@ export async function executePartnerTrustExecutionJourney(input: {
   const evidenceMode = resolveTrustExecutionEvidenceMode(env);
   const executed = await executeTrustExecutionDecision({
     partnerId: input.partnerId,
+    applicationId: input.applicationId,
     authorizationRef: loaded.journey.authorization_ref,
     controlledTestEvidence: evidenceMode === "controlled_test_evidence",
     env,
@@ -190,6 +207,7 @@ export async function executePartnerTrustExecutionJourney(input: {
 
   const refreshed = await loadPartnerTrustExecutionJourney({
     partnerId: input.partnerId,
+    applicationId: input.applicationId,
     challengeId: input.challengeId,
   });
   if (!refreshed.ok) return refreshed;

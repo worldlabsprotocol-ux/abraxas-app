@@ -41,7 +41,20 @@ function sanitizeJourneyForPartner(journey: PartnerTrustExecutionJourneyView) {
     holder_url: journey.holder_url,
     independent_verification_material: journey.independent_verification_material,
     independent_verification_note:
-      "Verify portable_receipt with your pinned trust anchor; Abraxas does not assert currently_acceptable on this API.",
+      "Portable verification material is for your relying party to verify locally against your own pinned trust anchor. Launchpad never substitutes server env configuration for external pinning.",
+  };
+}
+
+const LAUNCHPAD_ILLUSTRATIVE_VERIFICATION_DISCLAIMER =
+  "Illustrative only: computed with Abraxas demo environment anchor for integration smoke checks. External relying parties must verify portable material against their own pinned trust anchor.";
+
+function wrapIllustrativeIndependentVerification(
+  result: ReturnType<typeof verifyTrustExecutionMaterial>,
+): Record<string, unknown> {
+  return {
+    scope: "illustrative_launchpad_demo",
+    disclaimer: LAUNCHPAD_ILLUSTRATIVE_VERIFICATION_DISCLAIMER,
+    result,
   };
 }
 
@@ -67,10 +80,12 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const loaded = await loadPartnerTrustExecutionJourney({
       partnerId: auth.session.partnerId,
+      applicationId: params.id,
       challengeId,
     });
     if (!loaded.ok) {
-      const status = loaded.code === "tenant_mismatch" ? 403 : 404;
+      const status =
+        loaded.code === "tenant_mismatch" || loaded.code === "application_mismatch" ? 403 : 404;
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, status, loaded.code);
     }
     return launchpadJson({ ok: true, journey: sanitizeJourneyForPartner(loaded.journey) });
@@ -122,12 +137,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       }
       const executed = await executePartnerTrustExecutionJourney({
         partnerId: auth.session.partnerId,
+        applicationId: params.id,
         challengeId,
       });
       if (!executed.ok) {
         const status =
           executed.code === "awaiting_holder_authorization" ? 409
           : executed.code === "expired" ? 410
+          : executed.code === "application_mismatch" ? 403
           : executed.decision_result === "indeterminate" ? 503
           : 403;
         return launchpadJson(
@@ -140,18 +157,21 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       const material = executed.journey.independent_verification_material;
       const anchor = buildDemoTrustAnchorFromEnv(process.env);
       if (material && anchor) {
-        independent_verification = verifyTrustExecutionMaterial({
-          material,
-          pinnedTrustAnchor: anchor,
-          partnerId: auth.session.partnerId,
-          policyId: executed.journey.policy_id,
-        });
+        independent_verification = wrapIllustrativeIndependentVerification(
+          verifyTrustExecutionMaterial({
+            material,
+            pinnedTrustAnchor: anchor,
+            partnerId: auth.session.partnerId,
+            policyId: executed.journey.policy_id,
+          }),
+        );
       }
 
       return launchpadJson({
         ok: true,
         journey: sanitizeJourneyForPartner(executed.journey),
         independent_verification,
+        independent_verification_disclaimer: LAUNCHPAD_ILLUSTRATIVE_VERIFICATION_DISCLAIMER,
       });
     }
 
