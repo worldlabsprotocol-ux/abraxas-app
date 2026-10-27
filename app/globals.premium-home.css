@@ -1862,7 +1862,8 @@
   }
 }
 
-.rd-nav-start-building {
+.rd-nav-start-building,
+.rd-nav-primary-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1877,6 +1878,7 @@
   white-space: nowrap;
 }
 
-.rd-nav-start-building:hover {
+.rd-nav-start-building:hover,
+.rd-nav-primary-action:hover {
   opacity: 0.92;
 }

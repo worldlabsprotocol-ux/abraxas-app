@@ -20,6 +20,20 @@ export type SandboxCompletionPrimaryAction = {
   inPageAnchor?: boolean;
 };
 
+export type ApplicationIntegrationHandoffStep = {
+  id: string;
+  label: string;
+  detail: string;
+  state: "done" | "current" | "upcoming";
+};
+
+export type ApplicationIntegrationHandoff = {
+  title: string;
+  summary: string;
+  steps: ApplicationIntegrationHandoffStep[];
+  studioHref: string;
+};
+
 export type EphemeralSandboxCompletionView = {
   statusEyebrow: string;
   headline: string;
@@ -36,6 +50,7 @@ export type EphemeralSandboxCompletionView = {
   checklist: SandboxCompletionChecklistItem[];
   primaryAction: SandboxCompletionPrimaryAction | null;
   secondaryAction: SandboxCompletionPrimaryAction | null;
+  applicationHandoff: ApplicationIntegrationHandoff | null;
 };
 
 const DOCS_HREF = "/docs";
@@ -78,6 +93,48 @@ function validationModeLineFromState(receiptValidation: ReceiptValidationUiState
     return "Validation mode: standalone cryptographic verification against trusted signing authority.";
   }
   return "Validation mode: independent receipt check completed.";
+}
+
+function buildApplicationIntegrationHandoff(input: {
+  policyId: string;
+  policyLabel: string;
+  integrateEligible: boolean;
+}): ApplicationIntegrationHandoff | null {
+  if (!input.integrateEligible) return null;
+  const studioHref = buildIntegrationStudioHandoffUrl({ policyId: input.policyId });
+  const policyName = policyVerifiedLabel(input.policyId, input.policyLabel);
+  return {
+    title: "Put it in your app",
+    summary:
+      "Your verification works in sandbox. Next, connect a test application so Abraxas can request this check and return a signed result your code can verify independently.",
+    studioHref,
+    steps: [
+      {
+        id: "policy",
+        label: "Verification policy selected",
+        detail: policyName,
+        state: "done",
+      },
+      {
+        id: "sandbox_test",
+        label: "Test verification completed",
+        detail: "Signed receipt issued and independently checked.",
+        state: "done",
+      },
+      {
+        id: "connect_app",
+        label: "Connect your application",
+        detail: "Create or select a sandbox app, set an allowed callback, and run a real integration request.",
+        state: "current",
+      },
+      {
+        id: "handoff",
+        label: "Plan the integration handoff",
+        detail: "Use request examples, verifier checks, and production review requirements in Integration Studio.",
+        state: "upcoming",
+      },
+    ],
+  };
 }
 
 function acceptabilityLine(receiptValidation: ReceiptValidationUiState): string {
@@ -277,6 +334,12 @@ export function buildEphemeralSandboxCompletionView(input: {
         ? "SANDBOX TEST — NOT ACCEPTABLE"
         : "SANDBOX TEST COMPLETE";
 
+  const applicationHandoff = buildApplicationIntegrationHandoff({
+    policyId: input.policyId,
+    policyLabel: input.policyLabel,
+    integrateEligible,
+  });
+
   return {
     statusEyebrow,
     headline: headlineForDecision(input.policyId, input.policyLabel, decisionNorm),
@@ -293,5 +356,6 @@ export function buildEphemeralSandboxCompletionView(input: {
     checklist,
     primaryAction,
     secondaryAction,
+    applicationHandoff,
   };
 }

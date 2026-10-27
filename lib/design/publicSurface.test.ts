@@ -29,7 +29,8 @@ describe("public surface tokens", () => {
   it("uses consolidated primary header controls in RedesignNav", () => {
     const nav = readFileSync(resolve(ROOT, "components/redesign/RedesignNav.tsx"), "utf8");
     expect(nav).toContain("PublicNavConnectButton");
-    expect(nav).toContain("PublicNavLaunchAppLink");
+    expect(nav).toContain("PublicNavPrimaryActionLink");
+    expect(nav).not.toContain("PublicNavLaunchAppLink");
     expect(nav).toContain("PublicNavSectionMenu");
     expect(nav).toContain("PUBLIC_NAV_MENUS");
     expect(nav).toContain("LanguageSelector");

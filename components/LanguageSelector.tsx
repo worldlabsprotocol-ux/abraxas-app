@@ -14,20 +14,14 @@ import {
   writeLanguagePreference,
 } from "@/lib/i18n/googleTranslate";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import { PUBLIC_LOCALE_OPTIONS, publicLocaleByCode } from "@/lib/i18n/publicLocaleOptions";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-interface Lang { code: string; name: string; badge: string; }
+type Lang = (typeof PUBLIC_LOCALE_OPTIONS)[number];
 
-const LANGS: Lang[] = [
-  { code: "en", name: "English",   badge: "EN" },
-  { code: "es", name: "Español",   badge: "ES" },
-  { code: "pt", name: "Português", badge: "PT" },
-  { code: "fr", name: "Français",  badge: "FR" },
-  { code: "de", name: "Deutsch",   badge: "DE" },
-  { code: "zh-CN", name: "中文",   badge: "ZH" },
-];
+const LANGS: Lang[] = PUBLIC_LOCALE_OPTIONS;
 
 declare global {
   interface Window {
@@ -37,10 +31,10 @@ declare global {
 }
 
 function langFromPreference(code: string): Lang {
-  return LANGS.find(l => l.code === code) ?? LANGS[0];
+  return publicLocaleByCode(code) as Lang;
 }
 
-export function LanguageSelector() {
+export function LanguageSelector({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<Lang>(LANGS[0]);
   const [ready, setReady] = useState(false);
@@ -212,9 +206,11 @@ export function LanguageSelector() {
         }}>
           {current.badge}
         </span>
-        <span style={{ letterSpacing: "0.06em" }}>
-          {current.code === "zh-CN" ? "ZH" : current.code.toUpperCase()}
-        </span>
+        {compact ? null : (
+          <span style={{ letterSpacing: "0.06em" }}>
+            {current.code === "zh-CN" ? "ZH" : current.code.toUpperCase()}
+          </span>
+        )}
         <span style={{ color: "var(--accent)", fontSize: "0.65rem", marginLeft: 1 }}>▾</span>
       </button>
 
@@ -240,10 +236,11 @@ export function LanguageSelector() {
             padding: "0.45rem 0.875rem 0.35rem",
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
           }}>
-            English is default · translate only when you choose
+            English is the source language. Other options use auto-translate (beta) and may miss dynamic UI.
           </div>
           {LANGS.map(lang => {
             const active = lang.code === current.code;
+            const beta = lang.tier === "auto_translate_beta";
             return (
               <button
                 key={lang.code}
@@ -272,7 +269,14 @@ export function LanguageSelector() {
                 }}>
                   {lang.badge}
                 </span>
-                <span style={{ flex: 1 }}>{lang.name}</span>
+                <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span>{lang.name}</span>
+                  {beta ? (
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 500 }}>
+                      Auto-translate (beta)
+                    </span>
+                  ) : null}
+                </span>
                 {active && <span style={{ color: "var(--accent)", fontWeight: 900, fontSize: "0.8rem" }}>✓</span>}
               </button>
             );

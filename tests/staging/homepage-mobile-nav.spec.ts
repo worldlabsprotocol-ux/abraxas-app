@@ -12,10 +12,13 @@ test.describe("Mobile homepage navigation and architecture", () => {
       await page.locator(".abx-premium-hero-carousel").waitFor({ state: "visible", timeout: 60_000 });
 
       const signIn = page.locator(".rd-nav-mobile .public-nav-connect__trigger").first();
-      const startBuilding = page.locator(".rd-nav-mobile").getByRole("link", { name: "Start building" }).first();
+      const startBuilding = page
+        .locator(".rd-nav-mobile .rd-nav-primary-action, .rd-nav-mobile .rd-nav-start-building")
+        .first();
       await expect(signIn).toBeVisible({ timeout: 30_000 });
       await expect(signIn).not.toHaveAttribute("aria-label", "Loading sign-in");
-      await expect(startBuilding).toBeVisible();
+      await expect(startBuilding).toBeVisible({ timeout: 30_000 });
+      await expect(startBuilding).toContainText(/Start building|Continue building/i);
 
       const signInBox = await signIn.boundingBox();
       const startBox = await startBuilding.boundingBox();

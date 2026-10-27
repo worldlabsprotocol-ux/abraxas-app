@@ -45,6 +45,7 @@ import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWal
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
 import { WalletScopedAuthorizationReviewCard } from "@/components/wallet/WalletAuthorizationReviewCard";
 import { buildEphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
+import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { EphemeralSandboxVerificationCompletion } from "./EphemeralSandboxVerificationCompletion";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
@@ -168,8 +169,10 @@ export function EphemeralSandboxWorkspaceClient() {
   const [walletFocusHint, setWalletFocusHint] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
   const [walletAuthOperational, setWalletAuthOperational] = useState<boolean | null>(null);
+  const [needsManualSandboxEnter, setNeedsManualSandboxEnter] = useState(false);
 
   const sandboxPossessionSecretKeyRef = useRef<Uint8Array | null>(null);
+  const autoEnterAttemptedRef = useRef(false);
   const requestGenerationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const signingAbortRef = useRef<AbortController | null>(null);
@@ -380,6 +383,7 @@ export function EphemeralSandboxWorkspaceClient() {
             notifyEphemeralWalletSessionChanged();
           } else {
             setPhase("ready");
+            setNeedsManualSandboxEnter(true);
           }
         } else {
           setPhase("failure");
@@ -392,6 +396,7 @@ export function EphemeralSandboxWorkspaceClient() {
       }
       setWorkspace(json.workspace);
       setPhase("workspace");
+      setNeedsManualSandboxEnter(false);
       setUserError(null);
     } catch {
       setPhase("failure");
@@ -400,6 +405,19 @@ export function EphemeralSandboxWorkspaceClient() {
       setBusy(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (
+      phase === "ready"
+      && serverSessionAuthenticated
+      && !workspace
+      && !busy
+      && !autoEnterAttemptedRef.current
+    ) {
+      autoEnterAttemptedRef.current = true;
+      void enterWorkspace();
+    }
+  }, [phase, serverSessionAuthenticated, workspace, busy, enterWorkspace]);
 
   const cancelVerificationRequest = useCallback(() => {
     const signing = phaseRef.current === "signing";
@@ -762,6 +780,11 @@ export function EphemeralSandboxWorkspaceClient() {
   }, [hydrate, bumpRequestGeneration]);
 
   const openWalletSignIn = useCallback(() => {
+    if (typeof window !== "undefined") {
+      capturePostAuthResumePath(
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      );
+    }
     window.dispatchEvent(new Event("abraxas:open-wallet-sign-in"));
   }, []);
 
@@ -920,26 +943,28 @@ export function EphemeralSandboxWorkspaceClient() {
 
       <div className={styles.panel}>
         {serverSessionAuthenticated && (phase === "ready" || phase === "entering") && !workspace ? (
-          <>
-            <h2 className={styles.sectionTitle}>Start building</h2>
-            <p className={styles.muted}>
-              You&apos;re signed in to Abraxas
-              {walletAddress ? ` with ${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)}` : ""}. Open an
-              isolated sandbox to configure policies and run test verification.
-            </p>
-            {phase === "entering" ? (
-              <div className={styles.statusRow} role="status">
-                <span className={styles.spinner} aria-hidden />
-                Preparing workspace…
-              </div>
-            ) : (
-              <div className={styles.actions}>
-                <button type="button" className={styles.primaryBtn} disabled={busy} onClick={() => void enterWorkspace()}>
-                  Start building
-                </button>
-              </div>
-            )}
-          </>
+          needsManualSandboxEnter && phase === "ready" ? (
+            <div className={styles.actions}>
+              <p className={styles.muted}>We could not open your sandbox automatically. Try again when you are ready.</p>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                disabled={busy}
+                onClick={() => {
+                  autoEnterAttemptedRef.current = false;
+                  setNeedsManualSandboxEnter(false);
+                  void enterWorkspace();
+                }}
+              >
+                Open sandbox workspace
+              </button>
+            </div>
+          ) : (
+            <div className={styles.statusRow} role="status">
+              <span className={styles.spinner} aria-hidden />
+              {phase === "entering" ? "Opening your sandbox workspace…" : "Continuing into your sandbox…"}
+            </div>
+          )
         ) : null}
 
         {workspace
