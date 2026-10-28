@@ -57,8 +57,10 @@ describe("homepage simplification (#homepage-refinement)", () => {
   it("hero carousel composes emblem slide and architecture diagram slide", () => {
     const carousel = read("components/home/premium/PremiumHomeHeroCarousel.tsx");
     expect(carousel).toContain("PremiumHomeHero");
-    expect(carousel).toContain("HomeProtocolInfrastructureSection");
+    expect(carousel).toContain("HomeTrustContinuousArchitectureImage");
     expect(carousel).toContain("useReducedMotion");
+    read("components/home/HomeTrustContinuousArchitectureImage.tsx");
+    read("public/home/abraxas-trust-is-continuous-architecture.png");
   });
 
   it("unified entry removes four tab panels before sandbox", () => {
