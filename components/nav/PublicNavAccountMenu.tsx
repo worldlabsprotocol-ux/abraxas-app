@@ -119,6 +119,9 @@ export function PublicNavAccountMenu(props: {
 
 export function PublicNavConnectPrimary(props: {
   prominent?: boolean;
+  /** White pill — single global header primary (Build 891). */
+  headerWhite?: boolean;
+  compact?: boolean;
   label: string;
   ariaLabel: string;
   busy?: boolean;
@@ -127,6 +130,38 @@ export function PublicNavConnectPrimary(props: {
   href?: string;
   footer?: ReactNode;
 }) {
+  const inner = props.busy ? `${props.label}…` : props.label;
+
+  if (props.headerWhite) {
+    const className = [
+      "rd-nav-primary-action",
+      props.compact ? "rd-nav-primary-action--compact" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const control = props.href ? (
+      <Link href={props.href} className={className} aria-label={props.ariaLabel} onClick={props.onClick}>
+        {inner}
+      </Link>
+    ) : (
+      <button
+        type="button"
+        className={className}
+        aria-label={props.ariaLabel}
+        disabled={props.disabled || props.busy}
+        onClick={props.onClick}
+      >
+        {inner}
+      </button>
+    );
+    return (
+      <>
+        {control}
+        {props.footer ? <div className="public-nav-connect__footer">{props.footer}</div> : null}
+      </>
+    );
+  }
+
   const className = [
     "public-nav-connect__trigger",
     props.prominent ? "public-nav-connect__trigger--primary" : "public-nav-connect__trigger--secondary",
@@ -134,8 +169,6 @@ export function PublicNavConnectPrimary(props: {
   ]
     .filter(Boolean)
     .join(" ");
-
-  const inner = props.busy ? `${props.label}…` : props.label;
 
   return (
     <div className="public-nav-connect">

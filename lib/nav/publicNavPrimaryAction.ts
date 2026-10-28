@@ -20,8 +20,8 @@ export function resolvePublicNavPrimaryAction(input: {
   if (input.developerSessionAuthenticated) {
     return {
       label: "Continue building",
-      href: "/developers/ephemeral-sandbox",
-      ariaLabel: "Continue in Developer Workspace",
+      href: onHome ? "#start-sandbox" : "/developers/ephemeral-sandbox",
+      ariaLabel: onHome ? "Continue building in homepage workspace" : "Continue in Developer Workspace",
     };
   }
 
