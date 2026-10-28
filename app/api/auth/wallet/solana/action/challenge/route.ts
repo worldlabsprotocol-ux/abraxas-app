@@ -14,6 +14,8 @@ import {
 } from "@/lib/auth/ephemeralWallet/service";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
 import { randomBytes } from "crypto";
+import { rejectUnknownJsonKeys } from "@/lib/http/strictJsonBody";
+import { WALLET_ACTION_CHALLENGE_BODY_KEYS } from "@/lib/auth/ephemeralWallet/walletActionChallengeClientRequest";
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +40,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403 });
   }
 
-  let body: { operation?: string; resource?: string; policy_id?: string; solana_network?: string };
+  let raw: unknown;
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
     return NextResponse.json({ ok: false, code: "invalid_input" }, { status: 400 });
   }
+  const parsedBody = rejectUnknownJsonKeys(raw, WALLET_ACTION_CHALLENGE_BODY_KEYS);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ ok: false, code: parsedBody.code }, { status: 400 });
+  }
+  const body = parsedBody.body;
 
   const operation = String(body.operation ?? "") as WalletActionOperation;
   if (!ALLOWED.includes(operation)) {
@@ -69,7 +76,7 @@ export async function POST(req: NextRequest) {
       sessionContext,
       operation,
       resource,
-      policyId: body.policy_id ?? null,
+      policyId: typeof body.policy_id === "string" ? body.policy_id : null,
     });
     if (!result.ok) {
       const status = result.code === "store_unavailable" ? 503 : 400;

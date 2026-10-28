@@ -146,6 +146,7 @@
     "test:build-883-mandate": "vitest run lib/institutional/transactionMandateEnforcement.test.ts",
     "test:build-883-playwright": "playwright test tests/staging/build-882-product-continuity.spec.ts tests/staging/build-883-production-evidence.spec.ts",
     "build883:continuous-trust-evidence": "tsx scripts/build-883/continuous-trust-evidence.ts",
+    "build890:deployed-trust-evidence": "tsx scripts/build-890/deployed-trust-evidence.ts",
     "test:build-885-institutional-authority": "vitest run lib/institutional/mandate/signedInstitutionalMandate.adversarial.test.ts lib/institutional/mandate/independentEnforcementPath.integration.test.ts lib/institutional/transactionMandateEnforcement.test.ts examples/external-node-partner/externalPartner.test.ts -t \"Build 885 mandate gate\"",
     "build885:institutional-authority-evidence": "tsx scripts/build-885/institutional-authority-evidence.ts",
     "test:build-886-mandatory-trust-enforcement": "vitest run lib/institutional/mandate/enforceProtectedInstitutionalAction.adversarial.test.ts lib/institutional/mandate/mandateIssuerAuthorityChain.adversarial.test.ts lib/institutional/mandate/signedInstitutionalMandate.adversarial.test.ts lib/institutional/mandate/independentEnforcementPath.integration.test.ts lib/institutional/transactionMandateEnforcement.test.ts",

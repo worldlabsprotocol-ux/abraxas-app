@@ -7,9 +7,12 @@ export type UnifiedWorkspaceEmbedValue = {
   embeddedInDeveloperWorkspace: boolean;
   workspaceBasePath: string;
   preservedQuery: Record<string, string>;
-  /** Server-restored sandbox policy — not an authorization credential. */
+  /** Server-restored studio pack — not an authorization credential. */
   authoritativePolicyId: string | null;
+  /** Legacy hint; prefer serverPolicyLocked from authoritative_journey. */
   walletProofRecorded: boolean;
+  /** From GET sandbox/workspace authoritative_journey.policy_locked (validated server state). */
+  serverPolicyLocked: boolean;
 };
 
 const UnifiedWorkspaceEmbedContext = createContext<UnifiedWorkspaceEmbedValue>({
@@ -18,6 +21,7 @@ const UnifiedWorkspaceEmbedContext = createContext<UnifiedWorkspaceEmbedValue>({
   preservedQuery: {},
   authoritativePolicyId: null,
   walletProofRecorded: false,
+  serverPolicyLocked: false,
 });
 
 export function UnifiedWorkspaceEmbedProvider({
@@ -26,12 +30,14 @@ export function UnifiedWorkspaceEmbedProvider({
   preservedQuery = {},
   authoritativePolicyId = null,
   walletProofRecorded = false,
+  serverPolicyLocked = false,
 }: {
   children: ReactNode;
   embeddedInDeveloperWorkspace: boolean;
   preservedQuery?: Record<string, string>;
   authoritativePolicyId?: string | null;
   walletProofRecorded?: boolean;
+  serverPolicyLocked?: boolean;
 }) {
   return (
     <UnifiedWorkspaceEmbedContext.Provider
@@ -43,6 +49,7 @@ export function UnifiedWorkspaceEmbedProvider({
         preservedQuery,
         authoritativePolicyId,
         walletProofRecorded,
+        serverPolicyLocked,
       }}
     >
       {children}

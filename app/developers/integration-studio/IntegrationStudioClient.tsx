@@ -156,6 +156,7 @@ export function IntegrationStudioClient({
     preservedQuery,
     authoritativePolicyId,
     walletProofRecorded,
+    serverPolicyLocked,
   } = useUnifiedWorkspaceEmbed();
   const studioStageHref = useCallback(
     (stage: "policy" | "sandbox" | "configuration" | "request") =>
@@ -230,9 +231,9 @@ export function IntegrationStudioClient({
   const policyLockedByWorkspace =
     embeddedInDeveloperWorkspace
     && variant === "embedded_workspace"
+    && serverPolicyLocked
     && Boolean(authoritativePolicyId)
-    && packId === authoritativePolicyId
-    && walletProofRecorded;
+    && packId === authoritativePolicyId;
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
   const venueProfiles = useMemo(() => studioPublicCatalog().trading_venue.profiles ?? [], []);
   const baseCreatedSnippet = pathInstructions?.[pathId] ?? snippet;

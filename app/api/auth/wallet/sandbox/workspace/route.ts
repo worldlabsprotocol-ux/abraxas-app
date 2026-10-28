@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     }
     const authoritative_journey = buildServerAuthoritativeJourneySnapshot({
       guidedProgress,
+      workspaceExpiresAt: workspace?.expires_at ?? null,
     });
     return NextResponse.json({
       ok: true,

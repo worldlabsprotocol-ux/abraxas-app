@@ -9,6 +9,8 @@ import {
   buildSandboxReceiptValidationPayload,
   isPresentedSandboxTestReceipt,
 } from "@/lib/auth/ephemeralWallet/sandboxReceiptValidationResponse";
+import { rejectUnknownJsonKeys } from "@/lib/http/strictJsonBody";
+import { SANDBOX_RECEIPT_VALIDATE_BODY_KEYS } from "@/lib/auth/ephemeralWallet/sandboxValidateClientRequest";
 
 export const dynamic = "force-dynamic";
 
@@ -37,19 +39,23 @@ export async function GET(req: NextRequest) {
 
 /** Independent validation from a client-held sandbox receipt (no session). */
 export async function POST(req: NextRequest) {
-  let body: { receipt?: unknown };
+  let raw: unknown;
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
     return NextResponse.json({ ok: false, code: "invalid_input" }, { status: 400 });
   }
+  const parsedBody = rejectUnknownJsonKeys(raw, SANDBOX_RECEIPT_VALIDATE_BODY_KEYS);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ ok: false, code: parsedBody.code }, { status: 400 });
+  }
 
-  if (!isPresentedSandboxTestReceipt(body.receipt)) {
+  if (!isPresentedSandboxTestReceipt(parsedBody.body.receipt)) {
     return NextResponse.json({ ok: false, code: "invalid_receipt" }, { status: 400 });
   }
 
   const payload = await buildSandboxReceiptValidationPayload({
-    receipt: body.receipt,
+    receipt: parsedBody.body.receipt,
     source: "presented_receipt",
   });
   return jsonValidation(payload);

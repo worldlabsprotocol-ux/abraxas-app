@@ -170,6 +170,8 @@ export function EphemeralSandboxWorkspaceClient() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [policyAvailability, setPolicyAvailability] = useState<SandboxPolicyAvailability[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState("");
+  const [serverAuthoritativeStudioPack, setServerAuthoritativeStudioPack] = useState<string | null>(null);
+  const [serverPolicyLocked, setServerPolicyLocked] = useState(false);
   const [serverSessionAuthenticated, setServerSessionAuthenticated] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<WalletActionChallengePayload | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
@@ -254,6 +256,8 @@ export function EphemeralSandboxWorkspaceClient() {
         setWalletAddress(walletConnected ? publicKeyRef.current?.toBase58() ?? null : null);
         setSessionExpiresAt(null);
         setWorkspace(null);
+        setServerAuthoritativeStudioPack(null);
+        setServerPolicyLocked(false);
         return;
       }
       setSessionId(session.sessionId);
@@ -278,9 +282,15 @@ export function EphemeralSandboxWorkspaceClient() {
           receipt_validation?: Parameters<typeof mapGuidedProgressReceiptValidation>[0];
         } | null;
         guided_result?: TestResult | null;
+        authoritative_journey?: {
+          studio_pack_id?: string | null;
+          policy_locked?: boolean;
+        } | null;
       };
       if (workspaceBody.workspace) {
         setWorkspace(workspaceBody.workspace);
+        setServerAuthoritativeStudioPack(workspaceBody.authoritative_journey?.studio_pack_id ?? null);
+        setServerPolicyLocked(Boolean(workspaceBody.authoritative_journey?.policy_locked));
         if (workspaceBody.guided_result && workspaceBody.guided_progress) {
           setResult(workspaceBody.guided_result);
           setDecision(workspaceBody.guided_progress.decision ?? null);
@@ -298,6 +308,8 @@ export function EphemeralSandboxWorkspaceClient() {
         }
         return;
       }
+      setServerAuthoritativeStudioPack(null);
+      setServerPolicyLocked(false);
       if (!protectedPhases.includes(phaseRef.current)) {
         setPhase("ready");
       }
@@ -1020,8 +1032,9 @@ export function EphemeralSandboxWorkspaceClient() {
           </div>
         )}
         <EmbeddedIntegrationStudioPanel
-          authoritativePolicyId={selectedPolicy || null}
+          authoritativePolicyId={serverPolicyLocked ? serverAuthoritativeStudioPack : selectedPolicy || null}
           walletProofRecorded={walletProofReadyForStudio}
+          serverPolicyLocked={serverPolicyLocked}
         />
       </div>
     );
