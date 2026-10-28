@@ -37,6 +37,7 @@ const vercelBuild = process.env.VERCEL === "1";
 const nextConfig = {
   output: process.env.ABRAXAS_STANDALONE_BUILD === "1" ? "standalone" : undefined,
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
   typescript: {
     ignoreBuildErrors: skipInBuildValidation,
   },
@@ -51,6 +52,18 @@ const nextConfig = {
     instrumentationHook: true,
     cpus: vercelBuild ? 1 : 2,
     workerThreads: false,
+    /** Custom webpack disables default worker; keep explicit for Next 14.2 upgrades. */
+    webpackBuildWorker: vercelBuild ? false : undefined,
+    /** Peak RSS: avoid compiling server + edge graphs concurrently on 8 GB builders. */
+    parallelServerCompiles: vercelBuild ? false : undefined,
+    parallelServerBuildTraces: vercelBuild ? false : undefined,
+    staticGenerationMaxConcurrency: vercelBuild ? 1 : undefined,
+    optimizePackageImports: [
+      "recharts",
+      "framer-motion",
+      "@solana/web3.js",
+      "@tanstack/react-query",
+    ],
     serverComponentsExternalPackages: [
       "onnxruntime-node",
       "@sqds/multisig",
