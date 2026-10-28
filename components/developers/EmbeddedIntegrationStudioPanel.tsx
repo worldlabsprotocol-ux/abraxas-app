@@ -12,9 +12,11 @@ import { mergeUnifiedWorkspacePreservedQuery } from "@/lib/developers/unifiedWor
 export function EmbeddedIntegrationStudioPanel({
   authoritativePolicyId = null,
   walletProofRecorded = false,
+  serverPolicyLocked = false,
 }: {
   authoritativePolicyId?: string | null;
   walletProofRecorded?: boolean;
+  serverPolicyLocked?: boolean;
 }) {
   const searchParams = useSearchParams();
   const preservedQuery = useMemo(() => {
@@ -40,6 +42,7 @@ export function EmbeddedIntegrationStudioPanel({
       preservedQuery={preservedQuery}
       authoritativePolicyId={authoritativePolicyId}
       walletProofRecorded={walletProofRecorded}
+      serverPolicyLocked={serverPolicyLocked}
     >
       <IntegrationStudioOperationalProvider>
         <IntegrationStudioWorkspace>

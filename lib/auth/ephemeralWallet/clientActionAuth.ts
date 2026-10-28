@@ -4,6 +4,7 @@ import type { WalletActionOperation } from "./actionDisplayContext";
 import type { WalletActionChallengeDisplay } from "./actionDisplayContext";
 import { bytesToBase64 } from "./bytesToBase64";
 import { WALLET_SOL_AUTH_CHALLENGE_TTL_MS } from "./contract";
+import { buildWalletActionChallengeRequestBody } from "./walletActionChallengeClientRequest";
 
 export type WalletActionChallengePayload = {
   challenge_id: string;
@@ -35,12 +36,14 @@ export async function fetchWalletActionChallenge(input: {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      operation: input.operation,
-      resource: input.resource,
-      policy_id: input.policyId,
-      solana_network: input.solanaNetwork,
-    }),
+    body: JSON.stringify(
+      buildWalletActionChallengeRequestBody({
+        operation: input.operation,
+        resource: input.resource,
+        policyId: input.policyId,
+        solanaNetwork: input.solanaNetwork,
+      }),
+    ),
     signal: input.signal,
   });
   const challengeBody = (await challengeRes.json()) as {
