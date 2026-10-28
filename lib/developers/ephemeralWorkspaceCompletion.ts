@@ -15,7 +15,7 @@ export type SandboxCompletionChecklistItem = {
 export type SandboxCompletionPrimaryAction = {
   label: string;
   description: string;
-  kind: "link" | "check_proof";
+  kind: "link" | "check_proof" | "inline_integrate";
   href?: string;
 };
 
@@ -176,6 +176,8 @@ export function buildEphemeralSandboxCompletionView(input: {
   policyLabel: string;
   decision: string | null;
   receiptValidation: ReceiptValidationUiState;
+  /** Keep create-app on homepage builder — no `/developers/ephemeral-sandbox` hop. */
+  inlineIntegrationHandoff?: boolean;
 }): EphemeralSandboxCompletionView {
   const decisionNorm = normalizeDecision(input.decision);
   const approved = isApprovedDecision(decisionNorm);
@@ -268,9 +270,11 @@ export function buildEphemeralSandboxCompletionView(input: {
 
   if (integrateEligible) {
     primaryAction = {
-      kind: "link",
+      kind: input.inlineIntegrationHandoff ? "inline_integrate" : "link",
       label: "Create your test app",
-      href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
+      href: input.inlineIntegrationHandoff
+        ? undefined
+        : buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
       description:
         "Create a test application in this workspace and see how Abraxas requests and checks verification.",
     };

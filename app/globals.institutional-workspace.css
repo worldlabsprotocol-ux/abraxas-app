@@ -656,3 +656,24 @@
   line-height: 1.55;
   color: var(--text-secondary);
 }
+
+/* Homepage-embedded studio — full workspace width, no squeezed policy column */
+.abx-studio-workspace--homepage .abx-studio-workspace__main {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "canvas";
+}
+
+.abx-studio-workspace--homepage .abx-studio-workspace__canvas {
+  min-width: 0;
+}
+
+.abx-inline-sandbox-workspace .abx-studio-pack-grid {
+  width: 100%;
+}
+
+.abx-inline-sandbox-workspace .abx-studio-pack-chip {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+}

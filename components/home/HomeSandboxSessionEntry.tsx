@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { HomeBuilderDiscovery } from "@/components/home/HomeBuilderDiscovery";
+import { isHomeBuilderDiscoveryComplete } from "@/lib/home/homeBuilderDiscovery";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
@@ -29,6 +31,14 @@ export function HomeSandboxSessionEntry() {
   const { authMode, mode, overview, walletOnlyWithoutAccount, refresh } = useHomeWorkspaceSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [discoveryComplete, setDiscoveryComplete] = useState(false);
+
+  useEffect(() => {
+    setDiscoveryComplete(isHomeBuilderDiscoveryComplete());
+    const onIntent = () => setDiscoveryComplete(isHomeBuilderDiscoveryComplete());
+    window.addEventListener("abraxas:home-builder-intent", onIntent);
+    return () => window.removeEventListener("abraxas:home-builder-intent", onIntent);
+  }, []);
 
   useEffect(() => {
     const onFocus = () => void refresh();
@@ -89,12 +99,22 @@ export function HomeSandboxSessionEntry() {
   );
 
   const showPreAuthSteps =
-    mode !== "ephemeral_sandbox_ready"
+    discoveryComplete
+    && mode !== "ephemeral_sandbox_ready"
     && mode !== "native_disabled"
     && mode !== "native_unavailable";
 
+  const showDiscovery =
+    !discoveryComplete
+    && mode !== "native_disabled"
+    && mode !== "native_unavailable"
+    && mode !== "loading";
+
   return (
     <div className="abx-sandbox-entry">
+      {showDiscovery ? (
+        <HomeBuilderDiscovery onComplete={() => setDiscoveryComplete(true)} />
+      ) : null}
       {showPreAuthSteps ? <HomeWorkspaceProgressSteps mode={mode} /> : null}
 
       {mode === "loading" ? (

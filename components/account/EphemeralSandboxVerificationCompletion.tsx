@@ -15,6 +15,7 @@ export function EphemeralSandboxVerificationCompletion({
   receiptId,
   payloadHash,
   onRunAnotherTest,
+  onInlineIntegrate,
 }: {
   view: EphemeralSandboxCompletionView;
   receiptValidation: ReceiptValidationUiState;
@@ -23,6 +24,7 @@ export function EphemeralSandboxVerificationCompletion({
   receiptId: string | null;
   payloadHash: string | null;
   onRunAnotherTest?: () => void;
+  onInlineIntegrate?: () => void;
 }) {
   const toneClass =
     view.tone === "success"
@@ -111,6 +113,14 @@ export function EphemeralSandboxVerificationCompletion({
               onClick={onCheckProof}
             >
               {receiptValidation.status === "checking" ? "Checking your proof…" : view.primaryAction.label}
+            </button>
+          ) : view.primaryAction.kind === "inline_integrate" ? (
+            <button
+              type="button"
+              className={styles.completionPrimaryBtn}
+              onClick={() => onInlineIntegrate?.()}
+            >
+              {view.primaryAction.label}
             </button>
           ) : (
             <Link className={styles.completionPrimaryLink} href={view.primaryAction.href ?? "#"}>

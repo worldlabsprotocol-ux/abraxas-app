@@ -13,10 +13,12 @@ export function EmbeddedIntegrationStudioPanel({
   authoritativePolicyId = null,
   walletProofRecorded = false,
   serverPolicyLocked = false,
+  homepageEmbed = false,
 }: {
   authoritativePolicyId?: string | null;
   walletProofRecorded?: boolean;
   serverPolicyLocked?: boolean;
+  homepageEmbed?: boolean;
 }) {
   const searchParams = useSearchParams();
   const preservedQuery = useMemo(() => {
@@ -39,6 +41,7 @@ export function EmbeddedIntegrationStudioPanel({
   return (
     <UnifiedWorkspaceEmbedProvider
       embeddedInDeveloperWorkspace
+      workspaceBasePathOverride={homepageEmbed ? "/" : null}
       preservedQuery={preservedQuery}
       authoritativePolicyId={authoritativePolicyId}
       walletProofRecorded={walletProofRecorded}

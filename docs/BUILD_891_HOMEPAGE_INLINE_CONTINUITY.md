@@ -17,6 +17,10 @@ Production at merge **890** (`b7a31ae0`) still contained this redirect behavior.
 
 Advanced routes (`/developers/ephemeral-sandbox`, Integration Studio, Launchpad) unchanged for power users.
 
+## Duplicate header CTA (same release)
+
+`RedesignNav` rendered both `PublicNavConnectButton` (dark secondary) and `PublicNavPrimaryActionLink` (white). Consolidated to a single `PublicNavConnectButton headerPrimary` using the white `rd-nav-primary-action` styling and `resolvePublicNavPrimaryAction` for session-aware labels on `/`.
+
 ## Verify
 
 ```bash

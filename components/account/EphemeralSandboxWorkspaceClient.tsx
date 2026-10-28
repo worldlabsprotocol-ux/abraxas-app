@@ -58,6 +58,13 @@ import { HomeInlineWorkspaceProcessing } from "@/components/home/HomeInlineWorks
 import { isUnifiedWorkspaceIntegrationSearch } from "@/lib/developers/unifiedWorkspaceContinuity";
 import { mapGuidedProgressReceiptValidation } from "@/lib/developers/mapGuidedProgressRestore";
 import type { GuidedIntegrationJourneyStepId } from "@/lib/developers/guidedIntegrationJourney";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
+import {
+  readHomeBuilderDiscoveryIntent,
+  readHomepageCreateAppUnlocked,
+  writeHomepageCreateAppUnlocked,
+} from "@/lib/home/homeBuilderDiscovery";
+import { applyHomepageInlineIntegrationSearch } from "@/lib/developers/homepageInlineIntegration";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -197,6 +204,7 @@ export function EphemeralSandboxWorkspaceClient({
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
   const [walletAuthOperational, setWalletAuthOperational] = useState<boolean | null>(null);
   const [needsManualSandboxEnter, setNeedsManualSandboxEnter] = useState(false);
+  const [homepageCreateAppUnlocked, setHomepageCreateAppUnlocked] = useState(false);
 
   const sandboxPossessionSecretKeyRef = useRef<Uint8Array | null>(null);
   const autoEnterAttemptedRef = useRef(false);
@@ -331,6 +339,33 @@ export function EphemeralSandboxWorkspaceClient({
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (!isHomepageEmbed) return;
+    const syncUnlock = () => setHomepageCreateAppUnlocked(readHomepageCreateAppUnlocked());
+    syncUnlock();
+    window.addEventListener("abraxas:homepage-create-app-unlock", syncUnlock);
+    return () => window.removeEventListener("abraxas:homepage-create-app-unlock", syncUnlock);
+  }, [isHomepageEmbed]);
+
+  useEffect(() => {
+    if (!isHomepageEmbed) return;
+    if (integrationContinuityActive && searchParams.get("step") === "create_sandbox") {
+      writeHomepageCreateAppUnlocked(true);
+      setHomepageCreateAppUnlocked(true);
+    }
+  }, [integrationContinuityActive, isHomepageEmbed, searchParams]);
+
+  useEffect(() => {
+    const intent = readHomeBuilderDiscoveryIntent();
+    if (!intent || policies.length === 0) return;
+    const matched = policies.find(
+      (row) => inferPolicyPackFromPolicyId(row.policy_id)?.id === intent.policyPackId,
+    );
+    if (matched) {
+      setSelectedPolicy((current) => current || matched.policy_id);
+    }
+  }, [policies]);
 
   useEffect(() => {
     const onSignInDialog = (event: Event) => {
@@ -931,6 +966,7 @@ export function EphemeralSandboxWorkspaceClient({
         policyLabel: selectedPolicyMeta?.label ?? selectedPolicy,
         decision,
         receiptValidation,
+        inlineIntegrationHandoff: isHomepageEmbed,
       })
     : null;
 
@@ -999,11 +1035,17 @@ export function EphemeralSandboxWorkspaceClient({
     );
   }
 
+  const homepageCompletionActive = isHomepageEmbed && Boolean(result && sandboxCompletionView);
+  const showHomepageIntegrationStudio =
+    homepageCompletionActive
+    && homepageCreateAppUnlocked
+    && walletProofReadyForStudio;
+
   const unifiedIntegrationExperienceActive =
     integrationHandoffLanding
-    || (integrationContinuityActive && Boolean(result && sandboxCompletionView))
-    || walletProofReadyForStudio
-    || (isHomepageEmbed && Boolean(result && sandboxCompletionView));
+    || (integrationContinuityActive && Boolean(result && sandboxCompletionView) && !isHomepageEmbed)
+    || (walletProofReadyForStudio && !isHomepageEmbed)
+    || homepageCompletionActive;
 
   if (unifiedIntegrationExperienceActive) {
     const journeyStepId: GuidedIntegrationJourneyStepId =
@@ -1023,7 +1065,7 @@ export function EphemeralSandboxWorkspaceClient({
           />
         ) : null}
         {!isHomepageEmbed ? <UnifiedWorkspaceJourneyBar currentStepId={journeyStepId} /> : null}
-        {result && sandboxCompletionView ? (
+        {result && sandboxCompletionView && (!showHomepageIntegrationStudio || !homepageCreateAppUnlocked) ? (
           <div className={styles.panel}>
             <EphemeralSandboxVerificationCompletion
               view={sandboxCompletionView}
@@ -1042,20 +1084,30 @@ export function EphemeralSandboxWorkspaceClient({
                 setUserError(null);
                 setPhase("workspace");
               }}
+              onInlineIntegrate={() => {
+                if (!selectedPolicy) return;
+                writeHomepageCreateAppUnlocked(true);
+                setHomepageCreateAppUnlocked(true);
+                applyHomepageInlineIntegrationSearch(selectedPolicy);
+              }}
             />
           </div>
-        ) : (
+        ) : null}
+        {!homepageCompletionActive && !result ? (
           <div className={styles.panel}>
             <p className={styles.note} role="status">
               Illustrative workflow. Actual completion must come from authorized server state.
             </p>
           </div>
-        )}
-        <EmbeddedIntegrationStudioPanel
-          authoritativePolicyId={serverPolicyLocked ? serverAuthoritativeStudioPack : selectedPolicy || null}
-          walletProofRecorded={walletProofReadyForStudio}
-          serverPolicyLocked={serverPolicyLocked}
-        />
+        ) : null}
+        {(!isHomepageEmbed || showHomepageIntegrationStudio) ? (
+          <EmbeddedIntegrationStudioPanel
+            authoritativePolicyId={serverPolicyLocked ? serverAuthoritativeStudioPack : selectedPolicy || null}
+            walletProofRecorded={walletProofReadyForStudio}
+            serverPolicyLocked={serverPolicyLocked}
+            homepageEmbed={isHomepageEmbed}
+          />
+        ) : null}
       </div>
     );
   }

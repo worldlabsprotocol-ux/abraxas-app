@@ -43,6 +43,7 @@ export function IntegrationStudioWorkspace({
 }) {
   const pathname = usePathname();
   const { embeddedInDeveloperWorkspace, workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
+  const homepageStudioEmbed = embeddedInDeveloperWorkspace && workspaceBasePath === "/";
   const STEPS = buildStudioSteps({ basePath: workspaceBasePath, query: preservedQuery });
   const [hashStep, setHashStep] = useState<IntegrationStudioStageId | "receipt" | "verify" | "production">("policy");
 
@@ -91,7 +92,9 @@ export function IntegrationStudioWorkspace({
       <AbxInstitutionalWorkspaceShell
         className={
           embeddedInDeveloperWorkspace
-            ? "abx-studio-workspace abx-studio-workspace--embedded"
+            ? homepageStudioEmbed
+              ? "abx-studio-workspace abx-studio-workspace--embedded abx-studio-workspace--homepage"
+              : "abx-studio-workspace abx-studio-workspace--embedded"
             : "abx-studio-workspace"
         }
         aria-label="Integration Studio workspace"

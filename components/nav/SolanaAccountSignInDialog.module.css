@@ -28,6 +28,10 @@
   margin-bottom: 1rem;
 }
 
+.heroEmblem {
+  margin: 0 auto;
+}
+
 .orbit {
   width: 52px;
   height: 52px;
