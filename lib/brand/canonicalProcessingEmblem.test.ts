@@ -34,4 +34,13 @@ describe("canonical trust processing emblem", () => {
     );
     expect(completion).toContain("AbraxasProcessingEmblem");
   });
+
+  it("uses AbraxasProcessingEmblem for ephemeral sandbox processing states (no CSS spinners)", () => {
+    const workspace = readFileSync(
+      resolve(ROOT, "components/account/EphemeralSandboxWorkspaceClient.tsx"),
+      "utf8",
+    );
+    expect(workspace).toContain("AbraxasProcessingEmblem");
+    expect(workspace).not.toMatch(/className=\{styles\.spinner\}/);
+  });
 });

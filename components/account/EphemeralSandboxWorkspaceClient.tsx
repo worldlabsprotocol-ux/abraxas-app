@@ -37,6 +37,7 @@ import {
   notifyEphemeralWalletSessionChanged,
   type WalletSignInDialogDetail,
 } from "@/lib/auth/ephemeralWallet/clientSession";
+import { AbraxasProcessingEmblem } from "@/components/brand/AbraxasProcessingEmblem";
 import { EphemeralWorkspaceSessionRail } from "./EphemeralWorkspaceSessionRail";
 import {
   signPassportPossessionChallenge,
@@ -1007,7 +1008,7 @@ export function EphemeralSandboxWorkspaceClient({
     return (
       <div className={styles.shell}>
         <div className={styles.statusRow} role="status">
-          <span className={styles.spinner} aria-hidden />
+          <AbraxasProcessingEmblem size={28} pulse className={styles.statusEmblem} />
           Loading workspace…
         </div>
       </div>
@@ -1202,7 +1203,7 @@ export function EphemeralSandboxWorkspaceClient({
             />
           ) : (
             <div className={styles.statusRow} role="status">
-              <span className={styles.spinner} aria-hidden />
+              <AbraxasProcessingEmblem size={28} pulse className={styles.statusEmblem} />
               {phase === "entering" ? "Opening your sandbox workspace…" : "Continuing into your sandbox…"}
             </div>
           )
@@ -1350,7 +1351,7 @@ export function EphemeralSandboxWorkspaceClient({
             </div>
             {busy && !presentationAuthorized ? (
               <div className={styles.statusRow} role="status">
-                <span className={styles.spinner} aria-hidden />
+                <AbraxasProcessingEmblem size={28} pulse className={styles.statusEmblem} />
                 Confirming holder possession…
               </div>
             ) : presentationAuthorized ? (
@@ -1392,7 +1393,7 @@ export function EphemeralSandboxWorkspaceClient({
           <div className={styles.reviewCard}>
             <h2 className={styles.sectionTitle}>Confirm in your wallet</h2>
             <div className={styles.statusRow} role="status">
-              <span className={styles.spinner} aria-hidden />
+              <AbraxasProcessingEmblem size={28} pulse className={styles.statusEmblem} />
               Abraxas is waiting for your signature.
             </div>
             <p className={styles.note}>
@@ -1414,7 +1415,7 @@ export function EphemeralSandboxWorkspaceClient({
 
         {phase === "submitting" ? (
           <div className={styles.statusRow} role="status">
-            <span className={styles.spinner} aria-hidden />
+            <AbraxasProcessingEmblem size={28} pulse className={styles.statusEmblem} />
             Evaluating evidence…
           </div>
         ) : null}
