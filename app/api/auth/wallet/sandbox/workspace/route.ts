@@ -6,6 +6,7 @@ import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandbo
 import { getEphemeralSandboxGuidedProgressForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspaceGuidedProgress";
 import { loadEphemeralSandboxTestResult } from "@/lib/auth/ephemeralWallet/sandboxTestVerification";
 import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
+import { buildServerAuthoritativeJourneySnapshot } from "@/lib/developers/serverAuthoritativeJourney";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,15 @@ export async function GET(req: NextRequest) {
         guidedResult = stored as Record<string, unknown>;
       }
     }
+    const authoritative_journey = buildServerAuthoritativeJourneySnapshot({
+      guidedProgress,
+    });
     return NextResponse.json({
       ok: true,
       workspace,
       guided_progress: guidedProgress,
       guided_result: guidedResult,
+      authoritative_journey,
       test_only: true,
     });
   } catch (error) {

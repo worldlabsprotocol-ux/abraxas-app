@@ -71,6 +71,7 @@
     "pack:institutional-sdk": "npm run build:institutional-sdk && npm run pack:check --prefix packages/abraxas-institutional-verification",
     "test:institutional-sdk": "vitest run lib/institutionalVerification/ lib/institutionalCertification/build546/adversarialCertification.test.ts lib/decisionReceipts/verificationKeyLifecycle/verificationKeyLifecycle.test.ts && node scripts/build587/verify-external-install.mjs",
     "check:trust-contract-drift": "tsx scripts/trust-contract-drift/check.ts",
+    "check:execution-contracts": "tsx scripts/execution-contract-guard/check.ts",
     "homepage:baseline:refresh": "tsx scripts/homepage-guard/refresh-baseline.ts --approved",
     "identity:verify-schema": "tsx scripts/verify-admin-identity-schema.ts",
     "wallet-binding:verify-schema": "tsx scripts/verify-wallet-binding-schema.ts",

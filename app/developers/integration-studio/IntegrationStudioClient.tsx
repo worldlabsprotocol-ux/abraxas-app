@@ -227,6 +227,12 @@ export function IntegrationStudioClient({
   }, [searchParams]);
 
   const contract = useMemo(() => (packId ? studioPackContract(packId) : null), [packId]);
+  const policyLockedByWorkspace =
+    embeddedInDeveloperWorkspace
+    && variant === "embedded_workspace"
+    && Boolean(authoritativePolicyId)
+    && packId === authoritativePolicyId
+    && walletProofRecorded;
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
   const venueProfiles = useMemo(() => studioPublicCatalog().trading_venue.profiles ?? [], []);
   const baseCreatedSnippet = pathInstructions?.[pathId] ?? snippet;
@@ -704,7 +710,20 @@ export function IntegrationStudioClient({
       {stage === "policy" && (
       <>
       <Reveal delay={0.04}>
-      <ContentCard title="Choose a policy pack">
+      <ContentCard title={policyLockedByWorkspace ? "Verification policy" : "Choose a policy pack"}>
+        {policyLockedByWorkspace && contract ? (
+          <>
+            <p style={{ ...body, marginBottom: "0.85rem", maxWidth: "52ch" }}>
+              Wallet proof is already on record for this workspace. Abraxas will use{" "}
+              <strong>{contract.display_name}</strong> for your test application. To change policy, return to the
+              workspace and start a new verification scope.
+            </p>
+            <Btn href={studioStageHref("sandbox")} size="sm">
+              Continue to sandbox
+            </Btn>
+          </>
+        ) : (
+          <>
         <p style={{ ...body, marginBottom: "0.85rem", maxWidth: "52ch" }}>
           Select what your customers must prove. These are the same Launchpad policy packs. Identity or liveness is never the default path.
         </p>
@@ -756,9 +775,13 @@ export function IntegrationStudioClient({
             </Btn>
           </div>
         ) : null}
+          </>
+        )}
       </ContentCard>
       </Reveal>
 
+      {!policyLockedByWorkspace ? (
+      <>
       <details style={{ marginBottom: "1.25rem" }}>
         <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)", marginBottom: "0.65rem" }}>
           Need help choosing? Guided matching (optional)
@@ -820,6 +843,8 @@ export function IntegrationStudioClient({
           </details>
         </ContentCard>
       )}
+      </>
+      ) : null}
 
       <details style={{ marginBottom: "1.25rem" }}>
         <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>

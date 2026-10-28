@@ -13,6 +13,7 @@ import {
   type StarterKitPlatform,
 } from "@/lib/partner/starterKit/contract";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import { buildLaunchpadStarterKitRequestBody } from "@/lib/partner/starterKit/launchpadClientRequest";
 import { starterKitUserFacingError } from "@/lib/partner/starterKit/starterKitUserFacingError";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -65,12 +66,14 @@ export function PartnerStarterKitPanel({
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          binding_id: bindingId ?? "",
-          path: pathId,
-          platform,
-          capabilities: [],
-        }),
+        body: JSON.stringify(
+          buildLaunchpadStarterKitRequestBody({
+            bindingId,
+            path: pathId,
+            platform,
+            capabilities: [],
+          }),
+        ),
       });
       const data = await res.json() as {
         ok?: boolean;
