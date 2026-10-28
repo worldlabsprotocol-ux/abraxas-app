@@ -67,6 +67,10 @@ Typical counts (main @ 77fbea19): **~241** App Router pages, **~487** API routes
 
 - **`@solana/wallet-adapter-wallets`**: listed in `package.json` but **zero** TS/TSX imports. Phantom + Solflare adapters are imported directly in `WalletContextProvider`.
 
+### Restored direct dependency (Build 894 CI follow-up)
+
+- **`zod`**: `app/api/bags/tokenize/route.ts` and `lib/services/bagsService.ts` import `zod` directly. It was never declared in `package.json`; CI sometimes resolved it transitively via removed wallet/Reown packages. **BAG routes remain supported** (Vercel cron `/api/cron/bags-sync`, tokenomics/revenue UI). Added explicit `zod` dependency — not a memory regression.
+
 ## Next.js configuration (8 GB benchmark)
 
 When `VERCEL=1`, `next.config.js` now:

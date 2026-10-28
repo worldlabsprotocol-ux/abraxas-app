@@ -27,4 +27,11 @@ describe("Vercel 8GB build memory guards", () => {
     };
     expect(pkg.dependencies["@solana/wallet-adapter-wallets"]).toBeUndefined();
   });
+
+  it("declares zod for supported BAG API validation (direct import, not transitive-only)", () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(pkg.dependencies.zod).toBeTruthy();
+  });
 });
