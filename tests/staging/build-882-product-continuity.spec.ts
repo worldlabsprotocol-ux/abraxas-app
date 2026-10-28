@@ -9,8 +9,8 @@ test.describe("Build 882 product continuity", () => {
     await page.getByRole("button", { name: /Show slide 2/i }).click();
     await expect(page.getByRole("navigation", { name: /Architecture stages/i })).toBeVisible();
     await page.getByRole("button", { name: /02.*Abraxas decision/i }).click();
-    await expect(page.getByText(/Who has authority/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /View full architecture diagram/i })).toBeVisible();
+    await expect(page.getByText(/Issuer and delegated authority/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /View full architecture/i })).toBeVisible();
   });
 
   test("Abraxas Guide opens from header", async ({ page }) => {

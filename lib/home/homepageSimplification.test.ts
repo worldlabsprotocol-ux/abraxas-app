@@ -60,7 +60,8 @@ describe("homepage simplification (#homepage-refinement)", () => {
     expect(carousel).toContain("HomeTrustContinuousArchitectureImage");
     expect(carousel).toContain("useReducedMotion");
     read("components/home/HomeTrustContinuousArchitectureImage.tsx");
-    read("public/home/abraxas-trust-is-continuous-architecture.png");
+    read("public/home/abraxas-architecture-stage-01-request.png");
+    read("public/home/abraxas-architecture-overview-complete.png");
   });
 
   it("unified entry removes four tab panels before sandbox", () => {
