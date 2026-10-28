@@ -1943,6 +1943,12 @@
   background: rgba(76, 187, 146, 0.08);
 }
 
+.abx-trust-continuous-arch__stage-btn:focus-visible,
+.abx-trust-continuous-arch__diagram-toggle:focus-visible {
+  outline: 2px solid rgba(76, 187, 146, 0.85);
+  outline-offset: 2px;
+}
+
 .abx-trust-continuous-arch__stage-index {
   color: rgba(76, 187, 146, 0.95);
 }
@@ -1962,7 +1968,25 @@
   color: var(--text-primary);
 }
 
-.abx-trust-continuous-arch__stage-summary,
+.abx-trust-continuous-arch__stage-summary {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-trust-continuous-arch__stage-points {
+  margin: 0 0 0.65rem;
+  padding-left: 1.15rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.abx-trust-continuous-arch__stage-points li {
+  margin: 0.2rem 0;
+}
+
 .abx-trust-continuous-arch__stage-continuity {
   margin: 0.35rem 0 0;
   font-size: 0.88rem;
@@ -1998,32 +2022,47 @@
   line-height: 1.45;
 }
 
-.abx-trust-continuous-arch__scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  display: none;
-}
-
-.abx-trust-continuous-arch__scroll--expanded {
-  display: block;
-}
-
-@media (min-width: 769px) {
-  .abx-trust-continuous-arch__diagram-toggle {
-    display: none;
-  }
-
-  .abx-trust-continuous-arch__scroll {
-    display: block;
-  }
-}
-
-.abx-trust-continuous-arch__image {
-  width: auto;
-  height: auto;
-  max-width: none;
-  min-width: min(120vw, 72rem);
+.abx-trust-continuous-arch__stage-visual,
+.abx-trust-continuous-arch__overview-wrap {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  aspect-ratio: 3 / 4;
+  max-height: min(72vh, 36rem);
+  overflow: hidden;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(4, 6, 8, 0.92);
+}
+
+.abx-trust-continuous-arch__stage-image,
+.abx-trust-continuous-arch__overview-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+}
+
+.abx-trust-continuous-arch__overview-wrap {
+  aspect-ratio: 16 / 9;
+  max-width: 72rem;
+  max-height: min(70vh, 40rem);
+}
+
+@media (max-width: 768px) {
+  .abx-trust-continuous-arch {
+    min-width: 0;
+  }
+
+  .abx-trust-continuous-arch__stage-visual {
+    max-height: min(68vh, 32rem);
+  }
+
+  .abx-trust-continuous-arch__stage-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
 }

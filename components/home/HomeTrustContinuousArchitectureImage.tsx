@@ -1,28 +1,25 @@
 "use client";
 // FILE: components/home/HomeTrustContinuousArchitectureImage.tsx
-// Canonical "Trust is continuous" architecture — stage navigator + responsive diagram.
+// Build 884 — one selected stage visual + HTML panel; full overview on demand.
 
 import Image from "next/image";
-import { useCallback, useState } from "react";
-import { TRUST_ARCHITECTURE_STAGES, type TrustArchitectureStageId } from "@/lib/home/trustArchitectureStages";
-
-const ARCHITECTURE_SRC = "/home/abraxas-trust-is-continuous-architecture.png";
+import { useCallback, useId, useState } from "react";
+import {
+  TRUST_ARCHITECTURE_OVERVIEW,
+  TRUST_ARCHITECTURE_STAGES,
+  type TrustArchitectureStageId,
+} from "@/lib/home/trustArchitectureStages";
 
 export function HomeTrustContinuousArchitectureImage({ priority = false }: { priority?: boolean }) {
+  const panelId = useId();
   const [activeStageId, setActiveStageId] = useState<TrustArchitectureStageId>("request");
-  const [diagramExpanded, setDiagramExpanded] = useState(false);
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const activeStage = TRUST_ARCHITECTURE_STAGES.find((s) => s.id === activeStageId) ?? TRUST_ARCHITECTURE_STAGES[0];
 
   const selectStage = useCallback((id: TrustArchitectureStageId) => {
     setActiveStageId(id);
+    setOverviewOpen(false);
   }, []);
-
-  const scrollClassName = [
-    "abx-trust-continuous-arch__scroll",
-    diagramExpanded ? "abx-trust-continuous-arch__scroll--expanded" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
 
   return (
     <figure className="abx-trust-continuous-arch" aria-labelledby="abx-trust-continuous-arch-title">
@@ -32,21 +29,22 @@ export function HomeTrustContinuousArchitectureImage({ priority = false }: { pri
           Trust is continuous.
         </h2>
         <p className="abx-trust-continuous-arch__lead">
-          Four stages from request to enforcement—authority and continuity apply in every step. Abraxas does not replace
-          your custody or access-control systems.
+          Policy-bound trust decisions with evidence, authority, and continuity at every step—not wallet possession
+          alone.
         </p>
       </figcaption>
 
       <nav className="abx-trust-continuous-arch__stage-nav" aria-label="Architecture stages">
         <ol className="abx-trust-continuous-arch__stage-list">
           {TRUST_ARCHITECTURE_STAGES.map((stage) => {
-            const selected = stage.id === activeStageId;
+            const selected = stage.id === activeStageId && !overviewOpen;
             return (
               <li key={stage.id}>
                 <button
                   type="button"
                   className={`abx-trust-continuous-arch__stage-btn${selected ? " abx-trust-continuous-arch__stage-btn--active" : ""}`}
                   aria-current={selected ? "step" : undefined}
+                  aria-controls={panelId}
                   onClick={() => selectStage(stage.id)}
                 >
                   <span className="abx-trust-continuous-arch__stage-index">{stage.index}</span>
@@ -58,9 +56,18 @@ export function HomeTrustContinuousArchitectureImage({ priority = false }: { pri
         </ol>
       </nav>
 
-      <div className="abx-trust-continuous-arch__stage-panel" aria-live="polite">
-        <p className="abx-trust-continuous-arch__stage-question">{activeStage.question}</p>
+      <div
+        id={panelId}
+        className="abx-trust-continuous-arch__stage-panel"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <p className="abx-trust-continuous-arch__stage-summary">{activeStage.summary}</p>
+        <ul className="abx-trust-continuous-arch__stage-points">
+          {activeStage.panelPoints.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
         <p className="abx-trust-continuous-arch__stage-continuity">
           <span className="abx-trust-continuous-arch__stage-continuity-label">Continuity:</span> {activeStage.continuity}
         </p>
@@ -70,28 +77,46 @@ export function HomeTrustContinuousArchitectureImage({ priority = false }: { pri
         <button
           type="button"
           className="abx-trust-continuous-arch__diagram-toggle"
-          aria-expanded={diagramExpanded}
-          onClick={() => setDiagramExpanded((v) => !v)}
+          aria-expanded={overviewOpen}
+          onClick={() => setOverviewOpen((v) => !v)}
         >
-          {diagramExpanded ? "Hide full diagram" : "View full architecture diagram"}
+          {overviewOpen ? "Hide full architecture" : "View full architecture"}
         </button>
         <p className="abx-trust-continuous-arch__diagram-hint">
-          Stages 01–04 are always available above. On larger screens the full diagram is shown; swipe horizontally inside
-          the diagram when needed.
+          Select stages 01–04 to update the visual and explanation together. Open the full overview when you need all
+          stages in one view.
         </p>
       </div>
 
-      <div className={scrollClassName}>
-        <Image
-          src={ARCHITECTURE_SRC}
-          alt="Abraxas trust architecture: request, Abraxas decision with authority, independent verification, application enforcement, and continuity across stages."
-          width={2400}
-          height={1350}
-          className="abx-trust-continuous-arch__image"
-          priority={priority}
-          sizes="(max-width: 768px) 120vw, 1180px"
-        />
-      </div>
+      {overviewOpen ? (
+        <div className="abx-trust-continuous-arch__overview-wrap">
+          <Image
+            src={TRUST_ARCHITECTURE_OVERVIEW.src}
+            alt={TRUST_ARCHITECTURE_OVERVIEW.alt}
+            width={TRUST_ARCHITECTURE_OVERVIEW.width}
+            height={TRUST_ARCHITECTURE_OVERVIEW.height}
+            className="abx-trust-continuous-arch__overview-image"
+            priority={priority}
+            sizes="(max-width: 768px) 100vw, 1180px"
+          />
+        </div>
+      ) : (
+        <div
+          className="abx-trust-continuous-arch__stage-visual"
+          key={activeStage.id}
+          aria-label={`Architecture visual for stage ${activeStage.index}`}
+        >
+          <Image
+            src={activeStage.visualSrc}
+            alt={activeStage.visualAlt}
+            width={activeStage.visualWidth}
+            height={activeStage.visualHeight}
+            className="abx-trust-continuous-arch__stage-image"
+            priority={priority && activeStage.id === "request"}
+            sizes="(max-width: 768px) 100vw, 720px"
+          />
+        </div>
+      )}
     </figure>
   );
 }

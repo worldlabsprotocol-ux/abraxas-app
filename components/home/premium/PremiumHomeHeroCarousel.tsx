@@ -156,7 +156,8 @@ export function PremiumHomeHeroCarousel() {
           >
             <div className="abx-premium-hero-carousel__diagram-shell">
               <p className="abx-premium-hero-carousel__diagram-scroll-hint" id={`${regionId}-diagram-hint`}>
-                Use stages 01–04 to explore each step. Open the full diagram when you need the complete visual.
+                Use stages 01–04 to update the architecture visual and explanation. View full architecture for the complete
+                overview.
               </p>
               <div className="abx-premium-hero-carousel__diagram-scroll-wrap">
                 <div
