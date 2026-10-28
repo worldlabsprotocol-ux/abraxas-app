@@ -19,6 +19,7 @@ import {
   type InstitutionalMandatePayload,
   type SignedInstitutionalMandate,
 } from "./contract";
+import { buildEvidenceCommitment } from "@abraxas/independent-verifier";
 import { signInstitutionalMandatePayload } from "./signVerify";
 
 export type ControlledMandateIssuerFixture = {
@@ -129,6 +130,51 @@ export function buildControlledSignedMandate(input: {
     mandateIssuerPrivateJwk: signingKey.privateKeyJwk,
     signingKeyId: signingKey.signingKeyId,
   });
+}
+
+import type { TrustedInstitutionalEnforcementPolicy } from "./enforcementPolicy";
+import { sealProtectedActionExecutionContext } from "./transactionContext";
+
+export function trustedPolicyForMandate(
+  payload: InstitutionalMandatePayload,
+  mode: TrustedInstitutionalEnforcementPolicy["mode"],
+): TrustedInstitutionalEnforcementPolicy {
+  return {
+    mode,
+    policy_id: payload.policy_id,
+    policy_version: payload.policy_version,
+    tenant_id: payload.tenant_id,
+    environment: payload.environment,
+  };
+}
+
+export function receiptBindingForMandate(
+  signed: SignedInstitutionalMandate,
+  outcome: "permit" | "deny" | "indeterminate" = "permit",
+) {
+  const manifest = [
+    {
+      dependency_type: "reusable_fact" as const,
+      fact_id: signed.payload.mandate_id,
+      source_credential_id: null,
+    },
+  ];
+  const commitment = buildEvidenceCommitment(manifest);
+  return {
+    cryptographically_verified: true,
+    outcome,
+    policy_id: signed.payload.policy_id,
+    policy_version: signed.payload.policy_version,
+    evidence_commitment: commitment,
+    evidence_manifest: manifest,
+  };
+}
+
+export function sealedExecution(
+  transaction: import("@/lib/institutional/transactionMandateEnforcement").ProposedInstitutionalTransaction,
+  execution_id = "exec_controlled_885",
+) {
+  return sealProtectedActionExecutionContext(execution_id, transaction);
 }
 
 export const BASE_TRANSACTION: import("@/lib/institutional/transactionMandateEnforcement").ProposedInstitutionalTransaction =

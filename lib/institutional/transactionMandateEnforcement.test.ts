@@ -103,6 +103,16 @@ describe("transaction mandate enforcement (Build 883)", () => {
     expect(walletControlReceiptSatisfiesMandate()).toBe(false);
   });
 
+  it("can skip Abraxas gate for explicit mandate-only trusted policies", () => {
+    const result = evaluateTransactionMandate({
+      mandate: BASE_MANDATE,
+      transaction: TX,
+      now: new Date("2026-06-01T12:00:00.000Z"),
+      abraxas_gate: "skipped",
+    });
+    expect(result.outcome).toBe("permit");
+  });
+
   it("fail-closed on indeterminate Abraxas outcome", () => {
     const result = evaluateTransactionMandate({
       mandate: BASE_MANDATE,
