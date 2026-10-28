@@ -1,7 +1,9 @@
 // FILE: lib/developers/ephemeralWorkspaceCopy.ts
 
+import { TERM_TEST_WORKSPACE } from "@/lib/product/userFacingTerminology";
+
 export const EPHEMERAL_WORKSPACE_PAGE_TITLE = "Your Abraxas workspace";
-export const EPHEMERAL_WORKSPACE_PAGE_EYEBROW = "Sandbox";
+export const EPHEMERAL_WORKSPACE_PAGE_EYEBROW = TERM_TEST_WORKSPACE;
 export const EPHEMERAL_WORKSPACE_PAGE_SUBTITLE =
   "One continuous journey: prove wallet control, create your test app, run verification, and check the result independently.";
 

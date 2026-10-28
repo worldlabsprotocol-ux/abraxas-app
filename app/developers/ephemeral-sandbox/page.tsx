@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default function EphemeralSandboxPage() {
   return (
-    <RedesignPage accent="developer" maxWidth={1320}>
+    <RedesignPage accent="developer" maxWidth={1320} visualAtmosphere>
       <Suspense fallback={null}>
         <EphemeralSandboxPageHeader />
       </Suspense>

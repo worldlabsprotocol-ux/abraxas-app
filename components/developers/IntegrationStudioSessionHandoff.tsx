@@ -106,7 +106,7 @@ export function IntegrationStudioSessionHandoff({
               Attach session
             </Btn>
             <Link href="/developers/launchpad" style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center" }}>
-              Provision in Launchpad →
+              Create app in Launchpad →
             </Link>
           </div>
         </>

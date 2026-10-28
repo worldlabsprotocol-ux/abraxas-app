@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default function IntegrationStudioPage() {
   return (
-    <RedesignPage accent="developer" maxWidth={1320}>
+    <RedesignPage accent="developer" maxWidth={1320} visualAtmosphere>
       <PageHeader
         eyebrow="Developers · Integration Studio"
         title="Your first integration"
