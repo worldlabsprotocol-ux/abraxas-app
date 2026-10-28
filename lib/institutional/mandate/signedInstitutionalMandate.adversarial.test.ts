@@ -1,0 +1,304 @@
+// FILE: lib/institutional/mandate/signedInstitutionalMandate.adversarial.test.ts
+
+import { describe, expect, it } from "vitest";
+import { buildEvidenceCommitment } from "@abraxas/independent-verifier";
+import {
+  BASE_TRANSACTION,
+  buildControlledMandateIssuerFixture,
+  buildControlledSignedMandate,
+} from "./controlledIssuerFixture";
+import { verifySignedInstitutionalMandate } from "./signVerify";
+import { enforceInstitutionalAction } from "./enforceInstitutionalAction";
+import { signInstitutionalMandatePayload } from "./signVerify";
+
+const NOW = new Date("2026-06-15T12:00:00.000Z");
+
+describe("Build 885 signed institutional mandate adversarial", () => {
+  const fixture = buildControlledMandateIssuerFixture();
+
+  it("permits valid authorized mandate with matching transaction", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const result = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: BASE_TRANSACTION,
+      now: NOW,
+      independentReceipt: {
+        cryptographically_verified: true,
+        outcome: "permit",
+        policy_id: signed.payload.policy_id,
+        policy_version: signed.payload.policy_version,
+      },
+    });
+    expect(result.enforcement_action).toBe("permit");
+  });
+
+  it("rejects valid signature from unauthorized receipt-only issuer key", () => {
+    const signed = buildControlledSignedMandate({ fixture, signWith: "receipt_only" });
+    const verified = verifySignedInstitutionalMandate({
+      signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      now: NOW,
+    });
+    expect(verified.ok).toBe(false);
+    if (!verified.ok) {
+      expect(verified.reason).toBe("issuer_not_authorized_for_mandate_class");
+      expect(verified.trust_boundary).toBe("mandate_issuer_authority");
+    }
+  });
+
+  it("rejects invalid issuer signature", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const tampered = { ...signed, signature: signed.signature.slice(0, -4) + "AAAA" };
+    const verified = verifySignedInstitutionalMandate({
+      signed: tampered,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      now: NOW,
+    });
+    expect(verified.ok).toBe(false);
+  });
+
+  it("rejects unknown signing key not in issuer authority statement", () => {
+    const signed = buildControlledSignedMandate({ fixture, signWith: "unknown" });
+    const verified = verifySignedInstitutionalMandate({
+      signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      now: NOW,
+    });
+    expect(verified.ok).toBe(false);
+    if (!verified.ok) expect(verified.reason).toBe("unknown_key");
+  });
+
+  it("rejects unauthorized actor and wallet mismatch", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const wrongActor = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: { ...BASE_TRANSACTION, actor_wallet: "WrongWallet99999999999999999999999999999999" },
+      now: NOW,
+      independentReceipt: {
+        cryptographically_verified: true,
+        outcome: "permit",
+        policy_id: signed.payload.policy_id,
+        policy_version: signed.payload.policy_version,
+      },
+    });
+    expect(wrongActor.enforcement_action).toBe("deny");
+    expect(wrongActor.reasons).toContain("actor_not_authorized");
+  });
+
+  it("rejects wrong action type, amount, destination, tenant, and policy version", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const base = {
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo" as const,
+      now: NOW,
+      independentReceipt: {
+        cryptographically_verified: true,
+        outcome: "permit" as const,
+        policy_id: signed.payload.policy_id,
+        policy_version: signed.payload.policy_version,
+      },
+    };
+
+    expect(
+      enforceInstitutionalAction({
+        ...base,
+        transaction: { ...BASE_TRANSACTION, kind: "collateral_release", amount_usd: 999_999 },
+      }).reasons,
+    ).toContain("amount_exceeds_mandate");
+
+    expect(
+      enforceInstitutionalAction({
+        ...base,
+        transaction: { ...BASE_TRANSACTION, destination_fingerprint: "other_dest" },
+      }).enforcement_action,
+    ).toBe("deny");
+
+    expect(
+      enforceInstitutionalAction({
+        ...base,
+        transaction: { ...BASE_TRANSACTION, tenant_id: "other_tenant" },
+      }).enforcement_action,
+    ).toBe("deny");
+
+    expect(
+      enforceInstitutionalAction({
+        ...base,
+        transaction: { ...BASE_TRANSACTION, policy_version: 99 },
+      }).reasons,
+    ).toContain("policy_version_mismatch");
+  });
+
+  it("rejects expired, not-yet-effective, and revoked mandates", () => {
+    const expired = buildControlledSignedMandate({
+      fixture,
+      overrides: { not_after: "2026-06-01T00:00:00.000Z" },
+    });
+    expect(
+      verifySignedInstitutionalMandate({
+        signed: expired,
+        signedIssuerAuthority: fixture.signedIssuerAuthority,
+        trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+        environment: "demo",
+        now: NOW,
+      }).ok,
+    ).toBe(false);
+
+    const future = buildControlledSignedMandate({
+      fixture,
+      overrides: { not_before: "2026-12-01T00:00:00.000Z" },
+    });
+    expect(
+      verifySignedInstitutionalMandate({
+        signed: future,
+        signedIssuerAuthority: fixture.signedIssuerAuthority,
+        trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+        environment: "demo",
+        now: NOW,
+      }).ok,
+    ).toBe(false);
+
+    const revoked = buildControlledSignedMandate({
+      fixture,
+      overrides: { revoked_at: "2026-06-01T00:00:00.000Z" },
+    });
+    expect(
+      verifySignedInstitutionalMandate({
+        signed: revoked,
+        signedIssuerAuthority: fixture.signedIssuerAuthority,
+        trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+        environment: "demo",
+        now: NOW,
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("rejects stale issuer key and receipt tampering / unverified receipt", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const stalePayload = {
+      ...fixture.signedIssuerAuthority.payload,
+      keys: fixture.signedIssuerAuthority.payload.keys.map((k) =>
+        k.key_id === fixture.mandateIssuerKey.signingKeyId ? { ...k, status: "revoked" as const } : k,
+      ),
+    };
+    const staleStatement = {
+      ...fixture.signedIssuerAuthority,
+      payload: stalePayload,
+    };
+    expect(
+      verifySignedInstitutionalMandate({
+        signed,
+        signedIssuerAuthority: staleStatement,
+        trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+        environment: "demo",
+        now: NOW,
+      }).ok,
+    ).toBe(false);
+
+    const unverified = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: BASE_TRANSACTION,
+      now: NOW,
+      independentReceipt: {
+        cryptographically_verified: false,
+        outcome: "permit",
+        policy_id: signed.payload.policy_id,
+        policy_version: signed.payload.policy_version,
+      },
+    });
+    expect(unverified.enforcement_action).toBe("indeterminate");
+    expect(unverified.reasons).toContain("receipt_not_independently_verified");
+  });
+
+  it("rejects receipt policy mismatch and mandate evidence binding failure", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const manifest = [{ dependency_type: "reusable_fact" as const, fact_id: "other_mandate", source_credential_id: null }];
+    const commitment = buildEvidenceCommitment(manifest);
+    const mismatch = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: BASE_TRANSACTION,
+      now: NOW,
+      independentReceipt: {
+        cryptographically_verified: true,
+        outcome: "permit",
+        policy_id: "wrong_policy",
+        policy_version: 1,
+        evidence_commitment: commitment,
+        evidence_manifest: manifest,
+      },
+    });
+    expect(mismatch.enforcement_action).toBe("indeterminate");
+    expect(mismatch.reasons).toContain("receipt_policy_mismatch");
+
+    const badBinding = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: BASE_TRANSACTION,
+      now: NOW,
+      independentReceipt: {
+        cryptographically_verified: true,
+        outcome: "permit",
+        policy_id: signed.payload.policy_id,
+        policy_version: signed.payload.policy_version,
+        evidence_commitment: commitment,
+        evidence_manifest: manifest,
+      },
+    });
+    expect(badBinding.reasons).toContain("receipt_not_bound_to_mandate");
+  });
+
+  it("fail-closed when independent receipt required but missing", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const result = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: BASE_TRANSACTION,
+      now: NOW,
+      requireIndependentReceipt: true,
+    });
+    expect(result.enforcement_action).toBe("indeterminate");
+    expect(result.reasons).toContain("independent_receipt_required");
+  });
+
+  it("rejects payload tampering after signing", () => {
+    const signed = buildControlledSignedMandate({ fixture });
+    const reSigned = signInstitutionalMandatePayload({
+      payload: { ...signed.payload, max_amount_usd: 1 },
+      mandateIssuerPrivateJwk: fixture.mandateIssuerKey.privateKeyJwk,
+      signingKeyId: fixture.mandateIssuerKey.signingKeyId,
+    });
+    const swapped = { ...signed, payload: reSigned.payload };
+    const verified = verifySignedInstitutionalMandate({
+      signed: swapped,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      now: NOW,
+    });
+    expect(verified.ok).toBe(false);
+    if (!verified.ok) expect(verified.reason).toBe("mandate_payload_hash_mismatch");
+  });
+});

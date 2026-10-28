@@ -6,6 +6,12 @@ import { parseCallbackQuery } from "./src/callback.js";
 import { loadPinnedTrustAnchor, verifyPortableBundle } from "./src/verifyPortable.js";
 import { loadTestFixtures } from "./fixtures/loadTestFixtures.js";
 import { enforcementFromVerification } from "./src/enforce.js";
+import {
+  BASE_TRANSACTION,
+  buildControlledMandateIssuerFixture,
+  buildControlledSignedMandate,
+} from "../../lib/institutional/mandate/controlledIssuerFixture";
+import { enforceInstitutionalAction } from "../../lib/institutional/mandate/enforceInstitutionalAction";
 
 describe("Build #830 external HTTP partner", () => {
   it("creates handoff via fetch without @/lib", async () => {
@@ -109,6 +115,27 @@ describe("Build #830 external HTTP partner", () => {
     });
     expect(enforced.action).not.toBe("permit");
     expect(enforced.action).toBe("deny");
+  });
+
+  it("Build 885 mandate gate denies when wallet-valid receipt would permit but mandate scope fails", () => {
+    const fixture = buildControlledMandateIssuerFixture();
+    const signed = buildControlledSignedMandate({ fixture });
+    const result = enforceInstitutionalAction({
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+      environment: "demo",
+      transaction: { ...BASE_TRANSACTION, amount_usd: signed.payload.max_amount_usd + 1 },
+      now: new Date("2026-06-15T12:00:00.000Z"),
+      independentReceipt: {
+        cryptographically_verified: true,
+        outcome: "permit",
+        policy_id: signed.payload.policy_id,
+        policy_version: signed.payload.policy_version,
+      },
+    });
+    expect(result.enforcement_action).toBe("deny");
+    expect(result.reasons).toContain("amount_exceeds_mandate");
   });
 
   it("portable fetch errors map to retryable failure", async () => {

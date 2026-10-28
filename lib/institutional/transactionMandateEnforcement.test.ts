@@ -12,6 +12,7 @@ const BASE_MANDATE: SyntheticInstitutionalMandate = {
   issuer_id: "issuer_fund_alpha",
   tenant_id: "tenant_fund_alpha",
   policy_id: "institutional_signing_mandate_v1",
+  policy_version: 1,
   authorized_actor_wallet: "SignerWallet11111111111111111111111111111111",
   transaction_scope: {
     kind: "collateral_release",
@@ -30,6 +31,7 @@ const TX = {
   actor_wallet: "SignerWallet11111111111111111111111111111111",
   tenant_id: "tenant_fund_alpha",
   policy_id: "institutional_signing_mandate_v1",
+  policy_version: 1,
 };
 
 describe("transaction mandate enforcement (Build 883)", () => {

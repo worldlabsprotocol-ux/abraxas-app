@@ -9,6 +9,7 @@ export type SyntheticInstitutionalMandate = {
   issuer_id: string;
   tenant_id: string;
   policy_id: string;
+  policy_version: number;
   authorized_actor_wallet: string;
   transaction_scope: {
     kind: TransactionScopeKind;
@@ -27,6 +28,7 @@ export type ProposedInstitutionalTransaction = {
   actor_wallet: string;
   tenant_id: string;
   policy_id: string;
+  policy_version: number;
 };
 
 export type MandateEnforcementOutcome = "permit" | "deny" | "indeterminate";
@@ -89,6 +91,9 @@ export function evaluateTransactionMandate(input: {
   }
   if (m.policy_id !== t.policy_id) {
     return { outcome: "deny", reasons: ["policy_mismatch"] };
+  }
+  if (m.policy_version !== t.policy_version) {
+    return { outcome: "deny", reasons: ["policy_version_mismatch"] };
   }
   if (m.authorized_actor_wallet !== t.actor_wallet) {
     return { outcome: "deny", reasons: ["actor_not_authorized"] };
