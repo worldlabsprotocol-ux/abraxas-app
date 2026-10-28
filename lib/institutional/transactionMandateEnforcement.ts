@@ -46,20 +46,25 @@ export function evaluateTransactionMandate(input: {
   mandate: SyntheticInstitutionalMandate | null;
   transaction: ProposedInstitutionalTransaction;
   now: Date;
+  /** When required, Abraxas receipt must be independently verified before mandate scope is evaluated. */
+  abraxas_gate?: "required" | "skipped";
   abraxas_receipt_verified?: boolean;
   abraxas_outcome?: "permit" | "deny" | "indeterminate";
 }): MandateEvaluationResult {
   const reasons: string[] = [];
+  const abraxasGate = input.abraxas_gate ?? "required";
 
-  if (input.abraxas_outcome === "indeterminate" || input.abraxas_outcome === "deny") {
-    return {
-      outcome: input.abraxas_outcome === "deny" ? "deny" : "indeterminate",
-      reasons: [`abraxas_${input.abraxas_outcome}`],
-    };
-  }
+  if (abraxasGate === "required") {
+    if (input.abraxas_outcome === "indeterminate" || input.abraxas_outcome === "deny") {
+      return {
+        outcome: input.abraxas_outcome === "deny" ? "deny" : "indeterminate",
+        reasons: [`abraxas_${input.abraxas_outcome}`],
+      };
+    }
 
-  if (input.abraxas_receipt_verified !== true) {
-    return { outcome: "indeterminate", reasons: ["abraxas_receipt_not_independently_verified"] };
+    if (input.abraxas_receipt_verified !== true) {
+      return { outcome: "indeterminate", reasons: ["abraxas_receipt_not_independently_verified"] };
+    }
   }
 
   if (!input.mandate) {

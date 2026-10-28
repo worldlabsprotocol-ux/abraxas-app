@@ -8,29 +8,24 @@ import {
   buildControlledSignedMandate,
 } from "./controlledIssuerFixture";
 import { verifySignedInstitutionalMandate } from "./signVerify";
-import { enforceInstitutionalAction } from "./enforceInstitutionalAction";
 import { signInstitutionalMandatePayload } from "./signVerify";
+import { invokeProtectedEnforcement } from "./testEnforcementInvoke";
 
 const NOW = new Date("2026-06-15T12:00:00.000Z");
+const RECEIPT_MODE = "mandate_and_abraxas_receipt" as const;
 
 describe("Build 885 signed institutional mandate adversarial", () => {
   const fixture = buildControlledMandateIssuerFixture();
 
   it("permits valid authorized mandate with matching transaction", () => {
     const signed = buildControlledSignedMandate({ fixture });
-    const result = enforceInstitutionalAction({
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo",
+    const result = invokeProtectedEnforcement({
+      fixture,
+      signed,
       transaction: BASE_TRANSACTION,
       now: NOW,
-      independentReceipt: {
-        cryptographically_verified: true,
-        outcome: "permit",
-        policy_id: signed.payload.policy_id,
-        policy_version: signed.payload.policy_version,
-      },
+      mode: RECEIPT_MODE,
+      receipt: "auto_binding",
     });
     expect(result.enforcement_action).toBe("permit");
   });
@@ -79,19 +74,13 @@ describe("Build 885 signed institutional mandate adversarial", () => {
 
   it("rejects unauthorized actor and wallet mismatch", () => {
     const signed = buildControlledSignedMandate({ fixture });
-    const wrongActor = enforceInstitutionalAction({
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo",
+    const wrongActor = invokeProtectedEnforcement({
+      fixture,
+      signed,
       transaction: { ...BASE_TRANSACTION, actor_wallet: "WrongWallet99999999999999999999999999999999" },
       now: NOW,
-      independentReceipt: {
-        cryptographically_verified: true,
-        outcome: "permit",
-        policy_id: signed.payload.policy_id,
-        policy_version: signed.payload.policy_version,
-      },
+      mode: RECEIPT_MODE,
+      receipt: "auto_binding",
     });
     expect(wrongActor.enforcement_action).toBe("deny");
     expect(wrongActor.reasons).toContain("actor_not_authorized");
@@ -99,45 +88,48 @@ describe("Build 885 signed institutional mandate adversarial", () => {
 
   it("rejects wrong action type, amount, destination, tenant, and policy version", () => {
     const signed = buildControlledSignedMandate({ fixture });
-    const base = {
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo" as const,
-      now: NOW,
-      independentReceipt: {
-        cryptographically_verified: true,
-        outcome: "permit" as const,
-        policy_id: signed.payload.policy_id,
-        policy_version: signed.payload.policy_version,
-      },
-    };
 
     expect(
-      enforceInstitutionalAction({
-        ...base,
-        transaction: { ...BASE_TRANSACTION, kind: "collateral_release", amount_usd: 999_999 },
+      invokeProtectedEnforcement({
+        fixture,
+        signed,
+        transaction: { ...BASE_TRANSACTION, amount_usd: 999_999 },
+        now: NOW,
+        mode: RECEIPT_MODE,
+        receipt: "auto_binding",
       }).reasons,
     ).toContain("amount_exceeds_mandate");
 
     expect(
-      enforceInstitutionalAction({
-        ...base,
+      invokeProtectedEnforcement({
+        fixture,
+        signed,
         transaction: { ...BASE_TRANSACTION, destination_fingerprint: "other_dest" },
+        now: NOW,
+        mode: RECEIPT_MODE,
+        receipt: "auto_binding",
       }).enforcement_action,
     ).toBe("deny");
 
     expect(
-      enforceInstitutionalAction({
-        ...base,
+      invokeProtectedEnforcement({
+        fixture,
+        signed,
         transaction: { ...BASE_TRANSACTION, tenant_id: "other_tenant" },
+        now: NOW,
+        mode: RECEIPT_MODE,
+        receipt: "auto_binding",
       }).enforcement_action,
     ).toBe("deny");
 
     expect(
-      enforceInstitutionalAction({
-        ...base,
+      invokeProtectedEnforcement({
+        fixture,
+        signed,
         transaction: { ...BASE_TRANSACTION, policy_version: 99 },
+        now: NOW,
+        mode: RECEIPT_MODE,
+        receipt: "auto_binding",
       }).reasons,
     ).toContain("policy_version_mismatch");
   });
@@ -208,14 +200,13 @@ describe("Build 885 signed institutional mandate adversarial", () => {
       }).ok,
     ).toBe(false);
 
-    const unverified = enforceInstitutionalAction({
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo",
+    const unverified = invokeProtectedEnforcement({
+      fixture,
+      signed,
       transaction: BASE_TRANSACTION,
       now: NOW,
-      independentReceipt: {
+      mode: RECEIPT_MODE,
+      receipt: {
         cryptographically_verified: false,
         outcome: "permit",
         policy_id: signed.payload.policy_id,
@@ -230,14 +221,13 @@ describe("Build 885 signed institutional mandate adversarial", () => {
     const signed = buildControlledSignedMandate({ fixture });
     const manifest = [{ dependency_type: "reusable_fact" as const, fact_id: "other_mandate", source_credential_id: null }];
     const commitment = buildEvidenceCommitment(manifest);
-    const mismatch = enforceInstitutionalAction({
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo",
+    const mismatch = invokeProtectedEnforcement({
+      fixture,
+      signed,
       transaction: BASE_TRANSACTION,
       now: NOW,
-      independentReceipt: {
+      mode: RECEIPT_MODE,
+      receipt: {
         cryptographically_verified: true,
         outcome: "permit",
         policy_id: "wrong_policy",
@@ -249,14 +239,13 @@ describe("Build 885 signed institutional mandate adversarial", () => {
     expect(mismatch.enforcement_action).toBe("indeterminate");
     expect(mismatch.reasons).toContain("receipt_policy_mismatch");
 
-    const badBinding = enforceInstitutionalAction({
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo",
+    const badBinding = invokeProtectedEnforcement({
+      fixture,
+      signed,
       transaction: BASE_TRANSACTION,
       now: NOW,
-      independentReceipt: {
+      mode: RECEIPT_MODE,
+      receipt: {
         cryptographically_verified: true,
         outcome: "permit",
         policy_id: signed.payload.policy_id,
@@ -270,14 +259,13 @@ describe("Build 885 signed institutional mandate adversarial", () => {
 
   it("fail-closed when independent receipt required but missing", () => {
     const signed = buildControlledSignedMandate({ fixture });
-    const result = enforceInstitutionalAction({
-      signedMandate: signed,
-      signedIssuerAuthority: fixture.signedIssuerAuthority,
-      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
-      environment: "demo",
+    const result = invokeProtectedEnforcement({
+      fixture,
+      signed,
       transaction: BASE_TRANSACTION,
       now: NOW,
-      requireIndependentReceipt: true,
+      mode: RECEIPT_MODE,
+      receipt: null,
     });
     expect(result.enforcement_action).toBe("indeterminate");
     expect(result.reasons).toContain("independent_receipt_required");
