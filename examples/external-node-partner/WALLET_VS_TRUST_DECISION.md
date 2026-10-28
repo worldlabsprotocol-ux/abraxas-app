@@ -33,6 +33,12 @@ Success means the relying party:
 
 Wallet control is an **input** to the decision engine; the **product** is independently verifiable, current, policy-bound evidence your app can enforce without delegating trust to Abraxas UI.
 
-## Build 883 — transaction mandate (relying party)
+## Build 883 / 885 — transaction mandate (relying party)
 
-For institutional signing, add a **mandate gate** after independent Abraxas verification. See `lib/institutional/transactionMandateEnforcement.ts` in the Abraxas repo for a synthetic demonstration: permit only when authoritative mandate scope matches actor, amount, destination, tenant, policy, and freshness. Wallet control alone must not pass this gate.
+After independent Abraxas verification, enforce **issuer-backed mandate evidence** (`lib/institutional/mandate/`):
+
+1. Verify mandate signature against **signed issuer authority** (mandate issuer `reason_class`, not receipt-only keys).
+2. Match **transaction scope** (actor, tenant, policy version, amount, destination, action type, validity window).
+3. Optionally bind the Abraxas receipt via **evidence commitment** to the `mandate_id`.
+
+Build 885 uses a **controlled test issuer** (`abraxas_controlled_test_mandate_issuer_not_live_institution`) — not a live external institution. Wallet control and valid receipt signatures still **cannot** authorize if the mandate is invalid, out of scope, or issued by an unauthorized party.
