@@ -32,3 +32,7 @@ Success means the relying party:
 4. **Enforces** the result in their authorization path — including **deny** and **indeterminate** on wrong audience or stale evidence.
 
 Wallet control is an **input** to the decision engine; the **product** is independently verifiable, current, policy-bound evidence your app can enforce without delegating trust to Abraxas UI.
+
+## Build 883 — transaction mandate (relying party)
+
+For institutional signing, add a **mandate gate** after independent Abraxas verification. See `lib/institutional/transactionMandateEnforcement.ts` in the Abraxas repo for a synthetic demonstration: permit only when authoritative mandate scope matches actor, amount, destination, tenant, policy, and freshness. Wallet control alone must not pass this gate.
