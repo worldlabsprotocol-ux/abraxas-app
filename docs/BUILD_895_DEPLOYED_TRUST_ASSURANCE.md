@@ -34,7 +34,11 @@ Document-only module: `lib/institutional/mandate/issuerMandateHandoffRequirement
 
 Lists required signed artifacts (issuer authority, trust anchor pin, mandate payload, mandate-capable key class, sealed execution context). **No** new issuer dashboard or custody integration.
 
-## 4. Canonical processing emblem (founder correction)
+## 4. Integration Studio wallet continuity
+
+When ephemeral sandbox wallet proof is validated and policy-aligned with the sandbox application, Configuration shows **Wallet verified** instead of duplicate Solana/EVM connect cards. Server surface: `GET /api/developers/integration-studio/wallet-bindings` (`surface` field). Logic: `lib/developers/integrationStudioWalletSurface.ts`.
+
+## 5. Canonical processing emblem (founder correction)
 
 **Asset:** `/brand/living-sphere/abraxas-living-sphere-hero.jpg` (nav crop ≤40px display)
 
@@ -42,7 +46,7 @@ Lists required signed artifacts (issuer authority, trust anchor pin, mandate pay
 
 **Regression:** `lib/brand/canonicalProcessingEmblem.test.ts`
 
-## 5. Orchestration
+## 6. Orchestration
 
 ```bash
 npx tsx scripts/build-895/deployed-trust-evidence.ts
