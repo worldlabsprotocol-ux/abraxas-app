@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { PUBLIC_NAV_LINKS, PUBLIC_NAV_EXPLORE_LINKS } from "@/lib/design/publicSurface";
 import {
   FOOTER_COMPANY_LINKS,
-  FOOTER_DEVELOPER_LINKS,
-  FOOTER_PRODUCT_LINKS,
+  FOOTER_LEGAL_LINKS,
+  FOOTER_PRIMARY_LINKS,
 } from "@/lib/design/footerLinks";
 import {
   PUBLIC_JOURNEY_NEXT_STEPS,
@@ -65,9 +65,9 @@ describe("public product journey", () => {
     const hrefs = [
       ...PUBLIC_NAV_LINKS.map((link) => link.href),
       ...PUBLIC_NAV_EXPLORE_LINKS.map((link) => link.href),
-      ...FOOTER_PRODUCT_LINKS.map((link) => link.href),
-      ...FOOTER_DEVELOPER_LINKS.map((link) => link.href),
+      ...FOOTER_PRIMARY_LINKS.map((link) => link.href),
       ...FOOTER_COMPANY_LINKS.map((link) => link.href),
+      ...FOOTER_LEGAL_LINKS.map((link) => link.href),
       ...PUBLIC_JOURNEY_NEXT_STEPS.map((step) => step.href),
     ];
     expect(hrefs.filter((href) => !targetExists(href))).toEqual([]);

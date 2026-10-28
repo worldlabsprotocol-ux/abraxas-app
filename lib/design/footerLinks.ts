@@ -1,24 +1,26 @@
 // FILE: lib/design/footerLinks.ts
-// Canonical footer link groups — docs reachable without primary nav.
+// Minimal institutional footer — essentials only; product routes remain in primary nav.
 
-export const FOOTER_PRODUCT_LINKS = [
-  { label: "Passport", href: "/passport" },
+export const FOOTER_PRIMARY_LINKS = [
   { label: "Pricing", href: "/pricing" },
-  { label: "Capability map", href: "/#capability-map" },
-  { label: "For businesses", href: "/integrate" },
-  { label: "Pilot journey", href: "/pilot-journey" },
-] as const;
-
-export const FOOTER_DEVELOPER_LINKS = [
   { label: "Documentation", href: "/docs" },
-  { label: "Integration Studio", href: "/developers/integration-studio" },
-  { label: "Partner Flow", href: "/docs/partner-flow" },
-  { label: "Receipt verification", href: "/verify?mode=receipt" },
-  { label: "Solana integration", href: "/docs/solana" },
 ] as const;
 
 export const FOOTER_COMPANY_LINKS = [
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/worldlabsprotocol",
+    external: true,
+  },
+] as const;
+
+export const FOOTER_LEGAL_LINKS = [
   { label: "Privacy", href: "/legal/privacy" },
   { label: "Terms", href: "/legal/terms" },
-  { label: "Apply", href: "/integrations#apply" },
 ] as const;
+
+/** @deprecated Use FOOTER_PRIMARY_LINKS — kept for legacy imports during migration. */
+export const FOOTER_PRODUCT_LINKS = FOOTER_PRIMARY_LINKS;
+
+/** @deprecated Use FOOTER_PRIMARY_LINKS */
+export const FOOTER_DEVELOPER_LINKS = [{ label: "Documentation", href: "/docs" }] as const;

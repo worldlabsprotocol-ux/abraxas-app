@@ -140,10 +140,10 @@ describe("phase 9 holder journey batch 1", () => {
     expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
   });
 
-  it("routes footer product links to passport and businesses surfaces", () => {
+  it("uses minimal institutional footer links", () => {
     const footer = read("components/redesign/RedesignFooter.tsx");
-    expect(footer).toContain("FOOTER_PRODUCT_LINKS");
-    expect(footer).toContain("FOOTER_DEVELOPER_LINKS");
+    expect(footer).toContain("FOOTER_PRIMARY_LINKS");
+    expect(footer).toContain("FOOTER_LEGAL_LINKS");
     expect(footer).not.toContain("Tokenize");
     expect(footer).not.toMatch(/href:\s*"\/verify"/);
   });
@@ -220,9 +220,7 @@ describe("phase 9 holder journey batch 1", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     expect(nav).not.toMatch(/href:\s*"\/verify"/);
     const footer = read("components/redesign/RedesignFooter.tsx");
-    const footerLinks = read("lib/design/footerLinks.ts");
-    expect(footer).toContain("FOOTER_DEVELOPER_LINKS");
-    expect(footerLinks).toContain("Receipt verification");
-    expect(footerLinks).toContain("/verify?mode=receipt");
+    expect(footer).toContain("FOOTER_PRIMARY_LINKS");
+    expect(footer).not.toContain("/verify?mode=receipt");
   });
 });

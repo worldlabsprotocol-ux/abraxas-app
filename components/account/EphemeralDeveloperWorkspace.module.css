@@ -715,7 +715,8 @@
   gap: 0.45rem;
 }
 
-.completionPrimaryLink {
+.completionPrimaryLink,
+.completionPrimaryBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -730,10 +731,18 @@
   font-weight: 650;
   text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.completionPrimaryLink:hover {
+.completionPrimaryLink:hover,
+.completionPrimaryBtn:hover:not(:disabled) {
   background: #ffffff;
+}
+
+.completionPrimaryBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .completionPrimaryArrow {

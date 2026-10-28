@@ -49,7 +49,7 @@ test.describe("Mobile homepage navigation and architecture", () => {
       await page.getByRole("button", { name: /Show slide 2: How Abraxas works/i }).click();
       await page.locator(".abx-premium-hero-carousel--architecture").waitFor({ state: "attached", timeout: 15_000 });
 
-      const architectureTitle = page.getByRole("heading", { name: /Independent trust infrastructure/i });
+      const architectureTitle = page.getByRole("heading", { name: /Trust is continuous/i });
       await expect(architectureTitle).toBeVisible();
 
       const inputsStage = page.getByText("01", { exact: true }).first();

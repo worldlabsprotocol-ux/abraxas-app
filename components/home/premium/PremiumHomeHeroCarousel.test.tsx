@@ -17,8 +17,8 @@ vi.mock("@/components/home/premium/PremiumHomeHero", () => ({
   ),
 }));
 
-vi.mock("@/components/home/HomeProtocolInfrastructureSection", () => ({
-  HomeProtocolInfrastructureSection: () => <div data-testid="diagram-slide">diagram</div>,
+vi.mock("@/components/home/HomeTrustContinuousArchitectureImage", () => ({
+  HomeTrustContinuousArchitectureImage: () => <div data-testid="diagram-slide">diagram</div>,
 }));
 
 describe("PremiumHomeHeroCarousel", () => {
