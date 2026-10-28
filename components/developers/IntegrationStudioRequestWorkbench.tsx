@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import {
@@ -13,11 +13,26 @@ import { useIntegrationStudioOperational } from "@/components/developers/integra
 import { formatHarnessResultForBuilder } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
 import { buildLaunchpadTestScenarioRequestBody } from "@/lib/partner/launchpad/testScenarioClientRequest";
 import type { LaunchpadTestRunResult } from "@/lib/partner/launchpad/runTestScenario";
+import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import {
+  ApplicationConnectionAfterTestPanel,
+  persistHarnessSuccess,
+  readPersistedHarnessSuccess,
+} from "@/components/developers/ApplicationConnectionAfterTestPanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-export function IntegrationStudioRequestWorkbench() {
+export function IntegrationStudioRequestWorkbench({
+  packId,
+  pathId,
+  policyId,
+}: {
+  packId: PolicyPackId | null;
+  pathId: IntegrationStudioPathId;
+  policyId: string | null;
+}) {
   const { applicationId, signedIn, returnUrl, recordHttpTrace } = useIntegrationStudioOperational();
   const [scenarioId, setScenarioId] = useState<LaunchpadTestScenarioId>(
     LAUNCHPAD_TEST_SCENARIOS[0]?.id ?? "approved",
@@ -25,6 +40,12 @@ export function IntegrationStudioRequestWorkbench() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
+
+  useEffect(() => {
+    if (!applicationId) return;
+    const restored = readPersistedHarnessSuccess(applicationId);
+    if (restored) setOutcome(restored);
+  }, [applicationId]);
 
   async function runHarness() {
     if (!applicationId || !signedIn) return;
@@ -52,7 +73,11 @@ export function IntegrationStudioRequestWorkbench() {
         return;
       }
       if (data.result && typeof data.result === "object") {
-        setOutcome(formatHarnessResultForBuilder(data.result as LaunchpadTestRunResult));
+        const formatted = formatHarnessResultForBuilder(data.result as LaunchpadTestRunResult);
+        setOutcome(formatted);
+        if (applicationId && formatted.tone === "success") {
+          persistHarnessSuccess(applicationId, formatted);
+        }
       }
     } catch {
       setError("Harness request failed");
@@ -142,6 +167,19 @@ export function IntegrationStudioRequestWorkbench() {
           </Btn>
         </>
       )}
+      {applicationId && signedIn && packId && policyId && outcome?.tone === "success" ? (
+        <div style={{ marginTop: "1rem" }}>
+          <ApplicationConnectionAfterTestPanel
+            applicationId={applicationId}
+            signedIn={signedIn}
+            packId={packId}
+            pathId={pathId}
+            policyId={policyId}
+            returnUrl={returnUrl}
+            outcome={outcome}
+          />
+        </div>
+      ) : null}
     </ContentCard>
   );
 }
