@@ -3,9 +3,12 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { pageMetadata } from "@/lib/seo/metadata";
 
+import { AUTHENTICITY_VS_AUTHORITY, INSTITUTIONAL_TRUST_LEAD } from "@/lib/home/institutionalTrustPositioning";
+
 export const metadata = pageMetadata({
   title: "Protocol: Abraxas trust infrastructure",
-  description: "Policy evaluation, signed receipts, independent verification, and revocation without shared identity databases.",
+  description:
+    "Policy-bound trust decisions with authoritative evidence, independent verification, and current authorization—without shared identity databases.",
   path: "/protocol",
 });
 
@@ -14,8 +17,8 @@ export default function ProtocolPage() {
     <RedesignPage accent="neutral" maxWidth={880}>
       <PageHeader
         eyebrow="Protocol"
-        title="Independently verifiable authorization decisions"
-        subtitle="Abraxas evaluates policy-specific eligibility requests and returns signed receipts partners can verify without receiving underlying identity data."
+        title="Trust is continuous"
+        subtitle={`${INSTITUTIONAL_TRUST_LEAD} ${AUTHENTICITY_VS_AUTHORITY}`}
       />
       <ContentCard title="Core protocol surfaces">
         <ul>

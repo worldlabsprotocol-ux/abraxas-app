@@ -17,7 +17,7 @@ export default function IntegrationStudioPage() {
       <PageHeader
         eyebrow="Developers · Integration Studio"
         title="Your first integration"
-        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose what to verify, create a test app, send a request, receive a signed proof, and check it independently.`}
+        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Define policy, create a test app, run a holder step, receive a signed decision, and verify it independently before your app enforces permit, deny, or indeterminate.`}
       />
       <IntegrationStudioOperationalProvider>
         <IntegrationStudioWorkspace inspector={<IntegrationStudioInspectorRail />}>

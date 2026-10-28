@@ -6,9 +6,11 @@ This document is the single source of truth for public Abraxas architecture stor
 
 | Level | Audience | Surface | Model |
 | --- | --- | --- | --- |
-| Public | First time visitor | Homepage protocol card | Evidence → Decision → Verify |
-| Technical | Institutional engineer | Homepage disclosure “Technical architecture” | Four stage diagram (`HomeAbraxasSystemArchitectureDiagram`) |
-| Developer | Integrating team | Homepage disclosure “Developer integration path” | Six step integration sequence |
+| Public | First time visitor | Homepage hero + architecture slide | Trust is continuous — request → signed decision → verify → enforce |
+| Technical | Institutional engineer | Homepage architecture visual | Four engines: Evidence, Proof, Authority, Continuity |
+| Developer | Integrating team | Protocol page + Integration Studio | Policy → signed decision → independent verify → permit / deny / indeterminate |
+
+Institutional copy source: `lib/home/institutionalTrustPositioning.ts` and `docs/product/INSTITUTIONAL_TRUST_POSITIONING.md`.
 
 ## Canonical system diagram
 

@@ -1,9 +1,18 @@
 // FILE: lib/home/protocolPositioningCopy.ts
 // Public protocol positioning for homepage.
 
-export const PROTOCOL_HERO_TITLE = "Trust decisions. Independently verified.";
-export const PROTOCOL_HERO_LEAD =
-  "Abraxas turns authoritative evidence into signed trust decisions that applications can independently verify.";
+import {
+  AUTHENTICITY_VS_AUTHORITY,
+  INSTITUTIONAL_FOUR_ENGINES,
+  INSTITUTIONAL_TRUST_LEAD,
+  INSTITUTIONAL_TRUST_THESIS,
+} from "./institutionalTrustPositioning";
+
+export const PROTOCOL_HERO_TITLE = `${INSTITUTIONAL_TRUST_THESIS} Independently verifiable.`;
+export const PROTOCOL_HERO_LEAD = INSTITUTIONAL_TRUST_LEAD;
+
+/** Institutional distinction — surfaced in protocol disclosures, not repeated on every hero. */
+export const PROTOCOL_AUTHENTICITY_VS_AUTHORITY = AUTHENTICITY_VS_AUTHORITY;
 
 export const PROTOCOL_SECTION_EYEBROW = "Protocol";
 export const PROTOCOL_SECTION_TITLE = "Trust you can verify.";
@@ -14,17 +23,22 @@ export const PROTOCOL_PUBLIC_PILLARS = [
   {
     id: "evidence",
     label: "Evidence",
-    summary: "Authenticated inputs evaluated against policy.",
+    summary: "Authentic, authoritative inputs evaluated against policy.",
   },
   {
-    id: "decision",
-    label: "Decision",
-    summary: "A scoped result signed by Abraxas.",
+    id: "proof",
+    label: "Proof",
+    summary: "Independently verifiable decisions without trusting Abraxas UI.",
   },
   {
-    id: "verify",
-    label: "Verify",
-    summary: "Applications independently validate and enforce the result.",
+    id: "authority",
+    label: "Authority",
+    summary: "Scoped permission to request, issue, or authorize an action.",
+  },
+  {
+    id: "continuity",
+    label: "Continuity",
+    summary: "Expiration, revocation, and freshness determine current acceptability.",
   },
 ] as const;
 

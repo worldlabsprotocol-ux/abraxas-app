@@ -2,11 +2,11 @@
 // Noninteractive protocol signal bar between hero and protocol section.
 
 export const HOMEPAGE_PROTOCOL_MARQUEE_PHRASES = [
-  "Sovereign trust",
-  "Verified evidence",
+  "Authoritative evidence",
+  "Issuer authority",
   "Signed decisions",
   "Independent verification",
-  "Privacy by design",
+  "Continuity & revocation",
 ] as const;
 
 export const HOMEPAGE_PROTOCOL_MARQUEE_SEPARATOR = "✦";

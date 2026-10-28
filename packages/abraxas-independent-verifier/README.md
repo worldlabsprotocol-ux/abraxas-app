@@ -2,6 +2,8 @@
 
 Standalone cryptographic verification for Abraxas signed receipts and issuer authority statements.
 
+Use this when your application must **enforce permit, deny, or indeterminate** from policy-bound trust decisions—not when a wallet signature alone is enough to authorize an institutional action.
+
 Designed for **third-party relying parties** — no Abraxas application backend, Supabase, or PostgREST required.
 
 ## Integrator workflow

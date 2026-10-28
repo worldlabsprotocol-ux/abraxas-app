@@ -1,20 +1,20 @@
 // Institutional homepage narrative — product-truthful, no production claims for devnet proofs.
 
-export const INSTITUTIONAL_HOME_EYEBROW = "Independent trust & eligibility infrastructure";
+import { INSTITUTIONAL_TRUST_CLOSURE, INSTITUTIONAL_TRUST_LEAD, INSTITUTIONAL_TRUST_THESIS } from "./institutionalTrustPositioning";
 
-export const INSTITUTIONAL_HOME_TITLE =
-  "Holder-controlled trust and verification protocol";
+export const INSTITUTIONAL_HOME_EYEBROW = "Independent institutional trust layer";
 
-export const INSTITUTIONAL_HOME_LEAD =
-  "Passport connects proof-first presentations and portable revocation to real holder workflows. Partners receive evidence-backed policy answers, not biometrics, documents, or Abraxas identity database access at authorization time.";
+export const INSTITUTIONAL_HOME_TITLE = INSTITUTIONAL_TRUST_THESIS;
+
+export const INSTITUTIONAL_HOME_LEAD = `${INSTITUTIONAL_TRUST_LEAD} ${INSTITUTIONAL_TRUST_CLOSURE}`;
 
 export const INSTITUTIONAL_HOME_DEFINITION = {
   what:
-    "Abraxas is verification and authorization infrastructure: reusable evidence, policy evaluation, and signed decision receipts.",
+    "Abraxas is policy-bound trust infrastructure: authoritative evidence, issuer authority, signed decisions, and independent verification.",
   does:
-    "Partners configure required claims and assurance levels. Holders satisfy requests with consent. Abraxas evaluates trust and returns approved, denied, or manual-review outcomes with audit references.",
+    "Applications define what must be true for an action. Abraxas evaluates evidence and policy, then returns permit, deny, or indeterminate outcomes with portable proof. Custody, vault RBAC, and final enforcement stay in your systems.",
   why:
-    "Verification can be reused across applications, decisions can be re-checked without Abraxas as a single point of trust, and authorization can be revoked when policy or issuer state changes.",
+    "Institutions need decisions that remain checkable across platforms—who was authorized, under which policy, with evidence that is still current—not another permissions dashboard.",
 } as const;
 
 export const INSTITUTIONAL_TRUST_BOUNDARIES = [

@@ -27,7 +27,7 @@ describe("homepage simplification (#homepage-refinement)", () => {
   });
 
   it("uses one supporting hero line aligned with protocol lead", () => {
-    expect(CINEMATIC_HOME_LEAD).toContain("signed trust decisions");
+    expect(CINEMATIC_HOME_LEAD).toMatch(/policy-bound trust decisions/i);
     expect(CINEMATIC_HOME_LEAD).not.toContain("without exposing");
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).not.toContain("CINEMATIC_HOME_PRIVACY_SUPPORT");

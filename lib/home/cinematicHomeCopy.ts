@@ -1,6 +1,9 @@
 // FILE: lib/home/cinematicHomeCopy.ts
 // Cinematic homepage copy — thesis-first, product-truthful (Build #545 + legacy thesis modules).
 
+import { INSTITUTIONAL_TRUST_LEAD } from "./institutionalTrustPositioning";
+import { PROTOCOL_HERO_TITLE } from "./protocolPositioningCopy";
+
 export const CINEMATIC_THESIS_LINE_1 = "VERIFY WHAT MATTERS.";
 export const CINEMATIC_THESIS_LINE_2 = "REVEAL NOTHING ELSE.";
 
@@ -62,10 +65,9 @@ export const FOOTER_THESIS_LINE_1 = CINEMATIC_THESIS_LINE_1;
 export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 
 /** Build #545 public homepage hero and scroll chapters */
-export const CINEMATIC_HOME_HEADLINE = "Trust decisions. Independently verified.";
+export const CINEMATIC_HOME_HEADLINE = PROTOCOL_HERO_TITLE;
 
-export const CINEMATIC_HOME_LEAD =
-  "Abraxas turns authoritative evidence into signed trust decisions that applications can independently verify.";
+export const CINEMATIC_HOME_LEAD = INSTITUTIONAL_TRUST_LEAD;
 
 /** Privacy principle lives in product surfaces, not repeated under the hero. */
 export const CINEMATIC_HOME_PRIVACY_SUPPORT =
