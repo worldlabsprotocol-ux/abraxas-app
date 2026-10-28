@@ -11,6 +11,7 @@ import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
 import { useIntegrationStudioOperational } from "@/components/developers/integrationStudioOperationalContext";
 import { formatHarnessResultForBuilder } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
+import { buildLaunchpadTestScenarioRequestBody } from "@/lib/partner/launchpad/testScenarioClientRequest";
 import type { LaunchpadTestRunResult } from "@/lib/partner/launchpad/runTestScenario";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -30,7 +31,10 @@ export function IntegrationStudioRequestWorkbench() {
     setBusy(true);
     setError("");
     setOutcome(null);
-    const requestBody = { scenario_id: scenarioId, return_url: returnUrl };
+    const requestBody = buildLaunchpadTestScenarioRequestBody({
+      scenarioId,
+      returnUrl,
+    });
     try {
       const res = await fetch(`/api/launchpad/applications/${applicationId}/test`, {
         method: "POST",
