@@ -3,23 +3,26 @@
 
 import Link from "next/link";
 import type { EphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
-import {
-  GUIDED_INTEGRATION_JOURNEY,
-  guidedJourneyProgressLabel,
-} from "@/lib/developers/guidedIntegrationJourney";
+import type { ReceiptValidationUiState } from "@/lib/developers/mapReceiptValidationOutcome";
+import { guidedJourneyProgressLabel } from "@/lib/developers/guidedIntegrationJourney";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
-
-function ChecklistIcon({ state }: { state: "done" | "next" | "pending" | "blocked" }) {
-  if (state === "done") return <span aria-hidden>✓</span>;
-  if (state === "next") return <span aria-hidden>→</span>;
-  if (state === "blocked") return <span aria-hidden>!</span>;
-  return <span aria-hidden>○</span>;
-}
 
 export function EphemeralSandboxVerificationCompletion({
   view,
+  receiptValidation,
+  onCheckProof,
+  checkProofBusy,
+  receiptId,
+  payloadHash,
+  onRunAnotherTest,
 }: {
   view: EphemeralSandboxCompletionView;
+  receiptValidation: ReceiptValidationUiState;
+  onCheckProof: () => void;
+  checkProofBusy: boolean;
+  receiptId: string | null;
+  payloadHash: string | null;
+  onRunAnotherTest?: () => void;
 }) {
   const toneClass =
     view.tone === "success"
@@ -28,11 +31,17 @@ export function EphemeralSandboxVerificationCompletion({
         ? styles.completionCaution
         : styles.completionNeutral;
 
-  const journeyStep = view.primaryAction?.label === "Build my test app" ? 2 : 1;
-  const journeyLabel = GUIDED_INTEGRATION_JOURNEY[journeyStep - 1]?.title ?? "Prove wallet control";
+  const journeyStep =
+    view.primaryAction?.kind === "link" && view.primaryAction.label === "Create your test app" ? 2 : 1;
+
+  const showProofStage =
+    view.primaryAction?.kind === "check_proof" || receiptValidation.status === "checking";
+
+  const showValidatedOutcome =
+    receiptValidation.status === "validated" && view.primaryAction?.kind === "link";
 
   return (
-    <div className={`${styles.completionHero} ${toneClass}`}>
+    <div className={`${styles.completionHero} ${toneClass}`} data-testid="sandbox-completion-active-stage">
       <p className={styles.journeyKicker}>
         Abraxas · Your first integration · {guidedJourneyProgressLabel(journeyStep)}
       </p>
@@ -41,91 +50,120 @@ export function EphemeralSandboxVerificationCompletion({
       <p className={styles.completionSummary}>{view.summary}</p>
       <p className={styles.note}>{view.sandboxOnlyNote}</p>
 
-      <details className={styles.completionDetailsCollapsible}>
-        <summary>Technical details</summary>
-      <div className={styles.completionDetails}>
-        <p className={styles.resultLine}>
-          <strong>What was verified:</strong> {view.whatVerified}
-        </p>
-        <p className={styles.resultLine}>
-          <strong>{view.policyLine}</strong>
-        </p>
-        <p className={styles.resultLine}>{view.decisionLine}</p>
-        <p className={styles.resultLine}>{view.acceptabilityLine}</p>
-        <p className={styles.resultLine}>
-          <strong>Receipt:</strong> {view.receiptRepresents}
-        </p>
-        <p className={styles.muted}>{view.receiptUseLine}</p>
-        {view.validationModeLine ? <p className={styles.muted}>{view.validationModeLine}</p> : null}
-      </div>
-      </details>
-
-      {view.applicationHandoff ? (
-        <div className={styles.integrationHandoff}>
-          <p className={styles.completionNextTitle}>{view.applicationHandoff.title}</p>
-          <p className={styles.muted}>{view.applicationHandoff.summary}</p>
-          <ol className={styles.integrationHandoffSteps}>
-            {view.applicationHandoff.steps.map((step) => (
-              <li key={step.id} data-state={step.state}>
-                <span className={styles.integrationHandoffStepLabel}>{step.label}</span>
-                <span className={styles.muted}>{step.detail}</span>
-              </li>
-            ))}
-          </ol>
-          <Link className={styles.completionSecondaryLink} href={view.applicationHandoff.studioHref}>
-            Continue application setup in this workspace
-          </Link>
-        </div>
-      ) : null}
-
-      <div className={styles.completionNext}>
-        <p className={styles.completionNextTitle}>
-          {view.primaryAction?.label === "Build my test app"
-            ? "Your wallet is verified. Now see how Abraxas works in your app."
-            : "What happens next?"}
-        </p>
-        <p className={styles.muted}>
-          {view.primaryAction?.label === "Build my test app"
-            ? "Create a test application here to request verification and enforce the signed result in your own code — separate from your wallet demonstration."
-            : "An application can use this verification result to decide whether to allow a specific action. In this sandbox, no live access or eligibility is granted."}
-        </p>
-        <p className={styles.journeyNextLabel} aria-hidden>
-          Next · {journeyLabel}
-        </p>
-        <ul className={styles.completionChecklist}>
-          {view.checklist.map((item) => (
-            <li key={item.id} data-state={item.state}>
-              <ChecklistIcon state={item.state} />
-              <span>{item.label}</span>
-            </li>
-          ))}
-        </ul>
+      <div className={styles.validationPanel} aria-live="polite" aria-busy={receiptValidation.status === "checking"}>
+        {receiptValidation.status === "checking" ? (
+          <div className={styles.statusRow} role="status">
+            <span className={styles.spinner} aria-hidden />
+            Checking your proof…
+          </div>
+        ) : null}
+        {receiptValidation.status === "validated" ? (
+          <>
+            <p className={styles.resultLine}>{view.acceptabilityLine}</p>
+            {receiptValidation.verificationSummary ? (
+              <p className={styles.note}>{receiptValidation.verificationSummary}</p>
+            ) : null}
+            <p className={styles.resultLine}>
+              <strong>
+                {receiptValidation.standaloneCryptographicVerification === false
+                  ? "Sandbox integrity verified:"
+                  : "Signature authentic:"}
+              </strong>{" "}
+              {receiptValidation.signatureAuthentic ? "Yes" : "No"}
+            </p>
+            <p className={styles.resultLine}>
+              <strong>Currently acceptable:</strong>{" "}
+              {receiptValidation.currentlyAcceptable ? "Yes" : "No"}
+            </p>
+            {receiptValidation.checkedAt ? (
+              <p className={styles.meta}>
+                Checked {new Date(receiptValidation.checkedAt).toLocaleString()}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+        {receiptValidation.status === "failed" ? (
+          <div className={styles.errorPanel} role="alert">
+            <p className={styles.errorTitle}>{receiptValidation.title}</p>
+            <p className={styles.errorMessage}>{receiptValidation.message}</p>
+            {receiptValidation.recovery ? (
+              <p className={styles.errorRecovery}>{receiptValidation.recovery}</p>
+            ) : null}
+            <button
+              type="button"
+              className={styles.linkBtn}
+              disabled={checkProofBusy}
+              onClick={onCheckProof}
+            >
+              Try checking your proof again
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {view.primaryAction ? (
         <div className={styles.completionPrimaryWrap}>
-          {view.primaryAction.inPageAnchor ? (
-            <a className={styles.completionPrimaryLink} href={view.primaryAction.href}>
-              {view.primaryAction.label}
-            </a>
+          {view.primaryAction.kind === "check_proof" ? (
+            <button
+              type="button"
+              className={styles.completionPrimaryBtn}
+              disabled={checkProofBusy || receiptValidation.status === "checking"}
+              onClick={onCheckProof}
+            >
+              {receiptValidation.status === "checking" ? "Checking your proof…" : view.primaryAction.label}
+            </button>
           ) : (
-            <Link className={styles.completionPrimaryLink} href={view.primaryAction.href}>
+            <Link className={styles.completionPrimaryLink} href={view.primaryAction.href ?? "#"}>
               {view.primaryAction.label}
-              {view.primaryAction.href.includes("/developers/integration-studio") ? (
-                <span aria-hidden className={styles.completionPrimaryArrow}>
-                  ↗
-                </span>
-              ) : null}
             </Link>
           )}
           <p className={styles.muted}>{view.primaryAction.description}</p>
-          {view.secondaryAction ? (
-            <Link className={styles.completionSecondaryLink} href={view.secondaryAction.href}>
-              {view.secondaryAction.label}
-            </Link>
-          ) : null}
         </div>
       ) : null}
+
+      {showProofStage && view.primaryAction?.kind === "check_proof" ? (
+        <p className={styles.muted}>After verification: Create your test app</p>
+      ) : null}
+
+      {showValidatedOutcome && view.secondaryAction ? (
+        <Link className={styles.completionSecondaryLink} href={view.secondaryAction.href ?? "#"}>
+          {view.secondaryAction.label}
+        </Link>
+      ) : null}
+
+      <details className={styles.completionDetailsCollapsible}>
+        <summary>Technical details</summary>
+        <div className={styles.completionDetails}>
+          <p className={styles.resultLine}>
+            <strong>What was verified:</strong> {view.whatVerified}
+          </p>
+          <p className={styles.resultLine}>
+            <strong>{view.policyLine}</strong>
+          </p>
+          <p className={styles.resultLine}>{view.decisionLine}</p>
+          <p className={styles.resultLine}>
+            <strong>Receipt:</strong> {view.receiptRepresents}
+          </p>
+          <p className={styles.muted}>{view.receiptUseLine}</p>
+          {view.validationModeLine ? <p className={styles.muted}>{view.validationModeLine}</p> : null}
+          {receiptId ? (
+            <p className={styles.mono}>
+              {receiptId}
+              {payloadHash ? (
+                <>
+                  <br />
+                  {payloadHash}
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          {onRunAnotherTest ? (
+            <button type="button" className={styles.linkBtn} onClick={onRunAnotherTest}>
+              Run another test
+            </button>
+          ) : null}
+        </div>
+      </details>
     </div>
   );
 }

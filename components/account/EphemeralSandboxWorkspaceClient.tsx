@@ -993,17 +993,24 @@ export function EphemeralSandboxWorkspaceClient() {
         <UnifiedWorkspaceJourneyBar currentStepId={journeyStepId} />
         {result && sandboxCompletionView ? (
           <div className={styles.panel}>
-            <p className={styles.completionEyebrow}>{sandboxCompletionView.statusEyebrow}</p>
-            <h2 className={styles.sectionTitle}>{sandboxCompletionView.headline}</h2>
-            <p className={styles.muted}>{sandboxCompletionView.summary}</p>
-            <p className={styles.note}>{sandboxCompletionView.sandboxOnlyNote}</p>
-            <details className={styles.completionDetailsCollapsible}>
-              <summary>Wallet proof vs application enforcement</summary>
-              <p className={styles.muted}>
-                Wallet control confirmed for this sandbox test. Partner authorization requires your application to
-                verify and enforce a portable receipt — configured in the steps below.
-              </p>
-            </details>
+            <EphemeralSandboxVerificationCompletion
+              view={sandboxCompletionView}
+              receiptValidation={receiptValidation}
+              onCheckProof={() => void validateReceiptIndependent()}
+              checkProofBusy={busy}
+              receiptId={result.receipt_id ? String(result.receipt_id) : null}
+              payloadHash={result.payload_hash ?? null}
+              onRunAnotherTest={() => {
+                setResult(null);
+                setReceiptValidation({ status: "idle" });
+                setDecision(null);
+                setPreparedEvidence(null);
+                setPresentationCommitId(null);
+                setPresentationDisclosure(null);
+                setUserError(null);
+                setPhase("workspace");
+              }}
+            />
           </div>
         ) : (
           <div className={styles.panel}>
@@ -1072,7 +1079,7 @@ export function EphemeralSandboxWorkspaceClient() {
         ) : null}
       </div>
 
-      {workspace ? <TrustExecutionTrace stages={trustStages} /> : null}
+      {workspace && phase !== "result" ? <TrustExecutionTrace stages={trustStages} /> : null}
 
       <div className={styles.panel}>
         {serverSessionAuthenticated && (phase === "ready" || phase === "entering") && !workspace ? (
@@ -1101,6 +1108,7 @@ export function EphemeralSandboxWorkspaceClient() {
         ) : null}
 
         {workspace
+        && phase !== "result"
         && phase !== "review"
         && phase !== "signing"
         && phase !== "submitting"
@@ -1357,94 +1365,14 @@ export function EphemeralSandboxWorkspaceClient() {
         {result ? (
           <div className={styles.resultBox}>
             {sandboxCompletionView ? (
-              <EphemeralSandboxVerificationCompletion view={sandboxCompletionView} />
-            ) : null}
-            <p className={styles.note} id="check-proof">
-              Check your proof runs an independent check of your verification receipt. See whether it is authentic
-              and still valid — no additional wallet signature required.
-            </p>
-            <div className={styles.validationPanel} aria-live="polite">
-              {receiptValidation.status === "idle" ? (
-                <p className={styles.muted}>Independent validation not run yet.</p>
-              ) : null}
-              {receiptValidation.status === "checking" ? (
-                <div className={styles.statusRow} role="status">
-                  <span className={styles.spinner} aria-hidden />
-                  Checking receipt…
-                </div>
-              ) : null}
-              {receiptValidation.status === "validated" ? (
-                <>
-                  <h4 className={styles.validationTitle}>Your proof checks out</h4>
-                  {receiptValidation.verificationSummary ? (
-                    <p className={styles.note}>{receiptValidation.verificationSummary}</p>
-                  ) : null}
-                  <p className={styles.resultLine}>
-                    <strong>
-                      {receiptValidation.standaloneCryptographicVerification === false
-                        ? "Sandbox integrity verified:"
-                        : "Signature authentic:"}
-                    </strong>{" "}
-                    {receiptValidation.signatureAuthentic ? "Yes" : "No"}
-                  </p>
-                  <p className={styles.resultLine}>
-                    <strong>Currently acceptable:</strong>{" "}
-                    {receiptValidation.currentlyAcceptable ? "Yes" : "No"}
-                  </p>
-                  {!receiptValidation.currentlyAcceptable
-                  && receiptValidation.invalidationReasons.length > 0 ? (
-                    <p className={styles.note}>
-                      This receipt is not currently acceptable for reliance. Review the receipt details before
-                      sharing.
-                    </p>
-                  ) : null}
-                  <p className={styles.meta}>
-                    Checked {new Date(receiptValidation.checkedAt).toLocaleString()}
-                  </p>
-                </>
-              ) : null}
-              {receiptValidation.status === "failed" ? (
-                <div className={styles.errorPanel} role="alert">
-                  <p className={styles.errorTitle}>{receiptValidation.title}</p>
-                  <p className={styles.errorMessage}>{receiptValidation.message}</p>
-                  {receiptValidation.recovery ? (
-                    <p className={styles.errorRecovery}>{receiptValidation.recovery}</p>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            <details className={styles.receiptDetails}>
-              <summary>Receipt details</summary>
-              <p className={styles.mono}>
-                {String(result.receipt_id)}
-                <br />
-                {result.payload_hash}
-              </p>
-            </details>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.secondaryBtn}
-                disabled={busy || !result.receipt_id || receiptValidation.status === "checking"}
-                onClick={() => void validateReceiptIndependent()}
-              >
-                Check your proof
-              </button>
-              {receiptValidation.status === "failed" ? (
-                <button
-                  type="button"
-                  className={styles.secondaryBtn}
-                  disabled={busy}
-                  onClick={() => void validateReceiptIndependent()}
-                >
-                  Retry validation
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className={styles.secondaryBtn}
-                disabled={busy}
-                onClick={() => {
+              <EphemeralSandboxVerificationCompletion
+                view={sandboxCompletionView}
+                receiptValidation={receiptValidation}
+                onCheckProof={() => void validateReceiptIndependent()}
+                checkProofBusy={busy}
+                receiptId={result.receipt_id ? String(result.receipt_id) : null}
+                payloadHash={result.payload_hash ?? null}
+                onRunAnotherTest={() => {
                   setResult(null);
                   setReceiptValidation({ status: "idle" });
                   setDecision(null);
@@ -1454,10 +1382,8 @@ export function EphemeralSandboxWorkspaceClient() {
                   setUserError(null);
                   setPhase("workspace");
                 }}
-              >
-                Run another test
-              </button>
-            </div>
+              />
+            ) : null}
           </div>
         ) : null}
       </div>

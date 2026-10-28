@@ -14,10 +14,9 @@ export type SandboxCompletionChecklistItem = {
 
 export type SandboxCompletionPrimaryAction = {
   label: string;
-  href: string;
   description: string;
-  /** When set, UI may scroll to an in-page anchor instead of treating as external navigation. */
-  inPageAnchor?: boolean;
+  kind: "link" | "check_proof";
+  href?: string;
 };
 
 export type ApplicationIntegrationHandoffStep = {
@@ -269,55 +268,56 @@ export function buildEphemeralSandboxCompletionView(input: {
 
   if (integrateEligible) {
     primaryAction = {
-      label: "Build my test app",
+      kind: "link",
+      label: "Create your test app",
       href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
       description:
-        "Create a test application and see how Abraxas requests and checks verification in an isolated sandbox. No coding needed to explore.",
+        "Create a test application in this workspace and see how Abraxas requests and checks verification.",
     };
     secondaryAction = {
+      kind: "link",
       label: "Explore how verification works",
       href: EXPLORE_VERIFICATION_HREF,
       description: "Read how signed receipts and independent checks fit together.",
     };
   } else if (approved && !validated && !failedValidation) {
     primaryAction = {
+      kind: "check_proof",
       label: "Check your proof",
-      href: "#check-proof",
-      inPageAnchor: true,
       description:
-        "Confirm the receipt is authentic and still valid before you continue.",
-    };
-    secondaryAction = {
-      label: "Build my test app",
-      href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
-      description: "Skip ahead to Integration Studio when you are ready to experiment with your own app.",
+        "Confirm your receipt is authentic and still valid. No additional wallet signature is needed.",
     };
   } else if (!approved && !failedValidation) {
     primaryAction = {
+      kind: "link",
       label: "Review policy in Integration Studio",
       href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
       description:
         "Compare the Launchpad policy pack and integration path with what you tested. Adjust requirements or run another sandbox test.",
     };
     secondaryAction = {
+      kind: "link",
       label: "Run another sandbox test",
       href: integrationStudioReturnToWorkspaceHref(),
       description: "Return to the Developer Workspace policy screen.",
     };
   } else if (failedValidation) {
     primaryAction = {
+      kind: "link",
       label: "Run another sandbox test",
       href: integrationStudioReturnToWorkspaceHref(),
       description: failedValidation.recovery ?? "Start a fresh verification in the Developer Workspace.",
     };
     if (failedValidation.technicalCode === "result_not_found") {
       secondaryAction = {
+        kind: "link",
         label: "Developer documentation",
         href: DOCS_HREF,
         description: "Sandbox test records expire after 24 hours; credential validity and signing challenges use separate rules.",
       };
     } else {
       secondaryAction = {
+        kind: "link",
         label: "Developer documentation",
         href: DOCS_HREF,
         description: failedValidation.recovery ?? "Review receipt verification guidance before sharing results.",
@@ -325,11 +325,13 @@ export function buildEphemeralSandboxCompletionView(input: {
     }
   } else if (validated && currentlyAcceptable === false) {
     primaryAction = {
+      kind: "link",
       label: "Run another sandbox test",
       href: integrationStudioReturnToWorkspaceHref(),
       description: "Expired or policy-gated receipts should not authorize actions. Create a fresh test result.",
     };
     secondaryAction = {
+      kind: "link",
       label: "Review policy in Integration Studio",
       href: buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
       description: "Confirm receipt lifetime and policy version expectations for your integration.",
@@ -347,7 +349,20 @@ export function buildEphemeralSandboxCompletionView(input: {
       ? "SANDBOX TEST RESULT"
       : currentlyAcceptable === false
         ? "SANDBOX TEST — NOT ACCEPTABLE"
-        : "SANDBOX TEST COMPLETE";
+        : approved && !validated
+          ? "Wallet control confirmed"
+          : integrateEligible
+            ? "Your proof checks out"
+            : "SANDBOX TEST COMPLETE";
+
+  let headline = headlineForDecision(input.policyId, input.policyLabel, decisionNorm);
+  if (approved && !validated && !failedValidation) {
+    headline = "Check your proof";
+    summary =
+      "Confirm your verification receipt is authentic and still valid. No additional wallet signature is needed.";
+  } else if (integrateEligible) {
+    headline = "Your proof checks out";
+  }
 
   const applicationHandoff = buildApplicationIntegrationHandoff({
     policyId: input.policyId,
@@ -357,7 +372,7 @@ export function buildEphemeralSandboxCompletionView(input: {
 
   return {
     statusEyebrow,
-    headline: headlineForDecision(input.policyId, input.policyLabel, decisionNorm),
+    headline,
     summary,
     tone,
     sandboxOnlyNote,

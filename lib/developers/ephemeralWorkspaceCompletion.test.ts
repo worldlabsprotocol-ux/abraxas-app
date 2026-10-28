@@ -12,14 +12,11 @@ describe("buildEphemeralSandboxCompletionView", () => {
       decision: "approved",
       receiptValidation: { status: "idle" },
     });
-    expect(view.headline).toBe("Wallet control confirmed");
+    expect(view.headline).toBe("Check your proof");
+    expect(view.statusEyebrow).toBe("Wallet control confirmed");
+    expect(view.primaryAction?.kind).toBe("check_proof");
     expect(view.primaryAction?.label).toBe("Check your proof");
-    expect(view.primaryAction?.href).toBe("#check-proof");
-    expect(view.secondaryAction?.label).toBe("Build my test app");
-    expect(view.secondaryAction?.href).toContain("/developers/ephemeral-sandbox");
-    expect(view.secondaryAction?.href).toContain("integration=1");
-    expect(view.secondaryAction?.href).toContain(`source=${DEVELOPER_WORKSPACE_STUDIO_SOURCE}`);
-    expect(view.secondaryAction?.href).toContain("pack=wallet_control");
+    expect(view.secondaryAction).toBeNull();
     expect(view.acceptabilityLine).toMatch(/not checked yet/i);
   });
 
@@ -76,7 +73,8 @@ describe("buildEphemeralSandboxCompletionView", () => {
     });
     expect(view.validationModeLine).toMatch(/sandbox records/i);
     expect(view.tone).toBe("success");
-    expect(view.primaryAction?.label).toBe("Build my test app");
+    expect(view.primaryAction?.label).toBe("Create your test app");
+    expect(view.headline).toBe("Your proof checks out");
     expect(view.applicationHandoff?.title).toBe("Put it in your app");
     expect(view.applicationHandoff?.steps.some((s) => s.state === "current")).toBe(true);
   });

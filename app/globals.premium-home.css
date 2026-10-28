@@ -1882,3 +1882,41 @@
 .rd-nav-primary-action:hover {
   opacity: 0.92;
 }
+
+.abx-trust-continuous-arch {
+  margin: 0;
+  padding: 0;
+  min-width: min(100%, 72rem);
+}
+
+.abx-trust-continuous-arch__caption {
+  margin-bottom: 1rem;
+  max-width: 36rem;
+}
+
+.abx-trust-continuous-arch__title {
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 700;
+  margin: 0.35rem 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.abx-trust-continuous-arch__lead {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.abx-trust-continuous-arch__scroll {
+  overflow: visible;
+}
+
+.abx-trust-continuous-arch__image {
+  width: auto;
+  height: auto;
+  max-width: none;
+  min-width: min(120vw, 72rem);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

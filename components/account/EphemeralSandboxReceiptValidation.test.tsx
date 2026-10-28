@@ -9,6 +9,16 @@ import { buildWalletActionChallengeDisplay } from "@/lib/auth/ephemeralWallet/ac
 
 const signMessage = vi.fn();
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/developers/ephemeral-sandbox",
+}));
+
+vi.mock("@/components/developers/EmbeddedIntegrationStudioPanel", () => ({
+  EmbeddedIntegrationStudioPanel: () => null,
+}));
+
 vi.mock("@solana/wallet-adapter-react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@solana/wallet-adapter-react")>();
   return {
@@ -206,6 +216,9 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
+        if (url.includes("/api/auth/wallet/sandbox/guided-progress") && init?.method === "PATCH") {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
         if (url.includes("/api/auth/wallet/sandbox/validate") && init?.method === "POST") {
           return new Response(
             JSON.stringify({
@@ -264,20 +277,21 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Verify with Phantom/i })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
 
-    await waitFor(() => expect(screen.getByText(/Wallet control confirmed/i)).toBeTruthy());
-    const studioHref = screen.getByRole("link", { name: /Build my test app/i }).getAttribute("href");
-    expect(studioHref).toContain("/developers/integration-studio");
-    expect(studioHref).toContain("source=developer-workspace");
-    expect(studioHref).toContain("pack=wallet_control");
-    expect(studioHref).toContain("#sandbox");
-    expect(screen.getByText(/Independent validation not run yet/i)).toBeTruthy();
-    expect(screen.queryByText(/Receipt validated/i)).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: /Check your proof/i }));
-
     await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 4, name: "Your proof checks out" })).toBeTruthy(),
+      expect(screen.getByTestId("sandbox-completion-active-stage")).toBeTruthy(),
     );
+    expect(screen.getAllByRole("button", { name: /^Check your proof$/i })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /Review request/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Create your test app/i })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Check your proof$/i }));
+
+    await waitFor(
+      () =>
+        expect(screen.getByRole("heading", { level: 3, name: "Your proof checks out" })).toBeTruthy(),
+      { timeout: 5000 },
+    );
+    expect(screen.getByRole("link", { name: /Create your test app/i })).toBeTruthy();
     expect(screen.getByText(/Signature authentic:/i)).toBeTruthy();
     const callsAfterValidate = signMessage.mock.calls.length;
     expect(callsAfterValidate).toBeGreaterThanOrEqual(1);

@@ -17,7 +17,7 @@ import {
   CINEMATIC_HOME_CTA_PRIMARY_HREF,
 } from "@/lib/home/cinematicHomeCopy";
 import { PremiumHomeHero } from "@/components/home/premium/PremiumHomeHero";
-import { HomeProtocolInfrastructureSection } from "@/components/home/HomeProtocolInfrastructureSection";
+import { HomeTrustContinuousArchitectureImage } from "@/components/home/HomeTrustContinuousArchitectureImage";
 import { useReducedMotion } from "framer-motion";
 
 const SLIDES = [
@@ -155,27 +155,21 @@ export function PremiumHomeHeroCarousel() {
             inert={activeIndex !== 1}
           >
             <div className="abx-premium-hero-carousel__diagram-shell">
-              <header className="abx-premium-hero-carousel__diagram-intro">
-                <p className="abx-v2-eyebrow">02 · How Abraxas works</p>
-                <p className="abx-premium-hero-carousel__diagram-lead">
-                  Evidence → Decision → Verification — full architecture at readable scale.
-                </p>
-                <p className="abx-premium-hero-carousel__diagram-scroll-hint" id={`${regionId}-diagram-hint`}>
-                  Swipe the architecture stages horizontally — Evidence through Verification.
-                </p>
-              </header>
+              <p className="abx-premium-hero-carousel__diagram-scroll-hint" id={`${regionId}-diagram-hint`}>
+                Swipe horizontally to explore the full architecture diagram.
+              </p>
               <div className="abx-premium-hero-carousel__diagram-scroll-wrap">
                 <div
                   ref={diagramScrollRef}
                   className="abx-premium-hero-carousel__diagram-scroll"
                   role="group"
-                  aria-roledescription="scrollable architecture stages"
-                  aria-label="Abraxas trust architecture stages"
+                  aria-roledescription="scrollable architecture diagram"
+                  aria-label="Trust is continuous architecture diagram"
                   aria-describedby={`${regionId}-diagram-hint`}
                   tabIndex={0}
                 >
                   {diagramMounted ? (
-                    <HomeProtocolInfrastructureSection diagramPriority={false} />
+                    <HomeTrustContinuousArchitectureImage priority={false} />
                   ) : (
                     <div className="abx-premium-hero-carousel__diagram-placeholder" aria-hidden="true" />
                   )}
