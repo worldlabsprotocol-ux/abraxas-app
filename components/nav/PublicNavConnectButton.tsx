@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth/ephemeralWallet/clientSession";
 import { PublicNavAccountMenu, PublicNavConnectPrimary } from "@/components/nav/PublicNavAccountMenu";
 import { SolanaAccountSignInDialog } from "@/components/nav/SolanaAccountSignInDialog";
+import { HOMEPAGE_CTA_START_BUILDING } from "@/lib/home/homepagePlainCopy";
 import {
   PUBLIC_CONNECT_ACCOUNT_HREF,
   PUBLIC_NAV_EXPLORE_HREF,
@@ -164,7 +165,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   if (phase === "loading") {
     return (
-      <PublicNavConnectPrimary prominent={prominent} label="Sign in" ariaLabel="Loading sign-in" disabled />
+      <PublicNavConnectPrimary prominent={prominent} label={HOMEPAGE_CTA_START_BUILDING} ariaLabel="Loading" disabled />
     );
   }
 
@@ -194,8 +195,8 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     return (
       <PublicNavConnectPrimary
         prominent={prominent}
-        label="Sign in"
-        ariaLabel="Create an Abraxas account in the workspace section"
+        label={HOMEPAGE_CTA_START_BUILDING}
+        ariaLabel="Start building with Abraxas"
         href={PUBLIC_NAV_WORKSPACE_HREF}
       />
     );
@@ -226,8 +227,8 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     <>
       <PublicNavConnectPrimary
         prominent={prominent}
-        label={busy ? "Signing in" : "Sign in"}
-        ariaLabel="Sign in with Solana wallet"
+        label={busy ? "Authorizing" : HOMEPAGE_CTA_START_BUILDING}
+        ariaLabel="Start building with Solana wallet authorization"
         busy={busy}
         onClick={openSignIn}
         footer={errorFooter}

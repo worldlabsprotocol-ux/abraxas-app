@@ -8,7 +8,10 @@ import {
   type LaunchpadTestScenarioId,
 } from "@/lib/partner/launchpad/testScenarios";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
 import { useIntegrationStudioOperational } from "@/components/developers/integrationStudioOperationalContext";
+import { formatHarnessResultForBuilder } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
+import type { LaunchpadTestRunResult } from "@/lib/partner/launchpad/runTestScenario";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -20,11 +23,13 @@ export function IntegrationStudioRequestWorkbench() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
 
   async function runHarness() {
     if (!applicationId || !signedIn) return;
     setBusy(true);
     setError("");
+    setOutcome(null);
     const requestBody = { scenario_id: scenarioId, return_url: returnUrl };
     try {
       const res = await fetch(`/api/launchpad/applications/${applicationId}/test`, {
@@ -40,6 +45,10 @@ export function IntegrationStudioRequestWorkbench() {
       );
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : "Harness request failed");
+        return;
+      }
+      if (data.result && typeof data.result === "object") {
+        setOutcome(formatHarnessResultForBuilder(data.result as LaunchpadTestRunResult));
       }
     } catch {
       setError("Harness request failed");
@@ -50,10 +59,17 @@ export function IntegrationStudioRequestWorkbench() {
   }
 
   return (
-    <ContentCard title="Authenticated request builder" id="request">
+    <ContentCard title="Run a test" id="request">
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
-        Runs the partner test harness against your sandbox application. Responses and any signed receipt material appear in the inspector. Nothing is fabricated.
+        Run a real sandbox verification against your application. The result and signed receipt material appear here and in the inspector.
       </p>
+      {busy ? <AbraxasJourneyEmblemStatus state="running_test" detail="Executing harness request against your sandbox application." /> : null}
+      {outcome && !busy ? (
+        <AbraxasJourneyEmblemStatus
+          state={outcome.tone === "success" ? "verified" : "needs_attention"}
+          detail={outcome.headline}
+        />
+      ) : null}
       {!applicationId && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>
           Create your test app above to enable live requests.
@@ -92,8 +108,33 @@ export function IntegrationStudioRequestWorkbench() {
             return_url: {returnUrl}
           </p>
           {error && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)" }}>{error}</p>}
+          {outcome && !busy ? (
+            <div
+              style={{
+                fontFamily: FONT,
+                fontSize: "0.78rem",
+                lineHeight: 1.55,
+                margin: "0 0 0.75rem",
+                padding: "0.75rem 0.85rem",
+                borderRadius: 10,
+                border:
+                  outcome.tone === "success"
+                    ? "1px solid rgba(76,187,146,0.45)"
+                    : "1px solid rgba(248,113,113,0.35)",
+                background: "var(--surface-inset)",
+              }}
+            >
+              <p style={{ margin: "0 0 0.35rem", fontWeight: 700 }}>{outcome.headline}</p>
+              <p style={{ margin: 0, color: "var(--text-secondary)" }}>{outcome.summary}</p>
+              {outcome.receiptId ? (
+                <p style={{ margin: "0.55rem 0 0", fontFamily: MONO, fontSize: "0.65rem", color: "var(--text-muted)" }}>
+                  receipt_id: {outcome.receiptId}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <Btn size="sm" disabled={busy} onClick={() => void runHarness()}>
-            {busy ? "Running…" : "Run harness request"}
+            {busy ? "Running…" : "Run test"}
           </Btn>
         </>
       )}

@@ -12,6 +12,7 @@ import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resol
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { resolveApplicationPolicyBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
 import { buildPolicyPresentationFromTemplateId } from "@/lib/partner/launchpad/policyPresentation";
+import { prepareLaunchpadStarterKitBody } from "@/lib/partner/starterKit/prepareLaunchpadStarterKitBody";
 import { validateStarterKitInput } from "@/lib/partner/starterKit/validate";
 import { generateStarterKit } from "@/lib/partner/starterKit/generate";
 import { starterKitPinFromBinding } from "@/lib/partner/starterKit/bindingPin";
@@ -51,10 +52,18 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return launchpadError(resolved.code, status);
   }
 
-  const validated = validateStarterKitInput({
-    ...record,
-    pack_id: resolved.binding.pack_id,
-  });
+  let preparedBody: Record<string, unknown>;
+  try {
+    preparedBody = prepareLaunchpadStarterKitBody(record, resolved.binding.pack_id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "invalid_input";
+    if (message.startsWith("unexpected_starter_kit_field:")) {
+      return launchpadError("unknown_field", 400);
+    }
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400);
+  }
+
+  const validated = validateStarterKitInput(preparedBody);
   if (!validated.ok) {
     return launchpadError(validated.code, 400);
   }

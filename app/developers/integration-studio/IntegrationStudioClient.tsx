@@ -706,7 +706,7 @@ export function IntegrationStudioClient({
       <Reveal delay={0.04}>
       <ContentCard title="Choose a policy pack">
         <p style={{ ...body, marginBottom: "0.85rem", maxWidth: "52ch" }}>
-          Select what your customers must prove. These are the same Launchpad policy packs—identity or liveness is never the default path.
+          Select what your customers must prove. These are the same Launchpad policy packs. Identity or liveness is never the default path.
         </p>
         {packId === "content_origin_disclosure" && contract ? (
           <div style={{ ...body, marginBottom: "0.85rem", padding: "0.85rem", borderRadius: 12, border: "1px solid rgba(45,212,191,0.25)", background: "rgba(45,212,191,0.06)" }}>
@@ -1406,7 +1406,14 @@ export function IntegrationStudioClient({
             />
           )}
           {walletApp && (
-            <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
+            <details style={{ marginTop: "0.75rem" }}>
+              <summary style={{ cursor: "pointer", fontSize: "0.78rem", fontWeight: 700 }}>
+                Optional upgrade · paid usage plans (not required for sandbox testing)
+              </summary>
+              <div style={{ marginTop: "0.75rem" }}>
+                <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
+              </div>
+            </details>
           )}
         </>
       )}

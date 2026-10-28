@@ -13,6 +13,7 @@ import {
   type StarterKitPlatform,
 } from "@/lib/partner/starterKit/contract";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import { starterKitUserFacingError } from "@/lib/partner/starterKit/starterKitUserFacingError";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -81,7 +82,7 @@ export function PartnerStarterKitPanel({
         binding?: { pack_id: string; result_family: string; environment: string };
       };
       if (!res.ok || !data.ok || !data.files || !data.archive_base64) {
-        setError(data.code ?? data.error ?? "Could not generate integration files");
+        setError(starterKitUserFacingError(data.code ?? data.error));
         return;
       }
       setFiles(data.files);
@@ -112,7 +113,7 @@ export function PartnerStarterKitPanel({
     <ContentCard title={merchantMode ? "Set up integration" : "Starter kit"}>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
         {merchantMode
-          ? "Download the integration files for your platform. Secrets stay on your server — Abraxas never exposes live credentials here."
+          ? "Download the integration files for your platform. Secrets stay on your server. Abraxas never exposes live credentials here."
           : "Generate a binding-pinned integration contract. Policy metadata is server-resolved from the selected binding."}
       </p>
       {!merchantMode && (
@@ -205,8 +206,8 @@ function pillStyle(active: boolean): React.CSSProperties {
   return {
     padding: "0.4rem 0.7rem",
     borderRadius: 999,
-    border: active ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
-    background: active ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
+    border: active ? "1px solid rgba(76,187,146,0.55)" : "1px solid var(--border)",
+    background: active ? "rgba(76,187,146,0.12)" : "var(--surface-inset)",
     fontFamily: FONT,
     fontSize: "0.72rem",
     fontWeight: 600,

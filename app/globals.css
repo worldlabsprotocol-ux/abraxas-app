@@ -2971,3 +2971,25 @@ details > summary::-webkit-details-marker {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
+
+.abx-journey-emblem--pending .abx-brand-living-sphere-mark {
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .abx-journey-emblem--pending .abx-brand-living-sphere-mark {
+    animation: abx-journey-emblem-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes abx-journey-emblem-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}

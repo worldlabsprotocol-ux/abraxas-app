@@ -2,7 +2,7 @@
 // FILE: components/home/HomeSandboxSessionEntry.tsx
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
@@ -30,6 +30,11 @@ export function HomeSandboxSessionEntry() {
   const { authMode, mode, overview, walletOnlyWithoutAccount, refresh } = useHomeWorkspaceSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (mode !== "ephemeral_sandbox_ready") return;
+    router.replace("/developers/ephemeral-sandbox");
+  }, [mode, router]);
 
   const enrollSandbox = useCallback(async () => {
     setError(null);
@@ -109,7 +114,11 @@ export function HomeSandboxSessionEntry() {
       {mode === "needs_account" ? (
         authMode === "ephemeral_wallet" ? (
           <div className="abx-sandbox-entry__auth">
-            <NativeAccountSolanaPanel onSuccess={() => void refresh()} />
+            <NativeAccountSolanaPanel
+              onSuccess={() => {
+                void refresh().then(() => router.push("/developers/ephemeral-sandbox"));
+              }}
+            />
           </div>
         ) : (
           <HomeSandboxAccountAuth
