@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { EphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
 import type { ReceiptValidationUiState } from "@/lib/developers/mapReceiptValidationOutcome";
 import { guidedJourneyProgressLabel } from "@/lib/developers/guidedIntegrationJourney";
+import { AbraxasProcessingEmblem } from "@/components/brand/AbraxasProcessingEmblem";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 export function EphemeralSandboxVerificationCompletion({
@@ -55,7 +56,7 @@ export function EphemeralSandboxVerificationCompletion({
       <div className={styles.validationPanel} aria-live="polite" aria-busy={receiptValidation.status === "checking"}>
         {receiptValidation.status === "checking" ? (
           <div className={styles.statusRow} role="status">
-            <span className={styles.spinner} aria-hidden />
+            <AbraxasProcessingEmblem size={28} pulse className={styles.statusEmblem} />
             Checking your proof…
           </div>
         ) : null}

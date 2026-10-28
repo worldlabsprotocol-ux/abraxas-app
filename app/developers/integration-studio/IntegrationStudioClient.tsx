@@ -1429,6 +1429,7 @@ export function IntegrationStudioClient({
               partnerId={walletApp.partnerId}
               policyId={walletApp.policyId}
               policyVersion={walletApp.policyVersion}
+              pathId={pathId}
             />
           )}
           {walletApp && (

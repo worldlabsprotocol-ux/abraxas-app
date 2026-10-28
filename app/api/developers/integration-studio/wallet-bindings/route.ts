@@ -2,6 +2,12 @@
 // Return safe, read-only wallet-binding status for one session-owned sandbox.
 
 import { NextRequest, NextResponse } from "next/server";
+import { getEphemeralSandboxGuidedProgressForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspaceGuidedProgress";
+import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
+import { resolveEphemeralWalletSession } from "@/lib/auth/ephemeralWallet/walletSession";
+import { buildServerAuthoritativeJourneySnapshot } from "@/lib/developers/serverAuthoritativeJourney";
+import { buildIntegrationStudioWalletSurface } from "@/lib/developers/integrationStudioWalletSurface";
+import { isIntegrationStudioPathId } from "@/lib/partner/integrationStudio";
 import { resolvePartnerConsoleSession } from "@/lib/partner/launchpad/partnerConsoleSession";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { readStudioWalletBindingStatus } from "@/lib/partner/walletBindingStatus";
@@ -33,11 +39,32 @@ export async function GET(req: NextRequest) {
       policyVersion: application.policy_version,
       origin,
     });
+    const pathParam = (req.nextUrl.searchParams.get("path_id") ?? "").trim();
+    const pathId = isIntegrationStudioPathId(pathParam) ? pathParam : "hosted_partner_flow";
+    const ephemeralSession = await resolveEphemeralWalletSession(req);
+    let journey = null;
+    if (ephemeralSession) {
+      const guidedProgress = await getEphemeralSandboxGuidedProgressForSession(ephemeralSession.sessionId);
+      const workspace = await getEphemeralSandboxForSession(ephemeralSession.sessionId);
+      journey = buildServerAuthoritativeJourneySnapshot({
+        guidedProgress,
+        workspaceExpiresAt: workspace?.expires_at ?? null,
+      });
+    }
+    const surface = buildIntegrationStudioWalletSurface({
+      studioBindings: bindings,
+      journey,
+      ephemeralAuthenticated: Boolean(ephemeralSession),
+      ephemeralWalletAddress: ephemeralSession?.walletAddress ?? null,
+      applicationPolicyId: application.policy_id,
+      pathId,
+    });
     return NextResponse.json({
       ok: true,
       application_id: application.id,
       solana: bindings.solana,
       evm: bindings.evm,
+      surface,
     });
   } catch {
     return NextResponse.json({ ok: false, status: "store_unavailable" }, { status: 503 });

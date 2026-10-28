@@ -16,6 +16,18 @@ export const LIVING_SPHERE_BRAND = {
   },
 } as const;
 
+/**
+ * Founder-approved multicolor 3D emblem in transparent sphere.
+ * Use for wallet connection, signing, verification, and all trust-processing UI.
+ * Do not substitute crystalline protocol PNG/WebP variants in these surfaces.
+ */
+export const CANONICAL_TRUST_PROCESSING_EMBLEM = LIVING_SPHERE_BRAND.hero;
+
 export function livingSphereEmblemForSize(emblemSize: number) {
   return emblemSize <= 48 ? LIVING_SPHERE_BRAND.nav : LIVING_SPHERE_BRAND.hero;
+}
+
+/** Processing states (wallet modal, proof check, workspace restore). */
+export function trustProcessingEmblemForSize(emblemSize: number) {
+  return emblemSize <= 40 ? LIVING_SPHERE_BRAND.nav : LIVING_SPHERE_BRAND.hero;
 }

@@ -14,4 +14,11 @@ describe("homepage living sphere identity", () => {
     expect(logo).toContain("livingSphereEmblemForSize");
     expect(logo).toContain("abx-brand-living-sphere-mark");
   });
+
+  it("uses living sphere for trust processing surfaces", () => {
+    const processing = readFileSync(resolve(ROOT, "components/home/HomeInlineWorkspaceProcessing.tsx"), "utf8");
+    expect(processing).toContain("AbraxasProcessingEmblem");
+    const assets = readFileSync(resolve(ROOT, "lib/brand/livingSphereBrandAssets.ts"), "utf8");
+    expect(assets).toContain("CANONICAL_TRUST_PROCESSING_EMBLEM");
+  });
 });

@@ -1217,6 +1217,11 @@
   object-fit: contain;
 }
 
+.abx-processing-emblem__mark--living-sphere {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .abx-processing-emblem--pulse::after {
   content: "";
   position: absolute;

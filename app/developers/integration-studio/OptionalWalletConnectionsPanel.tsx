@@ -3,9 +3,15 @@
 // Optional message-proof bindings for a created sandbox. Never gates sandbox creation.
 
 import { useEffect, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import {
+  formatStudioVerifiedWalletLabel,
+  type IntegrationStudioWalletSurfaceResponse,
+} from "@/lib/developers/integrationStudioWalletSurface";
+import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 import {
   WALLET_STANDARD_NO_WALLET_PRODUCT,
   WALLET_STANDARD_NOT_IDENTITY,
@@ -23,6 +29,10 @@ import {
   connectEvmWalletInjected,
   signEvmPersonalMessage,
 } from "@/lib/walletAuthority/client/ethereumProvider";
+import {
+  walletVerifyPhaseDetail,
+  walletVerifyPhaseHeadline,
+} from "@/lib/wallet/walletVerifyPhaseCopy";
 
 const body: React.CSSProperties = {
   fontFamily: ABRAXAS_FONT_SANS,
@@ -64,33 +74,40 @@ export function OptionalWalletConnectionsPanel({
   partnerId,
   policyId,
   policyVersion,
+  pathId,
 }: {
   applicationId: string;
   partnerId: string;
   policyId: string;
   policyVersion: number;
+  pathId: IntegrationStudioPathId;
 }) {
+  const { wallet } = useWallet();
   const [solanaBusy, setSolanaBusy] = useState(false);
   const [solanaBinding, setSolanaBinding] = useState<WalletStandardBindView | null>(null);
   const [solanaNotice, setSolanaNotice] = useState("");
   const [evmBusy, setEvmBusy] = useState(false);
   const [evmBinding, setEvmBinding] = useState<EvmWalletBindView | null>(null);
   const [evmNotice, setEvmNotice] = useState("");
+  const [surface, setSurface] = useState<IntegrationStudioWalletSurfaceResponse | null>(null);
+  const [changeWalletOpen, setChangeWalletOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
         const response = await fetch(
-          `/api/developers/integration-studio/wallet-bindings?application_id=${encodeURIComponent(applicationId)}`,
+          `/api/developers/integration-studio/wallet-bindings?application_id=${encodeURIComponent(applicationId)}&path_id=${encodeURIComponent(pathId)}`,
           { credentials: "include" },
         );
         const result = await response.json() as {
           ok?: boolean;
           solana?: WalletStandardBindView;
           evm?: EvmWalletBindView;
+          surface?: IntegrationStudioWalletSurfaceResponse;
         };
         if (cancelled || !response.ok || !result.ok) return;
+        if (result.surface) setSurface(result.surface);
         if (result.solana) {
           setSolanaBinding(result.solana);
           setSolanaNotice(restoredNotice(result.solana, "Solana"));
@@ -106,7 +123,7 @@ export function OptionalWalletConnectionsPanel({
     return () => {
       cancelled = true;
     };
-  }, [applicationId]);
+  }, [applicationId, pathId]);
 
   async function connectSolanaWallet() {
     setSolanaBusy(true);
@@ -159,6 +176,22 @@ export function OptionalWalletConnectionsPanel({
       }
       setSolanaBinding(result);
       setSolanaNotice("Solana wallet control verified for this sandbox action.");
+      setSurface((current) => current
+        ? {
+            ...current,
+            solana: {
+              ...current.solana,
+              mode: "verified_compact",
+              proof_source: "studio_wallet_standard_binding",
+              studio_binding: result,
+              reuse_eligible: true,
+              require_signature_reason: null,
+              verified_detail: "Your connected wallet is ready for this test.",
+              wallet_address: signed.publicKey,
+            },
+          }
+        : current);
+      setChangeWalletOpen(false);
     } catch {
       setSolanaNotice("Connection was cancelled or could not finish. Your sandbox is still ready.");
     } finally {
@@ -230,11 +263,54 @@ export function OptionalWalletConnectionsPanel({
     }
   }
 
+  const solanaSurface = surface?.solana;
+  const showCompactVerified =
+    solanaSurface?.mode === "verified_compact"
+    && !changeWalletOpen;
+  const walletLabel = formatStudioVerifiedWalletLabel(
+    solanaSurface?.wallet_address ?? null,
+    wallet?.adapter?.name ?? null,
+  );
+
+  if (showCompactVerified) {
+    return (
+      <ContentCard title={walletVerifyPhaseHeadline("verified", walletLabel)}>
+        <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.55rem" }}>
+          {solanaSurface.verified_detail || walletVerifyPhaseDetail("verified", walletLabel)}
+        </p>
+        <p style={{ ...body, color: "var(--accent)", fontWeight: 800, marginBottom: "0.75rem" }}>
+          {walletLabel}
+        </p>
+        <Btn size="sm" variant="secondary" onClick={() => setChangeWalletOpen(true)}>
+          Change wallet
+        </Btn>
+        {solanaSurface.proof_source === "ephemeral_sandbox_receipt" ? (
+          <p style={{ ...body, marginTop: "0.65rem", fontSize: "0.75rem" }}>
+            Reusing your validated sandbox wallet proof for this integration. A new signature is only required when policy, audience, or freshness no longer match the next action.
+          </p>
+        ) : null}
+      </ContentCard>
+    );
+  }
+
+  const connectTitle =
+    solanaSurface?.mode === "action_required"
+      ? "Wallet authorization required"
+      : "Connect a wallet";
+
   return (
-    <ContentCard title="Optional · Connect a wallet">
-      <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.8rem" }}>
-        Add wallet control to this sandbox with one signed message. Choose either network or skip this step.
-      </p>
+    <ContentCard title={connectTitle}>
+      {solanaSurface?.require_signature_reason ? (
+        <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.8rem" }}>
+          {solanaSurface.require_signature_reason}
+        </p>
+      ) : (
+        <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.8rem" }}>
+          {changeWalletOpen
+            ? "Choose a different wallet or network only when the next action requires distinct authorization."
+            : "Add wallet control with one signed message when this integration requires it."}
+        </p>
+      )}
 
       <div style={{ display: "grid", gap: "0.65rem" }}>
         <section style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "0.75rem" }}>
@@ -250,6 +326,11 @@ export function OptionalWalletConnectionsPanel({
             >
               {solanaBinding?.ok ? "Solana connected" : "Connect Solana wallet"}
             </Btn>
+            {changeWalletOpen ? (
+              <Btn size="sm" variant="secondary" onClick={() => setChangeWalletOpen(false)}>
+                Cancel
+              </Btn>
+            ) : null}
             <span aria-live="polite" style={{ ...body, color: solanaBinding?.ok ? "var(--accent)" : "var(--text-secondary)" }}>
               {solanaNotice}
             </span>
@@ -257,25 +338,52 @@ export function OptionalWalletConnectionsPanel({
           <BindingStatus binding={solanaBinding} />
         </section>
 
-        <section style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "0.75rem" }}>
-          <p style={{ ...body, color: "var(--text-primary)", fontWeight: 800, marginBottom: "0.55rem" }}>
-            EVM · MetaMask or browser wallet
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.65rem" }}>
-            <Btn
-              size="sm"
-              loading={evmBusy}
-              disabled={evmBusy || evmBinding?.ok === true}
-              onClick={() => void connectEvmWallet()}
-            >
-              {evmBinding?.ok ? "EVM connected" : "Connect EVM wallet"}
-            </Btn>
-            <span aria-live="polite" style={{ ...body, color: evmBinding?.ok ? "var(--accent)" : "var(--text-secondary)" }}>
-              {evmNotice}
-            </span>
-          </div>
-          <BindingStatus binding={evmBinding} />
-        </section>
+        {surface?.show_evm_options ? (
+          <section style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "0.75rem" }}>
+            <p style={{ ...body, color: "var(--text-primary)", fontWeight: 800, marginBottom: "0.55rem" }}>
+              EVM · MetaMask or browser wallet (optional)
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.65rem" }}>
+              <Btn
+                size="sm"
+                loading={evmBusy}
+                disabled={evmBusy || evmBinding?.ok === true}
+                onClick={() => void connectEvmWallet()}
+              >
+                {evmBinding?.ok ? "EVM connected" : "Connect EVM wallet"}
+              </Btn>
+              <span aria-live="polite" style={{ ...body, color: evmBinding?.ok ? "var(--accent)" : "var(--text-secondary)" }}>
+                {evmNotice}
+              </span>
+            </div>
+            <BindingStatus binding={evmBinding} />
+          </section>
+        ) : (
+          <details style={{ marginTop: "0.15rem" }}>
+            <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+              Add EVM wallet (optional)
+            </summary>
+            <section style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "0.75rem", marginTop: "0.55rem" }}>
+              <p style={{ ...body, marginBottom: "0.55rem" }}>
+                Only needed when your integration path uses EVM eligibility or cross-chain gates.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.65rem" }}>
+                <Btn
+                  size="sm"
+                  loading={evmBusy}
+                  disabled={evmBusy || evmBinding?.ok === true}
+                  onClick={() => void connectEvmWallet()}
+                >
+                  {evmBinding?.ok ? "EVM connected" : "Connect EVM wallet"}
+                </Btn>
+                <span aria-live="polite" style={{ ...body, color: evmBinding?.ok ? "var(--accent)" : "var(--text-secondary)" }}>
+                  {evmNotice}
+                </span>
+              </div>
+              <BindingStatus binding={evmBinding} />
+            </section>
+          </details>
+        )}
       </div>
 
       <details style={{ marginTop: "0.75rem" }}>

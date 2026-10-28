@@ -16,6 +16,7 @@ const VITEST_SUITES = [
   "lib/auth/ephemeralWallet/walletActionChallengeRoute.test.ts",
   "lib/auth/ephemeralWallet/sandboxValidateRoute.test.ts",
   "lib/developers/serverAuthoritativeJourney.test.ts",
+  "lib/developers/integrationStudioWalletSurface.test.ts",
   "lib/institutional/mandate/build889InstitutionalReliability.adversarial.test.ts",
   "examples/portable-relying-party/portable-relying-party.test.ts",
   "examples/external-node-partner/externalPartner.test.ts",
