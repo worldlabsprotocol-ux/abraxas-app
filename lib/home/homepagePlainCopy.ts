@@ -9,7 +9,10 @@ export const HOMEPAGE_HERO_CTA_SECONDARY = "See how it works";
 
 export const HOMEPAGE_WORKSPACE_HEADING = "Create your test workspace";
 export const HOMEPAGE_WORKSPACE_LEAD =
-  "Test verification with a private development environment.";
+  "Free sandbox testing through your first verified result. Paid usage plans are optional and never required to finish a sandbox test.";
+
+export const HOMEPAGE_WORKSPACE_FREE_NOTE =
+  "Sandbox testing is free through verification. Upgrade only when you choose a paid usage plan.";
 
 export const HOMEPAGE_WORKSPACE_STEPS = [
   { id: "account", label: "Create account" },
