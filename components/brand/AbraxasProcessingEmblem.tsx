@@ -1,9 +1,9 @@
 "use client";
 // FILE: components/brand/AbraxasProcessingEmblem.tsx
-// Official Abraxas emblem for authentic async processing (no generic spinners).
+// Founder-approved living sphere during authentic async processing (no generic spinners).
 
 import Image from "next/image";
-import { OFFICIAL_EMBLEM_HERO_WEBP } from "@/lib/brand/officialBrandAssets";
+import { trustProcessingEmblemForSize } from "@/lib/brand/livingSphereBrandAssets";
 
 export function AbraxasProcessingEmblem({
   size = 56,
@@ -14,6 +14,7 @@ export function AbraxasProcessingEmblem({
   pulse?: boolean;
   className?: string;
 }) {
+  const asset = trustProcessingEmblemForSize(size);
   const wrapClass = ["abx-processing-emblem", pulse ? "abx-processing-emblem--pulse" : "", className ?? ""]
     .filter(Boolean)
     .join(" ");
@@ -21,12 +22,13 @@ export function AbraxasProcessingEmblem({
   return (
     <div className={wrapClass} style={{ width: size, height: size }} aria-hidden>
       <Image
-        src={OFFICIAL_EMBLEM_HERO_WEBP.src}
+        src={asset.src}
         alt=""
         width={size}
         height={size}
-        className="abx-processing-emblem__mark"
+        className="abx-processing-emblem__mark abx-processing-emblem__mark--living-sphere"
         priority
+        sizes={`${size}px`}
       />
     </div>
   );
