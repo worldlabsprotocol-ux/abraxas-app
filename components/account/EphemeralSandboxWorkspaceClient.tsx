@@ -54,6 +54,7 @@ import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { EphemeralSandboxVerificationCompletion } from "./EphemeralSandboxVerificationCompletion";
 import { EmbeddedIntegrationStudioPanel } from "@/components/developers/EmbeddedIntegrationStudioPanel";
 import { UnifiedWorkspaceJourneyBar } from "@/components/developers/UnifiedWorkspaceJourneyBar";
+import { HomeInlineWorkspaceProcessing } from "@/components/home/HomeInlineWorkspaceProcessing";
 import { isUnifiedWorkspaceIntegrationSearch } from "@/lib/developers/unifiedWorkspaceContinuity";
 import { mapGuidedProgressReceiptValidation } from "@/lib/developers/mapGuidedProgressRestore";
 import type { GuidedIntegrationJourneyStepId } from "@/lib/developers/guidedIntegrationJourney";
@@ -152,7 +153,13 @@ function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
   }
 }
 
-export function EphemeralSandboxWorkspaceClient() {
+export function EphemeralSandboxWorkspaceClient({
+  surface = "route",
+}: {
+  /** `homepage` keeps the guided journey on `/` without route hops. */
+  surface?: "route" | "homepage";
+}) {
+  const isHomepageEmbed = surface === "homepage";
   const router = useRouter();
   const searchParams = useSearchParams();
   const integrationContinuityActive = isUnifiedWorkspaceIntegrationSearch(searchParams);
@@ -932,6 +939,7 @@ export function EphemeralSandboxWorkspaceClient() {
     && sandboxIntegrationStudioEligible({ decision, receiptValidation });
 
   useEffect(() => {
+    if (isHomepageEmbed) return;
     if (!walletProofReadyForStudio || !selectedPolicy) return;
     if (integrationContinuityActive && searchParams.get("pack")) return;
     if (integrationUrlSyncedRef.current) return;
@@ -944,6 +952,7 @@ export function EphemeralSandboxWorkspaceClient() {
     );
   }, [
     integrationContinuityActive,
+    isHomepageEmbed,
     router,
     searchParams,
     selectedPolicy,
@@ -951,6 +960,14 @@ export function EphemeralSandboxWorkspaceClient() {
   ]);
 
   if (phase === "loading") {
+    if (isHomepageEmbed) {
+      return (
+        <HomeInlineWorkspaceProcessing
+          label="Restoring your workspace"
+          detail="Confirming authorized session with Abraxas servers."
+        />
+      );
+    }
     return (
       <div className={styles.shell}>
         <div className={styles.statusRow} role="status">
@@ -985,7 +1002,8 @@ export function EphemeralSandboxWorkspaceClient() {
   const unifiedIntegrationExperienceActive =
     integrationHandoffLanding
     || (integrationContinuityActive && Boolean(result && sandboxCompletionView))
-    || walletProofReadyForStudio;
+    || walletProofReadyForStudio
+    || (isHomepageEmbed && Boolean(result && sandboxCompletionView));
 
   if (unifiedIntegrationExperienceActive) {
     const journeyStepId: GuidedIntegrationJourneyStepId =
@@ -995,14 +1013,16 @@ export function EphemeralSandboxWorkspaceClient() {
           ? "create_test_app"
           : "prove_wallet_control";
     return (
-      <div className={styles.shell}>
-        <EphemeralWorkspaceSessionRail
-          state={sessionRailState}
-          walletAddress={walletAddress}
-          sessionExpiresAt={sessionExpiresAt}
-          workspaceExpiresAt={workspace?.expires_at ?? null}
-        />
-        <UnifiedWorkspaceJourneyBar currentStepId={journeyStepId} />
+      <div className={`${styles.shell} ${isHomepageEmbed ? styles.shellHomepageEmbed : ""}`.trim()}>
+        {!isHomepageEmbed ? (
+          <EphemeralWorkspaceSessionRail
+            state={sessionRailState}
+            walletAddress={walletAddress}
+            sessionExpiresAt={sessionExpiresAt}
+            workspaceExpiresAt={workspace?.expires_at ?? null}
+          />
+        ) : null}
+        {!isHomepageEmbed ? <UnifiedWorkspaceJourneyBar currentStepId={journeyStepId} /> : null}
         {result && sandboxCompletionView ? (
           <div className={styles.panel}>
             <EphemeralSandboxVerificationCompletion
@@ -1075,24 +1095,35 @@ export function EphemeralSandboxWorkspaceClient() {
   }
 
   return (
-    <div className={styles.shell}>
-      <EphemeralWorkspaceSessionRail
-        state={sessionRailState}
-        walletAddress={walletAddress}
-        sessionExpiresAt={sessionExpiresAt}
-        workspaceExpiresAt={workspace?.expires_at ?? null}
-      />
-      <div className={styles.workspaceHeader}>
-        <span className={styles.sandboxBadge}>{EPHEMERAL_WORKSPACE_SANDBOX_BADGE}</span>
-        <p className={styles.muted}>{EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE}</p>
-        {policyAvailability.some((row) => row.age_experience === "age_21_test") ? (
-          <p className={styles.integrityNote} role="note">
-            Issuer backed verification demonstration. Sandbox fixtures do not establish real world age eligibility.
-          </p>
-        ) : null}
-      </div>
+    <div className={`${styles.shell} ${isHomepageEmbed ? styles.shellHomepageEmbed : ""}`.trim()}>
+      {!isHomepageEmbed ? (
+        <EphemeralWorkspaceSessionRail
+          state={sessionRailState}
+          walletAddress={walletAddress}
+          sessionExpiresAt={sessionExpiresAt}
+          workspaceExpiresAt={workspace?.expires_at ?? null}
+        />
+      ) : null}
+      {!isHomepageEmbed ? (
+        <div className={styles.workspaceHeader}>
+          <span className={styles.sandboxBadge}>{EPHEMERAL_WORKSPACE_SANDBOX_BADGE}</span>
+          <p className={styles.muted}>{EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE}</p>
+          {policyAvailability.some((row) => row.age_experience === "age_21_test") ? (
+            <p className={styles.integrityNote} role="note">
+              Issuer backed verification demonstration. Sandbox fixtures do not establish real world age eligibility.
+            </p>
+          ) : null}
+        </div>
+      ) : workspace ? (
+        <p className={styles.note} role="status">
+          {EPHEMERAL_WORKSPACE_SANDBOX_BADGE} · active until{" "}
+          {new Date(workspace.expires_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+        </p>
+      ) : null}
 
-      {workspace && phase !== "result" ? <TrustExecutionTrace stages={trustStages} /> : null}
+      {!isHomepageEmbed && workspace && phase !== "result" ? (
+        <TrustExecutionTrace stages={trustStages} />
+      ) : null}
 
       <div className={styles.panel}>
         {serverSessionAuthenticated && (phase === "ready" || phase === "entering") && !workspace ? (
@@ -1112,6 +1143,11 @@ export function EphemeralSandboxWorkspaceClient() {
                 Open sandbox workspace
               </button>
             </div>
+          ) : isHomepageEmbed ? (
+            <HomeInlineWorkspaceProcessing
+              label={phase === "entering" ? "Opening your sandbox workspace" : "Continuing your workspace"}
+              detail="Using your authorized wallet session."
+            />
           ) : (
             <div className={styles.statusRow} role="status">
               <span className={styles.spinner} aria-hidden />

@@ -7,6 +7,7 @@ const RESUMABLE_PREFIXES = ["/developers/", "/developers/integration-studio"] as
 
 export function isResumableDeveloperPath(path: string): boolean {
   const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (normalized === "/" || normalized.startsWith("/?")) return true;
   return RESUMABLE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
 }
 

@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `unknown_field` | Launchpad `POST …/starter-kit` merged `binding_id` into the body passed to `validateStarterKitInput`, which only allows generator keys. | `prepareLaunchpadStarterKitBody()` strips `binding_id` before validation. |
 | Competing entry | Public header showed **Sign in** while hero and sandbox section showed **Start building**. | Header uses **Start building** for wallet authorization entry; sandbox step uses **Continue with wallet**. |
-| Lost continuity after auth | Homepage left an extra **Open test workspace** step after ephemeral session was already valid. | Auto `router.replace("/developers/ephemeral-sandbox")` when session is ready; wallet success navigates directly. |
+| Lost continuity after auth | Homepage left an extra **Open test workspace** step after ephemeral session was already valid. | **Superseded by Build 891:** inline workspace on `#start-sandbox` (no route hop). |
 | Unclear test outcome | Harness only logged to inspector rail. | **Run test** shows emblem status plus permit/deny headline from authoritative harness result. |
 | Pricing ambiguity | USDC plans rendered inline in configuration stage. | Collapsed under **Optional upgrade** disclosure; homepage states sandbox is free through first verification. |
 
