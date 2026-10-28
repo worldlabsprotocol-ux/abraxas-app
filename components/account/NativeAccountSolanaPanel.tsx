@@ -92,7 +92,7 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
     return (
       <>
         <p style={{ margin: "0 0 0.75rem", fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-          Sign in with your Solana wallet to open a temporary sandbox or integration tools. Ephemeral sign-in does
+          Sign in with your Solana wallet to open a test workspace or integration tools. Temporary sign-in does
           not create a permanent personal account.
         </p>
         <Btn size="sm" onClick={() => setSignInOpen(true)}>
@@ -131,7 +131,7 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
       </p>
       {ephemeral ? (
         <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>
-          Ephemeral session — expires automatically. No durable personal profile.
+          Temporary session — expires automatically. No durable personal profile.
         </p>
       ) : session.accountId ? (
         <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>

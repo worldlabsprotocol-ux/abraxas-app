@@ -1421,7 +1421,7 @@ export function IntegrationStudioClient({
           title="Verification requests require a sandbox application"
           lead="Run authenticated harness scenarios against your sandbox after provisioning. Signed receipt material appears in the integration inspector—never in the URL."
           steps={[
-            "Provision a sandbox and attach your Launchpad session (one-time API key).",
+            "Create your test app in the sandbox and attach your Launchpad session (one-time API key).",
             "Confirm callback configuration on the Configuration stage.",
             "Run a harness scenario here, then verify receipts independently on the workbench.",
           ]}

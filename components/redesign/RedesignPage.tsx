@@ -10,6 +10,7 @@ interface RedesignPageProps {
   maxWidth?: number;
   accent?: AbxTabAccent;
   withFooter?: boolean;
+  visualAtmosphere?: boolean;
 }
 
 export function RedesignPage({
@@ -17,9 +18,10 @@ export function RedesignPage({
   maxWidth = 900,
   accent = "neutral",
   withFooter = true,
+  visualAtmosphere = false,
 }: RedesignPageProps) {
   return (
-    <AbxPageShell accent={accent} maxWidth={maxWidth} withFooter={withFooter}>
+    <AbxPageShell accent={accent} maxWidth={maxWidth} withFooter={withFooter} visualAtmosphere={visualAtmosphere}>
       {children}
     </AbxPageShell>
   );

@@ -2824,3 +2824,150 @@ details > summary::-webkit-details-marker {
     align-items: stretch !important;
   }
 }
+
+/* Abraxas Guide (Build 882) */
+.abx-guide-nav-btn {
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.abx-guide-nav-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.abx-guide-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  overflow-y: auto;
+}
+
+.abx-guide-dialog {
+  width: min(100%, 32rem);
+  max-height: min(85vh, 640px);
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0a0c10;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.abx-guide-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.abx-guide-dialog__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.abx-guide-dialog__close {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+}
+
+.abx-guide-dialog__search-label {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.abx-guide-dialog__search-hint {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.abx-guide-dialog__search {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.abx-guide-dialog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.abx-guide-dialog__item {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.abx-guide-dialog__term {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.abx-guide-dialog__summary {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.abx-guide-dialog__detail {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.abx-guide-dialog__stage,
+.abx-guide-dialog__questions {
+  margin: 0.45rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.abx-guide-dialog__footer {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.abx-guide-dialog__link {
+  color: rgba(76, 187, 146, 0.95);
+  text-decoration: underline;
+}
+
+.abx-guide-dialog__empty {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}

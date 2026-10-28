@@ -8,6 +8,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
 import { PublicNavPrimaryActionLink } from "@/components/nav/PublicNavPrimaryActionLink";
 import { PublicNavSectionMenu } from "@/components/nav/PublicNavSectionMenu";
+import { AbraxasGuideNavButton } from "@/components/product/AbraxasGuideDialog";
 import {
   PUBLIC_FONT_SANS,
   PUBLIC_NAV_MENUS,
@@ -49,12 +50,14 @@ export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
       <div className="rd-nav-right rd-nav-actions" style={{ display: "none" }}>
+        <AbraxasGuideNavButton />
         <LanguageSelector />
         <PublicNavConnectButton />
         <PublicNavPrimaryActionLink />
       </div>
 
       <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
+        <AbraxasGuideNavButton />
         <LanguageSelector compact />
         <PublicNavConnectButton />
         <PublicNavPrimaryActionLink compact />

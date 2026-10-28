@@ -56,7 +56,7 @@ export function IntegrationStudioRequestWorkbench() {
       </p>
       {!applicationId && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-          Provision a sandbox application above to enable live requests.
+          Create your test app above to enable live requests.
         </p>
       )}
       {applicationId && !signedIn && (
