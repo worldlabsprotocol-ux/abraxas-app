@@ -74,6 +74,25 @@ describe("buildEphemeralSandboxCompletionView", () => {
     expect(view.validationModeLine).toMatch(/sandbox records/i);
     expect(view.tone).toBe("success");
     expect(view.primaryAction?.label).toBe("Create your test app");
+    expect(view.primaryAction?.kind).toBe("link");
+
+    const inlineView = buildEphemeralSandboxCompletionView({
+      policyId: "wallet_control",
+      policyLabel: "Wallet Control",
+      decision: "approved",
+      receiptValidation: {
+        status: "validated",
+        checkedAt: "2026-01-01T00:00:00.000Z",
+        signatureAuthentic: true,
+        currentlyAcceptable: true,
+        invalidationReasons: [],
+        standaloneCryptographicVerification: false,
+      },
+      inlineIntegrationHandoff: true,
+    });
+    expect(inlineView.primaryAction?.kind).toBe("inline_integrate");
+    expect(inlineView.primaryAction?.href).toBeUndefined();
+
     expect(view.headline).toBe("Your proof checks out");
     expect(view.applicationHandoff?.title).toBe("Put it in your app");
     expect(view.applicationHandoff?.steps.some((s) => s.state === "current")).toBe(true);

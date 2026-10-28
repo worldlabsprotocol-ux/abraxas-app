@@ -40,6 +40,7 @@ import {
   signInStatusMessage,
   type SolanaSignInPhase,
 } from "@/lib/nav/solanaSignInDialogState";
+import { AbraxasProcessingEmblem } from "@/components/brand/AbraxasProcessingEmblem";
 import styles from "./SolanaAccountSignInDialog.module.css";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -494,9 +495,7 @@ export function SolanaAccountSignInDialog({
     >
       <div className={styles.panel} ref={panelRef}>
         <div className={styles.hero}>
-          <div className={styles.orbit} aria-hidden>
-            <div className={styles.orbitCore} />
-          </div>
+          <AbraxasProcessingEmblem size={64} pulse={pending} className={styles.heroEmblem} />
         </div>
 
         <div className={styles.steps} aria-label="Sign-in progress">

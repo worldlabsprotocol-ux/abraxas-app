@@ -27,6 +27,7 @@ const UnifiedWorkspaceEmbedContext = createContext<UnifiedWorkspaceEmbedValue>({
 export function UnifiedWorkspaceEmbedProvider({
   children,
   embeddedInDeveloperWorkspace,
+  workspaceBasePathOverride = null,
   preservedQuery = {},
   authoritativePolicyId = null,
   walletProofRecorded = false,
@@ -34,6 +35,8 @@ export function UnifiedWorkspaceEmbedProvider({
 }: {
   children: ReactNode;
   embeddedInDeveloperWorkspace: boolean;
+  /** When embedding on the marketing homepage, stage links stay on `/`. */
+  workspaceBasePathOverride?: string | null;
   preservedQuery?: Record<string, string>;
   authoritativePolicyId?: string | null;
   walletProofRecorded?: boolean;
@@ -43,9 +46,10 @@ export function UnifiedWorkspaceEmbedProvider({
     <UnifiedWorkspaceEmbedContext.Provider
       value={{
         embeddedInDeveloperWorkspace,
-        workspaceBasePath: embeddedInDeveloperWorkspace
-          ? UNIFIED_DEVELOPER_WORKSPACE_PATH
-          : "/developers/integration-studio",
+        workspaceBasePath: workspaceBasePathOverride
+          ?? (embeddedInDeveloperWorkspace
+            ? UNIFIED_DEVELOPER_WORKSPACE_PATH
+            : "/developers/integration-studio"),
         preservedQuery,
         authoritativePolicyId,
         walletProofRecorded,

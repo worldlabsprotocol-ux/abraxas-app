@@ -1133,7 +1133,8 @@
 }
 
 .abx-native-sandbox-chapter__panel--solo {
-  max-width: 36rem;
+  width: 100%;
+  max-width: min(100%, 72rem);
 }
 
 .abx-sandbox-entry {
@@ -1145,7 +1146,8 @@
 
 .abx-inline-sandbox-workspace {
   width: 100%;
-  max-width: 42rem;
+  max-width: 100%;
+  min-width: min(100%, 20rem);
 }
 
 .abx-inline-workspace-processing {
@@ -1201,6 +1203,141 @@
     opacity: 1;
     transform: scale(1.06);
   }
+}
+
+.abx-processing-emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.abx-processing-emblem__mark {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.abx-processing-emblem--pulse::after {
+  content: "";
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--abx-trust-green, #4cbb92) 55%, transparent);
+  animation: abx-inline-emblem-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-processing-emblem--pulse::after {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+.abx-home-builder-discovery {
+  width: 100%;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.abx-home-builder-discovery__kicker {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.abx-home-builder-discovery__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  font-weight: 750;
+  color: var(--text-primary);
+}
+
+.abx-home-builder-discovery__title--second {
+  margin-top: 0.35rem;
+}
+
+.abx-home-builder-discovery__lead {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 52rem;
+}
+
+.abx-home-builder-discovery__platform-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  width: 100%;
+}
+
+.abx-home-builder-discovery__platform {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.85rem;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.abx-home-builder-discovery__platform--selected {
+  border-color: rgba(76, 187, 146, 0.55);
+  box-shadow: 0 0 0 1px rgba(76, 187, 146, 0.12);
+}
+
+.abx-home-builder-discovery__platform-label {
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.abx-home-builder-discovery__platform-detail {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.abx-home-builder-discovery__pack-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.abx-home-builder-discovery__pack {
+  flex: 1 1 min(100%, 12rem);
+  padding: 0.55rem 0.85rem;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.abx-home-builder-discovery__pack--selected {
+  border-color: rgba(76, 187, 146, 0.55);
+  background: rgba(76, 187, 146, 0.08);
+}
+
+.abx-home-builder-discovery__actions {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.abx-home-builder-discovery__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
 }
 
 .abx-sandbox-entry__actions {
