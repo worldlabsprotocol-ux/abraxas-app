@@ -1,5 +1,5 @@
 // FILE: lib/home/trustArchitectureStages.ts
-// Four-stage public architecture narrative (homepage diagram, Build 884).
+// Four-stage public architecture narrative (homepage diagram, Build 886A).
 
 export type TrustArchitectureStageId = "request" | "decision" | "verification" | "action";
 
@@ -7,23 +7,24 @@ export type TrustArchitectureStage = {
   id: TrustArchitectureStageId;
   index: string;
   title: string;
-  summary: string;
-  continuity: string;
-  panelPoints: readonly string[];
+  /** One plain language sentence shown under the stage tabs. */
+  caption: string;
   visualSrc: string;
   visualAlt: string;
   visualWidth: number;
   visualHeight: number;
 };
 
+export const TRUST_ARCHITECTURE_SECTION_LEAD =
+  "Trust decisions use evidence, authority, and continuity at every step. Wallet possession alone is not enough.";
+
 export const TRUST_ARCHITECTURE_OVERVIEW = {
   src: "/home/abraxas-architecture-overview-complete.png",
-  alt: "Complete Abraxas architecture overview: request, Abraxas decision, independent verification, and application enforcement with continuity.",
+  alt: "Complete Abraxas architecture overview from request through application enforcement.",
   width: 2400,
   height: 1350,
 } as const;
 
-/** Shared stage frame dimensions — prevents layout shift between stages. */
 export const TRUST_ARCHITECTURE_STAGE_FRAME = {
   width: 1200,
   height: 1600,
@@ -34,11 +35,9 @@ export const TRUST_ARCHITECTURE_STAGES: TrustArchitectureStage[] = [
     id: "request",
     index: "01",
     title: "Request",
-    summary: "An application asks whether a specific action should be allowed under a defined policy.",
-    panelPoints: ["Actor", "Action", "Authoritative evidence requirement", "Policy"],
-    continuity: "The request stays bound to the policy and audience from the start.",
+    caption: "A request is made for a specific action.",
     visualSrc: "/home/abraxas-architecture-stage-01-request.png",
-    visualAlt: "Stage 01 Request: actor, action, evidence, and policy before evaluation.",
+    visualAlt: "Stage 01 Request: your application asks whether an action should be allowed.",
     visualWidth: TRUST_ARCHITECTURE_STAGE_FRAME.width,
     visualHeight: TRUST_ARCHITECTURE_STAGE_FRAME.height,
   },
@@ -46,18 +45,9 @@ export const TRUST_ARCHITECTURE_STAGES: TrustArchitectureStage[] = [
     id: "decision",
     index: "02",
     title: "Abraxas decision",
-    summary:
-      "Abraxas issues a signed decision only after evidence integrity, issuer authority, policy evaluation, and current validity are satisfied.",
-    panelPoints: [
-      "Evidence integrity",
-      "Issuer and delegated authority",
-      "Policy evaluation",
-      "Current validity",
-      "Signed decision",
-    ],
-    continuity: "A valid signature proves authenticity—not that authorization remains current without status checks.",
+    caption: "Abraxas checks the evidence and signs a decision.",
     visualSrc: "/home/abraxas-architecture-stage-02-decision.png",
-    visualAlt: "Stage 02 Abraxas decision: evidence, authority, policy, validity, signed decision receipt.",
+    visualAlt: "Stage 02 Abraxas decision: evidence, authority, and policy checks before signing.",
     visualWidth: TRUST_ARCHITECTURE_STAGE_FRAME.width,
     visualHeight: TRUST_ARCHITECTURE_STAGE_FRAME.height,
   },
@@ -65,17 +55,9 @@ export const TRUST_ARCHITECTURE_STAGES: TrustArchitectureStage[] = [
     id: "verification",
     index: "03",
     title: "Independent verification",
-    summary: "A relying party verifies the result without trusting Abraxas UI or databases at enforcement time.",
-    panelPoints: [
-      "Trusted issuer",
-      "Cryptographic signature",
-      "Evidence integrity",
-      "Policy and audience binding",
-      "Freshness and revocation",
-    ],
-    continuity: "Verification fails closed when signed status is stale or revoked—checked at defined enforcement points.",
+    caption: "Anyone can verify the result independently.",
     visualSrc: "/home/abraxas-architecture-stage-03-verification.png",
-    visualAlt: "Stage 03 Independent verification: trust anchor, signatures, binding, signed status.",
+    visualAlt: "Stage 03 Independent verification: signatures and status checked without trusting Abraxas UI.",
     visualWidth: TRUST_ARCHITECTURE_STAGE_FRAME.width,
     visualHeight: TRUST_ARCHITECTURE_STAGE_FRAME.height,
   },
@@ -83,12 +65,9 @@ export const TRUST_ARCHITECTURE_STAGES: TrustArchitectureStage[] = [
     id: "action",
     index: "04",
     title: "Application action",
-    summary: "Your application enforces permit, deny, or indeterminate from the independently verified result.",
-    panelPoints: ["Permit", "Deny", "Indeterminate", "Integrating application enforces the outcome"],
-    continuity:
-      "Reevaluation is a continuity operation when evidence, authority, or status changes—not a fourth authorization outcome.",
+    caption: "The application uses the verified result to allow, deny, or ask for more review.",
     visualSrc: "/home/abraxas-architecture-stage-04-action.png",
-    visualAlt: "Stage 04 Application action: permit, deny, indeterminate enforcement by your system.",
+    visualAlt: "Stage 04 Application action: your system enforces the verified outcome.",
     visualWidth: TRUST_ARCHITECTURE_STAGE_FRAME.width,
     visualHeight: TRUST_ARCHITECTURE_STAGE_FRAME.height,
   },
@@ -96,4 +75,13 @@ export const TRUST_ARCHITECTURE_STAGES: TrustArchitectureStage[] = [
 
 export function trustArchitectureStageById(id: TrustArchitectureStageId): TrustArchitectureStage {
   return TRUST_ARCHITECTURE_STAGES.find((s) => s.id === id) ?? TRUST_ARCHITECTURE_STAGES[0]!;
+}
+
+/** Public homepage architecture copy must not use hyphen, en dash, or em dash. */
+export function collectTrustArchitecturePublicCopy(): string[] {
+  return [
+    TRUST_ARCHITECTURE_SECTION_LEAD,
+    ...TRUST_ARCHITECTURE_STAGES.flatMap((s) => [s.caption, s.title, s.visualAlt]),
+    TRUST_ARCHITECTURE_OVERVIEW.alt,
+  ];
 }
