@@ -12,6 +12,14 @@
   --ws-warn: #e8a65a;
 }
 
+.shellHomepageEmbed {
+  gap: 0.85rem;
+}
+
+.shellHomepageEmbed .panel {
+  border-color: rgba(62, 201, 142, 0.18);
+}
+
 .workspaceSignInActive .panel {
   opacity: 0.45;
   pointer-events: none;

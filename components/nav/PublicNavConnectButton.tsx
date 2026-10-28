@@ -105,20 +105,36 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     nativeStateLoaded,
   });
 
+  const focusHomepageWorkspace = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.location.hash = "start-sandbox";
+      window.dispatchEvent(new Event("abraxas:homepage-workspace-focus"));
+    }
+  }, []);
+
   const openDeveloperWorkspace = useCallback(() => {
     notifyEphemeralWalletSessionChanged();
+    if (pathname === "/" || pathname === "") {
+      focusHomepageWorkspace();
+      return;
+    }
     if (pathname === "/developers/ephemeral-sandbox") {
       router.refresh();
       return;
     }
     router.push("/developers/ephemeral-sandbox");
-  }, [pathname, router]);
+  }, [focusHomepageWorkspace, pathname, router]);
 
   const finishSuccess = useCallback(async () => {
     notifyEphemeralWalletSessionChanged();
     await refreshNavState();
     const resume = consumePostAuthResumePath();
     if (resume) {
+      const resumePath = resume.split("#")[0] ?? resume;
+      if (resumePath === "/" || resumePath === "") {
+        focusHomepageWorkspace();
+        return;
+      }
       router.push(resume);
       return;
     }
@@ -126,6 +142,10 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
       const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
       if (enabledJson.auth_mode === "ephemeral_wallet") {
+        if (pathname === "/" || pathname === "") {
+          focusHomepageWorkspace();
+          return;
+        }
         openDeveloperWorkspace();
         return;
       }
@@ -133,7 +153,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       /* fall through */
     }
     router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
-  }, [refreshNavState, router, openDeveloperWorkspace]);
+  }, [focusHomepageWorkspace, pathname, refreshNavState, router, openDeveloperWorkspace]);
 
   const openSignIn = useCallback(() => {
     setError(null);
@@ -175,8 +195,8 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       return (
         <PublicNavConnectPrimary
           prominent={prominent}
-          label="Workspace"
-          ariaLabel="Open developer workspace"
+          label={pathname === "/" ? HOMEPAGE_CTA_START_BUILDING : "Workspace"}
+          ariaLabel={pathname === "/" ? "Continue building in sandbox section" : "Open developer workspace"}
           onClick={openDeveloperWorkspace}
         />
       );

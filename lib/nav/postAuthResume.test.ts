@@ -33,6 +33,7 @@ describe("postAuthResume", () => {
   it("recognizes developer workspace paths", () => {
     expect(isResumableDeveloperPath("/developers/ephemeral-sandbox")).toBe(true);
     expect(isResumableDeveloperPath("/developers/integration-studio")).toBe(true);
+    expect(isResumableDeveloperPath("/")).toBe(true);
     expect(isResumableDeveloperPath("/passport")).toBe(false);
   });
 

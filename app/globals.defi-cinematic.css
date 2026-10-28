@@ -1143,6 +1143,66 @@
   gap: 0;
 }
 
+.abx-inline-sandbox-workspace {
+  width: 100%;
+  max-width: 42rem;
+}
+
+.abx-inline-workspace-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+}
+
+.abx-inline-workspace-processing__emblem-wrap {
+  position: relative;
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.abx-inline-workspace-processing__emblem {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+}
+
+.abx-inline-workspace-processing__pulse {
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--abx-trust-green, #3ecf8e) 55%, transparent);
+  animation: abx-inline-emblem-pulse 1.6s ease-in-out infinite;
+}
+
+.abx-inline-workspace-processing__label {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.abx-inline-workspace-processing__detail {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  max-width: 22rem;
+}
+
+@keyframes abx-inline-emblem-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
 .abx-sandbox-entry__actions {
   display: flex;
   flex-direction: column;

@@ -122,7 +122,7 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
       : "Wallet not connected in browser";
   const networkLabel = session.solanaNetwork ?? process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
   const ephemeral = session.authMode === "ephemeral_wallet";
-  const startHref = ephemeral ? "/developers/ephemeral-sandbox" : "/developers/launchpad";
+  const startHref = ephemeral ? "/#start-sandbox" : "/developers/launchpad";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>

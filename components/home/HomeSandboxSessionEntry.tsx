@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
 import { HomeSandboxAccountAuth } from "@/components/home/HomeSandboxAccountAuth";
+import { HomeInlineSandboxWorkspace } from "@/components/home/HomeInlineSandboxWorkspace";
 import { HomeWorkspaceProgressSteps } from "@/components/home/HomeWorkspaceProgressSteps";
 import {
   HOMEPAGE_CTA_OPEN_WORKSPACE,
@@ -18,8 +19,6 @@ import {
 } from "@/lib/home/homepagePlainCopy";
 import { mapSandboxEnrollError } from "@/lib/home/mapSandboxEnrollError";
 import {
-  SANDBOX_EPHEMERAL_CTA,
-  SANDBOX_EPHEMERAL_SIGNED_IN_LEAD,
   SANDBOX_WORKSPACE_STEP_LEAD,
 } from "@/lib/home/sandboxOnboardingCopy";
 import { hasPersistentAccountSession, useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
@@ -32,9 +31,14 @@ export function HomeSandboxSessionEntry() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (mode !== "ephemeral_sandbox_ready") return;
-    router.replace("/developers/ephemeral-sandbox");
-  }, [mode, router]);
+    const onFocus = () => void refresh();
+    window.addEventListener("abraxas:homepage-workspace-focus", onFocus);
+    window.addEventListener("abraxas:wallet-session", onFocus);
+    return () => {
+      window.removeEventListener("abraxas:homepage-workspace-focus", onFocus);
+      window.removeEventListener("abraxas:wallet-session", onFocus);
+    };
+  }, [refresh]);
 
   const enrollSandbox = useCallback(async () => {
     setError(null);
@@ -84,11 +88,14 @@ export function HomeSandboxSessionEntry() {
     </Link>
   );
 
+  const showPreAuthSteps =
+    mode !== "ephemeral_sandbox_ready"
+    && mode !== "native_disabled"
+    && mode !== "native_unavailable";
+
   return (
     <div className="abx-sandbox-entry">
-      {mode !== "native_disabled" && mode !== "native_unavailable" ? (
-        <HomeWorkspaceProgressSteps mode={mode} />
-      ) : null}
+      {showPreAuthSteps ? <HomeWorkspaceProgressSteps mode={mode} /> : null}
 
       {mode === "loading" ? (
         <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
@@ -116,7 +123,7 @@ export function HomeSandboxSessionEntry() {
           <div className="abx-sandbox-entry__auth">
             <NativeAccountSolanaPanel
               onSuccess={() => {
-                void refresh().then(() => router.push("/developers/ephemeral-sandbox"));
+                void refresh();
               }}
             />
           </div>
@@ -129,12 +136,7 @@ export function HomeSandboxSessionEntry() {
       ) : null}
 
       {mode === "ephemeral_sandbox_ready" ? (
-        <div className="abx-sandbox-entry__sandbox">
-          <p className="abx-sandbox-entry__auth-lead">{SANDBOX_EPHEMERAL_SIGNED_IN_LEAD}</p>
-          <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="/developers/ephemeral-sandbox">
-            {SANDBOX_EPHEMERAL_CTA}
-          </Link>
-        </div>
+        <HomeInlineSandboxWorkspace />
       ) : null}
 
       {mode === "needs_workspace" ? (
@@ -155,7 +157,9 @@ export function HomeSandboxSessionEntry() {
         </div>
       ) : null}
 
-      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" ? demoLink : null}
+      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" && mode !== "ephemeral_sandbox_ready"
+        ? demoLink
+        : null}
     </div>
   );
 }
@@ -170,6 +174,14 @@ export function HomeWorkspacePrimaryCta({ className }: { className?: string }) {
       <Link className={primaryClass} href="/developers/launchpad">
         {HOMEPAGE_CTA_OPEN_WORKSPACE}
       </Link>
+    );
+  }
+
+  if (mode === "ephemeral_sandbox_ready") {
+    return (
+      <a className={primaryClass} href="#start-sandbox">
+        {HOMEPAGE_CTA_START_BUILDING}
+      </a>
     );
   }
 
