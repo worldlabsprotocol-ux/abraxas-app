@@ -35,8 +35,9 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(unified).not.toContain("HomeHowAbraxasWorksSection");
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).toContain("PROTOCOL_HERO_TITLE");
-    const positioning = read("lib/home/protocolPositioningCopy.ts");
-    expect(positioning).toContain("Trust decisions. Independently verified.");
+    const positioning = read("lib/home/institutionalTrustPositioning.ts");
+    expect(positioning).toContain('INSTITUTIONAL_TRUST_THESIS = "Trust is continuous."');
+    expect(read("lib/home/protocolPositioningCopy.ts")).toContain("INSTITUTIONAL_TRUST_THESIS");
     expect(hero).toContain("abx-premium-hero--enhanced");
     const protocol = read("components/home/HomeProtocolInfrastructureSection.tsx");
     expect(protocol).toContain("HomeProtocolInfrastructureSection");

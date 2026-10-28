@@ -14,7 +14,8 @@ export function HomeTrustContinuousArchitectureImage({ priority = false }: { pri
           Trust is continuous.
         </h2>
         <p className="abx-trust-continuous-arch__lead">
-          See how a request becomes a decision your application can independently verify.
+          From request to enforcement: evidence, authority, signed decision, independent verification, and
+          continuity—without replacing your custody or access-control systems.
         </p>
       </figcaption>
       <div className="abx-trust-continuous-arch__scroll">

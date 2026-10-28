@@ -1,12 +1,13 @@
 // FILE: lib/integrate/businessPageCopy.ts
 // For businesses product page — value before implementation.
 
-export const BUSINESS_PAGE_EYEBROW = "For multi-app fintech & digital-asset platforms";
+import { AUTHENTICITY_VS_AUTHORITY, INSTITUTIONAL_TRUST_LEAD } from "@/lib/home/institutionalTrustPositioning";
 
-export const BUSINESS_PAGE_HEADLINE = "Stop re-verifying the same customer across every app";
+export const BUSINESS_PAGE_EYEBROW = "For institutions, treasury, and multi-app platforms";
 
-export const BUSINESS_PAGE_SUBHEAD =
-  "Keep your existing KYC provider. Abraxas turns trusted verification into reusable, application-specific answers — without passing the underlying identity package between applications.";
+export const BUSINESS_PAGE_HEADLINE = "Independently verifiable trust for institutional actions";
+
+export const BUSINESS_PAGE_SUBHEAD = `${INSTITUTIONAL_TRUST_LEAD} Abraxas fits alongside custody, vault permissions, and your existing KYC stack—it does not replace them. ${AUTHENTICITY_VS_AUTHORITY}`;
 
 export const BUSINESS_PAGE_CTA_PRIMARY = "See reuse across two apps";
 export const BUSINESS_PAGE_CTA_SECONDARY = "Prove reuse in sandbox";
@@ -27,16 +28,16 @@ export const BUSINESS_BENEFITS = [
   },
   {
     id: "clear-decisions",
-    title: "Keep your KYC provider",
-    body: "Abraxas sits after verification and controls reuse, disclosure, and server-verifiable results.",
+    title: "Keep your enforcement stack",
+    body: "Vault RBAC, signing workflows, and transaction engines stay in your systems. Abraxas supplies portable, policy-bound decisions your app verifies before acting.",
   },
 ] as const;
 
 export const BUSINESS_INTEGRATION_PILLARS = [
-  "Partner specific policies",
-  "Private eligibility results",
-  "Server verifiable decisions",
-  "Reusable customer proof",
+  "Policy-bound decisions",
+  "Independent verification",
+  "Authority & continuity checks",
+  "Permit · deny · indeterminate",
 ] as const;
 
 export const BUSINESS_PARTNER_PROOF_TITLE = "Reference proof: one verification, two applications";
