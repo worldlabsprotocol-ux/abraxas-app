@@ -13,12 +13,21 @@ describe("resolvePublicNavPrimaryAction", () => {
     expect(action.href).toBe("#start-sandbox");
   });
 
-  it("uses Continue building when a developer session exists", () => {
+  it("uses Continue building when a developer session exists off-home", () => {
     const action = resolvePublicNavPrimaryAction({
       developerSessionAuthenticated: true,
       pathname: "/developers/ephemeral-sandbox",
     });
     expect(action.label).toBe("Continue building");
     expect(action.href).toBe("/developers/ephemeral-sandbox");
+  });
+
+  it("keeps Continue building on the homepage without route hop", () => {
+    const action = resolvePublicNavPrimaryAction({
+      developerSessionAuthenticated: true,
+      pathname: "/",
+    });
+    expect(action.label).toBe("Continue building");
+    expect(action.href).toBe("#start-sandbox");
   });
 });

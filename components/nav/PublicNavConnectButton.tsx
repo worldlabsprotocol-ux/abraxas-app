@@ -23,6 +23,7 @@ import {
   capturePostAuthResumePath,
   consumePostAuthResumePath,
 } from "@/lib/nav/postAuthResume";
+import { resolvePublicNavPrimaryAction } from "@/lib/nav/publicNavPrimaryAction";
 
 type NativeSession = { authenticated: boolean };
 
@@ -61,8 +62,17 @@ async function loadNativeNavState(): Promise<{
   };
 }
 
-export function PublicNavConnectButton({ prominent = false }: { prominent?: boolean }) {
-  const pathname = usePathname();
+export function PublicNavConnectButton({
+  prominent = false,
+  headerPrimary = false,
+  compact = false,
+}: {
+  prominent?: boolean;
+  /** Single white header pill (RedesignNav). */
+  headerPrimary?: boolean;
+  compact?: boolean;
+}) {
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [nativeFlagEnabled, setNativeFlagEnabled] = useState<boolean | null>(null);
   const [nativeOperational, setNativeOperational] = useState<boolean | null>(null);
@@ -183,27 +193,95 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     </span>
   ) : null;
 
+  const connectVisual = headerPrimary
+    ? ({ headerWhite: true, compact } as const)
+    : ({ prominent } as const);
+
+  const onHome = pathname === "/";
+
+  if (headerPrimary && onHome) {
+    if (phase === "native_service_unavailable") {
+      return (
+        <PublicNavAccountMenu
+          prominent={prominent}
+          variant="muted"
+          triggerLabel="Sign in"
+          triggerAriaLabel="Account sign-in unavailable"
+          menuTitle={PUBLIC_SIGN_IN_UNAVAILABLE_TITLE}
+          menuDescription={PUBLIC_SIGN_IN_UNAVAILABLE_DESC}
+          items={[
+            {
+              type: "link",
+              label: "Explore Integration Studio",
+              href: PUBLIC_NAV_EXPLORE_HREF,
+              description: "No account required",
+            },
+          ]}
+        />
+      );
+    }
+
+    if (phase === "native_account_link" && authMode !== "ephemeral_wallet") {
+      return (
+        <PublicNavConnectPrimary
+          {...connectVisual}
+          label="Account"
+          ariaLabel="Open your Abraxas account"
+          href={PUBLIC_CONNECT_ACCOUNT_HREF}
+        />
+      );
+    }
+
+    const ephemeralAuthenticated =
+      phase === "native_account_link" && authMode === "ephemeral_wallet";
+    const action = resolvePublicNavPrimaryAction({
+      developerSessionAuthenticated: ephemeralAuthenticated,
+      pathname: "/",
+    });
+
+    return (
+      <PublicNavConnectPrimary
+        {...connectVisual}
+        label={phase === "loading" ? HOMEPAGE_CTA_START_BUILDING : action.label}
+        ariaLabel={action.ariaLabel}
+        href="#start-sandbox"
+        disabled={phase === "loading"}
+        onClick={() => focusHomepageWorkspace()}
+      />
+    );
+  }
+
   if (phase === "loading") {
     return (
-      <PublicNavConnectPrimary prominent={prominent} label={HOMEPAGE_CTA_START_BUILDING} ariaLabel="Loading" disabled />
+      <PublicNavConnectPrimary
+        {...connectVisual}
+        label={HOMEPAGE_CTA_START_BUILDING}
+        ariaLabel="Loading"
+        disabled
+      />
     );
   }
 
   if (phase === "native_account_link") {
     const ephemeral = authMode === "ephemeral_wallet";
     if (ephemeral) {
+      const action = resolvePublicNavPrimaryAction({
+        developerSessionAuthenticated: true,
+        pathname,
+      });
       return (
         <PublicNavConnectPrimary
-          prominent={prominent}
-          label={pathname === "/" ? HOMEPAGE_CTA_START_BUILDING : "Workspace"}
-          ariaLabel={pathname === "/" ? "Continue building in sandbox section" : "Open developer workspace"}
+          {...connectVisual}
+          label={onHome ? action.label : "Workspace"}
+          ariaLabel={onHome ? action.ariaLabel : "Open developer workspace"}
+          href={onHome ? "#start-sandbox" : undefined}
           onClick={openDeveloperWorkspace}
         />
       );
     }
     return (
       <PublicNavConnectPrimary
-        prominent={prominent}
+        {...connectVisual}
         label="Account"
         ariaLabel="Open your Abraxas account"
         href={PUBLIC_CONNECT_ACCOUNT_HREF}
@@ -214,7 +292,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   if (phase === "native_explore_only") {
     return (
       <PublicNavConnectPrimary
-        prominent={prominent}
+        {...connectVisual}
         label={HOMEPAGE_CTA_START_BUILDING}
         ariaLabel="Start building with Abraxas"
         href={PUBLIC_NAV_WORKSPACE_HREF}
@@ -246,7 +324,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   return (
     <>
       <PublicNavConnectPrimary
-        prominent={prominent}
+        {...connectVisual}
         label={busy ? "Authorizing" : HOMEPAGE_CTA_START_BUILDING}
         ariaLabel="Start building with Solana wallet authorization"
         busy={busy}

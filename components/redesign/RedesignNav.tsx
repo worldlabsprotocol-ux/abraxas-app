@@ -6,7 +6,6 @@ import Link from "next/link";
 import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
-import { PublicNavPrimaryActionLink } from "@/components/nav/PublicNavPrimaryActionLink";
 import { PublicNavSectionMenu } from "@/components/nav/PublicNavSectionMenu";
 import { AbraxasGuideNavButton } from "@/components/product/AbraxasGuideDialog";
 import {
@@ -52,15 +51,13 @@ export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
       <div className="rd-nav-right rd-nav-actions" style={{ display: "none" }}>
         <AbraxasGuideNavButton />
         <LanguageSelector />
-        <PublicNavConnectButton />
-        <PublicNavPrimaryActionLink />
+        <PublicNavConnectButton headerPrimary />
       </div>
 
       <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
         <AbraxasGuideNavButton />
         <LanguageSelector compact />
-        <PublicNavConnectButton />
-        <PublicNavPrimaryActionLink compact />
+        <PublicNavConnectButton headerPrimary compact />
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
