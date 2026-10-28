@@ -1466,23 +1466,36 @@ export function IntegrationStudioClient({
           }
         />
       ) : (
-        <IntegrationStudioRequestWorkbench />
+        <IntegrationStudioRequestWorkbench
+          packId={packId}
+          pathId={pathId}
+          policyId={walletApp?.policyId ?? resumeApp?.policy_id ?? null}
+        />
       )}
 
-      <ContentCard title="Upgrade · Production review">
-        <p style={body}>{PARTNER_ACTIVATION_PRODUCTION.notice}</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-          <Btn href={created ? launchpadResumeHref(created.application_id) : resumeApp ? launchpadResumeHref(resumeApp.id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
-            Open Launchpad readiness →
-          </Btn>
-          <Btn href="/verify" variant="secondary" size="sm">
-            Independent verification workbench →
-          </Btn>
-          <Btn href="/docs/sandbox-conformance" variant="ghost" size="sm">
-            Sandbox partner contract →
-          </Btn>
-        </div>
-      </ContentCard>
+      {variant !== "embedded_workspace" ? (
+        <details style={{ marginTop: "0.75rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+            Advanced · Production review (after integration works)
+          </summary>
+          <div style={{ marginTop: "0.75rem" }}>
+            <ContentCard title="Upgrade · Production review">
+              <p style={body}>{PARTNER_ACTIVATION_PRODUCTION.notice}</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+                <Btn href={created ? launchpadResumeHref(created.application_id) : resumeApp ? launchpadResumeHref(resumeApp.id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
+                  Open Launchpad readiness →
+                </Btn>
+                <Btn href="/verify" variant="secondary" size="sm">
+                  Independent verification workbench →
+                </Btn>
+                <Btn href="/docs/sandbox-conformance" variant="ghost" size="sm">
+                  Sandbox partner contract →
+                </Btn>
+              </div>
+            </ContentCard>
+          </div>
+        </details>
+      ) : null}
       <IntegrationStudioStageFooter stage="request" />
       </>
       )}

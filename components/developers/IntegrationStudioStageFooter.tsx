@@ -4,6 +4,7 @@ import {
   INTEGRATION_STUDIO_STAGE_ORDER,
   type IntegrationStudioStageId,
 } from "@/lib/developers/useIntegrationStudioStage";
+import { useUnifiedWorkspaceEmbed } from "@/lib/developers/unifiedWorkspaceEmbedContext";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -13,6 +14,7 @@ function studioStageHash(stage: IntegrationStudioStageId): string {
 }
 
 export function IntegrationStudioStageFooter({ stage }: { stage: IntegrationStudioStageId }) {
+  const { embeddedInDeveloperWorkspace } = useUnifiedWorkspaceEmbed();
   const index = INTEGRATION_STUDIO_STAGE_ORDER.indexOf(stage);
   const prev = index > 0 ? INTEGRATION_STUDIO_STAGE_ORDER[index - 1] : null;
   const next = index >= 0 && index < INTEGRATION_STUDIO_STAGE_ORDER.length - 1
@@ -60,6 +62,10 @@ export function IntegrationStudioStageFooter({ stage }: { stage: IntegrationStud
         >
           Continue: {stageLabel(next)} →
         </a>
+      ) : embeddedInDeveloperWorkspace && stage === "request" ? (
+        <span style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
+          Stay on this workspace to connect your app
+        </span>
       ) : (
         <a href="/verify?mode=receipt" style={{ color: "var(--accent)", fontWeight: 700 }}>
           Receipt tools →
