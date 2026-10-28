@@ -38,7 +38,7 @@ Lists required signed artifacts (issuer authority, trust anchor pin, mandate pay
 
 **Asset:** `/brand/living-sphere/abraxas-living-sphere-hero.jpg` (nav crop ≤40px display)
 
-**Components:** `AbraxasProcessingEmblem`, `SolanaAccountSignInDialog`, `HomeInlineWorkspaceProcessing`, proof-check row in `EphemeralSandboxVerificationCompletion`
+**Components:** `AbraxasProcessingEmblem`, `SolanaAccountSignInDialog`, `HomeInlineWorkspaceProcessing`, proof-check row in `EphemeralSandboxVerificationCompletion`, ephemeral sandbox processing rows in `EphemeralSandboxWorkspaceClient`
 
 **Regression:** `lib/brand/canonicalProcessingEmblem.test.ts`
 
