@@ -1602,9 +1602,9 @@
 }
 
 .abx-premium-hero-carousel__diagram-shell {
-  max-width: 1320px;
+  max-width: min(1320px, 100%);
   margin: 0 auto;
-  padding: clamp(1rem, 3vw, 1.75rem) clamp(1rem, 4vw, 2.5rem) clamp(1.25rem, 3vw, 2rem);
+  padding: clamp(0.5rem, 1.5vw, 0.85rem) clamp(0.65rem, 2vw, 1.25rem) clamp(0.65rem, 1.5vw, 1rem);
 }
 
 .abx-premium-hero-carousel__diagram-intro {
@@ -1886,12 +1886,13 @@
 .abx-trust-continuous-arch {
   margin: 0;
   padding: 0;
-  min-width: min(100%, 72rem);
+  width: 100%;
+  min-width: 0;
 }
 
 .abx-trust-continuous-arch__caption {
-  margin-bottom: 1rem;
-  max-width: 36rem;
+  margin-bottom: 0.75rem;
+  max-width: 40rem;
 }
 
 .abx-trust-continuous-arch__title {
@@ -1953,54 +1954,17 @@
   color: rgba(76, 187, 146, 0.95);
 }
 
-.abx-trust-continuous-arch__stage-panel {
-  margin-bottom: 1rem;
-  padding: 1rem 1.1rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(8, 10, 14, 0.72);
-}
-
-.abx-trust-continuous-arch__stage-question {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 650;
-  color: var(--text-primary);
-}
-
-.abx-trust-continuous-arch__stage-summary {
+.abx-trust-continuous-arch__stage-caption {
   margin: 0 0 0.65rem;
-  font-size: 0.88rem;
-  line-height: 1.55;
+  font-size: 0.95rem;
+  line-height: 1.45;
   color: var(--text-secondary);
-}
-
-.abx-trust-continuous-arch__stage-points {
-  margin: 0 0 0.65rem;
-  padding-left: 1.15rem;
-  font-size: 0.84rem;
-  line-height: 1.5;
-  color: var(--text-primary);
-}
-
-.abx-trust-continuous-arch__stage-points li {
-  margin: 0.2rem 0;
-}
-
-.abx-trust-continuous-arch__stage-continuity {
-  margin: 0.35rem 0 0;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: var(--text-secondary);
-}
-
-.abx-trust-continuous-arch__stage-continuity-label {
-  color: var(--text-primary);
-  font-weight: 600;
+  max-width: 36rem;
 }
 
 .abx-trust-continuous-arch__diagram-controls {
-  margin-bottom: 0.75rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
 }
 
 .abx-trust-continuous-arch__diagram-toggle {
@@ -2015,48 +1979,36 @@
   cursor: pointer;
 }
 
-.abx-trust-continuous-arch__diagram-hint {
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  line-height: 1.45;
-}
-
 .abx-trust-continuous-arch__stage-visual,
 .abx-trust-continuous-arch__overview-wrap {
   width: 100%;
-  max-width: 42rem;
-  margin: 0 auto;
-  aspect-ratio: 3 / 4;
-  max-height: min(72vh, 36rem);
+  max-width: min(1180px, 100%);
+  margin: 0;
   overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(4, 6, 8, 0.92);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(4, 6, 8, 0.55);
+  line-height: 0;
 }
 
 .abx-trust-continuous-arch__stage-image,
 .abx-trust-continuous-arch__overview-image {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: min(78vh, 52rem);
   object-fit: contain;
-  object-position: center top;
+  object-position: center center;
 }
 
 .abx-trust-continuous-arch__overview-wrap {
-  aspect-ratio: 16 / 9;
-  max-width: 72rem;
-  max-height: min(70vh, 40rem);
+  max-height: min(72vh, 44rem);
 }
 
 @media (max-width: 768px) {
-  .abx-trust-continuous-arch {
-    min-width: 0;
-  }
-
-  .abx-trust-continuous-arch__stage-visual {
-    max-height: min(68vh, 32rem);
+  .abx-trust-continuous-arch__stage-image,
+  .abx-trust-continuous-arch__overview-image {
+    max-height: min(62vh, 28rem);
   }
 
   .abx-trust-continuous-arch__stage-list {

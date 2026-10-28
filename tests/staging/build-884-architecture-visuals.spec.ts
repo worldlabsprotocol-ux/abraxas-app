@@ -11,7 +11,7 @@ test.describe("Build 884 architecture visuals", () => {
     await expect(stageImage).toHaveAttribute("src", /stage-01-request/);
 
     await page.getByRole("button", { name: /03.*Independent verification/i }).click();
-    await expect(page.getByText(/Freshness and revocation/i)).toBeVisible();
+    await expect(page.getByText(/Anyone can verify the result independently/i)).toBeVisible();
     await expect(stageImage).toHaveAttribute("src", /stage-03-verification/);
 
     await page.getByRole("button", { name: /View full architecture/i }).click();
