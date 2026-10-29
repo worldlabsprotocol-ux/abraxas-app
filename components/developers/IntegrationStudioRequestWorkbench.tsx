@@ -9,6 +9,7 @@ import {
 } from "@/lib/partner/launchpad/testScenarios";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
+import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
 import { useIntegrationStudioOperational } from "@/components/developers/integrationStudioOperationalContext";
 import { formatHarnessResultForBuilder } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
 import { buildLaunchpadTestScenarioRequestBody } from "@/lib/partner/launchpad/testScenarioClientRequest";
@@ -94,8 +95,6 @@ export function IntegrationStudioRequestWorkbench({
 
   if (beginnerSurface && showConnectJourney) {
     return (
-      <div className="abx-builder-journey-shell">
-        <div className="abx-builder-journey-shell__inner">
       <ApplicationConnectionAfterTestPanel
         applicationId={applicationId!}
         signedIn={signedIn}
@@ -106,35 +105,29 @@ export function IntegrationStudioRequestWorkbench({
         outcome={outcome!}
         testSucceeded
       />
-        </div>
-      </div>
     );
   }
 
   if (beginnerSurface) {
+    const failed = Boolean(error || (outcome && outcome.tone !== "success"));
     return (
-      <div className="abx-builder-journey-shell">
-        <div className="abx-builder-journey-shell__inner" data-testid="builder-run-test-minimal" style={{ fontFamily: FONT }}>
-        {busy ? <AbraxasJourneyEmblemStatus state="running_test" detail="Running your test" /> : null}
-        {outcome && !busy && outcome.tone !== "success" ? (
-          <AbraxasJourneyEmblemStatus state="needs_attention" detail={outcome.headline} />
-        ) : null}
-        {!applicationId ? (
-          <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", margin: 0 }}>Create your test app first.</p>
-        ) : null}
-        {applicationId && !signedIn ? (
-          <p style={{ fontSize: "0.88rem", color: "var(--warning, #f59e0b)", margin: 0 }}>Sign in to run your test.</p>
-        ) : null}
-        {error ? (
-          <p style={{ fontSize: "0.78rem", color: "var(--danger, #f87171)", margin: "0.5rem 0 0" }}>{error}</p>
-        ) : null}
-        {applicationId && signedIn && !outcome && !busy ? (
-          <Btn size="sm" disabled={busy} onClick={() => void runHarness()}>
-            Run test
+      <BuilderActiveTask
+        taskKey="run-sandbox-test"
+        testId="builder-run-test-minimal"
+        title={busy ? "Running your test" : failed ? "Your test needs attention" : "Run a sandbox test"}
+        description={failed ? "Check the result, then try again." : "See how your app receives a verified result."}
+        state={busy ? "pending" : failed ? "failure" : "ready"}
+        status={busy ? "Running against your sandbox app" : failed ? outcome?.headline : undefined}
+        error={error}
+        action={applicationId && signedIn ? (
+          <Btn size="sm" disabled={busy} loading={busy} onClick={() => void runHarness()}>
+            {failed ? "Try test again" : "Run test"}
           </Btn>
         ) : null}
-        </div>
-      </div>
+      >
+        {!applicationId ? <p className="abx-builder-journey-support">Create your test app first.</p> : null}
+        {applicationId && !signedIn ? <p className="abx-builder-journey-support">Sign in to run your test.</p> : null}
+      </BuilderActiveTask>
     );
   }
 

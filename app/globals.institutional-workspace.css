@@ -711,7 +711,7 @@
 
 .abx-builder-journey-shell__inner {
   width: 100%;
-  max-width: min(26rem, 100%);
+  max-width: min(44rem, 100%);
   margin-inline: auto;
   text-align: left;
 }
@@ -874,4 +874,70 @@
   background: var(--surface-inset);
   color: var(--text-primary);
   font-weight: 500;
+}
+
+
+/* Homepage and Studio share one active beginner task, with no nested task cards. */
+.abx-builder-active-task {
+  display: grid;
+  justify-items: center;
+  gap: 0.85rem;
+  padding: clamp(1.25rem, 3vw, 2rem) 0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  text-align: center;
+}
+
+.abx-builder-active-task__emblem {
+  display: inline-flex;
+  margin-bottom: 0.25rem;
+}
+
+.abx-builder-active-task .abx-builder-journey-headline {
+  margin: 0;
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.55rem, 3vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+}
+
+.abx-builder-active-task .abx-builder-journey-headline:focus {
+  outline: none;
+}
+
+.abx-builder-active-task .abx-builder-journey-support {
+  max-width: 38rem;
+  margin: 0;
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
+  line-height: 1.55;
+}
+
+.abx-builder-active-task .abx-builder-journey-actions {
+  justify-content: center;
+  margin-top: 0.3rem;
+}
+
+.abx-builder-active-task .abx-builder-journey-error {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 0.85rem;
+}
+
+.abx-builder-active-task .abx-beginner-create-card__field,
+.abx-builder-active-task .abx-builder-stack-grid,
+.abx-builder-active-task .abx-builder-technical-panel {
+  width: min(100%, 36rem);
+}
+
+.abx-builder-active-task .abx-builder-stack-chip:focus-visible,
+.abx-builder-active-task .abx-builder-inline-link:focus-visible,
+.abx-builder-active-task .abx-builder-technical-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .abx-builder-active-task { padding-block: 1rem; }
+  .abx-builder-active-task .abx-builder-journey-actions,
+  .abx-builder-active-task .abx-builder-journey-actions > * { width: 100%; }
 }

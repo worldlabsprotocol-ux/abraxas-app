@@ -10,7 +10,6 @@ import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
 import { HomeSandboxAccountAuth } from "@/components/home/HomeSandboxAccountAuth";
 import { HomeInlineSandboxWorkspace } from "@/components/home/HomeInlineSandboxWorkspace";
-import { HomeWorkspaceProgressSteps } from "@/components/home/HomeWorkspaceProgressSteps";
 import {
   HOMEPAGE_CTA_OPEN_WORKSPACE,
   HOMEPAGE_CTA_SET_UP_WORKSPACE,
@@ -102,24 +101,18 @@ export function HomeSandboxSessionEntry() {
     </Link>
   );
 
-  const showPreAuthSteps =
-    discoveryComplete
-    && mode !== "ephemeral_sandbox_ready"
-    && mode !== "native_disabled"
-    && mode !== "native_unavailable";
-
   const showDiscovery =
     !discoveryComplete
     && mode !== "native_disabled"
     && mode !== "native_unavailable"
     && mode !== "loading";
 
+  if (showDiscovery) {
+    return <div className="abx-sandbox-entry"><HomeBuilderDiscovery onComplete={() => setDiscoveryComplete(true)} /></div>;
+  }
+
   return (
     <div className="abx-sandbox-entry">
-      {showDiscovery ? (
-        <HomeBuilderDiscovery onComplete={() => setDiscoveryComplete(true)} />
-      ) : null}
-      {showPreAuthSteps ? <HomeWorkspaceProgressSteps mode={mode} /> : null}
 
       {mode === "loading" ? (
         <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
