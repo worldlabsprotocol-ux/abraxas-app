@@ -52,7 +52,7 @@ function buildCorrelatedReceiptGroups(bound: IntegrationEventRow[]): Map<string,
   }
 
   const groups = new Map<string, IntegrationEventRow[]>();
-  for (const receiptId of receiptIds) {
+  for (const receiptId of Array.from(receiptIds).sort()) {
     const merged: IntegrationEventRow[] = [];
     const seen = new Set<string>();
     const push = (event: IntegrationEventRow) => {
@@ -71,7 +71,7 @@ function buildCorrelatedReceiptGroups(bound: IntegrationEventRow[]): Map<string,
       const key = requestKey(event);
       if (key) requestIds.add(key);
     }
-    for (const key of requestIds) {
+    for (const key of Array.from(requestIds).sort()) {
       for (const event of byRequest.get(key) ?? []) {
         push(event);
       }
