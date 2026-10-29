@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Reveal } from "@/lib/motion/Reveal";
 import { Btn } from "@/components/redesign/ui";
@@ -68,6 +68,7 @@ import {
 } from "@/lib/developers/sandboxIntegrationHandoff";
 import { buildIntegrationStageUrl } from "@/lib/developers/unifiedWorkspaceContinuity";
 import { useUnifiedWorkspaceEmbed } from "@/lib/developers/unifiedWorkspaceEmbedContext";
+import { IntegrationStudioBeginnerFlow } from "@/components/developers/IntegrationStudioBeginnerFlow";
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
@@ -158,6 +159,7 @@ export function IntegrationStudioClient({
   beginnerStandaloneSurface?: boolean;
 }) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const {
     embeddedInDeveloperWorkspace,
     workspaceBasePath,
@@ -194,7 +196,14 @@ export function IntegrationStudioClient({
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
   const beginnerHomepageEmbed = embeddedInDeveloperWorkspace && variant === "embedded_workspace";
-  const beginnerSurface = beginnerHomepageEmbed || beginnerStandaloneSurface;
+  const advancedStudio = searchParams.get("advanced") === "1";
+  const standaloneStudioPath = pathname === "/developers/integration-studio";
+  const beginnerSurface =
+    beginnerHomepageEmbed
+    || beginnerStandaloneSurface
+    || (variant === "standalone" && standaloneStudioPath && !advancedStudio);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [partnerIdForStatus, setPartnerIdForStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -417,14 +426,16 @@ export function IntegrationStudioClient({
   const refreshLaunchpadSession = useCallback(async () => {
     try {
       const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
-      const data = await res.json() as { authenticated?: boolean };
+      const data = await res.json() as { authenticated?: boolean; partner_id?: string };
       const authenticated = Boolean(data.authenticated);
       setSignedIn(authenticated);
       if (!authenticated) {
         setResumeApp(null);
         setResumePartnerId("");
+        setPartnerIdForStatus("");
         return;
       }
+      setPartnerIdForStatus(data.partner_id ?? "");
       const workspaceRes = await fetch("/api/launchpad/applications", { credentials: "include" });
       const workspace = await workspaceRes.json() as {
         workspace?: {
@@ -436,6 +447,7 @@ export function IntegrationStudioClient({
       const fromUrl = urlAppId ? apps.find((item) => item.id === urlAppId) : undefined;
       const chosen = fromUrl ?? apps[0] ?? null;
       setResumeApp(chosen);
+      setPartnerIdForStatus(workspace.workspace?.partner_id ?? data.partner_id ?? "");
       setResumePartnerId(workspace.workspace?.partner_id ?? "");
       if (chosen) {
         const inferred = inferPolicyPackFromPolicyId(chosen.policy_id);
@@ -447,12 +459,22 @@ export function IntegrationStudioClient({
       setSignedIn(false);
       setResumeApp(null);
       setResumePartnerId("");
+      setPartnerIdForStatus("");
+    } finally {
+      setSessionChecked(true);
     }
   }, [urlAppId]);
 
   useEffect(() => {
     void refreshLaunchpadSession();
   }, [refreshLaunchpadSession]);
+
+  useEffect(() => {
+    if (!beginnerSurface || packId) return;
+    if (isPolicyPackId("wallet_control")) {
+      setPackId("wallet_control");
+    }
+  }, [beginnerSurface, packId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -566,7 +588,7 @@ export function IntegrationStudioClient({
           recommended_path: pathId,
           environment: "sandbox",
         });
-        if (typeof window !== "undefined" && !data.idempotency_replay) {
+        if (!beginnerSurface && typeof window !== "undefined" && !data.idempotency_replay) {
           const next = integrationStudioStageHref("request");
           window.history.replaceState(null, "", next);
           window.dispatchEvent(new HashChangeEvent("hashchange"));
@@ -680,13 +702,51 @@ export function IntegrationStudioClient({
   );
 
   useEffect(() => {
+    if (beginnerSurface) return;
     if (typeof window === "undefined") return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document.querySelector(".abx-studio-workspace__canvas")?.scrollIntoView({
       behavior: reduced ? "auto" : "smooth",
       block: "start",
     });
-  }, [stage]);
+  }, [stage, beginnerSurface]);
+
+  const workspaceStatusLine =
+    sessionChecked && signedIn && partnerIdForStatus.trim()
+      ? "Your workspace is ready"
+      : null;
+
+  const beginnerPolicyId =
+    walletApp?.policyId ?? resumeApp?.policy_id ?? created?.policy_id ?? null;
+
+  if (beginnerSurface) {
+    return (
+      <>
+        <IntegrationStudioOperationalBridge
+          applicationId={configuredAppId}
+          signedIn={signedIn}
+          returnUrl={returnUrl}
+          operationsRail={operationsRail}
+          nextAction={studioNextAction}
+        />
+        <IntegrationStudioBeginnerFlow
+          sessionChecked={sessionChecked}
+          signedIn={signedIn}
+          configuredAppId={configuredAppId}
+          packId={packId}
+          pathId={pathId}
+          policyId={beginnerPolicyId}
+          applicationName={applicationName}
+          onApplicationNameChange={setApplicationName}
+          onCreateSandbox={() => void createSandbox()}
+          submitting={submitting}
+          createError={error}
+          workspaceStatusLine={workspaceStatusLine}
+          onRefreshSession={() => void refreshLaunchpadSession()}
+        />
+      </>
+    );
+  }
 
   return (
     <>
