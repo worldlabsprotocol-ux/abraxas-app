@@ -700,3 +700,133 @@
   text-align: left;
   line-height: 1.35;
 }
+
+.abx-builder-journey-shell {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(0.35rem, 1.5vw, 1rem) clamp(0.5rem, 3vw, 1.25rem);
+}
+
+.abx-builder-journey-shell__inner {
+  width: 100%;
+  max-width: min(26rem, 100%);
+  margin-inline: auto;
+  text-align: left;
+}
+
+.abx-builder-journey-headline {
+  margin: 0.85rem 0 0.35rem;
+  font-size: clamp(1.15rem, 3.2vw, 1.35rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.abx-builder-journey-support {
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.abx-builder-journey-section-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.abx-builder-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  width: 100%;
+  margin-bottom: 0.85rem;
+}
+
+.abx-builder-stack-chip {
+  padding: 0.72rem 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.abx-builder-stack-chip:hover,
+.abx-builder-stack-chip:focus-visible {
+  border-color: rgba(76, 187, 146, 0.45);
+  outline: none;
+}
+
+.abx-builder-journey-footnote {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.abx-builder-inline-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.abx-builder-journey-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.abx-builder-journey-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.abx-builder-journey-error {
+  font-size: 0.72rem;
+  color: var(--danger, #f87171);
+  margin-top: 0.55rem;
+}
+
+.abx-builder-technical-toggle {
+  margin-top: 1.15rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.abx-builder-technical-panel {
+  margin-top: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.abx-builder-technical-panel code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  word-break: break-all;
+}
+
+.abx-studio-workspace--beginner .abx-studio-workspace__canvas,
+.abx-studio-workspace--homepage .abx-studio-workspace__canvas {
+  overflow-x: hidden;
+}

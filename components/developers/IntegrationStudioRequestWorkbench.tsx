@@ -94,6 +94,8 @@ export function IntegrationStudioRequestWorkbench({
 
   if (beginnerSurface && showConnectJourney) {
     return (
+      <div className="abx-builder-journey-shell">
+        <div className="abx-builder-journey-shell__inner">
       <ApplicationConnectionAfterTestPanel
         applicationId={applicationId!}
         signedIn={signedIn}
@@ -104,12 +106,15 @@ export function IntegrationStudioRequestWorkbench({
         outcome={outcome!}
         testSucceeded
       />
+        </div>
+      </div>
     );
   }
 
   if (beginnerSurface) {
     return (
-      <div data-testid="builder-run-test-minimal" style={{ fontFamily: FONT }}>
+      <div className="abx-builder-journey-shell">
+        <div className="abx-builder-journey-shell__inner" data-testid="builder-run-test-minimal" style={{ fontFamily: FONT }}>
         {busy ? <AbraxasJourneyEmblemStatus state="running_test" detail="Running your test" /> : null}
         {outcome && !busy && outcome.tone !== "success" ? (
           <AbraxasJourneyEmblemStatus state="needs_attention" detail={outcome.headline} />
@@ -128,6 +133,7 @@ export function IntegrationStudioRequestWorkbench({
             Run test
           </Btn>
         ) : null}
+        </div>
       </div>
     );
   }
