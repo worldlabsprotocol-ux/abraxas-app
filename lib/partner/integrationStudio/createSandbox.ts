@@ -151,13 +151,35 @@ export async function createStudioSandbox(req: NextRequest) {
   });
 
   if (!result.ok) {
-    if (result.code === "return_url_rejected") return studioError("return_url_rejected", 400);
+    if (result.code === "return_url_rejected") {
+      return launchpadError(
+        LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected,
+        400,
+        "Use an HTTPS callback on your domain, or http://localhost for local development only.",
+      );
+    }
     if (result.code === "policy_template_invalid") return studioError("policy_template_invalid", 400);
     if (result.code === "not_configured") return studioError("not_configured", 503);
     if (result.code === "conflict") {
-      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 409, "conflict");
+      return launchpadError(
+        LAUNCHPAD_PUBLIC_ERRORS.invalid_input,
+        409,
+        "That application name is already taken. Choose a different name and try again.",
+      );
     }
-    return studioError("provision_failed", result.code === "provision_failed" ? 500 : 400);
+    if (result.code === "invalid_input") {
+      const detail = result.reason === "provision_invalid_input"
+        ? "This create request does not match an earlier attempt. Refresh the page and try again."
+        : "Check the application name and callback URL, then try again.";
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, detail);
+    }
+    if (result.code === "provision_failed") {
+      const detail = result.reason === "public_slug_conflict"
+        ? "That application name is already taken. Choose a different name and try again."
+        : "Sandbox creation failed on the server. Wait a moment and try again. If it keeps failing, contact support with the time of this attempt.";
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.provision_failed, 500, detail);
+    }
+    return studioError("provision_failed", 400);
   }
 
   if (

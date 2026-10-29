@@ -19,6 +19,10 @@ function rateLimitMessage(ctx?: LaunchpadPublicErrorContext): string {
 const PUBLIC_ERROR_MESSAGES: Record<string, (ctx?: LaunchpadPublicErrorContext) => string> = {
   launchpad_rate_limited: rateLimitMessage,
   [LAUNCHPAD_PUBLIC_ERRORS.sandbox_rate_limited]: rateLimitMessage,
+  [LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected]: () =>
+    "That callback URL is not allowed. Use HTTPS on your domain, or http://localhost for local development.",
+  [LAUNCHPAD_PUBLIC_ERRORS.provision_failed]: () =>
+    "Could not create your test app. Wait a moment and try again.",
 };
 
 export function formatLaunchpadPublicError(
@@ -26,7 +30,7 @@ export function formatLaunchpadPublicError(
   fallback?: string,
   ctx?: LaunchpadPublicErrorContext,
 ): string {
-  if (fallback && fallback !== code) return fallback;
+  if (fallback && fallback !== code && !/^[a-z0-9_]+$/.test(fallback)) return fallback;
   if (!code) return fallback ?? "Something went wrong. Try again.";
   const formatter = PUBLIC_ERROR_MESSAGES[code];
   if (formatter) return formatter(ctx);

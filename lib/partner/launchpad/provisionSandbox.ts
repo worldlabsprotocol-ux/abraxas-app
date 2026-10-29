@@ -21,7 +21,7 @@ import {
   type CustomLaunchpadPolicyInput,
 } from "@/lib/partner/launchpad/customPolicy";
 import { validateLaunchpadReturnUrl } from "@/lib/partner/launchpad/returnUrl";
-import { slugifyLaunchpadApplication, isValidLaunchpadPublicSlug } from "@/lib/partner/launchpad/slug";
+import { isValidLaunchpadPublicSlug, resolveLaunchpadPublicSlug } from "@/lib/partner/launchpad/slug";
 import type { ProvisionSandboxResult } from "@/lib/partner/launchpad/types";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 import { SITE_URL } from "@/lib/siteUrl";
@@ -45,6 +45,13 @@ export type ProvisionSandboxErrorCode =
   | "conflict"
   | "not_configured";
 
+export type ProvisionSandboxFailure = {
+  ok: false;
+  code: ProvisionSandboxErrorCode;
+  /** Stable RPC / persistence reason for operator logs and precise UI copy. */
+  reason?: string;
+};
+
 function launchpadUsesDirectPostgres(): boolean {
   return persistenceUsesDirectPostgres() || isSovereignNativeAccountMode();
 }
@@ -53,7 +60,7 @@ export async function provisionLaunchpadSandbox(
   input: ProvisionSandboxInput,
 ): Promise<
   | { ok: true; result: ProvisionSandboxResult; idempotencyReplay: boolean; apiKey?: string }
-  | { ok: false; code: ProvisionSandboxErrorCode }
+  | ProvisionSandboxFailure
 > {
 
   const applicationName = input.applicationName.trim();
@@ -76,9 +83,9 @@ export async function provisionLaunchpadSandbox(
     return { ok: false, code: "return_url_rejected" };
   }
 
-  const publicSlug = input.publicSlug?.trim() || slugifyLaunchpadApplication(applicationName);
+  const publicSlug = input.publicSlug?.trim() || resolveLaunchpadPublicSlug(applicationName, partnerId);
   if (!isValidLaunchpadPublicSlug(publicSlug)) {
-    return { ok: false, code: "invalid_input" };
+    return { ok: false, code: "invalid_input", reason: "public_slug_invalid" };
   }
 
   const policyId = buildLaunchpadPolicyId(partnerId, input.policyTemplateId);
@@ -196,8 +203,9 @@ export async function provisionLaunchpadSandbox(
   };
 
   if (!rowTyped?.ok || !rowTyped.application_id || !rowTyped.partner_id || !rowTyped.public_slug) {
-    if (rowTyped?.code === "conflict") return { ok: false, code: "conflict" };
-    return { ok: false, code: "provision_failed" };
+    if (rowTyped?.code === "conflict") return { ok: false, code: "conflict", reason: "public_slug_conflict" };
+    if (rowTyped?.code === "invalid_input") return { ok: false, code: "invalid_input", reason: "provision_invalid_input" };
+    return { ok: false, code: "provision_failed", reason: rowTyped?.code ?? "provision_rpc_failed" };
   }
 
   const hostedVerifyUrl = `${SITE_URL}/partner/verify?app=${encodeURIComponent(rowTyped.public_slug)}&return_url=${encodeURIComponent(input.returnUrl.trim())}`;

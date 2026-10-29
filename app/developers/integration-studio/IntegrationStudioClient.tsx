@@ -76,6 +76,11 @@ import {
   isLocalReferenceCallbackUrl,
   LOCAL_REFERENCE_CALLBACK_URL,
 } from "@/lib/developers/integrationAdoptionPath";
+import {
+  isStudioLocalDevCallback,
+  resolveStudioDefaultCallbackUrl,
+} from "@/lib/developers/studioDefaultCallbackUrl";
+import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
 import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
@@ -185,6 +190,7 @@ export function IntegrationStudioClient({
   const [signedIn, setSignedIn] = useState(false);
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
+  const beginnerHomepageEmbed = embeddedInDeveloperWorkspace && variant === "embedded_workspace";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -471,6 +477,16 @@ export function IntegrationStudioClient({
     }
   }, [packId, pathId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setReturnUrl((current) => {
+      if (!isStudioLocalDevCallback(current) && current !== "http://localhost:3000/callback") {
+        return current;
+      }
+      return resolveStudioDefaultCallbackUrl(window.location.origin);
+    });
+  }, []);
+
   async function createSandbox() {
     setError("");
     if (!packId) {
@@ -495,13 +511,14 @@ export function IntegrationStudioClient({
           return_url: returnUrl,
           environment: "sandbox",
           sandbox_id: sandboxId,
-          idempotency_key: `studio-${packId}-${applicationName.trim().toLowerCase()}`,
+          idempotency_key: `studio-${sandboxId}-${packId}-${applicationName.trim().toLowerCase()}`,
         }),
       });
       const data = await res.json() as {
         ok?: boolean;
         error?: string;
         code?: string;
+        retry_after_sec?: number;
         api_key?: string | null;
         idempotency_replay?: boolean;
         application?: CreatedApp;
@@ -515,29 +532,18 @@ export function IntegrationStudioClient({
         }
         if (data.code === "launchpad_console_session_unconfigured") {
           setError(
-            "Launchpad browser session signing is not configured on this deployment. "
-              + "Set ABRAXAS_BROWSER_SESSION_SECRET (≥16 characters) for Preview/staging, redeploy, then retry. "
-              + "Your sandbox application and API key are still valid.",
+            "Browser session signing is not configured on this deployment. "
+              + "Your test app may still have been created; refresh and continue, or contact support if this repeats.",
           );
           return;
         }
         if (data.code === "launchpad_not_configured") {
           setError(
-            "Sandbox provisioning is not connected to Launchpad persistence in this environment. "
-              + "Use a staging deployment with Supabase migrations 084–086 applied and valid "
-              + "NEXT_PUBLIC_SUPABASE_URL plus SUPABASE_SERVICE_ROLE_KEY, then retry. "
-              + "Your wallet verification in Developer Workspace is still valid.",
+            "Test app storage is not available in this environment. Try again on the main Abraxas site or contact support.",
           );
           return;
         }
-        if (data.code === "launchpad_provision_failed") {
-          setError(
-            "Could not create the sandbox application. Check the callback URL (use https://localhost or a public HTTPS URL on staging), "
-              + "wait out rate limits, and retry. If this persists on staging, contact support with the time of the attempt.",
-          );
-          return;
-        }
-        setError(data.error ?? data.code ?? "Could not create sandbox");
+        setError(launchpadErrorFromResponse(data, "Could not create your test app. Try again."));
         return;
       }
       if (data.application) {
@@ -557,7 +563,7 @@ export function IntegrationStudioClient({
           environment: "sandbox",
         });
         if (typeof window !== "undefined" && !data.idempotency_replay) {
-          const next = integrationStudioStageHref("configuration");
+          const next = integrationStudioStageHref("request");
           window.history.replaceState(null, "", next);
           window.dispatchEvent(new HashChangeEvent("hashchange"));
         }
@@ -580,7 +586,7 @@ export function IntegrationStudioClient({
       if (data.path_instructions) setPathInstructions(data.path_instructions);
       if (data.docs) setHostedDocs(data.docs);
       if (data.idempotency_replay) {
-        setError("This sandbox already exists. The key is not shown again.");
+        setError("");
       }
     } catch {
       setError("Could not create sandbox");
@@ -1160,12 +1166,9 @@ export function IntegrationStudioClient({
       <>
       <ContentCard title={INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE} id="sandbox">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
-          This is where you try Abraxas as a developer. Your first application runs safely in a test environment — you
-          can change the name later.
-        </p>
-        <p style={{ ...body, marginBottom: "0.75rem", fontSize: "0.82rem" }}>
-          <strong style={{ color: "var(--text-primary)" }}>Safe to experiment.</strong> Your test app will not affect a
-          live protocol. Advanced connection settings appear when you need them.
+          {beginnerHomepageEmbed
+            ? "Name your test app. Abraxas runs it in a private sandbox that does not touch production."
+            : "Try Abraxas safely in a test environment. You can rename the app later."}
         </p>
         {!packId ? (
           <div style={{ ...body, marginBottom: "0.85rem", padding: "0.75rem", borderRadius: 12, border: "1px solid var(--border)" }}>
@@ -1278,10 +1281,11 @@ export function IntegrationStudioClient({
                 Policy identifier: <span style={{ fontFamily: MONO }}>{packId}</span> · Environment: sandbox only
               </p>
             </details>
-            <p style={{ ...body, margin: 0, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-              You can create your test app with the default callback while exploring. Open Advanced above to change
-              where results are delivered when you connect your own server.
-            </p>
+            {!beginnerHomepageEmbed ? (
+              <p style={{ ...body, margin: 0, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+                Default callback is fine while exploring. Open Advanced when you connect your own server.
+              </p>
+            ) : null}
             <Btn
               size="sm"
               disabled={submitting || !applicationName.trim() || !packId}
@@ -1324,12 +1328,13 @@ export function IntegrationStudioClient({
               Hosted sandbox test →
             </Btn>
           )}
-          {!signedIn && !created && (
+          {!beginnerHomepageEmbed && !signedIn && !created && (
             <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="ghost" size="sm">
               Open an existing sandbox →
             </Btn>
           )}
         </div>
+        {!beginnerHomepageEmbed ? (
         <details style={{ marginTop: "0.85rem" }}>
           <summary style={{ ...body, cursor: "pointer", fontWeight: 700, color: "var(--text-muted)" }}>
             Production review and portal (later)
@@ -1346,19 +1351,23 @@ export function IntegrationStudioClient({
             <span style={{ ...body, alignSelf: "center" }}>{INTEGRATION_STUDIO_PROVISION.production_upgrade_cta}</span>
           </div>
         </details>
+        ) : null}
       </ContentCard>
 
-      <IntegrationStudioSessionHandoff
-        signedIn={signedIn}
-        applicationId={configuredAppId}
-        onSessionChange={(authenticated) => {
-          setSignedIn(authenticated);
-          if (authenticated) void refreshLaunchpadSession();
-        }}
-      />
+      {!beginnerHomepageEmbed ? (
+        <IntegrationStudioSessionHandoff
+          signedIn={signedIn}
+          applicationId={configuredAppId}
+          onSessionChange={(authenticated) => {
+            setSignedIn(authenticated);
+            if (authenticated) void refreshLaunchpadSession();
+          }}
+        />
+      ) : null}
 
+      {!beginnerHomepageEmbed ? (
       <ContentCard title="Test your sandbox">
-        <p style={{ ...body }}>Run the hosted flow first. Open the full checklist only when you are ready to verify every integration edge.</p>
+        <p style={{ ...body }}>Run the hosted flow first. Open the full checklist when you are ready for edge cases.</p>
         <details style={{ marginTop: "0.75rem" }}>
           <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Show sandbox checklist</summary>
           <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.55rem", marginTop: "0.75rem" }}>
@@ -1372,6 +1381,7 @@ export function IntegrationStudioClient({
           </ol>
         </details>
       </ContentCard>
+      ) : null}
       <IntegrationStudioStageFooter stage="sandbox" />
       </>
       )}
@@ -1455,9 +1465,9 @@ export function IntegrationStudioClient({
           title="Verification requests require a sandbox application"
           lead="Run authenticated harness scenarios against your sandbox after provisioning. Signed receipt material appears in the integration inspector—never in the URL."
           steps={[
-            "Create your test app in the sandbox and attach your Launchpad session (one-time API key).",
-            "Confirm callback configuration on the Configuration stage.",
-            "Run a harness scenario here, then verify receipts independently on the workbench.",
+            "Create your test app on the previous step.",
+            "Confirm callback configuration when you connect your own server.",
+            "Run a test here and review the signed result.",
           ]}
           action={
             <Btn href={studioStageHref("sandbox")} size="sm">

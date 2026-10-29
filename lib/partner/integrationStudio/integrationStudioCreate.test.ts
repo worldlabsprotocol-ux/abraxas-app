@@ -193,6 +193,20 @@ describe("Integration Studio self-service sandbox create", () => {
     expect(provisionMock).not.toHaveBeenCalled();
   });
 
+  it("returns actionable copy when provisioning fails", async () => {
+    provisionMock.mockResolvedValue({ ok: false, code: "provision_failed", reason: "provision_rpc_failed" });
+    const { POST } = await import("@/app/api/developers/integration-studio/route");
+    const res = await POST(post({
+      application_name: "Retail sandbox",
+      policy_template_id: "age_21_retail",
+      return_url: "http://localhost:3000/callback",
+    }));
+    expect(res.status).toBe(500);
+    const json = await res.json() as { code?: string; error?: string };
+    expect(json.code).toBe("launchpad_provision_failed");
+    expect(json.error).toContain("Sandbox creation failed");
+  });
+
   it("rejects unsafe callbacks", async () => {
     provisionMock.mockResolvedValue({ ok: false, code: "return_url_rejected" });
     const { POST } = await import("@/app/api/developers/integration-studio/route");
@@ -202,8 +216,9 @@ describe("Integration Studio self-service sandbox create", () => {
       return_url: "http://169.254.169.254/callback",
     }));
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
-    expect(json.error).toBe("return_url_rejected");
+    const json = await res.json() as { error: string; code?: string };
+    expect(json.code).toBe("launchpad_return_url_rejected");
+    expect(json.error.toLowerCase()).toContain("callback");
     expect(JSON.stringify(json)).not.toContain("169.254");
   });
 

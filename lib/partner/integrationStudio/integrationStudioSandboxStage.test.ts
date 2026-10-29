@@ -26,5 +26,7 @@ describe("Integration Studio sandbox stage", () => {
     expect(client).toContain('integrationStudioStageHref("configuration")');
     expect(client).not.toContain("Create ·");
     expect(client).toContain("INTEGRATION_STUDIO_SANDBOX_STAGE_TITLE");
+    expect(client).toContain("beginnerHomepageEmbed");
+    expect(client).toContain("studio-${sandboxId}-${packId}");
   });
 });
