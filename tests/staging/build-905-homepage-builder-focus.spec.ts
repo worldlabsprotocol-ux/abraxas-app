@@ -39,7 +39,7 @@ test.describe("Build 905 homepage builder focus", () => {
     await page.locator('a[href="#start-sandbox"]').first().click();
     await expect(page).toHaveURL(/#start-sandbox/);
 
-    const section = page.locator("#start-sandbox");
+    const section = page.locator("#start-sandbox.abx-native-sandbox-chapter");
     await expect(section).toBeInViewport();
   });
 });
