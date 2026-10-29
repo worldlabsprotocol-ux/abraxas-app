@@ -25,7 +25,7 @@ export function formatHarnessResultForBuilder(result: LaunchpadTestRunResult): B
       tone: "success",
       observedAccess: observed,
       passed: true,
-      nextActionLabel: "Connect to my application",
+      nextActionLabel: "Connect my application",
       receiptId: receiptId ? String(receiptId) : null,
     };
   }

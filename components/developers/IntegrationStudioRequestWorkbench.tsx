@@ -90,7 +90,7 @@ export function IntegrationStudioRequestWorkbench({
   return (
     <ContentCard title="Run a test" id="request">
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
-        Run a real sandbox verification against your application. The result and signed receipt material appear here and in the inspector.
+        Run a real sandbox verification. When it succeeds, connect your application backend on the next step.
       </p>
       {busy ? <AbraxasJourneyEmblemStatus state="running_test" detail="Executing harness request against your sandbox application." /> : null}
       {outcome && !busy ? (
