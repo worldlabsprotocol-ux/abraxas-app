@@ -830,3 +830,48 @@
 .abx-studio-workspace--homepage .abx-studio-workspace__canvas {
   overflow-x: hidden;
 }
+
+.abx-beginner-create-card {
+  text-align: center;
+}
+
+.abx-beginner-create-card__title {
+  margin: 0.85rem 0 0.35rem;
+  font-size: clamp(1.35rem, 3.5vw, 1.65rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.abx-beginner-create-card__support {
+  margin: 0 0 0.85rem;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.abx-beginner-create-card__status {
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(76, 187, 146, 0.92);
+}
+
+.abx-beginner-create-card__field {
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+}
+
+.abx-beginner-create-card__field input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--surface-inset);
+  color: var(--text-primary);
+  font-weight: 500;
+}

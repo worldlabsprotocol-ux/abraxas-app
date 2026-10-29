@@ -130,7 +130,7 @@ export function IntegrationStudioWorkspace({
         </nav>
         ) : null}
         <div className="abx-studio-workspace__main">
-          {!embeddedInDeveloperWorkspace ? (
+          {!embeddedInDeveloperWorkspace && !beginnerSurface ? (
           <div className="abx-studio-workspace__guide">
             <IntegrationStudioStageGuide stageId={studioStage} />
           </div>
