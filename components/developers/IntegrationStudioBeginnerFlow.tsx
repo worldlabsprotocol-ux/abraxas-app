@@ -1,25 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { BeginnerCreateTestAppPanel } from "@/components/developers/BeginnerCreateTestAppPanel";
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
 import { Btn } from "@/components/redesign/ui";
-import { INTEGRATION_STUDIO_PROVISION } from "@/lib/partner/integrationStudio/contract";
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
 
-type ResumableApp = {
-  id: string;
-  application_name: string;
-  policy_id: string;
-};
-
 export function IntegrationStudioBeginnerFlow({
   sessionChecked,
   signedIn,
+  walletAuthorized,
   configuredAppId,
   packId,
   pathId,
@@ -30,10 +25,14 @@ export function IntegrationStudioBeginnerFlow({
   submitting,
   createError,
   workspaceStatusLine,
+  onContinueWithWallet,
   onRefreshSession,
+  sessionTechnicalDetail = null,
 }: {
   sessionChecked: boolean;
   signedIn: boolean;
+  /** Ephemeral wallet sign-in satisfied (homepage builder path). */
+  walletAuthorized: boolean;
   configuredAppId: string | null;
   packId: PolicyPackId | null;
   pathId: IntegrationStudioPathId;
@@ -44,11 +43,20 @@ export function IntegrationStudioBeginnerFlow({
   submitting: boolean;
   createError: string;
   workspaceStatusLine: string | null;
+  onContinueWithWallet: () => void;
   onRefreshSession: () => void;
+  sessionTechnicalDetail?: string | null;
 }) {
+  const builderAuthorized = signedIn || walletAuthorized;
+  const [showSessionTechnical, setShowSessionTechnical] = useState(false);
+
   if (!sessionChecked) {
     return (
-      <div className="abx-builder-journey-shell" data-testid="beginner-session-loading">
+      <div
+        className="abx-builder-journey-shell"
+        data-testid="beginner-session-loading"
+        data-homepage-active-task="1"
+      >
         <div className="abx-builder-journey-shell__inner">
           <AbraxasJourneyEmblemStatus state="preparing_workspace" detail="Loading your workspace" />
         </div>
@@ -56,22 +64,38 @@ export function IntegrationStudioBeginnerFlow({
     );
   }
 
-  if (!signedIn) {
+  if (!builderAuthorized) {
     return (
-      <div className="abx-builder-journey-shell" data-testid="beginner-sign-in-required">
+      <div
+        className="abx-builder-journey-shell"
+        data-testid="beginner-sign-in-required"
+        data-homepage-active-task="1"
+      >
         <div className="abx-builder-journey-shell__inner abx-beginner-create-card">
-          <AbraxasJourneyEmblemStatus state="needs_attention" detail="Sign in to continue" />
           <h2 className="abx-beginner-create-card__title">Create your test app</h2>
-          <p className="abx-beginner-create-card__support">Start with a free test. No payment required.</p>
-          <p className="abx-beginner-create-card__status" style={{ fontFamily: FONT }}>
-            Your Launchpad session is not active.
+          <p className="abx-beginner-create-card__support" style={{ fontFamily: FONT }}>
+            Connect your wallet to continue.
           </p>
-          <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
-            Sign in
+          <Btn size="sm" onClick={onContinueWithWallet}>
+            Continue with wallet
           </Btn>
           <Btn size="sm" variant="ghost" onClick={onRefreshSession}>
             Check again
           </Btn>
+          {sessionTechnicalDetail ? (
+            <details
+              className="abx-beginner-create-card__technical"
+              open={showSessionTechnical}
+              onToggle={(event) => setShowSessionTechnical((event.target as HTMLDetailsElement).open)}
+            >
+              <summary style={{ fontFamily: FONT, cursor: "pointer", fontSize: "0.72rem" }}>
+                Technical details
+              </summary>
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", marginTop: "0.35rem" }}>
+                {sessionTechnicalDetail}
+              </p>
+            </details>
+          ) : null}
         </div>
       </div>
     );
@@ -79,23 +103,27 @@ export function IntegrationStudioBeginnerFlow({
 
   if (!configuredAppId) {
     return (
-      <BeginnerCreateTestAppPanel
-        workspaceStatusLine={workspaceStatusLine}
-        applicationName={applicationName}
-        onApplicationNameChange={onApplicationNameChange}
-        onSubmit={onCreateSandbox}
-        submitting={submitting}
-        error={createError}
-      />
+      <div data-homepage-active-task="1">
+        <BeginnerCreateTestAppPanel
+          workspaceStatusLine={workspaceStatusLine}
+          applicationName={applicationName}
+          onApplicationNameChange={onApplicationNameChange}
+          onSubmit={onCreateSandbox}
+          submitting={submitting}
+          error={createError}
+        />
+      </div>
     );
   }
 
   return (
-    <IntegrationStudioRequestWorkbench
-      packId={packId}
-      pathId={pathId}
-      policyId={policyId}
-      beginnerSurface
-    />
+    <div data-homepage-active-task="1">
+      <IntegrationStudioRequestWorkbench
+        packId={packId}
+        pathId={pathId}
+        policyId={policyId}
+        beginnerSurface
+      />
+    </div>
   );
 }
