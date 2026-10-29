@@ -23,6 +23,7 @@ import {
   capturePostAuthResumePath,
   consumePostAuthResumePath,
 } from "@/lib/nav/postAuthResume";
+import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
 import { resolvePublicNavPrimaryAction } from "@/lib/nav/publicNavPrimaryAction";
 
 type NativeSession = { authenticated: boolean };
@@ -119,6 +120,7 @@ export function PublicNavConnectButton({
     if (typeof window !== "undefined") {
       window.location.hash = "start-sandbox";
       window.dispatchEvent(new Event("abraxas:homepage-workspace-focus"));
+      window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
     }
   }, []);
 

@@ -25,6 +25,7 @@ import {
 } from "@/lib/home/sandboxOnboardingCopy";
 import { hasPersistentAccountSession, useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 import { PUBLIC_NAV_EXPLORE_HREF } from "@/lib/nav/publicNavConnectBehavior";
+import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
 
 export function HomeSandboxSessionEntry() {
   const router = useRouter();
@@ -41,7 +42,10 @@ export function HomeSandboxSessionEntry() {
   }, []);
 
   useEffect(() => {
-    const onFocus = () => void refresh();
+    const onFocus = () => {
+      void refresh();
+      window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
+    };
     window.addEventListener("abraxas:homepage-workspace-focus", onFocus);
     window.addEventListener("abraxas:wallet-session", onFocus);
     return () => {

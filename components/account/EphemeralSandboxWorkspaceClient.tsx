@@ -66,6 +66,7 @@ import {
   writeHomepageCreateAppUnlocked,
 } from "@/lib/home/homeBuilderDiscovery";
 import { applyHomepageInlineIntegrationSearch } from "@/lib/developers/homepageInlineIntegration";
+import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -354,6 +355,7 @@ export function EphemeralSandboxWorkspaceClient({
     if (integrationContinuityActive && searchParams.get("step") === "create_sandbox") {
       writeHomepageCreateAppUnlocked(true);
       setHomepageCreateAppUnlocked(true);
+      window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
     }
   }, [integrationContinuityActive, isHomepageEmbed, searchParams]);
 
@@ -1101,7 +1103,7 @@ export function EphemeralSandboxWorkspaceClient({
             </p>
           </div>
         ) : null}
-        {(!isHomepageEmbed || showHomepageIntegrationStudio) ? (
+        {(!isHomepageEmbed || showHomepageIntegrationStudio || integrationHandoffLanding) ? (
           <EmbeddedIntegrationStudioPanel
             authoritativePolicyId={serverPolicyLocked ? serverAuthoritativeStudioPack : selectedPolicy || null}
             walletProofRecorded={walletProofReadyForStudio}

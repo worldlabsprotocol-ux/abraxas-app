@@ -7,6 +7,7 @@ import {
   sandboxPolicyToStudioPack,
 } from "@/lib/developers/sandboxIntegrationHandoff";
 import { UNIFIED_INTEGRATION_QUERY_FLAG } from "@/lib/developers/unifiedWorkspaceContinuity";
+import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
 
 export function applyHomepageInlineIntegrationSearch(policyId: string): void {
   if (typeof window === "undefined") return;
@@ -22,6 +23,6 @@ export function applyHomepageInlineIntegrationSearch(policyId: string): void {
     window.history.replaceState(null, "", next);
   }
   window.requestAnimationFrame(() => {
-    document.getElementById("sandbox")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    focusHomepageBuilderWorkspace();
   });
 }

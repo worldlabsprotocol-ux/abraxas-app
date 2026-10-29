@@ -68,6 +68,10 @@ import {
 } from "@/lib/developers/sandboxIntegrationHandoff";
 import { buildIntegrationStageUrl } from "@/lib/developers/unifiedWorkspaceContinuity";
 import { useUnifiedWorkspaceEmbed } from "@/lib/developers/unifiedWorkspaceEmbedContext";
+import { fetchEphemeralWalletClientSession } from "@/lib/auth/ephemeralWallet/clientSession";
+import { establishLaunchpadSessionWithAccount } from "@/lib/partner/launchpad/launchpadSessionClient";
+import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
+import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { IntegrationStudioBeginnerFlow } from "@/components/developers/IntegrationStudioBeginnerFlow";
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
@@ -193,6 +197,8 @@ export function IntegrationStudioClient({
   });
   const [venueProfileId, setVenueProfileId] = useState("generic_trading_venue");
   const [signedIn, setSignedIn] = useState(false);
+  const [walletAuthorized, setWalletAuthorized] = useState(false);
+  const [sessionTechnicalDetail, setSessionTechnicalDetail] = useState<string | null>(null);
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
   const beginnerHomepageEmbed = embeddedInDeveloperWorkspace && variant === "embedded_workspace";
@@ -400,13 +406,17 @@ export function IntegrationStudioClient({
       const hash = window.location.hash;
       if (step === "create_sandbox" || hash === "#sandbox") {
         window.requestAnimationFrame(() => {
-          document.getElementById("sandbox")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (beginnerHomepageEmbed) {
+            focusHomepageBuilderWorkspace();
+          } else {
+            document.getElementById("sandbox")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
       }
     } else if (pack && catalogVersion) {
       setHandoffNotice(`Planning catalog version ${catalogVersion} is preselected. Creating a sandbox still uses the current Launchpad pin, not an automatic upgrade.`);
     }
-  }, [variant]);
+  }, [beginnerHomepageEmbed, variant]);
 
   useEffect(() => {
     if (!embeddedInDeveloperWorkspace || variant !== "embedded_workspace") return;
@@ -414,6 +424,10 @@ export function IntegrationStudioClient({
       setPackId((current) => current ?? authoritativePolicyId);
     }
     if (walletProofRecorded && typeof window !== "undefined") {
+      if (beginnerHomepageEmbed) {
+        window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
+        return;
+      }
       const hash = window.location.hash;
       if (hash !== "#sandbox" && hash !== "#configuration" && hash !== "#request") {
         window.requestAnimationFrame(() => {
@@ -421,13 +435,31 @@ export function IntegrationStudioClient({
         });
       }
     }
-  }, [authoritativePolicyId, embeddedInDeveloperWorkspace, variant, walletProofRecorded]);
+  }, [authoritativePolicyId, beginnerHomepageEmbed, embeddedInDeveloperWorkspace, variant, walletProofRecorded]);
 
   const refreshLaunchpadSession = useCallback(async () => {
     try {
+      const wallet = await fetchEphemeralWalletClientSession();
+      setWalletAuthorized(wallet.authenticated);
+
       const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
       const data = await res.json() as { authenticated?: boolean; partner_id?: string };
-      const authenticated = Boolean(data.authenticated);
+      let authenticated = Boolean(data.authenticated);
+      if (!authenticated) {
+        const restored = await establishLaunchpadSessionWithAccount({});
+        if (restored.ok) {
+          authenticated = true;
+        } else if (!wallet.authenticated) {
+          setSessionTechnicalDetail(
+            restored.error
+              ?? "Connect your wallet to continue. Partner console authorization restores automatically when your account has access.",
+          );
+        } else {
+          setSessionTechnicalDetail(null);
+        }
+      } else {
+        setSessionTechnicalDetail(null);
+      }
       setSignedIn(authenticated);
       if (!authenticated) {
         setResumeApp(null);
@@ -468,6 +500,27 @@ export function IntegrationStudioClient({
   useEffect(() => {
     void refreshLaunchpadSession();
   }, [refreshLaunchpadSession]);
+
+  useEffect(() => {
+    if (!beginnerSurface) return;
+    const onWalletSession = () => void refreshLaunchpadSession();
+    window.addEventListener("abraxas:wallet-session", onWalletSession);
+    return () => window.removeEventListener("abraxas:wallet-session", onWalletSession);
+  }, [beginnerSurface, refreshLaunchpadSession]);
+
+  useEffect(() => {
+    if (!beginnerHomepageEmbed || !sessionChecked) return;
+    window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
+  }, [beginnerHomepageEmbed, sessionChecked, signedIn, walletAuthorized, configuredAppId]);
+
+  const continueBeginnerWithWallet = useCallback(() => {
+    if (typeof window !== "undefined") {
+      capturePostAuthResumePath(
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      );
+      window.dispatchEvent(new Event("abraxas:open-wallet-sign-in"));
+    }
+  }, []);
 
   useEffect(() => {
     if (!beginnerSurface || packId) return;
@@ -588,6 +641,9 @@ export function IntegrationStudioClient({
           recommended_path: pathId,
           environment: "sandbox",
         });
+        if (beginnerHomepageEmbed && typeof window !== "undefined") {
+          window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
+        }
         if (!beginnerSurface && typeof window !== "undefined" && !data.idempotency_replay) {
           const next = integrationStudioStageHref("request");
           window.history.replaceState(null, "", next);
@@ -732,6 +788,7 @@ export function IntegrationStudioClient({
         <IntegrationStudioBeginnerFlow
           sessionChecked={sessionChecked}
           signedIn={signedIn}
+          walletAuthorized={walletAuthorized}
           configuredAppId={configuredAppId}
           packId={packId}
           pathId={pathId}
@@ -742,7 +799,9 @@ export function IntegrationStudioClient({
           submitting={submitting}
           createError={error}
           workspaceStatusLine={workspaceStatusLine}
+          onContinueWithWallet={continueBeginnerWithWallet}
           onRefreshSession={() => void refreshLaunchpadSession()}
+          sessionTechnicalDetail={sessionTechnicalDetail}
         />
       </>
     );
