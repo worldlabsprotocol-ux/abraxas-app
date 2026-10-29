@@ -36,9 +36,11 @@ function activeStepFromHash(hash: string): IntegrationStudioStageId | "receipt" 
 
 export function IntegrationStudioWorkspace({
   inspector,
+  beginnerSurface = false,
   children,
 }: {
   inspector?: ReactNode;
+  beginnerSurface?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -91,15 +93,18 @@ export function IntegrationStudioWorkspace({
     <IntegrationStudioStageProvider stage={studioStage}>
       <AbxInstitutionalWorkspaceShell
         className={
-          embeddedInDeveloperWorkspace
-            ? homepageStudioEmbed
-              ? "abx-studio-workspace abx-studio-workspace--embedded abx-studio-workspace--homepage"
-              : "abx-studio-workspace abx-studio-workspace--embedded"
-            : "abx-studio-workspace"
+          [
+            "abx-studio-workspace",
+            embeddedInDeveloperWorkspace ? "abx-studio-workspace--embedded" : "",
+            homepageStudioEmbed ? "abx-studio-workspace--homepage" : "",
+            beginnerSurface ? "abx-studio-workspace--beginner" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")
         }
         aria-label="Integration Studio workspace"
       >
-        {!embeddedInDeveloperWorkspace ? (
+        {!embeddedInDeveloperWorkspace && !beginnerSurface ? (
         <nav className="abx-studio-workspace__nav" aria-label="Integration lifecycle">
           {STEPS.map((step, index) => {
             const active =

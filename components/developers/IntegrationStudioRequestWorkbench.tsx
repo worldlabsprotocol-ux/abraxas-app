@@ -28,10 +28,12 @@ export function IntegrationStudioRequestWorkbench({
   packId,
   pathId,
   policyId,
+  beginnerSurface = false,
 }: {
   packId: PolicyPackId | null;
   pathId: IntegrationStudioPathId;
   policyId: string | null;
+  beginnerSurface?: boolean;
 }) {
   const { applicationId, signedIn, returnUrl, recordHttpTrace } = useIntegrationStudioOperational();
   const [scenarioId, setScenarioId] = useState<LaunchpadTestScenarioId>(
@@ -69,7 +71,7 @@ export function IntegrationStudioRequestWorkbench({
         res.ok ? data : { ok: false, status: res.status, ...data },
       );
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Harness request failed");
+        setError(typeof data.error === "string" ? data.error : "Test failed");
         return;
       }
       if (data.result && typeof data.result === "object") {
@@ -80,11 +82,54 @@ export function IntegrationStudioRequestWorkbench({
         }
       }
     } catch {
-      setError("Harness request failed");
+      setError("Test failed");
       recordHttpTrace(requestBody, { ok: false, error: "network_error" });
     } finally {
       setBusy(false);
     }
+  }
+
+  const showConnectJourney =
+    Boolean(applicationId && signedIn && packId && policyId && outcome?.tone === "success");
+
+  if (beginnerSurface && showConnectJourney) {
+    return (
+      <ApplicationConnectionAfterTestPanel
+        applicationId={applicationId!}
+        signedIn={signedIn}
+        packId={packId!}
+        pathId={pathId}
+        policyId={policyId!}
+        returnUrl={returnUrl}
+        outcome={outcome!}
+        testSucceeded
+      />
+    );
+  }
+
+  if (beginnerSurface) {
+    return (
+      <div data-testid="builder-run-test-minimal" style={{ fontFamily: FONT }}>
+        {busy ? <AbraxasJourneyEmblemStatus state="running_test" detail="Running your test" /> : null}
+        {outcome && !busy && outcome.tone !== "success" ? (
+          <AbraxasJourneyEmblemStatus state="needs_attention" detail={outcome.headline} />
+        ) : null}
+        {!applicationId ? (
+          <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", margin: 0 }}>Create your test app first.</p>
+        ) : null}
+        {applicationId && !signedIn ? (
+          <p style={{ fontSize: "0.88rem", color: "var(--warning, #f59e0b)", margin: 0 }}>Sign in to run your test.</p>
+        ) : null}
+        {error ? (
+          <p style={{ fontSize: "0.78rem", color: "var(--danger, #f87171)", margin: "0.5rem 0 0" }}>{error}</p>
+        ) : null}
+        {applicationId && signedIn && !outcome && !busy ? (
+          <Btn size="sm" disabled={busy} onClick={() => void runHarness()}>
+            Run test
+          </Btn>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -167,16 +212,16 @@ export function IntegrationStudioRequestWorkbench({
           </Btn>
         </>
       )}
-      {applicationId && signedIn && packId && policyId && outcome?.tone === "success" ? (
+      {showConnectJourney ? (
         <div style={{ marginTop: "1rem" }}>
           <ApplicationConnectionAfterTestPanel
-            applicationId={applicationId}
+            applicationId={applicationId!}
             signedIn={signedIn}
-            packId={packId}
+            packId={packId!}
             pathId={pathId}
-            policyId={policyId}
+            policyId={policyId!}
             returnUrl={returnUrl}
-            outcome={outcome}
+            outcome={outcome!}
           />
         </div>
       ) : null}

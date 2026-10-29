@@ -665,6 +665,29 @@
 
 .abx-studio-workspace--homepage .abx-studio-workspace__canvas {
   min-width: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+}
+
+.abx-studio-workspace--beginner .abx-studio-workspace__nav,
+.abx-studio-workspace--beginner .abx-studio-workspace__guide {
+  display: none;
+}
+
+.abx-studio-workspace--beginner .abx-studio-workspace__main {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "canvas";
+}
+
+.abx-studio-workspace--beginner .abx-studio-workspace__canvas {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
 }
 
 .abx-inline-sandbox-workspace .abx-studio-pack-grid {

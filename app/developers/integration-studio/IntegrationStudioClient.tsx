@@ -151,8 +151,11 @@ type ResumableApp = {
 
 export function IntegrationStudioClient({
   variant = "standalone",
+  beginnerStandaloneSurface = false,
 }: {
   variant?: "standalone" | "embedded_workspace";
+  /** Hides inspector rail companion UI, stage footer, and harness diagnostics (use ?advanced=1 for full studio). */
+  beginnerStandaloneSurface?: boolean;
 }) {
   const searchParams = useSearchParams();
   const {
@@ -191,6 +194,7 @@ export function IntegrationStudioClient({
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
   const beginnerHomepageEmbed = embeddedInDeveloperWorkspace && variant === "embedded_workspace";
+  const beginnerSurface = beginnerHomepageEmbed || beginnerStandaloneSurface;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -1158,7 +1162,7 @@ export function IntegrationStudioClient({
       </ContentCard>
         </div>
       </details>
-      <IntegrationStudioStageFooter stage="policy" />
+      {!beginnerSurface ? <IntegrationStudioStageFooter stage="policy" /> : null}
       </>
       )}
 
@@ -1382,7 +1386,7 @@ export function IntegrationStudioClient({
         </details>
       </ContentCard>
       ) : null}
-      <IntegrationStudioStageFooter stage="sandbox" />
+      {!beginnerSurface ? <IntegrationStudioStageFooter stage="sandbox" /> : null}
       </>
       )}
 
@@ -1454,13 +1458,23 @@ export function IntegrationStudioClient({
           )}
         </>
       )}
-      <IntegrationStudioStageFooter stage="configuration" />
+      {!beginnerSurface ? <IntegrationStudioStageFooter stage="configuration" /> : null}
       </>
       )}
 
       {stage === "request" && (
       <>
       {!configuredAppId ? (
+        beginnerSurface ? (
+          <div style={{ fontFamily: FONT, maxWidth: "28rem" }}>
+            <p style={{ margin: "0 0 0.75rem", fontSize: "0.92rem", color: "var(--text-secondary)" }}>
+              Create your test app first.
+            </p>
+            <Btn href={studioStageHref("sandbox")} size="sm">
+              Go to sandbox
+            </Btn>
+          </div>
+        ) : (
         <IntegrationStudioEmptyState
           title="Verification requests require a sandbox application"
           lead="Run authenticated harness scenarios against your sandbox after provisioning. Signed receipt material appears in the integration inspector—never in the URL."
@@ -1475,11 +1489,13 @@ export function IntegrationStudioClient({
             </Btn>
           }
         />
+        )
       ) : (
         <IntegrationStudioRequestWorkbench
           packId={packId}
           pathId={pathId}
           policyId={walletApp?.policyId ?? resumeApp?.policy_id ?? null}
+          beginnerSurface={beginnerSurface}
         />
       )}
 
@@ -1506,7 +1522,7 @@ export function IntegrationStudioClient({
           </div>
         </details>
       ) : null}
-      <IntegrationStudioStageFooter stage="request" />
+      {!beginnerSurface ? <IntegrationStudioStageFooter stage="request" /> : null}
       </>
       )}
     </>
