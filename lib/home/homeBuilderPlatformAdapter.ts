@@ -3,6 +3,10 @@
 
 import type { HomeBuilderPlatformId } from "@/lib/home/homeBuilderDiscovery";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import {
+  resolveStarterKitPlatform,
+  type HomeBuilderIntegrationStackId,
+} from "@/lib/home/homeBuilderIntegrationStack";
 import type { StarterKitPlatform } from "@/lib/partner/starterKit/contract";
 
 export function homeBuilderPlatformLabel(platform: HomeBuilderPlatformId): string {
@@ -18,17 +22,12 @@ export function homeBuilderPlatformLabel(platform: HomeBuilderPlatformId): strin
   }
 }
 
-export function mapHomeBuilderPlatformToStarterKit(platform: HomeBuilderPlatformId): StarterKitPlatform {
-  switch (platform) {
-    case "website":
-      return "nextjs";
-    case "application":
-      return "nextjs";
-    case "api":
-      return "express";
-    case "exploring":
-      return "universal_https";
-  }
+/** @deprecated Prefer resolveStarterKitPlatform with explicit website stack. */
+export function mapHomeBuilderPlatformToStarterKit(
+  platform: HomeBuilderPlatformId,
+  integrationStack?: HomeBuilderIntegrationStackId | null,
+): StarterKitPlatform | null {
+  return resolveStarterKitPlatform({ platform, integrationStack });
 }
 
 export function defaultStudioPathForHomePlatform(platform: HomeBuilderPlatformId): IntegrationStudioPathId {

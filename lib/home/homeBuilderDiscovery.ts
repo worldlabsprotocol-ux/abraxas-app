@@ -3,14 +3,28 @@
 
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import type { HomeBuilderIntegrationStackId } from "@/lib/home/homeBuilderIntegrationStack";
 
 export type HomeBuilderPlatformId = "website" | "application" | "api" | "exploring";
 
 export type HomeBuilderDiscoveryIntent = {
   platform: HomeBuilderPlatformId;
   policyPackId: PolicyPackId;
+  /** Required for website before starter kit generation (Build 901). */
+  integrationStack?: HomeBuilderIntegrationStackId | null;
   updatedAt: string;
 };
+
+const INTEGRATION_STACKS: HomeBuilderIntegrationStackId[] = [
+  "nextjs",
+  "wix_velo",
+  "express",
+  "universal_https",
+];
+
+function isIntegrationStackId(value: unknown): value is HomeBuilderIntegrationStackId {
+  return typeof value === "string" && INTEGRATION_STACKS.includes(value as HomeBuilderIntegrationStackId);
+}
 
 export const HOME_BUILDER_DISCOVERY_STORAGE_KEY = "abx_home_builder_discovery_v1";
 
@@ -35,6 +49,7 @@ export function readHomeBuilderDiscoveryIntent(): HomeBuilderDiscoveryIntent | n
     return {
       platform: parsed.platform,
       policyPackId: parsed.policyPackId,
+      integrationStack: isIntegrationStackId(parsed.integrationStack) ? parsed.integrationStack : null,
       updatedAt: parsed.updatedAt ?? new Date().toISOString(),
     };
   } catch {

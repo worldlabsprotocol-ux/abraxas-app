@@ -1,23 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { ContentCard } from "@/components/redesign/RedesignContent";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import type { BuilderIntegrationAcceptanceView } from "@/lib/developers/builderExternalIntegrationAcceptance";
 import {
-  builderIntegrationPhaseDetail,
-  type BuilderIntegrationAcceptanceView,
-} from "@/lib/developers/builderExternalIntegrationAcceptance";
+  callbackExplanation,
+  resolveBuilderJourneyView,
+} from "@/lib/developers/builderIntegrationJourneyUi";
+import { EXTERNAL_NODE_PARTNER_REFERENCE } from "@/lib/developers/integrationAdoptionPath";
 import {
   readHomeBuilderDiscoveryIntent,
+  writeHomeBuilderDiscoveryIntent,
   type HomeBuilderDiscoveryIntent,
 } from "@/lib/home/homeBuilderDiscovery";
 import {
   homeBuilderPlatformLabel,
-  mapHomeBuilderPlatformToStarterKit,
 } from "@/lib/home/homeBuilderPlatformAdapter";
-import { EXTERNAL_NODE_PARTNER_REFERENCE } from "@/lib/developers/integrationAdoptionPath";
+import {
+  integrationStackLabel,
+  resolveStarterKitPlatform,
+  WEBSITE_INTEGRATION_STACKS,
+  type HomeBuilderIntegrationStackId,
+} from "@/lib/home/homeBuilderIntegrationStack";
 import type { BuilderHarnessOutcome } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
@@ -39,23 +45,6 @@ function writeFlag(key: string): void {
   window.sessionStorage.setItem(key, "1");
 }
 
-const kicker: React.CSSProperties = {
-  fontFamily: FONT,
-  fontSize: "0.62rem",
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  color: "var(--text-muted)",
-  margin: "0 0 0.35rem",
-};
-
-const stepTitle: React.CSSProperties = {
-  fontFamily: FONT,
-  fontSize: "0.95rem",
-  fontWeight: 700,
-  color: "var(--text-primary)",
-  margin: 0,
-};
-
 function OutcomeChip({ label, active, tone }: { label: string; active: boolean; tone: "permit" | "deny" | "indeterminate" }) {
   const color =
     tone === "permit" ? "rgba(76,187,146,0.9)"
@@ -65,13 +54,13 @@ function OutcomeChip({ label, active, tone }: { label: string; active: boolean; 
     <span
       style={{
         fontFamily: FONT,
-        fontSize: "0.72rem",
+        fontSize: "0.75rem",
         fontWeight: 700,
-        padding: "0.35rem 0.65rem",
+        padding: "0.35rem 0.7rem",
         borderRadius: 999,
-        border: `1px solid ${active ? color : "var(--border)"}`,
+        border: `1px solid ${active ? color : "rgba(255,255,255,0.12)"}`,
         color: active ? color : "var(--text-muted)",
-        opacity: active ? 1 : 0.55,
+        opacity: active ? 1 : 0.5,
       }}
     >
       {label}
@@ -96,6 +85,7 @@ export function ApplicationIntegrationJourneyPanel({
   outcome: BuilderHarnessOutcome;
 }) {
   const [intent, setIntent] = useState<HomeBuilderDiscoveryIntent | null>(null);
+  const [pendingStack, setPendingStack] = useState<HomeBuilderIntegrationStackId | null>(null);
   const [kitBusy, setKitBusy] = useState(false);
   const [kitError, setKitError] = useState("");
   const [kitFilename, setKitFilename] = useState<string | null>(null);
@@ -103,6 +93,7 @@ export function ApplicationIntegrationJourneyPanel({
   const [pollBusy, setPollBusy] = useState(false);
   const [pollError, setPollError] = useState("");
   const [acceptance, setAcceptance] = useState<BuilderIntegrationAcceptanceView | null>(null);
+  const [showTechnical, setShowTechnical] = useState(false);
 
   useEffect(() => {
     setIntent(readHomeBuilderDiscoveryIntent());
@@ -114,7 +105,8 @@ export function ApplicationIntegrationJourneyPanel({
 
   const platform = intent?.platform ?? "application";
   const platformLabel = homeBuilderPlatformLabel(platform);
-  const starterPlatform = mapHomeBuilderPlatformToStarterKit(platform);
+  const integrationStack = intent?.integrationStack ?? null;
+  const starterPlatform = resolveStarterKitPlatform({ platform, integrationStack });
 
   const pollExternalState = useCallback(async () => {
     if (!signedIn) return;
@@ -135,12 +127,12 @@ export function ApplicationIntegrationJourneyPanel({
         error?: string;
       };
       if (!res.ok || !data.ok || !data.acceptance) {
-        setPollError(data.error ?? "Could not read application integration state");
+        setPollError(data.error ?? "Could not read connection state");
         return;
       }
       setAcceptance(data.acceptance);
     } catch {
-      setPollError("Could not read application integration state");
+      setPollError("Could not read connection state");
     } finally {
       setPollBusy(false);
     }
@@ -152,8 +144,19 @@ export function ApplicationIntegrationJourneyPanel({
     }
   }, [filesReady, signedIn, pollExternalState]);
 
-  const connectApplication = useCallback(async () => {
-    if (!signedIn) return;
+  const persistStackChoice = useCallback((stack: HomeBuilderIntegrationStackId) => {
+    if (!intent) return;
+    writeHomeBuilderDiscoveryIntent({
+      platform: intent.platform,
+      policyPackId: intent.policyPackId,
+      integrationStack: stack,
+    });
+    setIntent(readHomeBuilderDiscoveryIntent());
+    setPendingStack(stack);
+  }, [intent]);
+
+  const downloadIntegrationFiles = useCallback(async () => {
+    if (!signedIn || !starterPlatform) return;
     setKitBusy(true);
     setKitError("");
     try {
@@ -206,128 +209,205 @@ export function ApplicationIntegrationJourneyPanel({
     verified_permit: false,
     verified_deny: false,
   };
-  const complete = acceptance?.completion_headline != null;
+
+  const journey = useMemo(
+    () =>
+      resolveBuilderJourneyView({
+        platform,
+        platformLabel,
+        integrationStack,
+        filesReady,
+        acceptancePhase: acceptance?.phase ?? null,
+        setupComplete: acceptance?.setup_complete === true,
+      }),
+    [acceptance?.phase, acceptance?.setup_complete, filesReady, integrationStack, platform, platformLabel],
+  );
+
+  const onPrimary = () => {
+    if (journey.primaryAction === "get_files") {
+      void downloadIntegrationFiles();
+      return;
+    }
+    if (journey.primaryAction === "check_connection") {
+      void pollExternalState();
+    }
+  };
+
+  const primaryDisabled =
+    !signedIn
+    || kitBusy
+    || pollBusy
+    || (journey.primaryAction === "get_files" && !starterPlatform)
+    || (journey.primaryAction === "choose_stack" && !pendingStack);
 
   return (
-    <ContentCard title="Make it work in your application">
-      <div style={{ display: "grid", gap: "0.85rem" }}>
-        <section>
-          <p style={kicker}>Already demonstrated</p>
-          <AbraxasJourneyEmblemStatus state="verified" detail="Your Abraxas test worked" />
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.45rem 0 0" }}>
-            {builderIntegrationPhaseDetail("sandbox_demonstrated")}
-          </p>
-        </section>
+    <div
+      data-testid="builder-integration-journey"
+      style={{
+        marginTop: "1.25rem",
+        padding: "1.1rem 0 0",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        fontFamily: FONT,
+      }}
+    >
+      <p
+        style={{
+          margin: "0 0 0.35rem",
+          fontSize: "0.62rem",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+        }}
+      >
+        {journey.stageKicker}
+      </p>
 
-        <section
-          style={{
-            padding: "0.85rem 0.95rem",
-            borderRadius: 12,
-            border: "1px solid rgba(76,187,146,0.45)",
-            background: "var(--surface-inset)",
-          }}
+      {journey.connectionVerified ? (
+        <AbraxasJourneyEmblemStatus state="verified" detail={journey.headline} />
+      ) : (
+        <h3 style={{ margin: "0 0 0.35rem", fontSize: "1.35rem", fontWeight: 700, color: "var(--text-primary)" }}>
+          {journey.headline}
+        </h3>
+      )}
+
+      <p style={{ margin: "0 0 1rem", fontSize: "0.92rem", color: "var(--text-secondary)", maxWidth: "36rem" }}>
+        {acceptance?.completion_headline ?? journey.support}
+      </p>
+
+      {platform === "website" && !integrationStack ? (
+        <div
+          data-testid="builder-stack-picker"
+          style={{ display: "grid", gap: "0.45rem", marginBottom: "1rem", maxWidth: "28rem" }}
+          role="radiogroup"
+          aria-label="Website stack"
         >
-          <p style={kicker}>Next milestone</p>
-          <p style={stepTitle}>Connect your {platformLabel} backend</p>
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.45rem 0 0.75rem", lineHeight: 1.55 }}>
-            Use the same policy and test app. Run verification from your server, not from this page alone.
-          </p>
+          {WEBSITE_INTEGRATION_STACKS.map((option) => {
+            const selected = pendingStack === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => persistStackChoice(option.id)}
+                style={{
+                  textAlign: "left",
+                  padding: "0.65rem 0.75rem",
+                  borderRadius: 10,
+                  border: selected ? "1px solid rgba(76,187,146,0.55)" : "1px solid rgba(255,255,255,0.1)",
+                  background: selected ? "rgba(76,187,146,0.08)" : "transparent",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ display: "block", fontWeight: 700, fontSize: "0.88rem" }}>{option.label}</span>
+                <span style={{ display: "block", fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                  {option.detail}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
-          {!filesReady ? (
-            <Btn size="sm" disabled={!signedIn || kitBusy} onClick={() => void connectApplication()}>
-              {kitBusy ? "Preparing…" : "Connect my application"}
-            </Btn>
-          ) : (
-            <>
-              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--accent)", margin: "0 0 0.65rem" }}>
-                {kitFilename ? `Files ready (${kitFilename}).` : "Integration files ready."} Install on your server with the sandbox API key.
-              </p>
-              <ol style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", paddingLeft: "1.1rem", lineHeight: 1.55 }}>
-                <li>Set callback to <code style={{ fontFamily: MONO }}>{returnUrl}</code></li>
-                <li>Store the API key in server environment only</li>
-                <li>POST partner-handoff from your backend, then complete holder flow if required</li>
-              </ol>
-              <Btn size="sm" disabled={pollBusy || !signedIn} onClick={() => void pollExternalState()}>
-                {pollBusy ? "Checking…" : "Check my application"}
-              </Btn>
-            </>
-          )}
+      {integrationStack ? (
+        <p style={{ margin: "0 0 0.75rem", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+          Stack: {integrationStackLabel(integrationStack)}
+        </p>
+      ) : null}
 
-          {kitError ? (
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{kitError}</p>
-          ) : null}
-          {pollError ? (
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{pollError}</p>
-          ) : null}
-          {acceptance ? (
-            <div style={{ marginTop: "0.65rem" }}>
-              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0 }}>
-                Current state: <strong style={{ color: "var(--text-primary)" }}>{acceptance.phase_label}</strong>
-                {" · "}
-                {builderIntegrationPhaseDetail(acceptance.phase)}
-              </p>
-              {acceptance.assurance_notice ? (
-                <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.45rem 0 0" }}>
-                  {acceptance.assurance_notice}
-                </p>
-              ) : null}
-              {acceptance.blockers.map((blocker) => (
-                <p key={blocker} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--warning, #f59e0b)", margin: "0.35rem 0 0" }}>
-                  {blocker}
-                </p>
-              ))}
-            </div>
-          ) : null}
-        </section>
-
-        <section>
-          <p style={kicker}>Final proof</p>
-          {complete && acceptance?.completion_headline ? (
-            <>
-              <p style={{ ...stepTitle, color: "rgba(76,187,146,0.95)" }}>{acceptance.completion_headline}</p>
-              <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.45rem 0 0.65rem" }}>
-                Your application verified and enforced the decision.
-              </p>
-            </>
-          ) : (
-            <p style={stepTitle}>Your application verified and enforced the decision</p>
-          )}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.55rem" }}>
-            <OutcomeChip label="Permit" active={enforcement.verified_permit} tone="permit" />
-            <OutcomeChip label="Deny" active={enforcement.verified_deny} tone="deny" />
-            <OutcomeChip label="Indeterminate" active={enforcement.indeterminate && !enforcement.verified_permit} tone="indeterminate" />
-          </div>
-          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
-            Highlighted outcomes require correlated partner events and platform independent verification.
-            Partner-reported telemetry alone is shown in the state line above, not as completion.
-          </p>
-        </section>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", alignItems: "center" }}>
+        {journey.primaryAction !== "choose_stack" ? (
+          <Btn size="sm" disabled={primaryDisabled} onClick={onPrimary}>
+            {kitBusy ? "Preparing…" : pollBusy ? "Checking…" : journey.primaryLabel}
+          </Btn>
+        ) : null}
+        {journey.showExampleApp ? (
+          <Btn
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setShowTechnical(true);
+              document.getElementById("builder-example-app")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }}
+          >
+            Try example application
+          </Btn>
+        ) : null}
       </div>
 
-      <details style={{ marginTop: "0.95rem" }}>
-        <summary style={{ fontFamily: FONT, fontSize: "0.72rem", cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
-          Advanced · local reference server and receipt tools
-        </summary>
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "0.55rem", lineHeight: 1.55 }}>
-          The copy-ready Node example at{" "}
-          <code style={{ fontFamily: MONO }}>{EXTERNAL_NODE_PARTNER_REFERENCE.repoPath}</code> runs on{" "}
-          {EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackBase} as a separate process. It is not your deployed site.
-          Sandbox receipt from this page:{" "}
-          {outcome.receiptId ? (
-            <code style={{ fontFamily: MONO }}>{outcome.receiptId}</code>
-          ) : (
-            "none yet"
-          )}
+      {filesReady && kitFilename ? (
+        <p data-testid="builder-files-ready" style={{ margin: "0.75rem 0 0", fontSize: "0.72rem", color: "var(--accent)" }}>
+          Files saved: {kitFilename}
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.55rem" }}>
-          <Btn href="/verify?mode=receipt" variant="secondary" size="sm">
-            Receipt inspection
-          </Btn>
-          <Btn href="/docs/sandbox-conformance" variant="ghost" size="sm">
-            Sandbox partner contract
-          </Btn>
+      ) : null}
+
+      {kitError ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{kitError}</p>
+      ) : null}
+      {pollError ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{pollError}</p>
+      ) : null}
+
+      {acceptance && !journey.connectionVerified ? (
+        <p style={{ margin: "0.65rem 0 0", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+          Status: {acceptance.phase_label}
+        </p>
+      ) : null}
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "1rem" }}>
+        <OutcomeChip label="Permit" active={enforcement.verified_permit} tone="permit" />
+        <OutcomeChip label="Deny" active={enforcement.verified_deny} tone="deny" />
+        <OutcomeChip
+          label="Blocked"
+          active={enforcement.indeterminate && !enforcement.verified_permit}
+          tone="indeterminate"
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowTechnical((v) => !v)}
+        style={{
+          marginTop: "1rem",
+          padding: 0,
+          border: "none",
+          background: "none",
+          fontFamily: FONT,
+          fontSize: "0.72rem",
+          fontWeight: 700,
+          color: "var(--accent)",
+          cursor: "pointer",
+        }}
+      >
+        {showTechnical ? "Hide technical details" : "Technical details"}
+      </button>
+
+      {showTechnical ? (
+        <div id="builder-example-app" style={{ marginTop: "0.65rem", fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
+          <p style={{ margin: "0 0 0.5rem" }}>{callbackExplanation(returnUrl)}</p>
+          <p style={{ margin: "0 0 0.5rem" }}>
+            Allowlisted return URL: <code style={{ fontFamily: MONO }}>{returnUrl}</code>
+          </p>
+          <p style={{ margin: "0 0 0.5rem" }}>
+            Example server path: <code style={{ fontFamily: MONO }}>{EXTERNAL_NODE_PARTNER_REFERENCE.repoPath}</code>
+            {" "}
+            on
+            {" "}
+            <code style={{ fontFamily: MONO }}>{EXTERNAL_NODE_PARTNER_REFERENCE.defaultCallbackBase}</code>
+            . You start it locally when ready. Abraxas does not deploy your site.
+          </p>
+          <p style={{ margin: 0 }}>
+            Sandbox receipt from this test:
+            {" "}
+            {outcome.receiptId ? (
+              <code style={{ fontFamily: MONO }}>{outcome.receiptId}</code>
+            ) : (
+              "none yet"
+            )}
+          </p>
         </div>
-      </details>
-    </ContentCard>
+      ) : null}
+    </div>
   );
 }
