@@ -52,6 +52,19 @@ describe("builderEnforcementCorrelation", () => {
     expect(chains[0]?.correlated_permit_chain).toBe(true);
   });
 
+  it("joins handoff events that only carry request_id into receipt-scoped chains", () => {
+    const chains = correlateBuilderEnforcementReceipts(
+      [
+        event({ event_type: "hosted_handoff_created", receipt_id: null }),
+        event({ event_type: "receipt_issued", receipt_id: null }),
+        event({ event_type: "receipt_verification_succeeded", outcome: "permitted" }),
+        event({ event_type: "access_decision_permit", outcome: "permit" }),
+      ],
+      bind,
+    );
+    expect(chains[0]?.correlated_permit_chain).toBe(true);
+  });
+
   it("rejects events bound to another tenant", () => {
     const chains = correlateBuilderEnforcementReceipts(
       [event({ partner_id: "other-tenant", event_type: "access_decision_permit" })],

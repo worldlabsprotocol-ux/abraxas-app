@@ -31,16 +31,55 @@ export function integrationEventBoundToBuilderContext(
   return true;
 }
 
-function groupByReceipt(events: IntegrationEventRow[]): Map<string, IntegrationEventRow[]> {
-  const map = new Map<string, IntegrationEventRow[]>();
-  for (const event of events) {
-    const receiptId = event.receipt_id?.trim();
-    if (!receiptId) continue;
-    const list = map.get(receiptId) ?? [];
+function requestKey(event: IntegrationEventRow): string | null {
+  return event.request_id?.trim() || event.correlation_id?.trim() || null;
+}
+
+function buildCorrelatedReceiptGroups(bound: IntegrationEventRow[]): Map<string, IntegrationEventRow[]> {
+  const byRequest = new Map<string, IntegrationEventRow[]>();
+  for (const event of bound) {
+    const key = requestKey(event);
+    if (!key) continue;
+    const list = byRequest.get(key) ?? [];
     list.push(event);
-    map.set(receiptId, list);
+    byRequest.set(key, list);
   }
-  return map;
+
+  const receiptIds = new Set<string>();
+  for (const event of bound) {
+    const receiptId = event.receipt_id?.trim();
+    if (receiptId) receiptIds.add(receiptId);
+  }
+
+  const groups = new Map<string, IntegrationEventRow[]>();
+  for (const receiptId of Array.from(receiptIds).sort()) {
+    const merged: IntegrationEventRow[] = [];
+    const seen = new Set<string>();
+    const push = (event: IntegrationEventRow) => {
+      const dedupe = `${event.event_id}:${event.event_type}:${event.receipt_id ?? ""}:${event.request_id ?? ""}`;
+      if (seen.has(dedupe)) return;
+      seen.add(dedupe);
+      merged.push(event);
+    };
+
+    for (const event of bound) {
+      if (event.receipt_id?.trim() === receiptId) push(event);
+    }
+
+    const requestIds = new Set<string>();
+    for (const event of merged) {
+      const key = requestKey(event);
+      if (key) requestIds.add(key);
+    }
+    for (const key of Array.from(requestIds).sort()) {
+      for (const event of byRequest.get(key) ?? []) {
+        push(event);
+      }
+    }
+
+    groups.set(receiptId, merged);
+  }
+  return groups;
 }
 
 function requestIdsConsistent(events: IntegrationEventRow[]): boolean {
@@ -96,7 +135,7 @@ export function correlateBuilderEnforcementReceipts(
   bind: BuilderEnforcementBind,
 ): CorrelatedEnforcementReceipt[] {
   const bound = events.filter((event) => integrationEventBoundToBuilderContext(event, bind));
-  const grouped = groupByReceipt(bound);
+  const grouped = buildCorrelatedReceiptGroups(bound);
   const out: CorrelatedEnforcementReceipt[] = [];
 
   for (const [receipt_id, receiptEvents] of Array.from(grouped.entries())) {
