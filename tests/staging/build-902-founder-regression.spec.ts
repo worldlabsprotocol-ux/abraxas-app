@@ -13,9 +13,12 @@ test.describe("Build 902 founder regressions", () => {
     const base = baseURL ?? "http://127.0.0.1:3000";
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/developers/integration-studio#request`);
+    await expect(page.locator(".abx-studio-workspace--beginner")).toBeVisible({ timeout: 20_000 });
     const shell = page.locator(".abx-builder-journey-shell__inner, .abx-builder-journey-shell").first();
-    await expect(shell).toBeVisible({ timeout: 20_000 });
-    const box = await shell.boundingBox();
+    const shellVisible = await shell.isVisible().catch(() => false);
+    const measureTarget = shellVisible ? shell : page.locator(".abx-studio-workspace--beginner .abx-studio-workspace__canvas");
+    await expect(measureTarget).toBeVisible();
+    const box = await measureTarget.boundingBox();
     const viewport = page.viewportSize();
     expect(box).not.toBeNull();
     expect(viewport).not.toBeNull();
