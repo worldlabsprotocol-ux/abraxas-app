@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
+import { BuilderReferenceExampleExperience } from "@/components/developers/BuilderReferenceExampleExperience";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import type { BuilderIntegrationAcceptanceView } from "@/lib/developers/builderExternalIntegrationAcceptance";
 import {
@@ -70,6 +71,7 @@ export function ApplicationIntegrationJourneyPanel({
   const [pollError, setPollError] = useState("");
   const [acceptance, setAcceptance] = useState<BuilderIntegrationAcceptanceView | null>(null);
   const [showTechnical, setShowTechnical] = useState(false);
+  const [surface, setSurface] = useState<"connect" | "example">("connect");
 
   useEffect(() => {
     setIntent(readHomeBuilderDiscoveryIntent());
@@ -215,179 +217,122 @@ export function ApplicationIntegrationJourneyPanel({
 
   const enforcement = acceptance?.external_enforcement;
 
-  return (
-    <div
-      data-testid="builder-integration-journey"
-      style={{ fontFamily: FONT, maxWidth: "32rem" }}
-    >
-      {testSucceeded && !journey.connectionVerified ? (
-        <>
-          <AbraxasJourneyEmblemStatus state="verified" detail="Your test worked." />
-          <h3
-            style={{
-              margin: "0.85rem 0 0.35rem",
-              fontSize: "1.35rem",
-              fontWeight: 700,
-              color: "var(--text-primary)",
-            }}
-          >
-            Now connect your {platform === "website" ? "website" : platformLabel.toLowerCase()}.
-          </h3>
-        </>
-      ) : journey.connectionVerified ? (
-        <AbraxasJourneyEmblemStatus state="verified" detail={journey.headline} />
-      ) : (
-        <h3 style={{ margin: "0 0 0.35rem", fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>
-          {journey.headline}
-        </h3>
-      )}
-
-      {!needsWebsiteStack && !journey.connectionVerified ? (
-        <p style={{ margin: "0 0 1rem", fontSize: "0.92rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
-          {acceptance?.completion_headline ?? journey.support}
-        </p>
-      ) : null}
-
-      {needsWebsiteStack ? (
-        <>
-          <p
-            style={{
-              margin: "0 0 0.65rem",
-              fontSize: "0.88rem",
-              fontWeight: 600,
-              color: "var(--text-secondary)",
-            }}
-          >
-            Where is your website built?
-          </p>
-          <div
-            data-testid="builder-stack-picker"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: "0.45rem",
-              marginBottom: "0.85rem",
-              maxWidth: "18rem",
-            }}
-            role="radiogroup"
-            aria-label="Website stack"
-          >
-            {WEBSITE_INTEGRATION_STACKS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={integrationStack === option.id}
-                onClick={() => persistStackChoice(option.id)}
-                style={{
-                  padding: "0.65rem 0.5rem",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  background: "transparent",
-                  color: "var(--text-primary)",
-                  fontWeight: 700,
-                  fontSize: "0.88rem",
-                  cursor: "pointer",
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <Btn
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setShowTechnical(true);
-              document.getElementById("builder-example-app")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            }}
-          >
-            Try an example
-          </Btn>
-        </>
-      ) : (
-        <>
-          {integrationStack ? (
-            <p style={{ margin: "0 0 0.75rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              {integrationStackLabel(integrationStack)}
-            </p>
-          ) : null}
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-            {journey.primaryAction !== "choose_stack" ? (
-              <Btn size="sm" disabled={primaryDisabled} onClick={onPrimary}>
-                {kitBusy ? "Preparing…" : pollBusy ? "Checking…" : journey.primaryLabel}
-              </Btn>
-            ) : null}
-            {!needsWebsiteStack && journey.showExampleApp && !filesReady ? (
-              <Btn
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setShowTechnical(true);
-                  document.getElementById("builder-example-app")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                }}
-              >
-                Try an example
-              </Btn>
-            ) : null}
-          </div>
-        </>
-      )}
-
-      {kitError ? (
-        <p style={{ fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{kitError}</p>
-      ) : null}
-      {pollError ? (
-        <p style={{ fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{pollError}</p>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={() => setShowTechnical((v) => !v)}
-        style={{
-          marginTop: "1.15rem",
-          padding: 0,
-          border: "none",
-          background: "none",
-          fontFamily: FONT,
-          fontSize: "0.72rem",
-          fontWeight: 700,
-          color: "var(--text-muted)",
-          cursor: "pointer",
-        }}
-      >
-        {showTechnical ? "Hide technical details" : "Technical details"}
-      </button>
-
-      {showTechnical ? (
-        <div
-          id="builder-example-app"
-          style={{ marginTop: "0.65rem", fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55 }}
-        >
-          <p style={{ margin: "0 0 0.5rem" }}>{callbackExplanation(returnUrl)}</p>
-          <p style={{ margin: "0 0 0.5rem" }}>
-            Allowlisted return URL: <code style={{ fontFamily: MONO }}>{returnUrl}</code>
-          </p>
-          <p style={{ margin: "0 0 0.5rem" }}>
-            Example app: <code style={{ fontFamily: MONO }}>{EXTERNAL_NODE_PARTNER_REFERENCE.repoPath}</code>
-          </p>
-          {outcome.receiptId ? (
-            <p style={{ margin: "0 0 0.5rem" }}>
-              Sandbox receipt: <code style={{ fontFamily: MONO }}>{outcome.receiptId}</code>
-            </p>
-          ) : null}
-          {enforcement ? (
-            <p style={{ margin: "0 0 0.5rem" }}>
-              Permit verified: {enforcement.verified_permit ? "yes" : "no"} · Deny verified:{" "}
-              {enforcement.verified_deny ? "yes" : "no"}
-            </p>
-          ) : null}
-          <Link href="/developers/integration-studio?advanced=1#request" style={{ color: "var(--accent)", fontWeight: 700 }}>
-            Open integration inspector
-          </Link>
+  if (surface === "example") {
+    return (
+      <div className="abx-builder-journey-shell">
+        <div className="abx-builder-journey-shell__inner">
+          <BuilderReferenceExampleExperience
+            applicationId={applicationId}
+            signedIn={signedIn}
+            returnUrl={returnUrl}
+            onBack={() => setSurface("connect")}
+          />
         </div>
-      ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="abx-builder-journey-shell">
+      <div className="abx-builder-journey-shell__inner" data-testid="builder-integration-journey">
+        {testSucceeded && !journey.connectionVerified ? (
+          <>
+            <AbraxasJourneyEmblemStatus state="verified" detail="Your test worked." />
+            <h3 className="abx-builder-journey-headline">
+              Now connect your {platform === "website" ? "website" : platformLabel.toLowerCase()}.
+            </h3>
+          </>
+        ) : journey.connectionVerified ? (
+          <AbraxasJourneyEmblemStatus state="verified" detail={journey.headline} />
+        ) : (
+          <h3 className="abx-builder-journey-headline">{journey.headline}</h3>
+        )}
+
+        {!needsWebsiteStack && !journey.connectionVerified ? (
+          <p className="abx-builder-journey-support">{acceptance?.completion_headline ?? journey.support}</p>
+        ) : null}
+
+        {needsWebsiteStack ? (
+          <>
+            <p className="abx-builder-journey-section-label">Where is your website built?</p>
+            <div
+              data-testid="builder-stack-picker"
+              className="abx-builder-stack-grid"
+              role="radiogroup"
+              aria-label="Website stack"
+            >
+              {WEBSITE_INTEGRATION_STACKS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={integrationStack === option.id}
+                  className="abx-builder-stack-chip"
+                  onClick={() => persistStackChoice(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="abx-builder-journey-footnote">
+              Don&apos;t have a website?{" "}
+              <button type="button" className="abx-builder-inline-link" onClick={() => setSurface("example")}>
+                Try an example
+              </button>
+            </p>
+          </>
+        ) : (
+          <>
+            {integrationStack ? (
+              <p className="abx-builder-journey-meta">{integrationStackLabel(integrationStack)}</p>
+            ) : null}
+
+            <div className="abx-builder-journey-actions">
+              {journey.primaryAction !== "choose_stack" ? (
+                <Btn size="sm" disabled={primaryDisabled} onClick={onPrimary}>
+                  {kitBusy ? "Preparing…" : pollBusy ? "Checking…" : journey.primaryLabel}
+                </Btn>
+              ) : null}
+              {!needsWebsiteStack && journey.showExampleApp && !filesReady ? (
+                <Btn size="sm" variant="ghost" onClick={() => setSurface("example")}>
+                  Try an example
+                </Btn>
+              ) : null}
+            </div>
+          </>
+        )}
+
+        {kitError ? <p className="abx-builder-journey-error">{kitError}</p> : null}
+        {pollError ? <p className="abx-builder-journey-error">{pollError}</p> : null}
+
+        <button type="button" className="abx-builder-technical-toggle" onClick={() => setShowTechnical((v) => !v)}>
+          {showTechnical ? "Hide technical details" : "Technical details"}
+        </button>
+
+        {showTechnical ? (
+          <div className="abx-builder-technical-panel">
+            <p>{callbackExplanation(returnUrl)}</p>
+            <p>
+              Allowlisted return URL: <code>{returnUrl}</code>
+            </p>
+            <p>
+              Example app: <code>{EXTERNAL_NODE_PARTNER_REFERENCE.repoPath}</code>
+            </p>
+            {outcome.receiptId ? (
+              <p>
+                Sandbox receipt: <code>{outcome.receiptId}</code>
+              </p>
+            ) : null}
+            {enforcement ? (
+              <p>
+                Permit verified: {enforcement.verified_permit ? "yes" : "no"} · Deny verified:{" "}
+                {enforcement.verified_deny ? "yes" : "no"}
+              </p>
+            ) : null}
+            <Link href="/developers/integration-studio?advanced=1#request">Open integration inspector</Link>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
