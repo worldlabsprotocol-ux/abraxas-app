@@ -21,6 +21,15 @@ async function main() {
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", config.callbackBaseUrl);
 
+    if (req.method === "GET" && url.pathname === "/health") {
+      res.writeHead(200, {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+      });
+      res.end(JSON.stringify({ ok: true, service: "external-node-partner" }));
+      return;
+    }
+
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "content-type": "text/html" });
       res.end(

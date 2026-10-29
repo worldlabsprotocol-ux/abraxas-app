@@ -1466,13 +1466,15 @@ export function IntegrationStudioClient({
       <>
       {!configuredAppId ? (
         beginnerSurface ? (
-          <div style={{ fontFamily: FONT, maxWidth: "28rem" }}>
-            <p style={{ margin: "0 0 0.75rem", fontSize: "0.92rem", color: "var(--text-secondary)" }}>
-              Create your test app first.
-            </p>
-            <Btn href={studioStageHref("sandbox")} size="sm">
-              Go to sandbox
-            </Btn>
+          <div className="abx-builder-journey-shell">
+            <div className="abx-builder-journey-shell__inner" style={{ fontFamily: FONT }}>
+              <p style={{ margin: "0 0 0.75rem", fontSize: "0.92rem", color: "var(--text-secondary)" }}>
+                Create your test app first.
+              </p>
+              <Btn href={studioStageHref("sandbox")} size="sm">
+                Go to sandbox
+              </Btn>
+            </div>
           </div>
         ) : (
         <IntegrationStudioEmptyState
@@ -1499,7 +1501,7 @@ export function IntegrationStudioClient({
         />
       )}
 
-      {variant !== "embedded_workspace" ? (
+      {!beginnerSurface ? (
         <details style={{ marginTop: "0.75rem" }}>
           <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
             Advanced · Production review (after integration works)
