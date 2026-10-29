@@ -9,12 +9,11 @@ export type HomeBuilderIntegrationStackId = "nextjs" | "wix_velo" | "express" | 
 export const WEBSITE_INTEGRATION_STACKS: Array<{
   id: HomeBuilderIntegrationStackId;
   label: string;
-  detail: string;
 }> = [
-  { id: "nextjs", label: "Next.js", detail: "App Router or Pages with a server backend" },
-  { id: "wix_velo", label: "Wix", detail: "Velo backend on your Wix site" },
-  { id: "express", label: "Node server", detail: "Express or similar HTTPS API" },
-  { id: "universal_https", label: "Other HTTPS site", detail: "Any stack with a server or serverless function" },
+  { id: "nextjs", label: "Next.js" },
+  { id: "wix_velo", label: "Wix" },
+  { id: "express", label: "Node" },
+  { id: "universal_https", label: "Other" },
 ];
 
 export function resolveStarterKitPlatform(input: {

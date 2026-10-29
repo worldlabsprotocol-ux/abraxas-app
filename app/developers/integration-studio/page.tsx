@@ -3,10 +3,8 @@
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
-import { IntegrationStudioClient } from "@/app/developers/integration-studio/IntegrationStudioClient";
-import { IntegrationStudioWorkspace } from "@/components/developers/IntegrationStudioWorkspace";
 import { IntegrationStudioOperationalProvider } from "@/components/developers/integrationStudioOperationalContext";
-import { IntegrationStudioInspectorRail } from "@/components/developers/IntegrationStudioInspectorRail";
+import { IntegrationStudioPageWorkspace } from "@/components/developers/IntegrationStudioPageWorkspace";
 import { ACCOUNT_ACCESS_FIRST_PAINT } from "@/lib/product/publicOrigin";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +18,7 @@ export default function IntegrationStudioPage() {
         subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Define policy, create a test app, run a holder step, receive a signed decision, and verify it independently before your app enforces permit, deny, or indeterminate.`}
       />
       <IntegrationStudioOperationalProvider>
-        <IntegrationStudioWorkspace inspector={<IntegrationStudioInspectorRail />}>
-          <IntegrationStudioClient />
-        </IntegrationStudioWorkspace>
+        <IntegrationStudioPageWorkspace />
       </IntegrationStudioOperationalProvider>
     </RedesignPage>
   );

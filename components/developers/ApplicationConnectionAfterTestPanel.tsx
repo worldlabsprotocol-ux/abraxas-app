@@ -37,6 +37,7 @@ export function ApplicationConnectionAfterTestPanel(props: {
   policyId: string;
   returnUrl: string;
   outcome: BuilderHarnessOutcome;
+  testSucceeded?: boolean;
 }) {
   return <ApplicationIntegrationJourneyPanel {...props} />;
 }
