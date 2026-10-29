@@ -29,10 +29,6 @@ function kitReadyKey(applicationId: string): string {
   return `abx_builder_kit_ready_v1_${applicationId}`;
 }
 
-function serverAckKey(applicationId: string): string {
-  return `abx_builder_server_ack_v1_${applicationId}`;
-}
-
 function readFlag(key: string): boolean {
   if (typeof window === "undefined") return false;
   return window.sessionStorage.getItem(key) === "1";
@@ -104,7 +100,6 @@ export function ApplicationIntegrationJourneyPanel({
   const [kitError, setKitError] = useState("");
   const [kitFilename, setKitFilename] = useState<string | null>(null);
   const [filesReady, setFilesReady] = useState(false);
-  const [serverAck, setServerAck] = useState(false);
   const [pollBusy, setPollBusy] = useState(false);
   const [pollError, setPollError] = useState("");
   const [acceptance, setAcceptance] = useState<BuilderIntegrationAcceptanceView | null>(null);
@@ -112,7 +107,6 @@ export function ApplicationIntegrationJourneyPanel({
   useEffect(() => {
     setIntent(readHomeBuilderDiscoveryIntent());
     setFilesReady(readFlag(kitReadyKey(applicationId)));
-    setServerAck(readFlag(serverAckKey(applicationId)));
     const onIntent = () => setIntent(readHomeBuilderDiscoveryIntent());
     window.addEventListener("abraxas:home-builder-intent", onIntent);
     return () => window.removeEventListener("abraxas:home-builder-intent", onIntent);
@@ -130,8 +124,6 @@ export function ApplicationIntegrationJourneyPanel({
       const params = new URLSearchParams({
         application_id: applicationId,
         harness_ok: "1",
-        files_ready: filesReady ? "1" : "0",
-        server_ack: serverAck ? "1" : "0",
       });
       const res = await fetch(
         `/api/developers/integration-studio/external-integration-state?${params.toString()}`,
@@ -152,13 +144,13 @@ export function ApplicationIntegrationJourneyPanel({
     } finally {
       setPollBusy(false);
     }
-  }, [applicationId, filesReady, serverAck, signedIn]);
+  }, [applicationId, signedIn]);
 
   useEffect(() => {
-    if (filesReady && serverAck && signedIn) {
+    if (filesReady && signedIn) {
       void pollExternalState();
     }
-  }, [filesReady, serverAck, signedIn, pollExternalState]);
+  }, [filesReady, signedIn, pollExternalState]);
 
   const connectApplication = useCallback(async () => {
     if (!signedIn) return;
@@ -207,8 +199,13 @@ export function ApplicationIntegrationJourneyPanel({
     }
   }, [applicationId, packId, pathId, signedIn, starterPlatform]);
 
-  const phase = acceptance?.phase ?? (filesReady ? (serverAck ? "awaiting_application_setup" : "integration_files_ready") : "sandbox_demonstrated");
-  const enforcement = acceptance?.external_enforcement ?? { permit: false, deny: false, indeterminate: false };
+  const enforcement = acceptance?.external_enforcement ?? {
+    permit: false,
+    deny: false,
+    indeterminate: false,
+    verified_permit: false,
+    verified_deny: false,
+  };
   const complete = acceptance?.completion_headline != null;
 
   return (
@@ -250,18 +247,9 @@ export function ApplicationIntegrationJourneyPanel({
                 <li>Store the API key in server environment only</li>
                 <li>POST partner-handoff from your backend, then complete holder flow if required</li>
               </ol>
-              {!serverAck ? (
-                <Btn size="sm" variant="secondary" onClick={() => {
-                  writeFlag(serverAckKey(applicationId));
-                  setServerAck(true);
-                }}>
-                  My server is running
-                </Btn>
-              ) : (
-                <Btn size="sm" disabled={pollBusy} onClick={() => void pollExternalState()}>
-                  {pollBusy ? "Checking…" : "Check my application"}
-                </Btn>
-              )}
+              <Btn size="sm" disabled={pollBusy || !signedIn} onClick={() => void pollExternalState()}>
+                {pollBusy ? "Checking…" : "Check my application"}
+              </Btn>
             </>
           )}
 
@@ -271,12 +259,24 @@ export function ApplicationIntegrationJourneyPanel({
           {pollError ? (
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{pollError}</p>
           ) : null}
-          {acceptance && !complete ? (
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "0.65rem" }}>
-              Current state: <strong style={{ color: "var(--text-primary)" }}>{acceptance.phase_label}</strong>
-              {" · "}
-              {builderIntegrationPhaseDetail(acceptance.phase)}
-            </p>
+          {acceptance ? (
+            <div style={{ marginTop: "0.65rem" }}>
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0 }}>
+                Current state: <strong style={{ color: "var(--text-primary)" }}>{acceptance.phase_label}</strong>
+                {" · "}
+                {builderIntegrationPhaseDetail(acceptance.phase)}
+              </p>
+              {acceptance.assurance_notice ? (
+                <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.45rem 0 0" }}>
+                  {acceptance.assurance_notice}
+                </p>
+              ) : null}
+              {acceptance.blockers.map((blocker) => (
+                <p key={blocker} style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--warning, #f59e0b)", margin: "0.35rem 0 0" }}>
+                  {blocker}
+                </p>
+              ))}
+            </div>
           ) : null}
         </section>
 
@@ -293,13 +293,13 @@ export function ApplicationIntegrationJourneyPanel({
             <p style={stepTitle}>Your application verified and enforced the decision</p>
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.55rem" }}>
-            <OutcomeChip label="Permit" active={enforcement.permit} tone="permit" />
-            <OutcomeChip label="Deny" active={enforcement.deny} tone="deny" />
-            <OutcomeChip label="Indeterminate" active={enforcement.indeterminate} tone="indeterminate" />
+            <OutcomeChip label="Permit" active={enforcement.verified_permit} tone="permit" />
+            <OutcomeChip label="Deny" active={enforcement.verified_deny} tone="deny" />
+            <OutcomeChip label="Indeterminate" active={enforcement.indeterminate && !enforcement.verified_permit} tone="indeterminate" />
           </div>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
-            The external application should permit only independently verified, currently acceptable authorization.
-            Run a deny scenario from your server to see the blocked path.
+            Highlighted outcomes require correlated partner events and platform independent verification.
+            Partner-reported telemetry alone is shown in the state line above, not as completion.
           </p>
         </section>
       </div>
