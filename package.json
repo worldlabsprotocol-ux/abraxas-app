@@ -131,6 +131,7 @@
     "build873:integration-adoption-acceptance": "tsx scripts/build-873/integration-adoption-acceptance.ts",
     "build873:live-external-node-adoption": "tsx scripts/build-873/live-external-node-adoption.ts",
     "build873:demo-external-node-live-adoption": "tsx scripts/build-873/demo-external-node-live-adoption.ts",
+    "build900:live-external-rp-acceptance": "tsx scripts/build-900/live-external-rp-acceptance.ts",
     "test:build-876-institutional-pilot-activation": "vitest run lib/commercial/pilotActivation/externalDeveloperAcceptance.test.ts lib/commercial/pilotEconomics/costAttributionModel.test.ts",
     "build876:institutional-pilot-activation-acceptance": "tsx scripts/build-876/institutional-pilot-activation-acceptance.ts",
     "build876:validate-external-developer-metrics": "tsx scripts/build-876/validate-external-developer-metrics.ts",
