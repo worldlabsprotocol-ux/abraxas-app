@@ -72,7 +72,10 @@ export function sandboxIntegrationStudioEligible(input: {
     validated && input.receiptValidation.status === "validated"
       ? input.receiptValidation.currentlyAcceptable
       : null;
-  return approved && !failedValidation && validated && currentlyAcceptable !== false;
+  return approved && !failedValidation && validated
+    && input.receiptValidation.status === "validated"
+    && input.receiptValidation.signatureAuthentic === true
+    && currentlyAcceptable === true;
 }
 
 function isApprovedDecision(decision: string): boolean {
@@ -154,7 +157,7 @@ function buildApplicationIntegrationHandoff(input: {
 
 function acceptabilityLine(receiptValidation: ReceiptValidationUiState): string {
   if (receiptValidation.status === "idle") {
-    return "Proof status: not checked yet. Use Check your proof to confirm the receipt is authentic and still valid.";
+    return "Proof status: checking the receipt before continuing.";
   }
   if (receiptValidation.status === "checking") {
     return "Proof status: checking…";
