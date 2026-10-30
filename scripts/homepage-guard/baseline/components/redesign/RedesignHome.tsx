@@ -23,6 +23,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
   return (
     <main className="abx-institutional-home abx-v2-home abx-premium-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
       {hero}
+      <HomeProtocolSignalMarquee />
 
       <div
         className="abx-premium-home__spine abx-premium-home__spine--shell abx-premium-home__spine--unified abx-premium-home__spine--sandbox-first"
@@ -31,7 +32,6 @@ function HomeContent({ hero }: { hero: ReactNode }) {
         <HomeUnifiedProductEntry />
       </div>
 
-      <HomeProtocolSignalMarquee />
     </main>
   );
 }
@@ -50,3 +50,4 @@ export function RedesignHome({ hero }: { hero: ReactNode }) {
     </div>
   );
 }
+
