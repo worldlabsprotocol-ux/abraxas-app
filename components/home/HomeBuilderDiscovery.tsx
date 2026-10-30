@@ -1,8 +1,8 @@
 "use client";
 // FILE: components/home/HomeBuilderDiscovery.tsx
-// Integration-first discovery on the homepage builder (no wallet required).
 
 import { useMemo, useState } from "react";
+import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
 import { Btn } from "@/components/redesign/ui";
 import { listStudioPackSummaries } from "@/lib/partner/integrationStudio";
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
@@ -28,87 +28,63 @@ export function HomeBuilderDiscovery({ onComplete }: { onComplete: () => void })
     return BEGINNER_PACK_ORDER.map((id) => byId.get(id)).filter(Boolean) as typeof summaries;
   }, []);
 
+  const [step, setStep] = useState<"platform" | "pack">("platform");
   const [platform, setPlatform] = useState<HomeBuilderPlatformId | null>(null);
   const [packId, setPackId] = useState<PolicyPackId | null>(null);
 
-  const canContinue = Boolean(platform && packId);
-
-  return (
-    <div className="abx-home-builder-discovery" data-testid="home-builder-discovery">
-      <p className="abx-home-builder-discovery__kicker">First screen</p>
-      <h3 className="abx-home-builder-discovery__title">What are you building?</h3>
-      <p className="abx-home-builder-discovery__lead">
-        Choose where Abraxas would fit. You can explore policies before connecting a wallet.
-      </p>
-      <div className="abx-home-builder-discovery__platform-grid" role="radiogroup" aria-label="Integration type">
-        {HOME_BUILDER_PLATFORMS.map((option) => {
-          const selected = platform === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              className={
-                selected
-                  ? "abx-home-builder-discovery__platform abx-home-builder-discovery__platform--selected"
-                  : "abx-home-builder-discovery__platform"
-              }
-              onClick={() => setPlatform(option.id)}
-            >
+  if (step === "platform") {
+    return (
+      <BuilderActiveTask
+        taskKey="choose-platform"
+        testId="home-builder-discovery"
+        title="What are you building?"
+        description="Choose where Abraxas would fit."
+        action={<Btn size="sm" disabled={!platform} onClick={() => setStep("pack")}>Continue</Btn>}
+      >
+        <div className="abx-home-builder-discovery__platform-grid" role="radiogroup" aria-label="Integration type">
+          {HOME_BUILDER_PLATFORMS.map((option) => (
+            <button key={option.id} type="button" role="radio" aria-checked={platform === option.id}
+              className={platform === option.id
+                ? "abx-home-builder-discovery__platform abx-home-builder-discovery__platform--selected"
+                : "abx-home-builder-discovery__platform"}
+              onClick={() => setPlatform(option.id)}>
               <span className="abx-home-builder-discovery__platform-label">{option.label}</span>
               <span className="abx-home-builder-discovery__platform-detail">{option.detail}</span>
             </button>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </BuilderActiveTask>
+    );
+  }
 
-      <h3 className="abx-home-builder-discovery__title abx-home-builder-discovery__title--second">
-        What should Abraxas verify?
-      </h3>
-      <p className="abx-home-builder-discovery__lead">
-        These are the same Launchpad policy packs. Identity or liveness is never the default path.
-      </p>
+  return (
+    <BuilderActiveTask
+      taskKey="choose-policy"
+      testId="home-builder-discovery"
+      title="What should Abraxas verify?"
+      description="Choose a policy for your test app."
+      action={<Btn size="sm" disabled={!packId} onClick={() => {
+        if (!platform || !packId) return;
+        writeHomeBuilderDiscoveryIntent({ platform, policyPackId: packId });
+        onComplete();
+      }}>Continue to builder</Btn>}
+      advanced={<button type="button" className="abx-builder-inline-link" onClick={() => setStep("platform")}>Change platform</button>}
+    >
       <div className="abx-home-builder-discovery__pack-grid" role="radiogroup" aria-label="Verification objective">
         {packs.map((pack) => {
           const id = pack.pack_id;
           if (!isPolicyPackId(id)) return null;
-          const selected = packId === id;
           return (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              className={
-                selected
-                  ? "abx-home-builder-discovery__pack abx-home-builder-discovery__pack--selected"
-                  : "abx-home-builder-discovery__pack"
-              }
-              onClick={() => setPackId(id)}
-            >
+            <button key={id} type="button" role="radio" aria-checked={packId === id}
+              className={packId === id
+                ? "abx-home-builder-discovery__pack abx-home-builder-discovery__pack--selected"
+                : "abx-home-builder-discovery__pack"}
+              onClick={() => setPackId(id)}>
               {pack.display_name}
             </button>
           );
         })}
       </div>
-
-      <div className="abx-home-builder-discovery__actions">
-        <Btn
-          size="sm"
-          disabled={!canContinue}
-          onClick={() => {
-            if (!platform || !packId) return;
-            writeHomeBuilderDiscoveryIntent({ platform, policyPackId: packId });
-            onComplete();
-          }}
-        >
-          Continue to authorize when needed
-        </Btn>
-        <p className="abx-home-builder-discovery__hint">
-          Wallet connection happens only when your selected check requires it.
-        </p>
-      </div>
-    </div>
+    </BuilderActiveTask>
   );
 }
