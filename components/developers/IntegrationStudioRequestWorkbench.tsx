@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import {
@@ -31,12 +31,16 @@ export function IntegrationStudioRequestWorkbench({
   pathId,
   policyId,
   beginnerSurface = false,
+  autoRunOnReady = false,
+  onAutoRunConsumed,
   onRefreshSession,
 }: {
   packId: PolicyPackId | null;
   pathId: IntegrationStudioPathId;
   policyId: string | null;
   beginnerSurface?: boolean;
+  autoRunOnReady?: boolean;
+  onAutoRunConsumed?: () => void;
   onRefreshSession?: () => void | Promise<void>;
 }) {
   const { applicationId, signedIn, returnUrl, recordHttpTrace } = useIntegrationStudioOperational();
@@ -44,6 +48,7 @@ export function IntegrationStudioRequestWorkbench({
     LAUNCHPAD_TEST_SCENARIOS[0]?.id ?? "approved",
   );
   const [busy, setBusy] = useState(false);
+  const autoRunStartedFor = useRef<string | null>(null);
   const [error, setError] = useState("");
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
 
@@ -94,6 +99,15 @@ export function IntegrationStudioRequestWorkbench({
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!autoRunOnReady || !applicationId || autoRunStartedFor.current === applicationId || !signedIn || !packId || !policyId) return;
+    autoRunStartedFor.current = applicationId;
+    onAutoRunConsumed?.();
+    void runHarness();
+  // One user-authorized create action starts one sandbox test; never replay on refresh.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRunOnReady, applicationId, signedIn, packId, policyId]);
 
   const showConnectJourney =
     Boolean(applicationId && signedIn && packId && policyId && outcome?.tone === "success");

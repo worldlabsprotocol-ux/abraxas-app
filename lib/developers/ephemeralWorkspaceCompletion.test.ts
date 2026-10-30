@@ -73,7 +73,7 @@ describe("buildEphemeralSandboxCompletionView", () => {
     });
     expect(view.validationModeLine).toMatch(/sandbox records/i);
     expect(view.tone).toBe("success");
-    expect(view.primaryAction?.label).toBe("Create your test app");
+    expect(view.primaryAction?.label).toBe("Connect your application");
     expect(view.primaryAction?.kind).toBe("link");
 
     const inlineView = buildEphemeralSandboxCompletionView({

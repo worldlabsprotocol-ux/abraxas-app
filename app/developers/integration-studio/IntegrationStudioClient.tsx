@@ -149,6 +149,7 @@ type CreatedApp = {
 
 type ResumableApp = {
   id: string;
+  environment?: string;
   application_name: string;
   public_slug: string;
   policy_id: string;
@@ -226,6 +227,10 @@ export function IntegrationStudioClient({
   const [pathInstructions, setPathInstructions] = useState<Record<string, { title: string; docs: string; code: string }> | null>(null);
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
   const [resumeApp, setResumeApp] = useState<ResumableApp | null>(null);
+  const [availableApps, setAvailableApps] = useState<ResumableApp[]>([]);
+  const [beginnerChoice, setBeginnerChoice] = useState<"choose" | "new" | "existing">("choose");
+  const [beginnerSelectedAppId, setBeginnerSelectedAppId] = useState<string | null>(null);
+  const [autoTestNewAppId, setAutoTestNewAppId] = useState<string | null>(null);
   const [resumePartnerId, setResumePartnerId] = useState("");
   const [urlAppId, setUrlAppId] = useState<string | null>(null);
   const [handoffNotice, setHandoffNotice] = useState("");
@@ -469,6 +474,7 @@ export function IntegrationStudioClient({
       setSignedIn(authenticated);
       if (!authenticated) {
         setResumeApp(null);
+        setAvailableApps([]);
         setResumePartnerId("");
         setPartnerIdForStatus("");
         return;
@@ -482,12 +488,13 @@ export function IntegrationStudioClient({
         };
       };
       const apps = workspace.workspace?.applications ?? [];
+      setAvailableApps(apps.filter((app) => app.environment === "sandbox" && Boolean(inferPolicyPackFromPolicyId(app.policy_id))));
       const fromUrl = urlAppId ? apps.find((item) => item.id === urlAppId) : undefined;
       const chosen = fromUrl ?? apps[0] ?? null;
       setResumeApp(chosen);
       setPartnerIdForStatus(workspace.workspace?.partner_id ?? data.partner_id ?? "");
       setResumePartnerId(workspace.workspace?.partner_id ?? "");
-      if (chosen) {
+      if (chosen && !beginnerSurface) {
         const inferred = inferPolicyPackFromPolicyId(chosen.policy_id);
         if (inferred) {
           setPackId(inferred.id);
@@ -496,12 +503,13 @@ export function IntegrationStudioClient({
     } catch {
       setSignedIn(false);
       setResumeApp(null);
+      setAvailableApps([]);
       setResumePartnerId("");
       setPartnerIdForStatus("");
     } finally {
       setSessionChecked(true);
     }
-  }, [configuredAppId, urlAppId]);
+  }, [configuredAppId, urlAppId, beginnerSurface]);
 
   useEffect(() => {
     void refreshLaunchpadSession();
@@ -642,6 +650,10 @@ export function IntegrationStudioClient({
           setPackId(data.application.policy_template_id);
         }
         setCreated(data.application);
+        if (beginnerSurface) {
+          setBeginnerChoice("new");
+          setAutoTestNewAppId(data.application.application_id);
+        }
         void recordGtmClientEvent("sandbox_created", {
           recommended_path: pathId,
           environment: "sandbox",
@@ -777,14 +789,19 @@ export function IntegrationStudioClient({
       ? "Your workspace is ready"
       : null;
 
-  const beginnerPolicyId =
-    walletApp?.policyId ?? resumeApp?.policy_id ?? created?.policy_id ?? null;
+  const beginnerExistingApp = availableApps.find((app) => app.id === beginnerSelectedAppId) ?? null;
+  const beginnerAppId = beginnerChoice === "new"
+    ? created?.application_id ?? null
+    : beginnerChoice === "existing" ? beginnerExistingApp?.id ?? null : null;
+  const beginnerPolicyId = beginnerChoice === "new"
+    ? created?.policy_id ?? null
+    : beginnerExistingApp?.policy_id ?? null;
 
   if (beginnerSurface) {
     return (
       <>
         <IntegrationStudioOperationalBridge
-          applicationId={configuredAppId}
+          applicationId={beginnerAppId}
           signedIn={signedIn}
           returnUrl={returnUrl}
           operationsRail={operationsRail}
@@ -794,7 +811,21 @@ export function IntegrationStudioClient({
           sessionChecked={sessionChecked}
           signedIn={signedIn}
           walletAuthorized={walletAuthorized}
-          configuredAppId={configuredAppId}
+          configuredAppId={beginnerAppId}
+          availableApps={availableApps}
+          choice={beginnerChoice}
+          onChoiceChange={setBeginnerChoice}
+          selectedAppId={beginnerSelectedAppId}
+          onSelectedAppIdChange={(id) => {
+            const app = availableApps.find((item) => item.id === id);
+            if (!app) return;
+            setBeginnerSelectedAppId(id);
+            setAutoTestNewAppId(id);
+            const inferred = inferPolicyPackFromPolicyId(app.policy_id);
+            setPackId(inferred?.id ?? null);
+          }}
+          autoRunTest={autoTestNewAppId === beginnerAppId}
+          onAutoRunTestConsumed={() => setAutoTestNewAppId(null)}
           packId={packId}
           pathId={pathId}
           policyId={beginnerPolicyId}

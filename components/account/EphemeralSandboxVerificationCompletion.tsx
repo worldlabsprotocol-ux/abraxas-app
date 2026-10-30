@@ -35,7 +35,7 @@ export function EphemeralSandboxVerificationCompletion({
         : styles.completionNeutral;
 
   const journeyStep =
-    view.primaryAction?.kind === "link" && view.primaryAction.label === "Create your test app" ? 2 : 1;
+    view.primaryAction?.kind === "link" && view.primaryAction.label === "Connect your application" ? 2 : 1;
 
   const showProofStage =
     view.primaryAction?.kind === "check_proof" || receiptValidation.status === "checking";
@@ -132,9 +132,6 @@ export function EphemeralSandboxVerificationCompletion({
         </div>
       ) : null}
 
-      {showProofStage && view.primaryAction?.kind === "check_proof" ? (
-        <p className={styles.muted}>After verification: Create your test app</p>
-      ) : null}
 
       {showValidatedOutcome && view.secondaryAction ? (
         <Link className={styles.completionSecondaryLink} href={view.secondaryAction.href ?? "#"}>
