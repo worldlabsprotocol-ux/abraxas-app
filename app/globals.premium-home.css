@@ -1716,7 +1716,7 @@
   }
 
   .abx-premium-hero-carousel__diagram-shell {
-    padding: clamp(0.65rem, 2vw, 1rem) clamp(0.85rem, 3vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
+    padding: 3rem clamp(0.85rem, 3vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
   }
 
   .abx-premium-hero-carousel__diagram-lead {
