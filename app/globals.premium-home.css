@@ -1619,130 +1619,6 @@
   line-height: 1.55;
 }
 
-.abx-premium-hero-carousel__diagram-scroll-hint {
-  display: none;
-  margin: 0.5rem 0 0;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
-}
-
-@media (max-width: 960px) {
-  .abx-premium-hero-carousel__diagram-scroll-hint {
-    display: block;
-  }
-}
-
-.abx-premium-hero-carousel__diagram-scroll-wrap {
-  position: relative;
-}
-
-.abx-premium-hero-carousel__diagram-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.35rem;
-  scroll-padding-inline: 1rem;
-  scroll-snap-type: x proximity;
-  overscroll-behavior-x: contain;
-}
-
-.abx-premium-hero-carousel__diagram-scroll-wrap::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0.35rem;
-  width: clamp(2rem, 12vw, 3.5rem);
-  pointer-events: none;
-  background: linear-gradient(270deg, rgba(5, 5, 5, 0.92) 0%, transparent 100%);
-  opacity: 0.85;
-}
-
-.abx-premium-hero-carousel__diagram-scroll-controls {
-  display: none;
-}
-
-@media (max-width: 960px) {
-  .abx-premium-hero-carousel__diagram-scroll-controls {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.35rem;
-    margin-top: 0.45rem;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(0, 0, 0, 0.45);
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    line-height: 1;
-    cursor: pointer;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll-btn:focus-visible {
-    outline: 2px solid rgba(76, 187, 146, 0.55);
-    outline-offset: 2px;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-home-protocol--diagram-only {
-    margin-bottom: 0;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram--mobile-primary {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__grid {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 0.65rem;
-    width: max-content;
-    min-width: 100%;
-    padding-right: 1.25rem;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__stage {
-    flex: 0 0 min(78vw, 17.5rem);
-    scroll-snap-align: start;
-    min-height: 100%;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__caption .abx-v2-eyebrow {
-    display: none;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__title {
-    font-size: 1rem;
-    margin-top: 0;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__lead {
-    display: none;
-  }
-
-  .abx-premium-hero-carousel__diagram-scroll .abx-trust-arch-diagram__footer {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
-    font-size: 0.68rem;
-    margin-top: 0.5rem;
-  }
-}
-
-.abx-premium-hero-carousel__diagram-scroll .abx-protocol-diagram__art {
-  min-width: 880px;
-}
-
 .abx-premium-hero-carousel__diagram-placeholder {
   min-height: 12rem;
 }
@@ -1840,7 +1716,7 @@
   }
 
   .abx-premium-hero-carousel__diagram-shell {
-    padding: clamp(0.65rem, 2vw, 1rem) clamp(0.85rem, 3vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
+    padding: 3rem clamp(0.85rem, 3vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
   }
 
   .abx-premium-hero-carousel__diagram-lead {
@@ -1884,185 +1760,130 @@
 }
 
 .abx-trust-continuous-arch {
-  margin: 0;
-  padding: 0;
-  min-width: min(100%, 72rem);
+  margin: 0 auto;
+  max-width: 76rem;
+  min-width: 0;
+  color: var(--text-primary);
 }
 
 .abx-trust-continuous-arch__caption {
-  margin-bottom: 1rem;
-  max-width: 36rem;
+  max-width: 46rem;
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 
 .abx-trust-continuous-arch__title {
-  font-size: clamp(1.35rem, 3vw, 1.85rem);
-  font-weight: 700;
-  margin: 0.35rem 0 0.5rem;
-  color: var(--text-primary);
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.15;
 }
 
 .abx-trust-continuous-arch__lead {
   margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.5;
   color: var(--text-secondary);
+  font-size: clamp(0.95rem, 1.3vw, 1.08rem);
+  line-height: 1.5;
 }
 
-.abx-trust-continuous-arch__stage-nav {
-  margin: 0 0 1rem;
-}
-
-.abx-trust-continuous-arch__stage-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+.abx-trust-continuous-arch__flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.85rem, 2vw, 1.5rem);
   list-style: none;
   margin: 0;
   padding: 0;
+  counter-reset: architecture;
 }
 
-.abx-trust-continuous-arch__stage-btn {
-  display: inline-flex;
+.abx-trust-continuous-arch__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 16rem;
+  padding: clamp(1rem, 1.6vw, 1.4rem);
+  border: 1px solid rgba(76, 187, 146, 0.27);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(76, 187, 146, 0.08), rgba(9, 18, 30, 0.48));
+}
+
+.abx-trust-continuous-arch__step:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  left: calc(100% + 0.25rem);
+  top: 45%;
+  color: #6ce4bb;
+  font-size: 1.25rem;
+  line-height: 1;
+  z-index: 1;
+}
+
+.abx-trust-continuous-arch__step-top {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
+  justify-content: space-between;
+  min-height: 3.25rem;
 }
 
-.abx-trust-continuous-arch__stage-btn--active {
-  border-color: rgba(76, 187, 146, 0.45);
-  color: var(--text-primary);
-  background: rgba(76, 187, 146, 0.08);
+.abx-trust-continuous-arch__step-number {
+  font-family: var(--font-mono, monospace);
+  color: #6ce4bb;
+  font-size: 0.95rem;
 }
 
-.abx-trust-continuous-arch__stage-btn:focus-visible,
-.abx-trust-continuous-arch__diagram-toggle:focus-visible {
-  outline: 2px solid rgba(76, 187, 146, 0.85);
-  outline-offset: 2px;
-}
-
-.abx-trust-continuous-arch__stage-index {
-  color: rgba(76, 187, 146, 0.95);
-}
-
-.abx-trust-continuous-arch__stage-panel {
-  margin-bottom: 1rem;
-  padding: 1rem 1.1rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(8, 10, 14, 0.72);
-}
-
-.abx-trust-continuous-arch__stage-question {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 650;
-  color: var(--text-primary);
-}
-
-.abx-trust-continuous-arch__stage-summary {
-  margin: 0 0 0.65rem;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: var(--text-secondary);
-}
-
-.abx-trust-continuous-arch__stage-points {
-  margin: 0 0 0.65rem;
-  padding-left: 1.15rem;
-  font-size: 0.84rem;
-  line-height: 1.5;
-  color: var(--text-primary);
-}
-
-.abx-trust-continuous-arch__stage-points li {
-  margin: 0.2rem 0;
-}
-
-.abx-trust-continuous-arch__stage-continuity {
-  margin: 0.35rem 0 0;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: var(--text-secondary);
-}
-
-.abx-trust-continuous-arch__stage-continuity-label {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.abx-trust-continuous-arch__diagram-controls {
-  margin-bottom: 0.75rem;
-}
-
-.abx-trust-continuous-arch__diagram-toggle {
-  display: inline-flex;
-  margin-bottom: 0.35rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: transparent;
-  color: var(--text-primary);
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.abx-trust-continuous-arch__diagram-hint {
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  line-height: 1.45;
-}
-
-.abx-trust-continuous-arch__stage-visual,
-.abx-trust-continuous-arch__overview-wrap {
-  width: 100%;
-  max-width: 42rem;
-  margin: 0 auto;
-  aspect-ratio: 3 / 4;
-  max-height: min(72vh, 36rem);
-  overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(4, 6, 8, 0.92);
-}
-
-.abx-trust-continuous-arch__stage-image,
-.abx-trust-continuous-arch__overview-image {
-  display: block;
-  width: 100%;
-  height: 100%;
+.abx-trust-continuous-arch__emblem {
+  width: 3rem;
+  height: 3rem;
   object-fit: contain;
-  object-position: center top;
 }
 
-.abx-trust-continuous-arch__overview-wrap {
-  aspect-ratio: 16 / 9;
+.abx-trust-continuous-arch__step h3 {
+  margin: 0.5rem 0 0.55rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  line-height: 1.22;
+}
+
+.abx-trust-continuous-arch__step p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.93rem;
+  line-height: 1.5;
+}
+
+.abx-trust-continuous-arch__signal {
+  display: block;
+  margin-top: auto;
+  padding-top: 1.1rem;
+  color: #94e9c8;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.abx-trust-continuous-arch__continuity {
   max-width: 72rem;
-  max-height: min(70vh, 40rem);
+  margin: clamp(1rem, 2vw, 1.5rem) 0 0.55rem;
+  padding-left: 1rem;
+  border-left: 2px solid #6ce4bb;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
 }
 
-@media (max-width: 768px) {
-  .abx-trust-continuous-arch {
-    min-width: 0;
-  }
+.abx-trust-continuous-arch__continuity strong { color: var(--text-primary); }
 
-  .abx-trust-continuous-arch__stage-visual {
-    max-height: min(68vh, 32rem);
-  }
+@media (max-width: 900px) {
+  .abx-trust-continuous-arch__flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .abx-trust-continuous-arch__step:nth-child(2)::after { display: none; }
+  .abx-trust-continuous-arch__step { min-height: 14rem; }
+}
 
-  .abx-trust-continuous-arch__stage-list {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 0.25rem;
+@media (max-width: 560px) {
+  .abx-trust-continuous-arch__flow { grid-template-columns: minmax(0, 1fr); gap: 1.3rem; }
+  .abx-trust-continuous-arch__step { min-height: 0; }
+  .abx-trust-continuous-arch__step:not(:last-child)::after {
+    display: block;
+    left: 50%;
+    top: calc(100% + 0.1rem);
+    transform: translateX(-50%) rotate(90deg);
   }
 }
