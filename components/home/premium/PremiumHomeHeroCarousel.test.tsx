@@ -30,13 +30,14 @@ describe("PremiumHomeHeroCarousel", () => {
     render(<PremiumHomeHeroCarousel />);
     fireEvent.click(screen.getByRole("button", { name: /Show slide 2/i }));
     expect(screen.getByRole("link", { name: CINEMATIC_HOME_CTA_PRIMARY })).toHaveAttribute("href", "#start-sandbox");
-    expect(screen.getByRole("link", { name: /Start sandbox/i })).toHaveAttribute("href", "#start-sandbox");
+    expect(screen.queryByRole("link", { name: /Start sandbox/i })).not.toBeInTheDocument();
   });
 
-  it("exposes architecture stage scroll controls on slide 2", () => {
+  it("shows one architecture visual without nested stage scrolling", () => {
     render(<PremiumHomeHeroCarousel />);
     fireEvent.click(screen.getByRole("button", { name: /Show slide 2/i }));
-    expect(screen.getByRole("button", { name: /Scroll architecture stages right/i })).toBeInTheDocument();
+    expect(screen.getByTestId("diagram-slide")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Scroll architecture stages right/i })).not.toBeInTheDocument();
   });
 
   it("supports keyboard navigation between slides", () => {

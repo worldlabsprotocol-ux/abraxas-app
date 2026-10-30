@@ -57,6 +57,7 @@ export function PremiumHomeHeroCarousel() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.target !== event.currentTarget) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         goTo(activeIndex - 1);
@@ -76,26 +77,6 @@ export function PremiumHomeHeroCarousel() {
 
   const onTouchStart = useCallback((event: TouchEvent<HTMLDivElement>) => {
     touchStartX.current = event.changedTouches[0]?.clientX ?? null;
-  }, []);
-
-  const diagramScrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (activeIndex !== 1) return;
-    const el = diagramScrollRef.current;
-    if (!el || typeof el.scrollTo !== "function") return;
-    el.scrollTo({ left: 0, behavior: "auto" });
-  }, [activeIndex]);
-
-  const scrollDiagramStages = useCallback((direction: -1 | 1) => {
-    const el = diagramScrollRef.current;
-    if (!el) return;
-    const step = Math.max(el.clientWidth * 0.72, 220);
-    if (typeof el.scrollBy === "function") {
-      el.scrollBy({ left: direction * step, behavior: "smooth" });
-      return;
-    }
-    el.scrollLeft += direction * step;
   }, []);
 
   const onTouchEnd = useCallback(
@@ -155,45 +136,11 @@ export function PremiumHomeHeroCarousel() {
             inert={activeIndex !== 1}
           >
             <div className="abx-premium-hero-carousel__diagram-shell">
-              <p className="abx-premium-hero-carousel__diagram-scroll-hint" id={`${regionId}-diagram-hint`}>
-                Use stages 01–04 to update the architecture visual and explanation. View full architecture for the complete
-                overview.
-              </p>
-              <div className="abx-premium-hero-carousel__diagram-scroll-wrap">
-                <div
-                  ref={diagramScrollRef}
-                  className="abx-premium-hero-carousel__diagram-scroll"
-                  role="group"
-                  aria-roledescription="scrollable architecture diagram"
-                  aria-label="Trust is continuous architecture diagram"
-                  aria-describedby={`${regionId}-diagram-hint`}
-                  tabIndex={0}
-                >
-                  {diagramMounted ? (
-                    <HomeTrustContinuousArchitectureImage priority={false} />
-                  ) : (
-                    <div className="abx-premium-hero-carousel__diagram-placeholder" aria-hidden="true" />
-                  )}
-                </div>
-                <div className="abx-premium-hero-carousel__diagram-scroll-controls" aria-hidden="false">
-                  <button
-                    type="button"
-                    className="abx-premium-hero-carousel__diagram-scroll-btn"
-                    aria-label="Scroll architecture stages left"
-                    onClick={() => scrollDiagramStages(-1)}
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="abx-premium-hero-carousel__diagram-scroll-btn"
-                    aria-label="Scroll architecture stages right"
-                    onClick={() => scrollDiagramStages(1)}
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
+              {diagramMounted ? (
+                <HomeTrustContinuousArchitectureImage priority={false} />
+              ) : (
+                <div className="abx-premium-hero-carousel__diagram-placeholder" aria-hidden="true" />
+              )}
             </div>
           </div>
         </div>
@@ -228,12 +175,6 @@ export function PremiumHomeHeroCarousel() {
               href={CINEMATIC_HOME_CTA_PRIMARY_HREF}
             >
               {CINEMATIC_HOME_CTA_PRIMARY}
-            </Link>
-            <Link
-              className="abx-premium-hero-carousel__cta abx-premium-hero-carousel__cta--secondary"
-              href={CINEMATIC_HOME_CTA_PRIMARY_HREF}
-            >
-              Start sandbox
             </Link>
           </div>
         </div>
