@@ -4,6 +4,9 @@ import React from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { IntegrationStudioRequestWorkbench } from "./IntegrationStudioRequestWorkbench";
+vi.mock("@/components/developers/BeginnerPartnerAccessGate", () => ({
+  BeginnerPartnerAccessGate: ({ applicationId }: { applicationId: string }) => <div data-testid="inline-access">{applicationId}</div>,
+}));
 
 const operational = vi.hoisted(() => ({
   applicationId: "app-123" as string | null,
@@ -25,29 +28,22 @@ vi.mock("@/components/redesign/ui", () => ({
 
 describe("beginner sandbox test access", () => {
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); operational.signedIn = false; });
-  const renderTask = (walletAuthorized: boolean) => render(
-    <IntegrationStudioRequestWorkbench packId={null} pathId="verify_with_abraxas" policyId={null} beginnerSurface walletAuthorized={walletAuthorized} />,
+  const renderTask = () => render(
+    <IntegrationStudioRequestWorkbench packId={null} pathId="verify_with_abraxas" policyId={null} beginnerSurface />,
   );
 
-  it("explains that a wallet session does not authorize the partner test", () => {
+  it("keeps partner access recovery inside the active task", () => {
     const fetch = vi.fn();
     vi.stubGlobal("fetch", fetch);
-    renderTask(true);
-    expect(screen.getByRole("heading", { name: "Partner access needed" })).toBeInTheDocument();
-    expect(screen.getByText(/wallet session is active/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open partner workspace" })).toHaveAttribute("href", "/developers/launchpad");
+    renderTask();
+    expect(screen.getByTestId("inline-access")).toHaveTextContent("app-123");
+    expect(screen.queryByRole("link", { name: "Open partner workspace" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Run test" })).not.toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalled();
   });
-
-  it("shows a partner sign-in recovery when neither session is available", () => {
-    renderTask(false);
-    expect(screen.getByText(/open the partner workspace to sign in/i)).toBeInTheDocument();
-  });
-
   it("retains the authorized test action for a partner session", () => {
     operational.signedIn = true;
-    renderTask(false);
+    renderTask();
     expect(screen.getByRole("button", { name: "Run test" })).toBeEnabled();
   });
 });

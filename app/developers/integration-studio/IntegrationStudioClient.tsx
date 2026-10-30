@@ -70,6 +70,7 @@ import { buildIntegrationStageUrl } from "@/lib/developers/unifiedWorkspaceConti
 import { useUnifiedWorkspaceEmbed } from "@/lib/developers/unifiedWorkspaceEmbedContext";
 import { fetchEphemeralWalletClientSession } from "@/lib/auth/ephemeralWallet/clientSession";
 import { establishLaunchpadSessionWithAccount } from "@/lib/partner/launchpad/launchpadSessionClient";
+import { readHomeBuilderDiscoveryIntent } from "@/lib/home/homeBuilderDiscovery";
 import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
 import { capturePostAuthResumePath } from "@/lib/nav/postAuthResume";
 import { IntegrationStudioBeginnerFlow } from "@/components/developers/IntegrationStudioBeginnerFlow";
@@ -451,7 +452,7 @@ export function IntegrationStudioClient({
       const data = await res.json() as { authenticated?: boolean; partner_id?: string };
       let authenticated = Boolean(data.authenticated);
       if (!authenticated) {
-        const restored = await establishLaunchpadSessionWithAccount({});
+        const restored = await establishLaunchpadSessionWithAccount({ applicationId: configuredAppId });
         if (restored.ok) {
           authenticated = true;
         } else if (!walletAuthenticated) {
@@ -489,7 +490,7 @@ export function IntegrationStudioClient({
       if (chosen) {
         const inferred = inferPolicyPackFromPolicyId(chosen.policy_id);
         if (inferred) {
-          setPackId((current) => current ?? inferred.id);
+          setPackId(inferred.id);
         }
       }
     } catch {
@@ -500,7 +501,7 @@ export function IntegrationStudioClient({
     } finally {
       setSessionChecked(true);
     }
-  }, [urlAppId]);
+  }, [configuredAppId, urlAppId]);
 
   useEffect(() => {
     void refreshLaunchpadSession();
@@ -529,9 +530,8 @@ export function IntegrationStudioClient({
 
   useEffect(() => {
     if (!beginnerSurface || packId) return;
-    if (isPolicyPackId("wallet_control")) {
-      setPackId("wallet_control");
-    }
+    const selected = readHomeBuilderDiscoveryIntent()?.policyPackId;
+    setPackId(selected && isPolicyPackId(selected) ? selected : "wallet_control");
   }, [beginnerSurface, packId]);
 
   useEffect(() => {

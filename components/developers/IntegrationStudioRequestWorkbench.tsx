@@ -10,6 +10,7 @@ import {
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { AbraxasJourneyEmblemStatus } from "@/components/developers/AbraxasJourneyEmblemStatus";
 import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
+import { BeginnerPartnerAccessGate } from "@/components/developers/BeginnerPartnerAccessGate";
 import { useIntegrationStudioOperational } from "@/components/developers/integrationStudioOperationalContext";
 import { formatHarnessResultForBuilder } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
 import { buildLaunchpadTestScenarioRequestBody } from "@/lib/partner/launchpad/testScenarioClientRequest";
@@ -30,13 +31,13 @@ export function IntegrationStudioRequestWorkbench({
   pathId,
   policyId,
   beginnerSurface = false,
-  walletAuthorized = false,
+  onRefreshSession,
 }: {
   packId: PolicyPackId | null;
   pathId: IntegrationStudioPathId;
   policyId: string | null;
   beginnerSurface?: boolean;
-  walletAuthorized?: boolean;
+  onRefreshSession?: () => void | Promise<void>;
 }) {
   const { applicationId, signedIn, returnUrl, recordHttpTrace } = useIntegrationStudioOperational();
   const [scenarioId, setScenarioId] = useState<LaunchpadTestScenarioId>(
@@ -74,7 +75,9 @@ export function IntegrationStudioRequestWorkbench({
         res.ok ? data : { ok: false, status: res.status, ...data },
       );
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Test failed");
+        setError(res.status === 401 || res.status === 403
+          ? "Access to this app has ended. Confirm your account and try again."
+          : "We could not run the test. Try again.");
         return;
       }
       if (data.result && typeof data.result === "object") {
@@ -111,18 +114,9 @@ export function IntegrationStudioRequestWorkbench({
   }
 
   if (beginnerSurface && applicationId && !signedIn) {
-    return (
-      <BuilderActiveTask
-        taskKey="partner-access-needed"
-        testId="builder-partner-access-needed"
-        title="Partner access needed"
-        description={walletAuthorized
-          ? "Your wallet session is active. This test also needs access to its partner workspace."
-          : "Open the partner workspace to sign in and continue your test."}
-        action={<Btn href="/developers/launchpad" size="sm">Open partner workspace</Btn>}
-      />
-    );
+    return <BeginnerPartnerAccessGate applicationId={applicationId} onReady={onRefreshSession ?? (() => {})} />;
   }
+
   if (beginnerSurface) {
     const failed = Boolean(error || (outcome && outcome.tone !== "success"));
     return (

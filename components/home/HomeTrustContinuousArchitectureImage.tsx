@@ -1,5 +1,6 @@
 // A single, responsive account of the public trust flow. This is explanatory, not live state.
 import Image from "next/image";
+import { LIVING_SPHERE_BRAND } from "@/lib/brand/livingSphereBrandAssets";
 import { HomeProtocolVisualDisclosure } from "@/components/home/HomeProtocolVisualDisclosure";
 
 const steps = [
@@ -42,7 +43,7 @@ export function HomeTrustContinuousArchitectureImage({ priority = false }: { pri
           <li className="abx-trust-continuous-arch__step" key={step.number}>
             <div className="abx-trust-continuous-arch__step-top">
               <span className="abx-trust-continuous-arch__step-number">{step.number}</span>
-              {index === 2 && <Image src="/brand/official/abraxas-emblem-protocol-640.webp" alt="" aria-hidden width={52} height={52} priority={priority} className="abx-trust-continuous-arch__emblem" />}
+              {index === 2 && <Image src={LIVING_SPHERE_BRAND.nav.src} alt="" aria-hidden width={52} height={52} priority={priority} className="abx-trust-continuous-arch__emblem" />}
             </div>
             <h3>{step.title}</h3>
             <p>{step.detail}</p>

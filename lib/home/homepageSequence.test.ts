@@ -11,7 +11,7 @@ function read(rel: string): string {
 }
 
 describe("homepage journey sequence", () => {
-  it("orders hero carousel, sandbox entry, then protocol signal", () => {
+  it("orders hero carousel, protocol signal, then sandbox entry", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     const body = shell.slice(shell.indexOf("function HomeContent"));
     const heroIdx = body.indexOf("{hero}");
@@ -19,7 +19,8 @@ describe("homepage journey sequence", () => {
     const marqueeIdx = body.indexOf("<HomeProtocolSignalMarquee");
     expect(heroIdx).toBeGreaterThan(-1);
     expect(unifiedIdx).toBeGreaterThan(heroIdx);
-    expect(marqueeIdx).toBeGreaterThan(unifiedIdx);
+    expect(marqueeIdx).toBeGreaterThan(heroIdx);
+    expect(unifiedIdx).toBeGreaterThan(marqueeIdx);
   });
 
   it("unified entry leads with sandbox workspace only", () => {

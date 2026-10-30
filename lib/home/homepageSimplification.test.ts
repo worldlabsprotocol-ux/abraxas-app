@@ -51,16 +51,22 @@ describe("homepage simplification (#homepage-refinement)", () => {
     const unifiedIndex = body.indexOf("<HomeUnifiedProductEntry");
     const marqueeIndex = body.indexOf("<HomeProtocolSignalMarquee");
     expect(unifiedIndex).toBeGreaterThan(heroIndex);
-    expect(marqueeIndex).toBeGreaterThan(unifiedIndex);
+    expect(marqueeIndex).toBeGreaterThan(heroIndex);
+    expect(unifiedIndex).toBeGreaterThan(marqueeIndex);
   });
 
+  it("continues the homepage builder without a Launchpad route jump", () => {
+    const entry = read("components/home/HomeSandboxSessionEntry.tsx");
+    expect(entry).toContain("HomeBeginnerIntegrationStudio beginnerStandaloneSurface");
+    expect(entry).not.toContain('router.push("/developers/launchpad")');
+  });
   it("hero carousel composes emblem slide and architecture diagram slide", () => {
     const carousel = read("components/home/premium/PremiumHomeHeroCarousel.tsx");
     expect(carousel).toContain("PremiumHomeHero");
     expect(carousel).toContain("HomeTrustContinuousArchitectureImage");
     expect(carousel).toContain("useReducedMotion");
     read("components/home/HomeTrustContinuousArchitectureImage.tsx");
-    expect(read("components/home/HomeTrustContinuousArchitectureImage.tsx")).toContain("abraxas-emblem-protocol-640.webp");
+    expect(read("components/home/HomeTrustContinuousArchitectureImage.tsx")).toContain("LIVING_SPHERE_BRAND.nav.src");
   });
 
   it("unified entry removes four tab panels before sandbox", () => {

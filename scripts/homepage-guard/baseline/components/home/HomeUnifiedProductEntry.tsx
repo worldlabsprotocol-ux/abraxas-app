@@ -1,12 +1,9 @@
 "use client";
 // FILE: components/home/HomeUnifiedProductEntry.tsx
-// Sandbox-first entry below protocol explanation.
 
 import { useEffect } from "react";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { HomeNativeSandboxChapter } from "@/components/home/HomeNativeSandboxChapter";
-import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
-import { HOMEPAGE_UNIFIED_EYEBROW, HOMEPAGE_UNIFIED_LEAD } from "@/lib/home/homepageUnifiedEntryCopy";
 
 const LEGACY_HASH_REDIRECTS: Record<string, string> = {
   "how-abraxas-works": "protocol-infrastructure",
@@ -26,21 +23,7 @@ export function HomeUnifiedProductEntry() {
   }, []);
 
   return (
-    <section
-      id="start-sandbox"
-      className="abx-home-unified-entry"
-      aria-labelledby="home-unified-heading"
-    >
-      <header className="abx-home-unified-entry__header">
-        <p className="abx-home-unified-entry__eyebrow">{HOMEPAGE_UNIFIED_EYEBROW}</p>
-        <h2 id="home-unified-heading" className="abx-v2-section-title">
-          Start sandbox
-        </h2>
-        <p className="abx-v2-section-lead abx-v2-section-lead--tight">{HOMEPAGE_UNIFIED_LEAD}</p>
-      </header>
-
-      <HomeSignedInModule />
-
+    <section id="start-sandbox" className="abx-home-unified-entry" aria-label="Start sandbox">
       <LazyHomeSection minHeight="10rem" eager>
         <HomeNativeSandboxChapter />
       </LazyHomeSection>
