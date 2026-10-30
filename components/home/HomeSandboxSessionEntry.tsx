@@ -8,6 +8,7 @@ import { isHomeBuilderDiscoveryComplete } from "@/lib/home/homeBuilderDiscovery"
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
+import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
 import { HomeSandboxAccountAuth } from "@/components/home/HomeSandboxAccountAuth";
 import { HomeInlineSandboxWorkspace } from "@/components/home/HomeInlineSandboxWorkspace";
 import {
