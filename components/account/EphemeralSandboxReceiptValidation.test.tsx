@@ -129,7 +129,7 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     void receipt;
   });
 
-  it("shows independent validation result after Validate receipt without Phantom", async () => {
+  it("validates the receipt automatically without another Phantom signature", async () => {
     // Direct unit-style test of UI branch: render with internal state requires completing verify flow.
     // Mock test-verify to land on result phase.
     const receipt = {
@@ -280,20 +280,15 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     await waitFor(() =>
       expect(screen.getByTestId("sandbox-completion-active-stage")).toBeTruthy(),
     );
-    expect(screen.getAllByRole("button", { name: /^Check your proof$/i })).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /Review request/i })).toBeNull();
-    expect(screen.queryByRole("link", { name: /Create your test app/i })).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: /^Check your proof$/i }));
 
     await waitFor(
       () =>
         expect(screen.getByRole("heading", { level: 3, name: "Your proof checks out" })).toBeTruthy(),
       { timeout: 5000 },
     );
-    expect(screen.getByRole("link", { name: /Create your test app/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Connect your application/i })).toBeTruthy();
     expect(screen.getByText(/Signature authentic:/i)).toBeTruthy();
-    const callsAfterValidate = signMessage.mock.calls.length;
-    expect(callsAfterValidate).toBeGreaterThanOrEqual(1);
+    expect(signMessage).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { IntegrationStudioRequestWorkbench } from "./IntegrationStudioRequestWorkbench";
 vi.mock("@/components/developers/BeginnerPartnerAccessGate", () => ({
@@ -40,6 +40,18 @@ describe("beginner sandbox test access", () => {
     expect(screen.queryByRole("link", { name: "Open partner workspace" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Run test" })).not.toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it("runs one test after an explicit create action, with no extra wallet signature", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetch);
+    const consumed = vi.fn();
+    const { rerender } = render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady onAutoRunConsumed={consumed} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(String(fetch.mock.calls[0]?.[0])).toContain("/api/launchpad/applications/app-123/test");
+    expect(consumed).toHaveBeenCalledTimes(1);
+    rerender(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady onAutoRunConsumed={consumed} />);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
   it("retains the authorized test action for a partner session", () => {
     operational.signedIn = true;

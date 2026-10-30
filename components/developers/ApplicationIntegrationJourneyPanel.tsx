@@ -50,6 +50,7 @@ export function ApplicationIntegrationJourneyPanel({
   returnUrl,
   outcome,
   testSucceeded = false,
+  startWithExample = false,
 }: {
   applicationId: string;
   signedIn: boolean;
@@ -59,6 +60,7 @@ export function ApplicationIntegrationJourneyPanel({
   returnUrl: string;
   outcome: BuilderHarnessOutcome;
   testSucceeded?: boolean;
+  startWithExample?: boolean;
 }) {
   const [intent, setIntent] = useState<HomeBuilderDiscoveryIntent | null>(null);
   const [kitBusy, setKitBusy] = useState(false);
@@ -67,7 +69,7 @@ export function ApplicationIntegrationJourneyPanel({
   const [pollBusy, setPollBusy] = useState(false);
   const [pollError, setPollError] = useState("");
   const [acceptance, setAcceptance] = useState<BuilderIntegrationAcceptanceView | null>(null);
-  const [surface, setSurface] = useState<"connect" | "example">("connect");
+  const [surface, setSurface] = useState<"connect" | "example">(startWithExample ? "example" : "connect");
 
   useEffect(() => {
     setIntent(readHomeBuilderDiscoveryIntent());

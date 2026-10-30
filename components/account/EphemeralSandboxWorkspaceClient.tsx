@@ -316,9 +316,8 @@ export function EphemeralSandboxWorkspaceClient({
           setResult(workspaceBody.guided_result);
           setDecision(workspaceBody.guided_progress.decision ?? null);
           setSelectedPolicy(workspaceBody.guided_progress.policy_id);
-          setReceiptValidation(
-            mapGuidedProgressReceiptValidation(workspaceBody.guided_progress.receipt_validation),
-          );
+          // Recheck restored receipts; their acceptability can change.
+          setReceiptValidation({ status: "idle" });
           if (!protectedPhases.includes(phaseRef.current)) {
             setPhase("result");
           }
@@ -833,6 +832,11 @@ export function EphemeralSandboxWorkspaceClient({
     }
   }, [result, receiptValidation.status]);
 
+  useEffect(() => {
+    if (phase !== "result" || !result?.receipt_id || receiptValidation.status !== "idle") return;
+    void validateReceiptIndependent();
+  }, [phase, result?.receipt_id, receiptValidation.status, validateReceiptIndependent]);
+
   const openPhantomForReview = useCallback(async () => {
     if (!pendingChallenge || !signMessage) return;
     if (signingAbortRef.current) return;
@@ -983,6 +987,13 @@ export function EphemeralSandboxWorkspaceClient({
   const walletProofReadyForStudio =
     phase === "result"
     && sandboxIntegrationStudioEligible({ decision, receiptValidation });
+
+  useEffect(() => {
+    if (!isHomepageEmbed || !walletProofReadyForStudio || !selectedPolicy || homepageCreateAppUnlocked) return;
+    writeHomepageCreateAppUnlocked(true);
+    setHomepageCreateAppUnlocked(true);
+    applyHomepageInlineIntegrationSearch(selectedPolicy);
+  }, [isHomepageEmbed, walletProofReadyForStudio, selectedPolicy, homepageCreateAppUnlocked]);
 
   useEffect(() => {
     if (isHomepageEmbed) return;

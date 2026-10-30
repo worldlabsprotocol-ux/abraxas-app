@@ -38,6 +38,7 @@ export function ApplicationConnectionAfterTestPanel(props: {
   returnUrl: string;
   outcome: BuilderHarnessOutcome;
   testSucceeded?: boolean;
+  startWithExample?: boolean;
 }) {
   return <ApplicationIntegrationJourneyPanel {...props} />;
 }

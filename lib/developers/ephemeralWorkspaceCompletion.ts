@@ -72,7 +72,10 @@ export function sandboxIntegrationStudioEligible(input: {
     validated && input.receiptValidation.status === "validated"
       ? input.receiptValidation.currentlyAcceptable
       : null;
-  return approved && !failedValidation && validated && currentlyAcceptable !== false;
+  return approved && !failedValidation && validated
+    && input.receiptValidation.status === "validated"
+    && input.receiptValidation.signatureAuthentic === true
+    && currentlyAcceptable === true;
 }
 
 function isApprovedDecision(decision: string): boolean {
@@ -154,7 +157,7 @@ function buildApplicationIntegrationHandoff(input: {
 
 function acceptabilityLine(receiptValidation: ReceiptValidationUiState): string {
   if (receiptValidation.status === "idle") {
-    return "Proof status: not checked yet. Use Check your proof to confirm the receipt is authentic and still valid.";
+    return "Proof status: checking the receipt before continuing.";
   }
   if (receiptValidation.status === "checking") {
     return "Proof status: checking…";
@@ -226,7 +229,7 @@ export function buildEphemeralSandboxCompletionView(input: {
       "The proof checked out technically, but the policy decision is not approval. Do not treat this as authorization for a live action.";
   } else if (approved) {
     summary =
-      "Your wallet signed the request successfully. Check your proof next to confirm the receipt before you rely on it.";
+      "Wallet verification completed. Abraxas is checking the receipt before continuing.";
   } else {
     summary =
       "Review the decision and receipt details. Run another test or adjust your integration policy if you expected approval.";
@@ -257,9 +260,9 @@ export function buildEphemeralSandboxCompletionView(input: {
     {
       id: "integrate",
       label: integrateEligible
-        ? "Next: Create your test app in this workspace"
+        ? "Next: Connect your application"
         : approved
-          ? "Next: Check your proof, then build your test app"
+          ? "Next: Confirm the receipt, then connect your application"
           : "Next: Review what this policy requires or run another test",
       state: integrateEligible ? "next" : approved && !validated ? "pending" : "next",
     },
@@ -271,12 +274,12 @@ export function buildEphemeralSandboxCompletionView(input: {
   if (integrateEligible) {
     primaryAction = {
       kind: input.inlineIntegrationHandoff ? "inline_integrate" : "link",
-      label: "Create your test app",
+      label: "Connect your application",
       href: input.inlineIntegrationHandoff
         ? undefined
         : buildIntegrationStudioHandoffUrl({ policyId: input.policyId }),
       description:
-        "Create a test application in this workspace and see how Abraxas requests and checks verification.",
+        "Choose a new or existing sandbox application.",
     };
     secondaryAction = {
       kind: "link",

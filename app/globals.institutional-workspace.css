@@ -991,3 +991,8 @@
   border-radius: 16px;
   background: #171717;
 }
+
+.abx-builder-choice-list { display: grid; gap: .7rem; width: min(100%, 35rem); text-align: left; }
+.abx-builder-choice-list button { display: grid; gap: .25rem; width: 100%; padding: 1rem 1.15rem; border: 1px solid rgba(76,187,146,.28); border-radius: 12px; background: rgba(9,20,23,.75); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; }
+.abx-builder-choice-list button:hover, .abx-builder-choice-list button:focus-visible, .abx-builder-choice-list button[aria-pressed="true"] { border-color: rgba(76,187,146,.8); outline-offset: 3px; }
+.abx-builder-choice-list button span { color: var(--text-secondary); font-size: .82rem; }

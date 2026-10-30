@@ -176,9 +176,9 @@ export function BuilderReferenceExampleExperience({
       {reachability === "unreachable" ? (
         <div style={{ marginBottom: "1rem" }}>
           <p style={{ margin: "0 0 0.55rem", fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-            Start the reference application on this computer. Abraxas will not simulate a connected example.
+            This example runs on your computer. You can connect your website instead.
           </p>
-          <code
+          <details className="abx-builder-technical-panel"><summary className="abx-builder-technical-toggle">Developer setup</summary><code
             style={{
               display: "block",
               fontFamily: MONO,
@@ -191,7 +191,7 @@ export function BuilderReferenceExampleExperience({
             }}
           >
             {REFERENCE_EXAMPLE_START_COMMAND}
-          </code>
+          </code></details>
           <Btn size="sm" onClick={() => void runProbe()}>
             Check again
           </Btn>

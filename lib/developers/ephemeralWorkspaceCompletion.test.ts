@@ -17,7 +17,7 @@ describe("buildEphemeralSandboxCompletionView", () => {
     expect(view.primaryAction?.kind).toBe("check_proof");
     expect(view.primaryAction?.label).toBe("Check your proof");
     expect(view.secondaryAction).toBeNull();
-    expect(view.acceptabilityLine).toMatch(/not checked yet/i);
+    expect(view.acceptabilityLine).toMatch(/checking the receipt/i);
   });
 
   it("does not show integration-success tone when policy denied", () => {
@@ -57,6 +57,19 @@ describe("buildEphemeralSandboxCompletionView", () => {
     expect(view.acceptabilityLine).toMatch(/not currently valid/i);
   });
 
+  it.each([
+    { reason: "revoked", signatureAuthentic: true },
+    { reason: "tampered", signatureAuthentic: false },
+  ])("blocks $reason receipts from opening integration", ({ reason, signatureAuthentic }) => {
+    const view = buildEphemeralSandboxCompletionView({
+      policyId: "wallet_control", policyLabel: "Wallet Control", decision: "approved",
+      receiptValidation: { status: "validated", checkedAt: "2026-01-01T00:00:00.000Z", signatureAuthentic,
+        currentlyAcceptable: reason === "tampered", invalidationReasons: [reason] },
+    });
+    expect(view.primaryAction?.kind).not.toBe("inline_integrate");
+    expect(view.primaryAction?.label).not.toBe("Connect your application");
+  });
+
   it("surfaces sandbox record validation mode when standalone crypto is false", () => {
     const view = buildEphemeralSandboxCompletionView({
       policyId: "wallet_control",
@@ -73,7 +86,7 @@ describe("buildEphemeralSandboxCompletionView", () => {
     });
     expect(view.validationModeLine).toMatch(/sandbox records/i);
     expect(view.tone).toBe("success");
-    expect(view.primaryAction?.label).toBe("Create your test app");
+    expect(view.primaryAction?.label).toBe("Connect your application");
     expect(view.primaryAction?.kind).toBe("link");
 
     const inlineView = buildEphemeralSandboxCompletionView({
