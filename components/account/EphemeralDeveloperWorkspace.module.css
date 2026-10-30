@@ -244,6 +244,63 @@
   padding: clamp(1.1rem, 2.5vw, 1.55rem) clamp(1.15rem, 3vw, 1.65rem);
 }
 
+.policyConfiguration {
+  text-align: left;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.policyConfigurationTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.policyConfigurationEyebrow {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.policyConfigurationTitle {
+  margin: 0.5rem 0 0.35rem;
+  color: var(--text-primary);
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  letter-spacing: -0.03em;
+}
+
+.policyConfigurationFacts {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1.25rem 0 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.policyConfigurationFacts p {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.policyConfigurationFacts strong { color: var(--text-primary); }
+.policyConfigurationFacts span { color: var(--text-secondary); }
+
+.policyConfigurationDetails {
+  margin-top: 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.policyConfigurationDetails summary { cursor: pointer; }
+.policyConfigurationDetails p { overflow-wrap: anywhere; }
+
 .policyGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));

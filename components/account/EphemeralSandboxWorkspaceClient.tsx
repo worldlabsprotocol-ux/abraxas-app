@@ -61,8 +61,10 @@ import { mapGuidedProgressReceiptValidation } from "@/lib/developers/mapGuidedPr
 import type { GuidedIntegrationJourneyStepId } from "@/lib/developers/guidedIntegrationJourney";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import {
+  matchHomeBuilderPolicy,
   readHomeBuilderDiscoveryIntent,
   readHomepageCreateAppUnlocked,
+  writeHomeBuilderDiscoveryIntent,
   writeHomepageCreateAppUnlocked,
 } from "@/lib/home/homeBuilderDiscovery";
 import { applyHomepageInlineIntegrationSearch } from "@/lib/developers/homepageInlineIntegration";
@@ -186,6 +188,8 @@ export function EphemeralSandboxWorkspaceClient({
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [policyAvailability, setPolicyAvailability] = useState<SandboxPolicyAvailability[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState("");
+  const [policySelectionConfirmed, setPolicySelectionConfirmed] = useState(false);
+  const [policyPickerOpen, setPolicyPickerOpen] = useState(false);
   const [serverAuthoritativeStudioPack, setServerAuthoritativeStudioPack] = useState<string | null>(null);
   const [serverPolicyLocked, setServerPolicyLocked] = useState(false);
   const [serverSessionAuthenticated, setServerSessionAuthenticated] = useState(false);
@@ -360,15 +364,16 @@ export function EphemeralSandboxWorkspaceClient({
   }, [integrationContinuityActive, isHomepageEmbed, searchParams]);
 
   useEffect(() => {
-    const intent = readHomeBuilderDiscoveryIntent();
-    if (!intent || policies.length === 0) return;
-    const matched = policies.find(
-      (row) => inferPolicyPackFromPolicyId(row.policy_id)?.id === intent.policyPackId,
+    if (!serverPolicyLocked || !serverAuthoritativeStudioPack || policies.length === 0) return;
+    const pinned = policies.find(
+      (row) => inferPolicyPackFromPolicyId(row.policy_id)?.id === serverAuthoritativeStudioPack,
     );
-    if (matched) {
-      setSelectedPolicy((current) => current || matched.policy_id);
+    if (pinned) {
+      setSelectedPolicy(pinned.policy_id);
+      setPolicySelectionConfirmed(true);
+      setPolicyPickerOpen(false);
     }
-  }, [policies]);
+  }, [policies, serverAuthoritativeStudioPack, serverPolicyLocked]);
 
   useEffect(() => {
     const onSignInDialog = (event: Event) => {
@@ -396,8 +401,10 @@ export function EphemeralSandboxWorkspaceClient({
         const availability = json.availability ?? [];
         setPolicies(list);
         setPolicyAvailability(availability);
-        const defaultPolicy = firstSandboxPolicyIdWithVerification(list, availability) ?? "";
-        if (defaultPolicy) setSelectedPolicy(defaultPolicy);
+        const matched = matchHomeBuilderPolicy(list);
+        const defaultPolicy = matched?.policy_id ?? firstSandboxPolicyIdWithVerification(list, availability) ?? "";
+        if (defaultPolicy) setSelectedPolicy((current) => current || defaultPolicy);
+        if (matched) setPolicySelectionConfirmed(true);
       })
       .catch(() => setPolicies([]));
   }, [hydrate]);
@@ -1218,11 +1225,41 @@ export function EphemeralSandboxWorkspaceClient({
         && phase !== "submitting"
         && phase !== "disclosure" ? (
           <>
+            {isHomepageEmbed && policySelectionConfirmed && !policyPickerOpen && selectedPolicyMeta ? (
+              <div className={styles.policyConfiguration}>
+                <div className={styles.policyConfigurationTop}>
+                  <span className={styles.policyConfigurationEyebrow}>Your test configuration</span>
+                  <span className={styles.policyBadgeReady}>Sandbox</span>
+                </div>
+                <h2 className={styles.policyConfigurationTitle}>{selectedPolicyMeta.label}</h2>
+                <p className={styles.muted}>
+                  {selectedPolicy === "wallet_control"
+                    ? "Confirm wallet control before your application allows an action."
+                    : selectedPolicyMeta.description}
+                </p>
+                <div className={styles.policyConfigurationFacts}>
+                  <p><strong>What Abraxas checks</strong><span>{selectedPolicyMeta.label}</span></p>
+                  <p><strong>If verification fails</strong><span>Your application must block the action.</span></p>
+                </div>
+                {!serverPolicyLocked ? (
+                  <button type="button" className={styles.linkBtn} onClick={() => { setPolicySelectionConfirmed(false); setPolicyPickerOpen(true); }}>
+                    Change policy
+                  </button>
+                ) : null}
+                <details className={styles.policyConfigurationDetails}>
+                  <summary>Technical details</summary>
+                  <p>Policy: {selectedPolicy} · Workspace expires {new Date(workspace.expires_at).toLocaleString()}</p>
+                </details>
+              </div>
+            ) : (
+              <>
             <h2 className={styles.sectionTitle}>Choose a policy</h2>
-            <p className={`${styles.meta} ${styles.muted}`}>
-              Workspace {workspace.workspace_id.slice(0, 18)}… · expires{" "}
-              {new Date(workspace.expires_at).toLocaleString()}
-            </p>
+            {!isHomepageEmbed ? (
+              <p className={styles.muted}>
+                Workspace {workspace.workspace_id.slice(0, 18)}… · expires{" "}
+                {new Date(workspace.expires_at).toLocaleString()}
+              </p>
+            ) : null}
             {publicKey ? null : (
               <p className={styles.note}>Connect your wallet to authorize test verification when you are ready.</p>
             )}
@@ -1237,10 +1274,22 @@ export function EphemeralSandboxWorkspaceClient({
                     type="button"
                     role="radio"
                     aria-checked={selected}
-                    disabled={busy}
+                    disabled={busy || serverPolicyLocked}
                     className={selected ? styles.policyCardActive : styles.policyCard}
                     onClick={() => {
+                      if (serverPolicyLocked) return;
                       setSelectedPolicy(p.policy_id);
+                      setPolicySelectionConfirmed(true);
+                      setPolicyPickerOpen(false);
+                      const intent = readHomeBuilderDiscoveryIntent();
+                      const pack = inferPolicyPackFromPolicyId(p.policy_id);
+                      if (intent && pack) {
+                        writeHomeBuilderDiscoveryIntent({
+                          platform: intent.platform,
+                          policyPackId: pack.id,
+                          integrationStack: intent.integrationStack,
+                        });
+                      }
                       setPreparedEvidence(null);
                       setPresentationCommitId(null);
                       setPresentationDisclosure(null);
@@ -1260,7 +1309,10 @@ export function EphemeralSandboxWorkspaceClient({
                 );
               })}
             </div>
-            {selectedPolicy && policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience) ? (
+              </>
+            )}
+            {selectedPolicy && (!isHomepageEmbed || selectedPolicy === "age_21_retail")
+              && policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience) ? (
               <p className={styles.note}>
                 {policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience)}
               </p>
@@ -1273,7 +1325,7 @@ export function EphemeralSandboxWorkspaceClient({
                 <button
                   type="button"
                   className={styles.verifyBtn}
-                  disabled={busy || !selectedPolicy}
+                  disabled={busy || !selectedPolicy || (isHomepageEmbed && !policySelectionConfirmed)}
                   onClick={() => void prepareAgePresentation()}
                 >
                   Prepare presentation
@@ -1284,6 +1336,7 @@ export function EphemeralSandboxWorkspaceClient({
                   className={styles.verifyBtn}
                   disabled={
                     busy || !selectedPolicy || !signMessage || !selectedAvailability?.can_request_verification
+                    || (isHomepageEmbed && !policySelectionConfirmed)
                   }
                   onClick={() => void beginVerificationReview()}
                 >
