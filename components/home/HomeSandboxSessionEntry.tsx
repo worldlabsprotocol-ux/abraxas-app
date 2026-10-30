@@ -116,7 +116,7 @@ export function HomeSandboxSessionEntry() {
     <div className="abx-sandbox-entry">
 
       {mode === "loading" ? (
-        <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
+        <BuilderActiveTask taskKey="check-workspace" title="Checking workspace availability" state="pending" status="Loading your sandbox session" />
       ) : null}
 
       {mode === "native_disabled" || mode === "native_unavailable" ? (
@@ -154,26 +154,26 @@ export function HomeSandboxSessionEntry() {
       ) : null}
 
       {mode === "needs_workspace" ? (
-        <div className="abx-sandbox-entry__sandbox">
-          <p className="abx-sandbox-entry__auth-lead">{SANDBOX_WORKSPACE_STEP_LEAD}</p>
-          <Btn size="sm" disabled={busy} onClick={() => void enrollSandbox()}>
-            {busy ? "Setting up…" : HOMEPAGE_CTA_SET_UP_WORKSPACE}
-          </Btn>
-          {error ? <p className="abx-sandbox-entry__error">{error}</p> : null}
-        </div>
+        <BuilderActiveTask
+          taskKey="setup-workspace"
+          title="Set up your test workspace"
+          description={SANDBOX_WORKSPACE_STEP_LEAD}
+          state={busy ? "pending" : error ? "failure" : "ready"}
+          status={busy ? "Setting up workspace" : undefined}
+          error={error}
+          action={<Btn size="sm" disabled={busy} loading={busy} onClick={() => void enrollSandbox()}>{HOMEPAGE_CTA_SET_UP_WORKSPACE}</Btn>}
+        />
       ) : null}
 
       {mode === "has_workspace" ? (
-        <div className="abx-sandbox-entry__sandbox">
-          <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="/developers/launchpad">
-            {HOMEPAGE_CTA_OPEN_WORKSPACE}
-          </Link>
-        </div>
+        <BuilderActiveTask
+          taskKey="workspace-ready"
+          title="Your workspace is ready"
+          description="Continue building in Launchpad."
+          state="success"
+          action={<Btn href="/developers/launchpad" size="sm">{HOMEPAGE_CTA_OPEN_WORKSPACE}</Btn>}
+        />
       ) : null}
-
-      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" && mode !== "ephemeral_sandbox_ready"
-        ? demoLink
-        : null}
     </div>
   );
 }
