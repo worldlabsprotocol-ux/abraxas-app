@@ -23,7 +23,8 @@ describe("welcome route continuity", () => {
     const unified = read("components/home/HomeUnifiedProductEntry.tsx");
     expect(unified).toContain("HomeNativeSandboxChapter");
     const chapter = read("components/home/HomeNativeSandboxChapter.tsx");
-    expect(chapter).toContain('id="start-sandbox"');
+    expect(unified).toContain('id="start-sandbox"');
+    expect(chapter).not.toContain('id="start-sandbox"');
     expect(chapter).toContain("HomeSandboxSessionEntry");
     expect(chapter).not.toContain("AbraxasHeroCenterpiece");
     expect(chapter).not.toContain("HomeTrustPipelineStrip");
