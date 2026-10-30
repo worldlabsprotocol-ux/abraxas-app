@@ -87,6 +87,7 @@ import {
   resolveStudioDefaultCallbackUrl,
 } from "@/lib/developers/studioDefaultCallbackUrl";
 import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
+import { shouldRestoreStudioPolicySelection } from "@/lib/partner/integrationStudio/policySelection";
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
 import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
@@ -191,6 +192,14 @@ export function IntegrationStudioClient({
       return INTEGRATION_STUDIO_OUTCOMES[outcome].defaultPackId;
     }
     return null;
+  });
+  const [policySelected, setPolicySelected] = useState(() => {
+    const requested = searchParams.get("pack");
+    const outcome = searchParams.get("outcome");
+    return Boolean(
+      (requested && isPolicyPackId(requested))
+      || (outcome && isIntegrationStudioOutcomeId(outcome)),
+    );
   });
   const [pathId, setPathId] = useState<IntegrationStudioPathId>(() => {
     const requested = searchParams.get("path");
@@ -381,7 +390,10 @@ export function IntegrationStudioClient({
     const requestedPlatform = params.get("platform");
     const requestedCapabilities = params.getAll("capability").filter(isStarterKitOptionalCapability);
     const catalogVersion = params.get("catalog_version");
-    if (pack && isPolicyPackId(pack)) setPackId(pack);
+    if (pack && isPolicyPackId(pack)) {
+      setPackId(pack);
+      setPolicySelected(true);
+    }
     if (path && isIntegrationStudioPathId(path)) setPathId(path);
     if (requestedPlatform && isStarterKitPlatform(requestedPlatform)) setPlatform(requestedPlatform);
     if (requestedCapabilities.length > 0) setOptionalCaps(requestedCapabilities);
@@ -391,6 +403,7 @@ export function IntegrationStudioClient({
       const mapped = INTEGRATION_STUDIO_OUTCOMES[outcome];
       setPathId(mapped.defaultPathId);
       setPackId(mapped.defaultPackId);
+      setPolicySelected(true);
     }
     const appParam = params.get("app")?.trim();
     if (appParam) setUrlAppId(appParam);
@@ -423,6 +436,7 @@ export function IntegrationStudioClient({
     if (!embeddedInDeveloperWorkspace || variant !== "embedded_workspace") return;
     if (authoritativePolicyId && isPolicyPackId(authoritativePolicyId)) {
       setPackId((current) => current ?? authoritativePolicyId);
+      setPolicySelected(true);
     }
     if (walletProofRecorded && typeof window !== "undefined") {
       if (beginnerHomepageEmbed) {
@@ -491,6 +505,7 @@ export function IntegrationStudioClient({
         const inferred = inferPolicyPackFromPolicyId(chosen.policy_id);
         if (inferred) {
           setPackId(inferred.id);
+          setPolicySelected(true);
         }
       }
     } catch {
@@ -531,7 +546,10 @@ export function IntegrationStudioClient({
   useEffect(() => {
     if (!beginnerSurface || packId) return;
     const selected = readHomeBuilderDiscoveryIntent()?.policyPackId;
-    setPackId(selected && isPolicyPackId(selected) ? selected : "wallet_control");
+    if (selected && isPolicyPackId(selected)) {
+      setPackId(selected);
+      setPolicySelected(true);
+    }
   }, [beginnerSurface, packId]);
 
   useEffect(() => {
@@ -539,27 +557,50 @@ export function IntegrationStudioClient({
     try {
       const raw = window.sessionStorage.getItem(STUDIO_DRAFT_STORAGE_KEY);
       if (!raw) return;
-      const draft = JSON.parse(raw) as { packId?: string; pathId?: string };
+      const draft = JSON.parse(raw) as { packId?: string; pathId?: string; policy_selected?: boolean };
       if (draft.packId && isPolicyPackId(draft.packId)) {
-        setPackId((current) => (current ?? (draft.packId as PolicyPackId)));
+        const outcome = searchParams.get("outcome");
+        const explicitIntent =
+          draft.policy_selected === true
+          || (searchParams.get("pack") === draft.packId)
+          || (outcome && isIntegrationStudioOutcomeId(outcome)
+            && INTEGRATION_STUDIO_OUTCOMES[outcome].defaultPackId === draft.packId)
+          || readHomeBuilderDiscoveryIntent()?.policyPackId === draft.packId;
+        const shouldRestorePolicy = shouldRestoreStudioPolicySelection({
+          packId: draft.packId,
+          beginnerSurface,
+          selectionRecorded: draft.policy_selected === true,
+          explicitIntent: Boolean(explicitIntent),
+        });
+        if (shouldRestorePolicy) {
+          setPackId((current) => (current ?? (draft.packId as PolicyPackId)));
+          if (
+            draft.policy_selected === true
+            || draft.packId !== "wallet_control"
+            || explicitIntent
+            || !beginnerSurface
+          ) {
+            setPolicySelected(true);
+          }
+        }
       }
       if (draft.pathId && isIntegrationStudioPathId(draft.pathId)) setPathId(draft.pathId);
     } catch {
       /* ignore corrupt draft */
     }
-  }, []);
+  }, [beginnerSurface, searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       window.sessionStorage.setItem(
         STUDIO_DRAFT_STORAGE_KEY,
-        JSON.stringify({ packId, pathId }),
+        JSON.stringify({ packId, pathId, policy_selected: policySelected }),
       );
     } catch {
       /* ignore quota */
     }
-  }, [packId, pathId]);
+  }, [packId, pathId, policySelected]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -573,7 +614,7 @@ export function IntegrationStudioClient({
 
   async function createSandbox() {
     setError("");
-    if (!packId) {
+    if (!packId || !isPolicyPackId(packId)) {
       setError("Choose a policy pack on the Policy stage before creating a sandbox.");
       return;
     }
@@ -640,6 +681,7 @@ export function IntegrationStudioClient({
         }
         if (isPolicyPackId(data.application.policy_template_id)) {
           setPackId(data.application.policy_template_id);
+          setPolicySelected(true);
         }
         setCreated(data.application);
         void recordGtmClientEvent("sandbox_created", {
@@ -796,10 +838,15 @@ export function IntegrationStudioClient({
           walletAuthorized={walletAuthorized}
           configuredAppId={configuredAppId}
           packId={packId}
+          policyOptions={packs.map((pack) => ({ id: pack.pack_id, label: pack.display_name }))}
           pathId={pathId}
           policyId={beginnerPolicyId}
           applicationName={applicationName}
           onApplicationNameChange={setApplicationName}
+          onPolicyPackChange={(nextPack) => {
+            setPackId(nextPack);
+            setPolicySelected(true);
+          }}
           onCreateSandbox={() => void createSandbox()}
           submitting={submitting}
           createError={error}
@@ -892,7 +939,10 @@ export function IntegrationStudioClient({
                   : "abx-studio-pack-chip"
               }
               aria-pressed={pack.pack_id === packId}
-              onClick={() => setPackId(pack.pack_id)}
+              onClick={() => {
+                setPackId(pack.pack_id);
+                setPolicySelected(true);
+              }}
             >
               {pack.display_name}
             </button>
@@ -928,6 +978,7 @@ export function IntegrationStudioClient({
               setSelectedOutcomeId(outcomeId);
               setPathId(nextPath);
               setPackId(nextPack);
+              setPolicySelected(true);
             }}
           />
           <PolicyFitPlanner
@@ -935,6 +986,7 @@ export function IntegrationStudioClient({
             onApply={(selection) => {
               if (!isPolicyPackId(selection.packId)) return;
               setPackId(selection.packId);
+              setPolicySelected(true);
               setPathId(selection.pathId);
               setOptionalCaps(selection.capabilities);
             }}
@@ -1654,4 +1706,3 @@ export function IntegrationStudioClient({
     </>
   );
 }
-
