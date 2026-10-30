@@ -1807,3 +1807,11 @@
     font-size: 0.68rem !important;
   }
 }
+
+/* The homepage spine is the task container; avoid a second card inside it. */
+.abx-native-sandbox-chapter__panel--solo {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}

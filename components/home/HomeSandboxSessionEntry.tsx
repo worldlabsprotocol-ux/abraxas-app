@@ -8,9 +8,9 @@ import { isHomeBuilderDiscoveryComplete } from "@/lib/home/homeBuilderDiscovery"
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
+import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
 import { HomeSandboxAccountAuth } from "@/components/home/HomeSandboxAccountAuth";
 import { HomeInlineSandboxWorkspace } from "@/components/home/HomeInlineSandboxWorkspace";
-import { HomeWorkspaceProgressSteps } from "@/components/home/HomeWorkspaceProgressSteps";
 import {
   HOMEPAGE_CTA_OPEN_WORKSPACE,
   HOMEPAGE_CTA_SET_UP_WORKSPACE,
@@ -102,27 +102,21 @@ export function HomeSandboxSessionEntry() {
     </Link>
   );
 
-  const showPreAuthSteps =
-    discoveryComplete
-    && mode !== "ephemeral_sandbox_ready"
-    && mode !== "native_disabled"
-    && mode !== "native_unavailable";
-
   const showDiscovery =
     !discoveryComplete
     && mode !== "native_disabled"
     && mode !== "native_unavailable"
     && mode !== "loading";
 
+  if (showDiscovery) {
+    return <div className="abx-sandbox-entry"><HomeBuilderDiscovery onComplete={() => setDiscoveryComplete(true)} /></div>;
+  }
+
   return (
     <div className="abx-sandbox-entry">
-      {showDiscovery ? (
-        <HomeBuilderDiscovery onComplete={() => setDiscoveryComplete(true)} />
-      ) : null}
-      {showPreAuthSteps ? <HomeWorkspaceProgressSteps mode={mode} /> : null}
 
       {mode === "loading" ? (
-        <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
+        <BuilderActiveTask taskKey="check-workspace" title="Checking workspace availability" state="pending" status="Loading your sandbox session" />
       ) : null}
 
       {mode === "native_disabled" || mode === "native_unavailable" ? (
@@ -144,13 +138,9 @@ export function HomeSandboxSessionEntry() {
 
       {mode === "needs_account" ? (
         authMode === "ephemeral_wallet" ? (
-          <div className="abx-sandbox-entry__auth">
-            <NativeAccountSolanaPanel
-              onSuccess={() => {
-                void refresh();
-              }}
-            />
-          </div>
+          <BuilderActiveTask taskKey="authorize-wallet" title="Connect to continue" description="Use your Solana wallet to create a test workspace.">
+            <NativeAccountSolanaPanel hideIntro onSuccess={() => { void refresh(); }} />
+          </BuilderActiveTask>
         ) : (
           <HomeSandboxAccountAuth
             walletOnlyHint={walletOnlyWithoutAccount}
@@ -164,26 +154,26 @@ export function HomeSandboxSessionEntry() {
       ) : null}
 
       {mode === "needs_workspace" ? (
-        <div className="abx-sandbox-entry__sandbox">
-          <p className="abx-sandbox-entry__auth-lead">{SANDBOX_WORKSPACE_STEP_LEAD}</p>
-          <Btn size="sm" disabled={busy} onClick={() => void enrollSandbox()}>
-            {busy ? "Setting up…" : HOMEPAGE_CTA_SET_UP_WORKSPACE}
-          </Btn>
-          {error ? <p className="abx-sandbox-entry__error">{error}</p> : null}
-        </div>
+        <BuilderActiveTask
+          taskKey="setup-workspace"
+          title="Set up your test workspace"
+          description={SANDBOX_WORKSPACE_STEP_LEAD}
+          state={busy ? "pending" : error ? "failure" : "ready"}
+          status={busy ? "Setting up workspace" : undefined}
+          error={error}
+          action={<Btn size="sm" disabled={busy} loading={busy} onClick={() => void enrollSandbox()}>{HOMEPAGE_CTA_SET_UP_WORKSPACE}</Btn>}
+        />
       ) : null}
 
       {mode === "has_workspace" ? (
-        <div className="abx-sandbox-entry__sandbox">
-          <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="/developers/launchpad">
-            {HOMEPAGE_CTA_OPEN_WORKSPACE}
-          </Link>
-        </div>
+        <BuilderActiveTask
+          taskKey="workspace-ready"
+          title="Your workspace is ready"
+          description="Continue building in Launchpad."
+          state="success"
+          action={<Btn href="/developers/launchpad" size="sm">{HOMEPAGE_CTA_OPEN_WORKSPACE}</Btn>}
+        />
       ) : null}
-
-      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" && mode !== "ephemeral_sandbox_ready"
-        ? demoLink
-        : null}
     </div>
   );
 }

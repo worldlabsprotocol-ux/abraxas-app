@@ -19,7 +19,7 @@ type SessionState =
       solanaNetwork: string | null;
     };
 
-export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void }) {
+export function NativeAccountSolanaPanel({ onSuccess, hideIntro = false }: { onSuccess?: () => void; hideIntro?: boolean }) {
   const { publicKey } = useWallet();
   const [session, setSession] = useState<SessionState>({ loading: true });
   const [signInOpen, setSignInOpen] = useState(false);
@@ -91,10 +91,12 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
   if (!session.authenticated) {
     return (
       <>
+        {!hideIntro ? (
         <p style={{ margin: "0 0 0.75rem", fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
           Authorize with your Solana wallet to continue building. This temporary session does not create a
           permanent personal account.
         </p>
+        ) : null}
         <Btn size="sm" onClick={() => setSignInOpen(true)}>
           Continue with wallet
         </Btn>
