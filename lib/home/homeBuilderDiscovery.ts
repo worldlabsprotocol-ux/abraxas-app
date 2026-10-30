@@ -2,7 +2,7 @@
 // Homepage builder intent — integration discovery before mandatory wallet auth.
 
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
-import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { inferPolicyPackFromPolicyId, isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { HomeBuilderIntegrationStackId } from "@/lib/home/homeBuilderIntegrationStack";
 
 export type HomeBuilderPlatformId = "website" | "application" | "api" | "exploring";
@@ -27,6 +27,7 @@ function isIntegrationStackId(value: unknown): value is HomeBuilderIntegrationSt
 }
 
 export const HOME_BUILDER_DISCOVERY_STORAGE_KEY = "abx_home_builder_discovery_v1";
+const DISCOVERY_INTENT_MAX_AGE_MS = 60 * 60 * 1000;
 
 export const HOME_BUILDER_PLATFORMS: Array<{
   id: HomeBuilderPlatformId;
@@ -42,15 +43,21 @@ export const HOME_BUILDER_PLATFORMS: Array<{
 export function readHomeBuilderDiscoveryIntent(): HomeBuilderDiscoveryIntent | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.sessionStorage.getItem(HOME_BUILDER_DISCOVERY_STORAGE_KEY);
+    // A short-lived planning hint survives wallet sign-in in a new browser tab.
+    // The server still decides which policies can be verified or provisioned.
+    const raw = window.sessionStorage.getItem(HOME_BUILDER_DISCOVERY_STORAGE_KEY)
+      ?? window.localStorage.getItem(HOME_BUILDER_DISCOVERY_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<HomeBuilderDiscoveryIntent>;
-    if (!parsed.platform || !parsed.policyPackId || !isPolicyPackId(parsed.policyPackId)) return null;
+    const updatedAt = typeof parsed.updatedAt === "string" ? Date.parse(parsed.updatedAt) : NaN;
+    if (!Number.isFinite(updatedAt) || updatedAt > Date.now() || Date.now() - updatedAt > DISCOVERY_INTENT_MAX_AGE_MS) return null;
+    if (!HOME_BUILDER_PLATFORMS.some((item) => item.id === parsed.platform)
+      || !parsed.policyPackId || !isPolicyPackId(parsed.policyPackId)) return null;
     return {
-      platform: parsed.platform,
+      platform: parsed.platform as HomeBuilderPlatformId,
       policyPackId: parsed.policyPackId,
       integrationStack: isIntegrationStackId(parsed.integrationStack) ? parsed.integrationStack : null,
-      updatedAt: parsed.updatedAt ?? new Date().toISOString(),
+      updatedAt: parsed.updatedAt,
     };
   } catch {
     return null;
@@ -64,7 +71,18 @@ export function writeHomeBuilderDiscoveryIntent(intent: Omit<HomeBuilderDiscover
     updatedAt: new Date().toISOString(),
   };
   window.sessionStorage.setItem(HOME_BUILDER_DISCOVERY_STORAGE_KEY, JSON.stringify(payload));
+  try {
+    window.localStorage.setItem(HOME_BUILDER_DISCOVERY_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // Same-tab selection still works when cross-tab storage is unavailable.
+  }
   window.dispatchEvent(new CustomEvent("abraxas:home-builder-intent"));
+}
+
+/** Match the client choice only against policies returned by the authenticated server. */
+export function matchHomeBuilderPolicy<T extends { policy_id: string }>(policies: T[]): T | undefined {
+  const chosen = readHomeBuilderDiscoveryIntent()?.policyPackId;
+  return chosen ? policies.find((row) => inferPolicyPackFromPolicyId(row.policy_id)?.id === chosen) : undefined;
 }
 
 export function isHomeBuilderDiscoveryComplete(): boolean {
