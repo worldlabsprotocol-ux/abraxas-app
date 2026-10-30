@@ -138,13 +138,9 @@ export function HomeSandboxSessionEntry() {
 
       {mode === "needs_account" ? (
         authMode === "ephemeral_wallet" ? (
-          <div className="abx-sandbox-entry__auth">
-            <NativeAccountSolanaPanel
-              onSuccess={() => {
-                void refresh();
-              }}
-            />
-          </div>
+          <BuilderActiveTask taskKey="authorize-wallet" title="Connect to continue" description="Use your Solana wallet to create a test workspace.">
+            <NativeAccountSolanaPanel hideIntro onSuccess={() => { void refresh(); }} />
+          </BuilderActiveTask>
         ) : (
           <HomeSandboxAccountAuth
             walletOnlyHint={walletOnlyWithoutAccount}

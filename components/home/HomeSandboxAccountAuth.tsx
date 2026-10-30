@@ -32,7 +32,7 @@ export function HomeSandboxAccountAuth({
         </details>
       }
     >
-      <NativeAccountSolanaPanel onSuccess={() => void onAccountReady()} />
+      <NativeAccountSolanaPanel hideIntro onSuccess={() => void onAccountReady()} />
     </BuilderActiveTask>
   );
 }
