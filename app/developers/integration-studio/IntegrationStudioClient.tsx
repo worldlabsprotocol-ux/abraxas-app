@@ -439,8 +439,13 @@ export function IntegrationStudioClient({
 
   const refreshLaunchpadSession = useCallback(async () => {
     try {
-      const wallet = await fetchEphemeralWalletClientSession();
-      setWalletAuthorized(wallet.authenticated);
+      let walletAuthenticated = false;
+      try {
+        walletAuthenticated = (await fetchEphemeralWalletClientSession()).authenticated;
+      } catch {
+        // A wallet probe failure must not hide an existing partner session.
+      }
+      setWalletAuthorized(walletAuthenticated);
 
       const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
       const data = await res.json() as { authenticated?: boolean; partner_id?: string };
@@ -449,7 +454,7 @@ export function IntegrationStudioClient({
         const restored = await establishLaunchpadSessionWithAccount({});
         if (restored.ok) {
           authenticated = true;
-        } else if (!wallet.authenticated) {
+        } else if (!walletAuthenticated) {
           setSessionTechnicalDetail(
             restored.error
               ?? "Connect your wallet to continue. Partner console authorization restores automatically when your account has access.",
@@ -1649,3 +1654,4 @@ export function IntegrationStudioClient({
     </>
   );
 }
+

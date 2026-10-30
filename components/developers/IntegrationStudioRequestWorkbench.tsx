@@ -30,11 +30,13 @@ export function IntegrationStudioRequestWorkbench({
   pathId,
   policyId,
   beginnerSurface = false,
+  walletAuthorized = false,
 }: {
   packId: PolicyPackId | null;
   pathId: IntegrationStudioPathId;
   policyId: string | null;
   beginnerSurface?: boolean;
+  walletAuthorized?: boolean;
 }) {
   const { applicationId, signedIn, returnUrl, recordHttpTrace } = useIntegrationStudioOperational();
   const [scenarioId, setScenarioId] = useState<LaunchpadTestScenarioId>(
@@ -108,6 +110,19 @@ export function IntegrationStudioRequestWorkbench({
     );
   }
 
+  if (beginnerSurface && applicationId && !signedIn) {
+    return (
+      <BuilderActiveTask
+        taskKey="partner-access-needed"
+        testId="builder-partner-access-needed"
+        title="Partner access needed"
+        description={walletAuthorized
+          ? "Your wallet session is active. This test also needs access to its partner workspace."
+          : "Open the partner workspace to sign in and continue your test."}
+        action={<Btn href="/developers/launchpad" size="sm">Open partner workspace</Btn>}
+      />
+    );
+  }
   if (beginnerSurface) {
     const failed = Boolean(error || (outcome && outcome.tone !== "success"));
     return (
@@ -126,7 +141,6 @@ export function IntegrationStudioRequestWorkbench({
         ) : null}
       >
         {!applicationId ? <p className="abx-builder-journey-support">Create your test app first.</p> : null}
-        {applicationId && !signedIn ? <p className="abx-builder-journey-support">Sign in to run your test.</p> : null}
       </BuilderActiveTask>
     );
   }
@@ -227,3 +241,4 @@ export function IntegrationStudioRequestWorkbench({
     </ContentCard>
   );
 }
+

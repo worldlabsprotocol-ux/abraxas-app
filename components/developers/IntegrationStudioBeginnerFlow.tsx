@@ -103,6 +103,8 @@ export function IntegrationStudioBeginnerFlow({
       pathId={pathId}
       policyId={policyId}
       beginnerSurface
+      walletAuthorized={walletAuthorized}
     />
   );
 }
+
