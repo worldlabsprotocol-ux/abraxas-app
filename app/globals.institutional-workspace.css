@@ -941,3 +941,9 @@
   .abx-builder-active-task .abx-builder-journey-actions,
   .abx-builder-active-task .abx-builder-journey-actions > * { width: 100%; }
 }
+
+/* Keep the beginner journey at a reading width on desktop. */
+.abx-studio-workspace--beginner {
+  width: min(100%, 54rem);
+  margin-inline: auto;
+}

@@ -68,21 +68,17 @@ export function IntegrationStudioBeginnerFlow({
         description="Connect your wallet to continue."
         action={<Btn size="sm" onClick={onContinueWithWallet}>Continue with wallet</Btn>}
         advanced={
-          <>
+          <details
+            className="abx-builder-technical-panel"
+            open={showSessionTechnical}
+            onToggle={(event) => setShowSessionTechnical((event.target as HTMLDetailsElement).open)}
+          >
+            <summary className="abx-builder-technical-toggle">Technical details</summary>
+            {sessionTechnicalDetail ? <p>{sessionTechnicalDetail}</p> : null}
             <button type="button" className="abx-builder-inline-link" onClick={onRefreshSession}>
-              Check again
+              Check session again
             </button>
-            {sessionTechnicalDetail ? (
-              <details
-                className="abx-beginner-create-card__technical"
-                open={showSessionTechnical}
-                onToggle={(event) => setShowSessionTechnical((event.target as HTMLDetailsElement).open)}
-              >
-                <summary>Technical details</summary>
-                <p>{sessionTechnicalDetail}</p>
-              </details>
-            ) : null}
-          </>
+          </details>
         }
       />
     );
