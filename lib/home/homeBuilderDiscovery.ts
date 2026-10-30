@@ -57,7 +57,7 @@ export function readHomeBuilderDiscoveryIntent(): HomeBuilderDiscoveryIntent | n
       platform: parsed.platform as HomeBuilderPlatformId,
       policyPackId: parsed.policyPackId,
       integrationStack: isIntegrationStackId(parsed.integrationStack) ? parsed.integrationStack : null,
-      updatedAt: parsed.updatedAt,
+      updatedAt: parsed.updatedAt as string,
     };
   } catch {
     return null;
