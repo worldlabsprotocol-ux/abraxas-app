@@ -50,4 +50,3 @@ export function RedesignHome({ hero }: { hero: ReactNode }) {
     </div>
   );
 }
-
