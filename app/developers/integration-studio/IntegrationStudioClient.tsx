@@ -104,6 +104,7 @@ import {
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 const STUDIO_DRAFT_STORAGE_KEY = "abraxas_integration_studio_draft_v1";
+const BEGINNER_CHOICE_STORAGE_KEY = "abraxas_beginner_integration_choice_v1";
 
 const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   verify_with_abraxas: "Verify with Abraxas",
@@ -228,9 +229,23 @@ export function IntegrationStudioClient({
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
   const [resumeApp, setResumeApp] = useState<ResumableApp | null>(null);
   const [availableApps, setAvailableApps] = useState<ResumableApp[]>([]);
-  const [beginnerChoice, setBeginnerChoice] = useState<"choose" | "new" | "existing">("choose");
+  const [beginnerChoice, setBeginnerChoice] = useState<"choose" | "new" | "existing" | "example">("choose");
   const [beginnerSelectedAppId, setBeginnerSelectedAppId] = useState<string | null>(null);
   const [autoTestNewAppId, setAutoTestNewAppId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(BEGINNER_CHOICE_STORAGE_KEY) ?? "null") as { choice?: string; appId?: string } | null;
+      if (saved?.choice === "new" || saved?.choice === "existing" || saved?.choice === "example") setBeginnerChoice(saved.choice);
+      if (typeof saved?.appId === "string") setBeginnerSelectedAppId(saved.appId);
+    } catch { /* A damaged client hint cannot grant access. */ }
+  }, []);
+  const selectBeginnerChoice = (choice: "choose" | "new" | "existing" | "example") => {
+    const appId = choice === "new" || (choice === "existing" && beginnerChoice !== "existing") ? null : beginnerSelectedAppId;
+    if (choice === "new") setCreated(null);
+    setBeginnerSelectedAppId(appId);
+    setBeginnerChoice(choice);
+    window.sessionStorage.setItem(BEGINNER_CHOICE_STORAGE_KEY, JSON.stringify({ choice, appId }));
+  };
   const [resumePartnerId, setResumePartnerId] = useState("");
   const [urlAppId, setUrlAppId] = useState<string | null>(null);
   const [handoffNotice, setHandoffNotice] = useState("");
@@ -651,8 +666,8 @@ export function IntegrationStudioClient({
         }
         setCreated(data.application);
         if (beginnerSurface) {
-          setBeginnerChoice("new");
           setAutoTestNewAppId(data.application.application_id);
+          window.sessionStorage.setItem(BEGINNER_CHOICE_STORAGE_KEY, JSON.stringify({ choice: "existing", appId: data.application.application_id }));
         }
         void recordGtmClientEvent("sandbox_created", {
           recommended_path: pathId,
@@ -790,11 +805,16 @@ export function IntegrationStudioClient({
       : null;
 
   const beginnerExistingApp = availableApps.find((app) => app.id === beginnerSelectedAppId) ?? null;
-  const beginnerAppId = beginnerChoice === "new"
-    ? created?.application_id ?? null
-    : beginnerChoice === "existing" ? beginnerExistingApp?.id ?? null : null;
-  const beginnerPolicyId = beginnerChoice === "new"
-    ? created?.policy_id ?? null
+  useEffect(() => {
+    if (!beginnerSurface || !beginnerExistingApp || created?.application_id === beginnerExistingApp.id) return;
+    const inferred = inferPolicyPackFromPolicyId(beginnerExistingApp.policy_id);
+    if (inferred && inferred.id !== packId) setPackId(inferred.id);
+  }, [beginnerSurface, beginnerExistingApp, created?.application_id, packId]);
+  const beginnerAppId = (beginnerChoice === "new" || beginnerChoice === "example") && created
+    ? created.application_id
+    : (beginnerChoice === "existing" || beginnerChoice === "example") ? beginnerExistingApp?.id ?? null : null;
+  const beginnerPolicyId = created && beginnerAppId === created.application_id
+    ? created.policy_id
     : beginnerExistingApp?.policy_id ?? null;
 
   if (beginnerSurface) {
@@ -814,12 +834,13 @@ export function IntegrationStudioClient({
           configuredAppId={beginnerAppId}
           availableApps={availableApps}
           choice={beginnerChoice}
-          onChoiceChange={setBeginnerChoice}
+          onChoiceChange={selectBeginnerChoice}
           selectedAppId={beginnerSelectedAppId}
           onSelectedAppIdChange={(id) => {
             const app = availableApps.find((item) => item.id === id);
             if (!app) return;
             setBeginnerSelectedAppId(id);
+            window.sessionStorage.setItem(BEGINNER_CHOICE_STORAGE_KEY, JSON.stringify({ choice: beginnerChoice, appId: id }));
             setAutoTestNewAppId(id);
             const inferred = inferPolicyPackFromPolicyId(app.policy_id);
             setPackId(inferred?.id ?? null);

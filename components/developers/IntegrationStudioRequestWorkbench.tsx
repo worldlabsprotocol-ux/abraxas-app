@@ -32,6 +32,7 @@ export function IntegrationStudioRequestWorkbench({
   policyId,
   beginnerSurface = false,
   autoRunOnReady = false,
+  startWithExample = false,
   onAutoRunConsumed,
   onRefreshSession,
 }: {
@@ -40,6 +41,7 @@ export function IntegrationStudioRequestWorkbench({
   policyId: string | null;
   beginnerSurface?: boolean;
   autoRunOnReady?: boolean;
+  startWithExample?: boolean;
   onAutoRunConsumed?: () => void;
   onRefreshSession?: () => void | Promise<void>;
 }) {
@@ -123,6 +125,7 @@ export function IntegrationStudioRequestWorkbench({
         returnUrl={returnUrl}
         outcome={outcome!}
         testSucceeded
+        startWithExample={startWithExample}
       />
     );
   }

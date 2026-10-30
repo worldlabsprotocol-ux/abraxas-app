@@ -9,7 +9,7 @@ import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 type ExistingApp = { id: string; application_name: string; policy_id: string };
-type Choice = "choose" | "new" | "existing";
+type Choice = "choose" | "new" | "existing" | "example";
 
 export function IntegrationStudioBeginnerFlow({
   sessionChecked, signedIn, walletAuthorized, configuredAppId, availableApps, choice,
@@ -65,6 +65,7 @@ export function IntegrationStudioBeginnerFlow({
       action={<div className="abx-builder-choice-list">
         <button type="button" onClick={() => onChoiceChange("new")}><strong>Create a new integration</strong><span>Set up a sandbox app and test it.</span></button>
         <button type="button" onClick={() => onChoiceChange("existing")}><strong>Connect an existing application</strong><span>Choose an app in this workspace.</span></button>
+        <button type="button" onClick={() => onChoiceChange("example")}><strong>Try an example</strong><span>Local developer setup after a sandbox test.</span></button>
       </div>}
       advanced={<details className="abx-builder-technical-panel"><summary className="abx-builder-technical-toggle">Developer example</summary><p>The reference application runs locally and requires developer setup. Connect an application first, then open the example.</p></details>}
     />;
@@ -82,12 +83,12 @@ export function IntegrationStudioBeginnerFlow({
     />;
   }
 
-  if (choice === "new" && !configuredAppId) {
+  if ((choice === "new" || choice === "example") && !configuredAppId) {
     return <BeginnerCreateTestAppPanel workspaceStatusLine={workspaceStatusLine} applicationName={applicationName}
       onApplicationNameChange={onApplicationNameChange} onSubmit={onCreateSandbox} submitting={submitting} error={createError} onBack={() => onChoiceChange("choose")} />;
   }
 
   return <IntegrationStudioRequestWorkbench packId={packId} pathId={pathId} policyId={policyId}
-    beginnerSurface autoRunOnReady={autoRunTest} onAutoRunConsumed={onAutoRunTestConsumed}
+    beginnerSurface autoRunOnReady={autoRunTest} startWithExample={choice === "example"} onAutoRunConsumed={onAutoRunTestConsumed}
     onRefreshSession={onRefreshSession} />;
 }

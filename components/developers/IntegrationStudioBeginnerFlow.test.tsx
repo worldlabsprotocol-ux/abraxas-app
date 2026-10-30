@@ -33,6 +33,12 @@ describe("beginner integration choice", () => {
     fireEvent.click(screen.getByRole("button", { name: /Create a new integration/i }));
     expect(base.onChoiceChange).toHaveBeenCalledWith("new");
   });
+  it("offers an honest local example path", () => {
+    render(<IntegrationStudioBeginnerFlow {...base} />);
+    fireEvent.click(screen.getByRole("button", { name: /Try an example/i }));
+    expect(base.onChoiceChange).toHaveBeenCalledWith("example");
+    expect(screen.getByText(/Local developer setup/i)).toBeInTheDocument();
+  });
   it("offers only applications supplied by the authenticated workspace", () => {
     render(<IntegrationStudioBeginnerFlow {...base} choice="existing" />);
     fireEvent.click(screen.getByRole("button", { name: /My app/i }));
