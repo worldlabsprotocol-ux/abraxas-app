@@ -45,7 +45,7 @@ import styles from "./SolanaAccountSignInDialog.module.css";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const CONNECT_WALLET_DISCLAIMER =
-  "Connect your wallet, review the sign-in request, then approve the message in Phantom.";
+  "Connect your wallet, review the sign-in request, then approve the message in your wallet.";
 
 type SignInReviewChallenge = EphemeralWalletSignInChallenge;
 
@@ -728,3 +728,4 @@ export function SolanaAccountSignInDialog({
     </div>
   );
 }
+
