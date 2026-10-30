@@ -866,7 +866,8 @@
   margin-bottom: 0.85rem;
 }
 
-.abx-beginner-create-card__field input {
+.abx-beginner-create-card__field input,
+.abx-beginner-create-card__field select {
   width: 100%;
   padding: 0.55rem 0.7rem;
   border-radius: 10px;

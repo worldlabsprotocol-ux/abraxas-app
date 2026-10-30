@@ -5,7 +5,7 @@ import { BeginnerCreateTestAppPanel } from "@/components/developers/BeginnerCrea
 import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { Btn } from "@/components/redesign/ui";
-import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { inferPolicyPackFromPolicyId, resolvePolicyPack, type PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 export function IntegrationStudioBeginnerFlow({
@@ -14,10 +14,12 @@ export function IntegrationStudioBeginnerFlow({
   walletAuthorized,
   configuredAppId,
   packId,
+  policyOptions,
   pathId,
   policyId,
   applicationName,
   onApplicationNameChange,
+  onPolicyPackChange,
   onCreateSandbox,
   submitting,
   createError,
@@ -32,10 +34,12 @@ export function IntegrationStudioBeginnerFlow({
   walletAuthorized: boolean;
   configuredAppId: string | null;
   packId: PolicyPackId | null;
+  policyOptions: Array<{ id: PolicyPackId; label: string }>;
   pathId: IntegrationStudioPathId;
   policyId: string | null;
   applicationName: string;
   onApplicationNameChange: (value: string) => void;
+  onPolicyPackChange: (policyPackId: PolicyPackId) => void;
   onCreateSandbox: () => void;
   submitting: boolean;
   createError: string;
@@ -46,6 +50,12 @@ export function IntegrationStudioBeginnerFlow({
 }) {
   const builderAuthorized = signedIn || walletAuthorized;
   const [showSessionTechnical, setShowSessionTechnical] = useState(false);
+  const boundPack = policyId
+    ? inferPolicyPackFromPolicyId(policyId)
+    : packId
+      ? resolvePolicyPack(packId)
+      : null;
+  const displayedPolicy = boundPack?.display_name ?? policyId;
 
   if (!sessionChecked) {
     return (
@@ -80,7 +90,9 @@ export function IntegrationStudioBeginnerFlow({
             </button>
           </details>
         }
-      />
+      >
+        {displayedPolicy ? <p>Selected policy: <strong>{displayedPolicy}</strong></p> : null}
+      </BuilderActiveTask>
     );
   }
 
@@ -90,6 +102,9 @@ export function IntegrationStudioBeginnerFlow({
         workspaceStatusLine={workspaceStatusLine}
         applicationName={applicationName}
         onApplicationNameChange={onApplicationNameChange}
+        policyPackId={packId}
+        policyOptions={policyOptions}
+        onPolicyPackChange={onPolicyPackChange}
         onSubmit={onCreateSandbox}
         submitting={submitting}
         error={createError}
@@ -98,13 +113,23 @@ export function IntegrationStudioBeginnerFlow({
   }
 
   return (
-    <IntegrationStudioRequestWorkbench
-      packId={packId}
-      pathId={pathId}
-      policyId={policyId}
-      beginnerSurface
-      onRefreshSession={onRefreshSession}
-    />
+    <>
+      {displayedPolicy ? (
+        <div className="abx-builder-journey-shell">
+          <div className="abx-builder-journey-shell__inner">
+            <p className="abx-builder-journey-support">
+              This test app is configured to verify <strong>{displayedPolicy}</strong>.
+            </p>
+          </div>
+        </div>
+      ) : null}
+      <IntegrationStudioRequestWorkbench
+        packId={boundPack?.id ?? packId}
+        pathId={pathId}
+        policyId={policyId}
+        beginnerSurface
+        onRefreshSession={onRefreshSession}
+      />
+    </>
   );
 }
-

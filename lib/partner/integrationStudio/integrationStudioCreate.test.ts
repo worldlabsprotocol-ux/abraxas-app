@@ -121,6 +121,21 @@ describe("Integration Studio self-service sandbox create", () => {
     }));
   });
 
+  it("provisions the explicitly selected policy template", async () => {
+    const { POST } = await import("@/app/api/developers/integration-studio/route");
+    const res = await POST(post({
+      application_name: "Adult sandbox",
+      policy_template_id: "age_18_retail",
+      return_url: "http://localhost:3000/callback",
+    }));
+
+    expect(res.status).toBe(200);
+    expect(provisionMock).toHaveBeenCalledWith(expect.objectContaining({
+      partnerId: "acme",
+      policyTemplateId: "age_18_retail",
+    }));
+  });
+
   it("creates an isolated sandbox for a new browser without zkLogin or an existing API key", async () => {
     resolvePartnerConsoleSessionMock.mockResolvedValue(null);
     const { POST } = await import("@/app/api/developers/integration-studio/route");
@@ -162,6 +177,25 @@ describe("Integration Studio self-service sandbox create", () => {
       policy_id: "acme-forged-policy-v99",
     }));
     expect(res.status).toBe(403);
+    expect(provisionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported or conflicting client policy selections", async () => {
+    const { POST } = await import("@/app/api/developers/integration-studio/route");
+    const unsupported = await POST(post({
+      application_name: "Retail sandbox",
+      policy_template_id: "unsupported_policy",
+      return_url: "http://localhost:3000/callback",
+    }));
+    expect(unsupported.status).toBe(400);
+
+    const conflicting = await POST(post({
+      application_name: "Retail sandbox",
+      policy_template_id: "age_21_retail",
+      pack_id: "wallet_control",
+      return_url: "http://localhost:3000/callback",
+    }));
+    expect(conflicting.status).toBe(400);
     expect(provisionMock).not.toHaveBeenCalled();
   });
 

@@ -29,4 +29,18 @@ describe("Integration Studio sandbox stage", () => {
     expect(client).toContain("beginnerHomepageEmbed");
     expect(client).toContain("studio-${sandboxId}-${packId}");
   });
+
+  it("does not invent a default policy and restores the authorized app binding", () => {
+    const client = readFileSync(
+      join(ROOT, "app/developers/integration-studio/IntegrationStudioClient.tsx"),
+      "utf8",
+    );
+    expect(client).toContain("if (selected && isPolicyPackId(selected)) {");
+    expect(client).not.toContain('selected : "wallet_control"');
+    expect(client).toContain("const chosen = fromUrl ?? apps[0] ?? null;");
+    expect(client).toContain("if (inferred) {");
+    expect(client).toContain("setPackId(inferred.id)");
+    expect(client).toContain("policy_selected: policySelected");
+    expect(client).toContain("shouldRestoreStudioPolicySelection");
+  });
 });
