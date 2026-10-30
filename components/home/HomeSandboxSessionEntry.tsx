@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { HomeBuilderDiscovery } from "@/components/home/HomeBuilderDiscovery";
 import { isHomeBuilderDiscoveryComplete } from "@/lib/home/homeBuilderDiscovery";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
 import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
@@ -27,8 +27,12 @@ import { hasPersistentAccountSession, useHomeWorkspaceSession } from "@/lib/home
 import { PUBLIC_NAV_EXPLORE_HREF } from "@/lib/nav/publicNavConnectBehavior";
 import { focusHomepageBuilderWorkspace } from "@/lib/home/homepageWorkspaceFocus";
 
+const HomeBeginnerIntegrationStudio = dynamic(
+  () => import("@/app/developers/integration-studio/IntegrationStudioClient").then((module) => module.IntegrationStudioClient),
+  { ssr: false, loading: () => <BuilderActiveTask taskKey="open-builder" title="Opening your test app" state="pending" /> },
+);
+
 export function HomeSandboxSessionEntry() {
-  const router = useRouter();
   const { authMode, mode, overview, walletOnlyWithoutAccount, refresh } = useHomeWorkspaceSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,13 +92,13 @@ export function HomeSandboxSessionEntry() {
         return;
       }
       await refresh();
-      router.push("/developers/launchpad");
+      window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
     } catch {
       setError(mapSandboxEnrollError(undefined));
     } finally {
       setBusy(false);
     }
-  }, [overview, refresh, router]);
+  }, [overview, refresh]);
 
   const demoLink = (
     <Link className="abx-sandbox-entry__demo-link" href="/try">
@@ -166,13 +170,7 @@ export function HomeSandboxSessionEntry() {
       ) : null}
 
       {mode === "has_workspace" ? (
-        <BuilderActiveTask
-          taskKey="workspace-ready"
-          title="Your workspace is ready"
-          description="Continue building in Launchpad."
-          state="success"
-          action={<Btn href="/developers/launchpad" size="sm">{HOMEPAGE_CTA_OPEN_WORKSPACE}</Btn>}
-        />
+        <HomeBeginnerIntegrationStudio beginnerStandaloneSurface />
       ) : null}
     </div>
   );
@@ -185,7 +183,7 @@ export function HomeWorkspacePrimaryCta({ className }: { className?: string }) {
 
   if (mode === "has_workspace") {
     return (
-      <Link className={primaryClass} href="/developers/launchpad">
+      <Link className={primaryClass} href="#start-sandbox">
         {HOMEPAGE_CTA_OPEN_WORKSPACE}
       </Link>
     );

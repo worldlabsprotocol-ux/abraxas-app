@@ -2,9 +2,10 @@
 // Canonical four stage trust architecture (public storytelling, not live network state).
 
 import Image from "next/image";
+import { LIVING_SPHERE_BRAND } from "@/lib/brand/livingSphereBrandAssets";
 import { HomeProtocolVisualDisclosure } from "@/components/home/HomeProtocolVisualDisclosure";
 
-const EMBLEM = "/brand/official/abraxas-emblem-protocol-640.webp";
+const EMBLEM = LIVING_SPHERE_BRAND.hero.src;
 
 const INPUTS = ["Wallet", "Evidence", "Consent", "Policy request"] as const;
 

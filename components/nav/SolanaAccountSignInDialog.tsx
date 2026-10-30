@@ -672,7 +672,7 @@ export function SolanaAccountSignInDialog({
               disabled={pending || signInPending}
               onClick={() => void runSign()}
             >
-              {signInPending || phase === "verifying" ? "Waiting for wallet approval" : "Sign in Phantom"}
+              {signInPending || phase === "verifying" ? "Waiting for wallet approval" : `Sign in ${wallet?.adapter.name ?? "wallet"}`}
             </button>
           ) : null}
 
@@ -721,7 +721,7 @@ export function SolanaAccountSignInDialog({
 
         {walletConnected && phase === "connected" && !localError ? (
           <p className={styles.signInFootnote}>
-            Connection only links your wallet. Select <strong>Review sign-in request</strong>, then sign in Phantom.
+            Review the request, then approve it in your wallet.
           </p>
         ) : null}
       </div>

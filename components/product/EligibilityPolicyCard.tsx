@@ -35,6 +35,7 @@ export interface EligibilityPolicyCardProps {
   recommendedReason?: string;
   showTechnicalDetails?: boolean;
   compact?: boolean;
+  beginnerTile?: boolean;
 }
 
 const AVAILABILITY_LABELS: Record<PolicyCardAvailability, string> = {
@@ -81,6 +82,7 @@ export function EligibilityPolicyCard({
   recommendedReason,
   showTechnicalDetails = false,
   compact = false,
+  beginnerTile = false,
 }: EligibilityPolicyCardProps) {
   const [expanded, setExpanded] = useState(showTechnicalDetails);
   const interactive = Boolean(onSelect);
@@ -181,6 +183,30 @@ export function EligibilityPolicyCard({
     </>
   );
 
+  if (beginnerTile) {
+    return (
+      <article className={`abx-policy-choice ${selected ? "abx-policy-choice--selected" : ""}`}>
+        <button type="button" className="abx-policy-choice__select" onClick={onSelect}
+          aria-pressed={selected} disabled={!interactive}>
+          <span className="abx-policy-choice__top">
+            <strong>{title}</strong>
+            <span className="abx-policy-choice__tag">
+              {environment === "sandbox" ? "Sandbox" : "Available"}
+            </span>
+          </span>
+          <span className="abx-policy-choice__summary">{question}</span>
+        </button>
+        <details className="abx-policy-choice__details">
+          <summary>What is shared</summary>
+          <PrivacyDisclosureCard compact
+            requested={[{ label: question }]}
+            shared={[{ label: partnerReceives }]}
+            withheld={partnerDoesNotReceive.map((label) => ({ label }))} />
+          {technicalId ? <p className="abx-policy-choice__technical">Policy: {technicalId}</p> : null}
+        </details>
+      </article>
+    );
+  }
   return (
     <article style={shellStyle}>
       {interactive ? (

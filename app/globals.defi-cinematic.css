@@ -1815,3 +1815,13 @@
   border: 0;
   background: transparent;
 }
+
+/* One framed active task, matching the wallet sign-in surface. */
+.abx-native-sandbox-chapter--focused {
+  max-width: 52rem;
+  margin: 0 auto clamp(2rem, 5vw, 3rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}

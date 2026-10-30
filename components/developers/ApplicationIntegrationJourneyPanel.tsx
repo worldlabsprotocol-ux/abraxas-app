@@ -102,7 +102,7 @@ export function ApplicationIntegrationJourneyPanel({
         error?: string;
       };
       if (!res.ok || !data.ok || !data.acceptance) {
-        setPollError(data.error ?? "Could not read connection state");
+        setPollError("Could not check your connection. Try again.");
         return;
       }
       setAcceptance(data.acceptance);
@@ -162,7 +162,7 @@ export function ApplicationIntegrationJourneyPanel({
       const archive = data.kit?.archive_base64 ?? data.archive_base64;
       const filename = data.kit?.filename ?? data.filename ?? "abraxas-starter-kit.zip";
       if (!res.ok || !data.ok || !archive) {
-        setKitError(data.error ?? "Could not prepare files");
+        setKitError("Could not prepare your files. Try again.");
         return;
       }
       const binary = Uint8Array.from(atob(archive), (c) => c.charCodeAt(0));

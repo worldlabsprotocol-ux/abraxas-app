@@ -5,7 +5,7 @@ import { HomeSandboxSessionEntry } from "@/components/home/HomeSandboxSessionEnt
 
 export function HomeNativeSandboxChapter() {
   return (
-    <section id="start-sandbox" className="abx-native-sandbox-chapter abx-native-sandbox-chapter--focused" aria-label="Sandbox builder">
+    <section className="abx-native-sandbox-chapter abx-native-sandbox-chapter--focused" aria-label="Sandbox builder">
       <div className="abx-native-sandbox-chapter__panel abx-native-sandbox-chapter__panel--solo">
         <HomeSandboxSessionEntry />
       </div>

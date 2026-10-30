@@ -224,10 +224,6 @@ export function PartnerLaunchpadClient({
   const productionDomainVerified = Boolean(productionCallback && domainVerifications.some((verification) => {
     try { return verification.status === "verified" && new URL(productionCallback).hostname.toLowerCase() === verification.hostname.toLowerCase(); } catch { return false; }
   }));
-  const selectedPack = useMemo(
-    () => policies.find((policy) => policy.id === policyTemplateId) ?? null,
-    [policies, policyTemplateId],
-  );
   const institutionalFocus = useMemo(() => {
     if (activeApp?.policy_template_id === "sandbox_institutional_protocol_access") return true;
     if (policyTemplateId === "sandbox_institutional_protocol_access") return true;
@@ -504,7 +500,7 @@ export function PartnerLaunchpadClient({
     setError("");
     const result = await establishLaunchpadSessionWithApiKey(apiKeyInput);
     if (!result.ok) {
-      setError(result.error ?? "Sign in failed");
+      setError("Could not sign in. Check your sandbox key and try again.");
       return;
     }
     setApiKeyInput("");
@@ -527,7 +523,7 @@ export function PartnerLaunchpadClient({
           setShowOneTimeClaim(true);
           setError("One-time API key proof is required to link this application to your account.");
         } else {
-          setError(result.error ?? "Could not resume Launchpad");
+          setError(result.code === "invalid_input" ? "Choose an app to continue." : "Could not open your workspace. Try again.");
         }
         return;
       }
@@ -899,10 +895,9 @@ export function PartnerLaunchpadClient({
       )}
 
       {!authenticated && !workspace?.applications.length ? (
-        <ContentCard title="Sign in or create your first application">
+        <ContentCard title="Continue your workspace">
           <p style={bodyText}>
-            Signed in to Abraxas? Resume your sandbox with your account. API keys are for server integrations and
-            one-time membership linking — not repeated operator login.
+            Sign in to choose what your app checks.
           </p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
             {nativeAccountSignedIn ? (
@@ -920,7 +915,7 @@ export function PartnerLaunchpadClient({
               <p style={{ ...bodyText, fontSize: "0.72rem", color: "var(--text-muted)" }}>
                 {showOneTimeClaim
                   ? "Link this application once with the sandbox key shown at provisioning. After membership is granted, your account can resume without the full secret."
-                  : "Or paste a sandbox API key to sign in or provision a new workspace."}
+                  : "You can also use a sandbox key."}
               </p>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
                 <input
@@ -1024,7 +1019,7 @@ export function PartnerLaunchpadClient({
         </>
       )}
 
-      {step === "verify" && (
+      {step === "verify" && (authenticated || Boolean(workspace?.applications.length)) && (
         <ContentCard id={launchpadStagePanelDomId("verify")} title={institutionalFocus ? "Choose verification" : "What do you need to verify?"}>
           {institutionalFocus ? (
             <>
@@ -1065,12 +1060,11 @@ export function PartnerLaunchpadClient({
             </>
           ) : (
             <>
-          <p style={bodyText}>
-            Each pack answers one eligibility question with minimum disclosure. You receive a signed result, not holder profile data.
-          </p>
+          <p style={bodyText}>Choose one check for your app.</p>
           <div style={{ display: "grid", gap: "0.65rem" }}>
             {policiesForVerifyStep.map((policy) => (
               <EligibilityPolicyCard
+                beginnerTile
                 key={policy.id}
                 title={policy.label}
                 question={policy.user_explanation}
@@ -1105,22 +1099,6 @@ export function PartnerLaunchpadClient({
               </div>
             </button>
           </div>
-          {selectedPack && policyTemplateId !== CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && (
-            <div style={{ marginTop: "0.85rem", padding: "0.85rem", border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface-inset)" }}>
-              <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What the holder must prove</p>
-              <p style={bodyText}>{selectedPack.user_explanation}</p>
-              <p style={bodyText}>Claims: {(selectedPack.required_claims ?? []).join(", ") || "catalog claims"} · Assurance {selectedPack.minimum_assurance ?? "N/A"} · Receipt {selectedPack.receipt_lifetime_hours ?? "N/A"}h</p>
-              <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What the partner receives</p>
-              <p style={bodyText}>{selectedPack.partner_receives ?? selectedPack.disclosed_result}</p>
-              <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What Abraxas does not share</p>
-              <p style={bodyText}>{(selectedPack.partner_does_not_receive ?? []).join(", ")}</p>
-              {(selectedPack.intended_use_examples ?? []).length > 0 && (
-                <ul style={{ margin: "0 0 0.5rem", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
-                  {selectedPack.intended_use_examples!.map((example) => <li key={example}>{example}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
           {policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && (
             <div style={{ marginTop: "0.85rem", padding: "0.85rem", border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface-inset)" }}>
               <label style={labelStyle}>Policy name<input value={customPolicyName} onChange={(e) => setCustomPolicyName(e.target.value)} style={inputStyle} /></label>
