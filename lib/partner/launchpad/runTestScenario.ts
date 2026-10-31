@@ -9,7 +9,6 @@ import {
 import {
   runPartnerHarnessCase,
   resolvePartnerHarnessScenario,
-  harnessPassPublicCode,
   type PartnerHarnessCaseResult,
 } from "@/lib/partner/launchpad/partnerTestHarness";
 import { SITE_URL } from "@/lib/siteUrl";
@@ -35,6 +34,9 @@ export async function runLaunchpadTestScenario(input: {
 > {
   const scenario = resolvePartnerHarnessScenario(input.scenarioId);
   if (!scenario) return { ok: false, code: "invalid_scenario" };
+  // A durable receipt and its confirmation must resolve through the same
+  // sovereign store. Do not issue a receipt on the legacy PostgREST path.
+  if (!launchpadUsesSovereignPostgres()) return { ok: false, code: "receipt_unavailable" };
 
   const app = await getLaunchpadApplicationForPartner(input.applicationId, input.partnerId);
   if (!app) return { ok: false, code: "not_found" };
@@ -68,49 +70,16 @@ export async function runLaunchpadTestScenario(input: {
   const result = caseResult as PartnerHarnessCaseResult;
   const hostedVerifyUrl = `${SITE_URL}/partner/verify?app=${encodeURIComponent(app.public_slug)}&return_url=${encodeURIComponent(returnUrl)}`;
 
-  if (launchpadUsesSovereignPostgres()) {
-    const { recordSovereignVerificationRun } = await import(
-      "@/lib/partner/launchpad/sovereign/verificationExecution"
-    );
-    await recordSovereignVerificationRun({
-      app,
-      partnerId: input.partnerId,
-      scenarioId: scenario.id,
-      harness: result,
-      idempotencyKey: `harness:${app.id}:${scenario.id}:${result.callback_params.receipt_id}`,
-    });
-  } else {
-    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
-    const { recordLaunchpadActivity } = await import("@/lib/partner/launchpad/recordActivity");
-    const sb = requireSupabaseAdmin();
-    const persistence = result.persistence;
-    if (!persistence) return { ok: false, code: "receipt_unavailable" };
-    const { error: persistError } = await sb.from("partner_launchpad_harness_receipts").insert({
-      receipt_id: persistence.receipt_id,
-      application_id: app.id,
-      partner_id: app.partner_id,
-      policy_id: app.policy_id,
-      policy_version: app.policy_version,
-      scenario_id: scenario.id,
-      request_status: "completed",
-      public_payload: persistence.public_payload,
-      signature: persistence.signature,
-      expires_at: persistence.expires_at,
-    });
-    if (persistError) return { ok: false, code: "receipt_unavailable" };
-    await recordLaunchpadActivity(sb, {
-      applicationId: app.id,
-      partnerId: input.partnerId,
-      eventType: result.passed ? "receipt_verified" : "verification_failed",
-      publicCode: result.passed ? harnessPassPublicCode(result.scenario_id) : `harness_${result.scenario_id}_fail`,
-      metadata: {
-        scenario: result.scenario_id,
-        simulated: false,
-        harness: true,
-        passed: result.passed,
-      },
-    });
-  }
+  const { recordSovereignVerificationRun } = await import(
+    "@/lib/partner/launchpad/sovereign/verificationExecution"
+  );
+  await recordSovereignVerificationRun({
+    app,
+    partnerId: input.partnerId,
+    scenarioId: scenario.id,
+    harness: result,
+    idempotencyKey: `harness:${app.id}:${scenario.id}:${result.callback_params.receipt_id}`,
+  });
 
   return {
     ok: true,
@@ -124,3 +93,4 @@ export async function runLaunchpadTestScenario(input: {
     },
   };
 }
+
