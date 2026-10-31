@@ -5,8 +5,8 @@ import { resetLaunchpadRateLimitStoreForTests } from "@/lib/partner/launchpad/ra
 const sessionMock = vi.fn();
 const listMock = vi.fn();
 
-vi.mock("@/lib/auth/browserSession", () => ({
-  requireBrowserSession: (...args: unknown[]) => sessionMock(...args),
+vi.mock("@/lib/passport/portableTrust/resolveHolderSession", () => ({
+  resolveAuthenticatedHolderSession: (...args: unknown[]) => sessionMock(...args),
 }));
 vi.mock("@/lib/passport/passportRequestInbox", () => ({
   listPassportRequestInbox: (...args: unknown[]) => listMock(...args),
@@ -14,18 +14,18 @@ vi.mock("@/lib/passport/passportRequestInbox", () => ({
 
 import { GET } from "./route";
 
-const SUBJECT = "0x" + "a".repeat(64);
+const SUBJECT = "abx_hs_" + "a".repeat(32);
 
 describe("GET /api/passport/requests", () => {
   beforeEach(() => {
     resetLaunchpadRateLimitStoreForTests();
     vi.clearAllMocks();
-    sessionMock.mockResolvedValue({ ok: true, session: { suiAddress: SUBJECT } });
+    sessionMock.mockResolvedValue({ ok: true, subjectId: SUBJECT });
     listMock.mockResolvedValue([]);
   });
 
   it("requires a Passport browser session", async () => {
-    sessionMock.mockResolvedValueOnce({ ok: false, status: 401 });
+    sessionMock.mockResolvedValueOnce({ ok: false, error: "unauthorized", message: "Sign in required" });
     const response = await GET(new NextRequest("http://localhost/api/passport/requests"));
     expect(response.status).toBe(401);
     expect(listMock).not.toHaveBeenCalled();

@@ -2,7 +2,7 @@
 // Holder privacy requests — view and create export/deletion requests.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import {
   createPrivacyRequest,
   listPrivacyRequestsForSubject,
@@ -16,13 +16,13 @@ import {
 } from "@/lib/privacy/privacyDataInventory";
 
 export async function GET(req: NextRequest) {
-  const sessionResult = await requireBrowserSession(req);
+  const sessionResult = await resolveAuthenticatedHolderSession(req);
   if (!sessionResult.ok) {
-    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+    return NextResponse.json({ error: sessionResult.message }, { status: sessionResult.error === "forbidden" ? 403 : 401 });
   }
 
   try {
-    const requests = await listPrivacyRequestsForSubject(sessionResult.session.subjectId);
+    const requests = await listPrivacyRequestsForSubject(sessionResult.subjectId);
     return NextResponse.json({
       disclaimer: PRIVACY_CENTER_DISCLAIMER,
       data_categories: PRIVACY_DATA_CATEGORIES.map(c => ({
@@ -42,9 +42,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const sessionResult = await requireBrowserSession(req);
+  const sessionResult = await resolveAuthenticatedHolderSession(req);
   if (!sessionResult.ok) {
-    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+    return NextResponse.json({ error: sessionResult.message }, { status: sessionResult.error === "forbidden" ? 403 : 401 });
   }
 
   const body = await req.json().catch(() => ({})) as {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await createPrivacyRequest({
-      subjectSui: sessionResult.session.subjectId,
+      subjectSui: sessionResult.subjectId,
       requestType: body.request_type,
       idempotencyKey: body.idempotency_key,
     });

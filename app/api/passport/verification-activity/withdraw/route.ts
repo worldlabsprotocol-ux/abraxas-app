@@ -2,7 +2,7 @@
 // Signed-in holder withdrawal. Opaque activity_ref only. Session subject is authority.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 import {
   holderWithdrawalClientError,
@@ -13,9 +13,9 @@ import { PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE } from "@/lib/passport/verificat
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const session = await requireBrowserSession(req);
+  const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
-    return NextResponse.json(holderWithdrawalClientError("sign_in_required"), { status: 401 });
+    return NextResponse.json(holderWithdrawalClientError("sign_in_required"), { status: session.error === "forbidden" ? 403 : 401 });
   }
 
   const limited = await checkLaunchpadRateLimit(req, "/api/passport/verification-activity/withdraw", 10);
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await withdrawHolderSharedResult({
-      subjectId: session.session.subjectId,
+      subjectId: session.subjectId,
       activityRef: body.activity_ref,
       clientBody: body,
     });

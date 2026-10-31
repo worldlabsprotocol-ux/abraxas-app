@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import {
   isPassportSupportStatus,
+  isPassportSupportIssue,
   parsePassportSupportCategory,
   passportSupportBodyFromMessage,
   passportSupportCategory,
@@ -39,11 +40,17 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(100);
 
-  if (error) {
+  const { data: subjectData, error: subjectError } = await supabase
+    .from("passport_subject_support_requests")
+    .select("id,reference,issue_type,status,message,created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error || (subjectError && subjectError.code !== "42P01")) {
     return NextResponse.json({ ok: false, error: "Support queue is unavailable." }, { status: 500 });
   }
 
-  const requests = (data ?? []).flatMap(row => {
+  const legacyRequests = (data ?? []).flatMap(row => {
     const category = parsePassportSupportCategory(row.category);
     const reference = passportSupportReferenceFromMessage(row.message);
     if (!category || !reference || typeof row.id !== "string") return [];
@@ -60,6 +67,23 @@ export async function GET(req: NextRequest) {
     }];
   });
 
+  const subjectRequests = (subjectData ?? []).flatMap(row => {
+    if (!isPassportSupportIssue(row.issue_type) || !isPassportSupportStatus(row.status)) return [];
+    return [{
+      id: row.id,
+      reference: row.reference,
+      email: "",
+      issue_type: row.issue_type,
+      issue_label: passportSupportIssueLabel(row.issue_type),
+      status: row.status,
+      status_label: passportSupportStatusLabel(row.status),
+      message: row.message,
+      submitted_at: row.created_at,
+    }];
+  });
+  const requests = [...subjectRequests, ...legacyRequests]
+    .sort((a, b) => String(b.submitted_at).localeCompare(String(a.submitted_at)))
+    .slice(0, 100);
   return NextResponse.json({ ok: true, requests });
 }
 
@@ -83,6 +107,29 @@ export async function PATCH(req: NextRequest) {
   const supabase = database();
   if (!supabase) {
     return NextResponse.json({ ok: false, error: "Support queue is unavailable." }, { status: 503 });
+  }
+
+  if (id.startsWith("ps_")) {
+    const { data: existing, error: readError } = await supabase
+      .from("passport_subject_support_requests")
+      .select("issue_type")
+      .eq("id", id)
+      .maybeSingle();
+    if (readError || !isPassportSupportIssue(existing?.issue_type)) {
+      return NextResponse.json({ ok: false, error: "Support request not found." }, { status: 404 });
+    }
+    const { error: updateError } = await supabase
+      .from("passport_subject_support_requests")
+      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (updateError) {
+      return NextResponse.json({ ok: false, error: "Status update failed." }, { status: 500 });
+    }
+    return NextResponse.json({
+      ok: true,
+      status: body.status,
+      status_label: passportSupportStatusLabel(body.status),
+    });
   }
 
   const { data: existing, error: readError } = await supabase

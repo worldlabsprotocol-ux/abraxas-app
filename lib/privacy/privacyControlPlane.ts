@@ -1,7 +1,8 @@
 // FILE: lib/privacy/privacyControlPlane.ts
 // Holder privacy requests — append-only ledger, admin review, safe deletion (access revoke only).
 
-import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizeStoredHolderKey } from "@/lib/auth/holderSubject/normalizeSubjectKey";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
@@ -126,7 +127,7 @@ export async function createPrivacyRequest(input: {
   }
 
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(input.subjectSui);
+  const subject = normalizeStoredHolderKey(input.subjectSui);
   const pseudonym = subjectPseudonymId(subject);
   const idempotencyKey = input.idempotencyKey
     ?? `privacy:${input.requestType}:${subject}:${Date.now()}`;
@@ -137,6 +138,9 @@ export async function createPrivacyRequest(input: {
       .select("*")
       .eq("idempotency_key", input.idempotencyKey)
       .maybeSingle();
+    if (existing && existing.subject_sui !== subject) {
+      return { ok: false, error: "privacy_request_owner_mismatch" };
+    }
     if (existing) {
       return { ok: true, request: toHolderView(mapRequestRow(existing)), created: false };
     }
@@ -185,6 +189,9 @@ export async function createPrivacyRequest(input: {
           .select("*")
           .eq("idempotency_key", input.idempotencyKey)
           .maybeSingle();
+        if (idemReplay && idemReplay.subject_sui !== subject) {
+          return { ok: false, error: "privacy_request_owner_mismatch" };
+        }
         if (idemReplay) {
           return { ok: true, request: toHolderView(mapRequestRow(idemReplay)), created: false };
         }
@@ -238,7 +245,7 @@ export async function listPrivacyRequestsForSubject(
   subjectSui: string,
 ): Promise<HolderPrivacyRequestView[]> {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(subjectSui);
+  const subject = normalizeStoredHolderKey(subjectSui);
   const { data } = await sb
     .from(TABLE)
     .select("*")
@@ -272,7 +279,7 @@ export function subjectOwnsRequest(
   record: PrivacyRequestRecord,
   subjectSui: string,
 ): boolean {
-  return record.subject_sui === normalizeSuiAddress(subjectSui);
+  return record.subject_sui === normalizeStoredHolderKey(subjectSui);
 }
 
 async function transitionRequest(input: {
@@ -461,6 +468,11 @@ export async function approveDeletionPrivacyRequest(input: {
   if (!existing) return { ok: false, error: "request_not_found" };
   if (existing.request_type !== "account_deletion") {
     return { ok: false, error: "not_deletion_request" };
+  }
+  // Migration 061's approval RPC does not revoke holder-subject credential
+  // and wallet bindings. Never report access revoked for a canonical holder.
+  if (isChainNeutralHolderSubjectId(existing.subject_sui)) {
+    return { ok: false, error: "canonical_deletion_review_required" };
   }
   if (existing.status === "access_revoked_pending_purge" || existing.status === "completed") {
     return { ok: true, request: toAdminView(existing), accessRevoked: true };

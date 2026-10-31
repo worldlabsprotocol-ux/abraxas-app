@@ -12,8 +12,8 @@ const resolveAdminAccessMock = vi.fn();
 const approveDeletionPrivacyRequestMock = vi.fn();
 const requireBrowserSessionMock = vi.fn();
 
-vi.mock("@/lib/auth/browserSession", () => ({
-  requireBrowserSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
+vi.mock("@/lib/passport/portableTrust/resolveHolderSession", () => ({
+  resolveAuthenticatedHolderSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
 }));
 
 vi.mock("@/lib/privacy/privacyControlPlane", () => ({
@@ -52,7 +52,7 @@ describe("privacy API routes", () => {
     resolveAdminAccessMock.mockResolvedValue({ authorized: true, method: "pin_header" });
     requireBrowserSessionMock.mockResolvedValue({
       ok: true,
-      session: { suiAddress: "0x0000000000000000000000000000000000000000000000000000000000000001" },
+      subjectId: "abx_hs_00000000000000000000000000000001",
     });
   });
 
@@ -73,12 +73,12 @@ describe("privacy API routes", () => {
     await holderGet(new NextRequest("http://localhost/api/passport/privacy/requests"));
 
     expect(listPrivacyRequestsForSubjectMock).toHaveBeenCalledWith(
-      "0x0000000000000000000000000000000000000000000000000000000000000001",
+      "abx_hs_00000000000000000000000000000001",
     );
   });
 
   it("holder GET returns 401 without session", async () => {
-    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, status: 401, error: "Sign in required" });
+    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, error: "unauthorized", message: "Sign in required" });
 
     const res = await holderGet(new NextRequest("http://localhost/api/passport/privacy/requests"));
     expect(res.status).toBe(401);
@@ -104,7 +104,7 @@ describe("privacy API routes", () => {
     expect(res.status).toBe(201);
     expect(holderPrivacyRequestHasOnlyAllowedFields(body.request)).toBe(true);
     expect(createPrivacyRequestMock).toHaveBeenCalledWith({
-      subjectSui: "0x0000000000000000000000000000000000000000000000000000000000000001",
+      subjectSui: "abx_hs_00000000000000000000000000000001",
       requestType: "account_deletion",
       idempotencyKey: "k1",
     });

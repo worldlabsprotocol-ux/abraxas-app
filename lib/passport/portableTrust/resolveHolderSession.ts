@@ -1,11 +1,11 @@
 // FILE: lib/passport/portableTrust/resolveHolderSession.ts
 
 import type { NextRequest } from "next/server";
-import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { resolveVerifiedWalletSubjectId } from "@/lib/auth/holderSubject/service";
 import { requireBrowserSession, type BrowserSession } from "@/lib/auth/browserSession";
 
-const SPOOF_QUERY_KEYS = ["sui", "subject", "subject_id", "holder", "wallet"] as const;
+const SPOOF_QUERY_KEYS = ["sui", "subject", "subject_id", "holder", "holder_subject_id", "wallet", "wallet_address"] as const;
 
 function querySpoofAttempt(req: NextRequest): boolean {
   for (const key of SPOOF_QUERY_KEYS) {
@@ -15,28 +15,14 @@ function querySpoofAttempt(req: NextRequest): boolean {
   return false;
 }
 
-function normalizeOptionalSui(value: string | undefined): string | null {
-  if (!value?.trim()) return null;
-  try {
-    return normalizeSuiAddress(value.trim());
-  } catch {
-    return null;
-  }
-}
-
 /** Reject client-supplied identifiers that do not match the authenticated session. */
 export function assertSessionBindingConsistent(session: BrowserSession): boolean {
-  if (session.holderSubjectId && isChainNeutralHolderSubjectId(session.holderSubjectId)) {
-    return session.subjectId === session.holderSubjectId;
-  }
-  if (session.suiAddress) {
-    try {
-      return session.subjectId === normalizeSuiAddress(session.suiAddress);
-    } catch {
-      return false;
-    }
-  }
-  return Boolean(session.subjectId);
+  return session.authMethod === "solana_wallet"
+    && Boolean(session.holderSubjectId)
+    && isChainNeutralHolderSubjectId(session.holderSubjectId ?? "")
+    && session.subjectId === session.holderSubjectId
+    && !session.suiAddress
+    && /^solana:[^:]+:[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(session.walletCaip10 ?? "");
 }
 
 export async function resolveAuthenticatedHolderSession(
@@ -62,9 +48,21 @@ export async function resolveAuthenticatedHolderSession(
     return { ok: false, error: "forbidden", message: "Session subject binding invalid." };
   }
 
-  const spoofSui = normalizeOptionalSui(req.headers.get("x-abraxas-sui-address") ?? undefined);
-  if (spoofSui && spoofSui !== auth.session.subjectId) {
-    return { ok: false, error: "forbidden", message: "Wallet header does not match session." };
+  if (req.headers.has("x-abraxas-sui-address") || req.headers.has("x-abraxas-holder-subject")) {
+    return { ok: false, error: "forbidden", message: "Wallet headers cannot identify a holder." };
+  }
+
+  const walletCaip10 = auth.session.walletCaip10;
+  if (!walletCaip10) {
+    return { ok: false, error: "forbidden", message: "Verified wallet binding required." };
+  }
+  try {
+    const boundSubject = await resolveVerifiedWalletSubjectId(walletCaip10);
+    if (boundSubject !== auth.session.subjectId) {
+      return { ok: false, error: "forbidden", message: "Wallet is not bound to this Passport." };
+    }
+  } catch {
+    return { ok: false, error: "forbidden", message: "Passport access is temporarily unavailable." };
   }
 
   return { ok: true, session: auth.session, subjectId: auth.session.subjectId };

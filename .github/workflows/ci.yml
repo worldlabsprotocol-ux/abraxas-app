@@ -484,7 +484,9 @@ jobs:
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
           NEXT_PUBLIC_SOLANA_NETWORK: devnet
       - name: Passport Solana wallet lifecycle
-          run: npx vitest run app/api/auth/browser-session/route.test.ts components/passport/PassportSolanaWalletConnection.test.tsx components/passport/PassportSolanaSessionBoundary.test.tsx components/passport/PassportSolanaSessionRestoration.test.tsx components/passport/PassportSolanaSignInButton.lifecycle.test.tsx lib/wallet/passportSolanaAuthClient.test.ts lib/wallet/passportSolanaAuthClient.isolation.test.ts
+        run: npx vitest run app/api/auth/browser-session/route.test.ts components/passport/PassportSolanaWalletConnection.test.tsx components/passport/PassportSolanaSessionBoundary.test.tsx components/passport/PassportSolanaSessionRestoration.test.tsx components/passport/PassportSolanaSignInButton.lifecycle.test.tsx lib/wallet/passportSolanaAuthClient.test.ts lib/wallet/passportSolanaAuthClient.isolation.test.ts
+      - name: Passport Solana holder ownership
+        run: npx vitest run lib/passport/portableTrust/solanaHolderSession.test.ts lib/passport/portableTrust/portableTrust.security.test.ts lib/verification/requestPreviewAccess.test.ts app/api/passport/requests/route.test.ts app/api/passport/verification-activity/route.test.ts app/api/passport/verification-activity/withdraw/route.test.ts app/api/passport/verification-activity/withdraw-all/route.test.ts lib/privacy/privacyRoutes.test.ts lib/privacy/privacyControlPlane.test.ts
       - name: Ephemeral wallet auth (TCP Redis replay)
         run: npx vitest run lib/auth/ephemeralWallet/ephemeralWallet.redis.integration.test.ts
         env:
@@ -492,6 +494,7 @@ jobs:
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
           NEXT_PUBLIC_SOLANA_NETWORK: devnet
           ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
+
 
 
 

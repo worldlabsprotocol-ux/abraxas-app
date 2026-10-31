@@ -58,6 +58,7 @@ function privacyRequestTableMock(handlers: {
 }
 
 const SAMPLE_SUI = "0x0000000000000000000000000000000000000000000000000000000000000001";
+const SOLANA_HOLDER = `abx_hs_${"a".repeat(32)}`;
 
 const sampleRecord: PrivacyRequestRecord = {
   id: "00000000-0000-4000-8000-000000000099",
@@ -182,6 +183,32 @@ describe("privacy control plane", () => {
     }
   });
 
+  it("does not return another holder's request for a reused idempotency key", async () => {
+    fromMock.mockImplementation(() => privacyRequestTableMock({
+      maybeSingle: vi.fn().mockResolvedValue({ data: sampleRecord, error: null }),
+    }));
+    const result = await createPrivacyRequest({
+      subjectSui: SOLANA_HOLDER,
+      requestType: "account_deletion",
+      idempotencyKey: "del-key-1",
+    });
+    expect(result).toEqual({ ok: false, error: "privacy_request_owner_mismatch" });
+  });
+
+  it("keeps canonical deletion approval fail-closed until its revocation RPC is migrated", async () => {
+    fromMock.mockImplementation(() => privacyRequestTableMock({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { ...sampleRecord, subject_sui: SOLANA_HOLDER }, error: null,
+      }),
+    }));
+    const result = await approveDeletionPrivacyRequest({
+      requestId: sampleRecord.id,
+      adminActorCategory: "admin_pin",
+    });
+    expect(result).toEqual({ ok: false, error: "canonical_deletion_review_required" });
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("approved deletion uses atomic RPC and does not call revokeSubjectClaims directly", async () => {
     const pendingRecord = {
       ...sampleRecord,
@@ -231,3 +258,4 @@ describe("privacy control plane", () => {
     expect(revokeSubjectClaims).not.toHaveBeenCalled();
   });
 });
+

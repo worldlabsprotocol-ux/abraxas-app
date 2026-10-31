@@ -5,10 +5,13 @@ import { NextRequest } from "next/server";
 
 const VICTIM_SUI = "0x0000000000000000000000000000000000000000000000000000000000000001";
 const ATTACKER_HOLDER = "abx_hs_aabbccddeeff00112233445566778899";
-const VICTIM_HOLDER = "abx_hs_00112233445566778899aabbccddeeff00";
+const VICTIM_HOLDER = "abx_hs_00112233445566778899aabbccddeeff";
 
 vi.mock("@/lib/auth/browserSession", () => ({
   requireBrowserSession: vi.fn(),
+}));
+vi.mock("@/lib/auth/holderSubject/service", () => ({
+  resolveVerifiedWalletSubjectId: vi.fn(),
 }));
 
 vi.mock("@/lib/passport/portableTrust/holderReceiptAccess", () => ({
@@ -17,6 +20,7 @@ vi.mock("@/lib/passport/portableTrust/holderReceiptAccess", () => ({
 }));
 
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveVerifiedWalletSubjectId } from "@/lib/auth/holderSubject/service";
 import { listHolderPortableCredentials, getHolderReceiptIfOwned } from "@/lib/passport/portableTrust/holderReceiptAccess";
 import { GET as credentialsGET } from "@/app/api/passport/portable-trust/credentials/route";
 import { POST as exportPOST } from "@/app/api/passport/portable-trust/export/route";
@@ -28,14 +32,16 @@ import { buildHolderPortableExport } from "@/lib/passport/portableTrust/presenta
 
 const requireBrowserSessionMock = vi.mocked(requireBrowserSession);
 
-function sessionFor(subjectId: string, extra?: { suiAddress?: string; holderSubjectId?: string }) {
+const VICTIM_WALLET = "11111111111111111111111111111111";
+const ATTACKER_WALLET = "22222222222222222222222222222222";
+function sessionFor(subjectId: string) {
   return {
     ok: true as const,
     session: {
       subjectId,
-      holderSubjectId: extra?.holderSubjectId ?? (subjectId.startsWith("abx_hs_") ? subjectId : undefined),
-      suiAddress: extra?.suiAddress,
-      authMethod: "oauth" as const,
+      holderSubjectId: subjectId,
+      authMethod: "solana_wallet" as const,
+      walletCaip10: `solana:devnet:${subjectId === VICTIM_HOLDER ? VICTIM_WALLET : ATTACKER_WALLET}`,
     },
   };
 }
@@ -43,6 +49,8 @@ function sessionFor(subjectId: string, extra?: { suiAddress?: string; holderSubj
 describe("Build #565 portable trust security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(resolveVerifiedWalletSubjectId).mockImplementation(async caip =>
+      caip.endsWith(VICTIM_WALLET) ? VICTIM_HOLDER : ATTACKER_HOLDER);
   });
 
   afterEach(() => {
@@ -187,12 +195,13 @@ describe("Build #565 portable trust security", () => {
     expect(body.code).toBe("synthetic_verification_disabled_in_production");
   });
 
-  it("assertSessionBindingConsistent accepts chain-neutral and legacy Sui sessions", () => {
+  it("accepts only a canonical Solana holder session", () => {
     expect(
       assertSessionBindingConsistent({
         subjectId: VICTIM_HOLDER,
         holderSubjectId: VICTIM_HOLDER,
-        authMethod: "evm_wallet",
+        authMethod: "solana_wallet",
+        walletCaip10: `solana:devnet:${VICTIM_WALLET}`,
       }),
     ).toBe(true);
     expect(
@@ -201,7 +210,7 @@ describe("Build #565 portable trust security", () => {
         suiAddress: VICTIM_SUI,
         authMethod: "oauth",
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       assertSessionBindingConsistent({
         subjectId: VICTIM_HOLDER,

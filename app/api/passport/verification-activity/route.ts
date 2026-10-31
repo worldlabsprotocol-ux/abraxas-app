@@ -2,7 +2,7 @@
 // Signed-in holder activity. Subject comes from the browser session only.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 import { loadPassportVerificationActivity } from "@/lib/passport/verificationActivity/load";
 import { passportActivityCopyLeaks } from "@/lib/passport/verificationActivity/view";
@@ -11,9 +11,9 @@ import { PASSPORT_ACTIVITY_UNAVAILABLE } from "@/lib/passport/verificationActivi
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const session = await requireBrowserSession(req);
+  const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
-    return NextResponse.json({ ok: false, error: "Sign in required" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: session.message }, { status: session.error === "forbidden" ? 403 : 401 });
   }
 
   const limited = await checkLaunchpadRateLimit(req, "/api/passport/verification-activity", 30);
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const view = await loadPassportVerificationActivity(session.session.subjectId);
+    const view = await loadPassportVerificationActivity(session.subjectId);
     const serialized = JSON.stringify(view);
     if (passportActivityCopyLeaks(serialized).length > 0) {
       return NextResponse.json({ ok: false, error: PASSPORT_ACTIVITY_UNAVAILABLE }, { status: 503 });
