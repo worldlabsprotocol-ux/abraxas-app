@@ -159,6 +159,9 @@ export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string 
       <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
         Keep building free in Sandbox, or activate a paid usage plan for 30 days with USDC on Solana.
       </p>
+      <p style={{ ...body, marginBottom: "0.75rem" }}>
+        ABRA service credits are being prepared for eligible paid usage. Checkout is unavailable until pricing and settlement checks are complete.
+      </p>
       {billing?.active && billing.paid_through && (
         <section role="status" style={{ border: "1px solid rgba(45,212,191,0.5)", background: "rgba(45,212,191,0.08)", borderRadius: 12, padding: "0.8rem", marginBottom: "0.75rem" }}>
           <p style={{ ...body, color: "var(--text-primary)", fontWeight: 800 }}>
@@ -268,3 +271,4 @@ export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string 
     </ContentCard>
   );
 }
+
