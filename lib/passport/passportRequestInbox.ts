@@ -1,7 +1,7 @@
 // FILE: lib/passport/passportRequestInbox.ts
 // Holder-safe inbox for partner requests already addressed to this Passport.
 
-import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPartnerPolicy } from "@/lib/policy/getPolicy";
 import { getVerificationRequestPreview } from "@/lib/verification/requestsService";
@@ -51,13 +51,13 @@ export function projectPassportRequestInboxItem(input: {
 export async function listPassportRequestInbox(
   subjectId: string,
 ): Promise<PassportRequestInboxItem[]> {
-  const subject = normalizeSuiAddress(subjectId);
+  if (!isChainNeutralHolderSubjectId(subjectId)) throw new Error("canonical_holder_required");
   const now = new Date().toISOString();
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("verification_requests")
     .select("id,partner_id,policy_id,requested_action,created_at,expires_at")
-    .or(`subject_id.eq.${subject},sui_address.eq.${subject}`)
+    .eq("subject_id", subjectId)
     .eq("status", "pending")
     .gt("expires_at", now)
     .order("created_at", { ascending: false })
@@ -69,7 +69,7 @@ export async function listPassportRequestInbox(
     const row = raw as InboxSourceRow;
     const [policy, preview] = await Promise.all([
       getPartnerPolicy(row.policy_id),
-      getVerificationRequestPreview(row.id),
+      getVerificationRequestPreview(row.id, subjectId),
     ]);
     return projectPassportRequestInboxItem({
       row,
