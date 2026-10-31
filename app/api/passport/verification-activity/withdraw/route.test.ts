@@ -7,8 +7,8 @@ import { PASSPORT_ACTIVITY_WITHDRAW_NOT_FOUND } from "@/lib/passport/verificatio
 const requireBrowserSessionMock = vi.fn();
 const withdrawMock = vi.fn();
 
-vi.mock("@/lib/auth/browserSession", () => ({
-  requireBrowserSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
+vi.mock("@/lib/passport/portableTrust/resolveHolderSession", () => ({
+  resolveAuthenticatedHolderSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
 }));
 
 vi.mock("@/lib/passport/verificationActivity/withdraw", async () => {
@@ -23,7 +23,7 @@ vi.mock("@/lib/passport/verificationActivity/withdraw", async () => {
 
 import { POST } from "@/app/api/passport/verification-activity/withdraw/route";
 
-const SUBJECT = "0x" + "e".repeat(64);
+const SUBJECT = "abx_hs_" + "e".repeat(32);
 const REF = opaqueActivityRef(SUBJECT, "dec-1");
 
 function post(url: string, body: unknown) {
@@ -40,7 +40,7 @@ describe("POST /api/passport/verification-activity/withdraw", () => {
     vi.clearAllMocks();
     requireBrowserSessionMock.mockResolvedValue({
       ok: true,
-      session: { suiAddress: SUBJECT },
+      subjectId: SUBJECT,
     });
     withdrawMock.mockResolvedValue({
       ok: true,
@@ -55,7 +55,7 @@ describe("POST /api/passport/verification-activity/withdraw", () => {
   });
 
   it("denies unsigned requests", async () => {
-    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, status: 401, error: "Sign in required" });
+    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, error: "unauthorized", message: "Sign in required" });
     const res = await POST(post("http://localhost/api/passport/verification-activity/withdraw", { activity_ref: REF }));
     expect(res.status).toBe(401);
     expect(withdrawMock).not.toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe("POST /api/passport/verification-activity/withdraw", () => {
 
   it("passes only the session subject and opaque activity_ref", async () => {
     const res = await POST(post(
-      "http://localhost/api/passport/verification-activity/withdraw?subject=other&receipt_id=dr_abc",
+      "http://localhost/api/passport/verification-activity/withdraw",
       { activity_ref: REF },
     ));
     expect(res.status).toBe(200);
@@ -75,7 +75,7 @@ describe("POST /api/passport/verification-activity/withdraw", () => {
     });
     const body = await res.json() as Record<string, unknown>;
     expect(body.state).toBe("revoked");
-    expect(JSON.stringify(body)).not.toContain("dr_abc");
+    expect(JSON.stringify(body)).not.toContain(SUBJECT);
   });
 
   it("rejects raw receipt ids from the browser", async () => {
