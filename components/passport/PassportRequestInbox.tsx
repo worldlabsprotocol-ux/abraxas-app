@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { PassportRequestInboxItem } from "@/lib/passport/passportRequestInbox";
+import { SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
 import { ProductOutcomeState } from "@/components/product/ProductOutcomeState";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
@@ -47,7 +48,7 @@ export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolea
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+        body: JSON.stringify({ policy_id: SANDBOX_POLICY_ID }),
       });
       const body = await response.json().catch(() => ({})) as {
         consent_url?: string;
