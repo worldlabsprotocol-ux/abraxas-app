@@ -92,7 +92,7 @@ jobs:
         run: npm run check:homepage
 
       - name: Sandbox result continuity tests
-        run: npx vitest run components/developers/IntegrationStudioRequestWorkbench.test.tsx components/developers/IntegrationStudioBeginnerFlow.test.tsx lib/partner/launchpad/formatHarnessResultForBuilder.test.ts
+        run: npx vitest run components/developers/IntegrationStudioRequestWorkbench.test.tsx components/developers/IntegrationStudioBeginnerFlow.test.tsx lib/partner/launchpad/formatHarnessResultForBuilder.test.ts lib/partner/launchpad/verifyStoredHarnessReceipt.test.ts lib/partner/launchpad/runTestScenario.sovereignOnly.test.ts
 
       - name: Build #865 evidence continuity + #868 portable relying party (contract)
         run: npm run test:build-865-evidence-continuity && npm run test:build-868-portable-relying-party
@@ -494,6 +494,7 @@ jobs:
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
           NEXT_PUBLIC_SOLANA_NETWORK: devnet
           ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
+
 
 
 
