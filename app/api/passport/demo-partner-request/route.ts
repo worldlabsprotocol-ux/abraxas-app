@@ -2,45 +2,15 @@
 // Pilot: create a test verification request for the signed-in holder (no partner key in browser).
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
-import {
-  isSandboxPolicyId,
-  sandboxPartnerIdForPolicy,
-  SANDBOX_POLICY_ID,
-} from "@/lib/partner/sandboxPartner";
-import { createVerificationRequest } from "@/lib/verification/requestsService";
-
-const DEMO_POLICIES = ["abraxas-core-v1", "cielo-verified-guest-v1", SANDBOX_POLICY_ID] as const;
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 
 export async function POST(req: NextRequest) {
-  const session = await requireBrowserSession(req);
+  const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
-    return NextResponse.json({ error: session.error }, { status: session.status });
+    return NextResponse.json({ error: session.message }, { status: session.error === "forbidden" ? 403 : 401 });
   }
 
-  const body = await req.json().catch(() => ({})) as { policy_id?: string };
-  const policyId = body.policy_id && DEMO_POLICIES.includes(body.policy_id as typeof DEMO_POLICIES[number])
-    ? body.policy_id
-    : "abraxas-core-v1";
-
-  const partnerId = sandboxPartnerIdForPolicy(policyId);
-
-  try {
-    const result = await createVerificationRequest({
-      partnerId,
-      policyId,
-      requestedAction: isSandboxPolicyId(policyId) ? "sandbox_eligibility_demo" : "pilot_eligibility_check",
-      suiAddress: session.session.subjectId,
-    });
-
-    return NextResponse.json({
-      ...result,
-      policy_id: policyId,
-      partner_id: partnerId,
-      message: "Open consent_url to complete the portable reuse loop.",
-    });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Could not create demo request";
-    return NextResponse.json({ error: msg }, { status: 400 });
-  }
+  // The legacy consent evaluator still requires a Sui subject. Do not create
+  // a Solana-bound request until that evaluator can complete it securely.
+  return NextResponse.json({ error: "This demo is unavailable for Solana Passport right now." }, { status: 503 });
 }
