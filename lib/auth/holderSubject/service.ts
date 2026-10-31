@@ -142,6 +142,23 @@ export async function resolveSubjectForVerifiedWallet(input: {
   return { ok: true, subjectId, created: true };
 }
 
+/** Recheck a signed-in wallet's current owner before serving holder records. */
+export async function resolveVerifiedWalletSubjectId(caip10: string): Promise<string | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const direct = await directModule();
+    return direct.queryPersistedWalletOwner(caip10);
+  }
+
+  const sb = requirePersistenceAdmin();
+  const { data, error } = await sb
+    .from("passport_holder_wallet_accounts")
+    .select("subject_id")
+    .eq("caip10", caip10)
+    .maybeSingle();
+  if (error) throw new HolderSubjectStoreUnavailableError();
+  return data?.subject_id ?? null;
+}
+
 export async function linkLegacyKeyToSubject(input: {
   subjectId: string;
   legacyKind: string;
