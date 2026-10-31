@@ -17,11 +17,13 @@ export async function POST(req: NextRequest) {
     policy_id?: string;
     requested_action?: string;
     requested_claims?: string[];
-    sui_address?: string;
   };
 
   if (!body.policy_id) {
     return NextResponse.json({ error: "policy_id required" }, { status: 400 });
+  }
+  if (!auth.ctx?.launchpadApplicationId) {
+    return NextResponse.json({ error: "An application-bound partner credential is required" }, { status: 403 });
   }
 
   try {
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
       policyId: body.policy_id,
       requestedAction: body.requested_action,
       requestedClaims: body.requested_claims,
-      suiAddress: body.sui_address,
+      launchpadApplicationId: auth.ctx.launchpadApplicationId,
     });
 
     void logPartnerUsage({
