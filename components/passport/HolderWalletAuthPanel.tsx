@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { PassportWalletSignInButton } from "@/components/sui/PassportWalletSignInButton";
 import { PassportSolanaSignInButton } from "./PassportSolanaSignInButton";
-import { SolanaWalletConnectButton } from "./SolanaWalletConnectButton";
+import { PassportSolanaWalletConnection } from "./PassportSolanaWalletConnection";
 import { WalletVerifyControlPanel } from "@/components/wallet/WalletVerifyControlPanel";
 import { PASSPORT_WALLET_ACTIONS, type PassportWalletIntendedAction } from "@/lib/auth/passportWalletAuth/contract";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
@@ -118,7 +118,7 @@ export function HolderWalletAuthPanel({
         </p>
       ) : null}
 
-      <SolanaWalletConnectButton />
+      <PassportSolanaWalletConnection />
       <PassportSolanaSignInButton intendedAction="passport_sign_in" onSuccess={onSuccess} />
 
       <button type="button" onClick={() => setShowSui((v) => !v)} style={{
