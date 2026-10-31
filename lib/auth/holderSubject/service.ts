@@ -64,13 +64,15 @@ export async function bindVerifiedWalletAccount(input: {
   }
 
   const sb = requirePersistenceAdmin();
-  const { data: existing } = await sb
+  if (!await assertHolderSubjectExists(input.subjectId)) return { ok: false, code: "persist_failed" };
+  const { data: existing, error: existingError } = await sb
     .from("passport_holder_wallet_accounts")
-    .select("subject_id")
+    .select("subject_id,revoked_at")
     .eq("caip10", input.caip.caip10)
     .maybeSingle();
+  if (existingError) throw new HolderSubjectStoreUnavailableError();
 
-  if (existing && existing.subject_id !== input.subjectId) {
+  if (existing && (existing.subject_id !== input.subjectId || existing.revoked_at)) {
     return { ok: false, code: "wallet_bound_to_other_subject" };
   }
 
@@ -87,7 +89,11 @@ export async function bindVerifiedWalletAccount(input: {
 
   if (error) {
     if (error.code === "42P01") throw new HolderSubjectStoreUnavailableError();
-    if (error.code === "23505") return { ok: true };
+    if (error.code === "23505") {
+      return await resolveVerifiedWalletSubjectId(input.caip.caip10) === input.subjectId
+        ? { ok: true }
+        : { ok: false, code: "wallet_bound_to_other_subject" };
+    }
     return { ok: false, code: "persist_failed" };
   }
   return { ok: true };
@@ -114,13 +120,17 @@ export async function resolveSubjectForVerifiedWallet(input: {
   }
 
   const sb = requirePersistenceAdmin();
-  const { data: bound } = await sb
+  const { data: bound, error: boundError } = await sb
     .from("passport_holder_wallet_accounts")
-    .select("subject_id")
+    .select("subject_id,revoked_at")
     .eq("caip10", input.caip.caip10)
     .maybeSingle();
+  if (boundError) throw new HolderSubjectStoreUnavailableError();
 
   if (bound?.subject_id) {
+    if (bound.revoked_at || !await assertHolderSubjectExists(bound.subject_id)) {
+      return { ok: false, code: "persist_failed" };
+    }
     return { ok: true, subjectId: bound.subject_id, created: false };
   }
 
@@ -154,9 +164,11 @@ export async function resolveVerifiedWalletSubjectId(caip10: string): Promise<st
     .from("passport_holder_wallet_accounts")
     .select("subject_id")
     .eq("caip10", caip10)
+    .is("revoked_at", null)
     .maybeSingle();
   if (error) throw new HolderSubjectStoreUnavailableError();
-  return data?.subject_id ?? null;
+  if (!data?.subject_id) return null;
+  return await assertHolderSubjectExists(data.subject_id) ? data.subject_id : null;
 }
 
 export async function linkLegacyKeyToSubject(input: {
@@ -211,6 +223,7 @@ export async function assertHolderSubjectExists(subjectId: string): Promise<bool
     .from("passport_holder_subjects")
     .select("subject_id")
     .eq("subject_id", subjectId)
+    .eq("status", "active")
     .maybeSingle();
   if (error) {
     if (error.code === "42P01") return false;
