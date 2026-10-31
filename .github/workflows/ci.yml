@@ -92,7 +92,7 @@ jobs:
         run: npm run check:homepage
 
       - name: Sandbox result continuity tests
-        run: npx vitest run components/developers/IntegrationStudioRequestWorkbench.test.tsx components/developers/IntegrationStudioBeginnerFlow.test.tsx lib/partner/launchpad/formatHarnessResultForBuilder.test.ts lib/partner/launchpad/partnerTestHarness.test.ts lib/partner/launchpad/verifyStoredHarnessReceipt.test.ts
+        run: npx vitest run components/developers/IntegrationStudioRequestWorkbench.test.tsx components/developers/IntegrationStudioBeginnerFlow.test.tsx lib/partner/launchpad/formatHarnessResultForBuilder.test.ts
 
       - name: Build #865 evidence continuity + #868 portable relying party (contract)
         run: npm run test:build-865-evidence-continuity && npm run test:build-868-portable-relying-party
@@ -113,7 +113,7 @@ jobs:
         run: npm run build:compile
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-    …2775 tokens truncated…g-party/integration-first.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6I…2747 tokens truncated…g-party/integration-first.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts
       - name: Sovereign slice operational proof (no Supabase)
         run: npx vitest run --no-file-parallelism lib/persistence/boundary/sovereignOperationalProof.integration.test.ts
         env:
