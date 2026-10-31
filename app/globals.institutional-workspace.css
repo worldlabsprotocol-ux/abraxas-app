@@ -996,3 +996,15 @@
 .abx-builder-choice-list button { display: grid; gap: .25rem; width: 100%; padding: 1rem 1.15rem; border: 1px solid rgba(76,187,146,.28); border-radius: 12px; background: rgba(9,20,23,.75); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; }
 .abx-builder-choice-list button:hover, .abx-builder-choice-list button:focus-visible, .abx-builder-choice-list button[aria-pressed="true"] { border-color: rgba(76,187,146,.8); outline-offset: 3px; }
 .abx-builder-choice-list button span { color: var(--text-secondary); font-size: .82rem; }
+.abx-builder-test-summary { width: min(100%, 36rem); margin: 1.2rem auto; text-align: left; }
+.abx-builder-test-summary__tag { display: inline-block; color: #48d8a0; font-size: .72rem; font-weight: 700; }
+.abx-builder-test-summary dl { margin: .8rem 0 0; display: grid; gap: .5rem; }
+.abx-builder-test-summary dl div { display: flex; justify-content: space-between; gap: 1rem; }
+.abx-builder-test-summary dt { color: var(--text-secondary); }
+.abx-builder-test-summary dd { margin: 0; text-align: right; }
+.abx-builder-connection-paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; width: min(100%, 36rem); margin: .8rem auto; }
+.abx-builder-connection-paths button { display: grid; gap: .25rem; padding: .9rem .65rem; border: 1px solid rgba(76,187,146,.28); border-radius: 12px; background: rgba(9,20,23,.75); color: var(--text-primary); cursor: pointer; font: inherit; }
+.abx-builder-connection-paths button span { color: var(--text-secondary); font-size: .72rem; }
+.abx-builder-connection-paths button:hover, .abx-builder-connection-paths button:focus-visible { border-color: rgba(76,187,146,.8); outline-offset: 3px; }
+@media (max-width: 580px) { .abx-builder-connection-paths { grid-template-columns: 1fr; } }
+

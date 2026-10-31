@@ -27,7 +27,7 @@ vi.mock("@/components/redesign/ui", () => ({
 }));
 
 describe("beginner sandbox test access", () => {
-  afterEach(() => { cleanup(); vi.unstubAllGlobals(); operational.signedIn = false; });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); operational.signedIn = false; window.sessionStorage.clear(); });
   const renderTask = () => render(
     <IntegrationStudioRequestWorkbench packId={null} pathId="verify_with_abraxas" policyId={null} beginnerSurface />,
   );
@@ -58,5 +58,36 @@ describe("beginner sandbox test access", () => {
     renderTask();
     expect(screen.getByRole("button", { name: "Run test" })).toBeEnabled();
   });
+  it("shows a completed test only after server receipt validation", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: { passed: true, observed_access: "allow", persistence: { receipt_id: "receipt-1" } } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: true }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" applicationName="My test app" beginnerSurface autoRunOnReady />);
+    await waitFor(() => expect(screen.getByText("My test app")).toBeInTheDocument());
+    expect(screen.getByText("Sandbox test passed")).toBeInTheDocument();
+    expect(fetch.mock.calls[1]?.[0]).toContain("/receipts/validate?receipt_id=receipt-1");
+  });
+  it("fails closed when the server cannot confirm the test receipt", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: { passed: true, observed_access: "allow", persistence: { receipt_id: "receipt-1" } } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: false }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady />);
+    await waitFor(() => expect(screen.getByText(/receipt could not be confirmed/i)).toBeInTheDocument());
+    expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
+  });
+  it("revalidates a restored result instead of trusting session storage", async () => {
+    operational.signedIn = true;
+    window.sessionStorage.setItem("abx_studio_harness_success_v1_app-123", JSON.stringify({ outcome: { tone: "success", receiptId: "receipt-1", headline: "Test worked", summary: "", observedAccess: "allow", passed: true, nextActionLabel: "Connect" } }));
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: false }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
+    await waitFor(() => expect(screen.getByText(/previous test result is no longer confirmed/i)).toBeInTheDocument());
+    expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
+  });
 });
+
 

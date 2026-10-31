@@ -60,6 +60,14 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     mode: "sandbox",
     allowSandbox: true,
   });
+  const bindingMatches = receipt.receipt_id === stored.receipt_id
+    && stored.public_payload.signature === stored.signature
+    && stored.public_payload.policy_version === app.policy_version
+    && receipt.decision_context === "sandbox_only"
+    && app.environment === "sandbox";
+  const storageCurrent = !stored.revoked_at
+    && Number.isFinite(Date.parse(stored.expires_at))
+    && Date.parse(stored.expires_at) > Date.now();
 
   return launchpadJson({
     ok: true,
@@ -70,7 +78,12 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     invalidation_reasons: trust.invalidation_reasons,
     partner_flow_ok: flow.ok,
     partner_flow_errors: flow.errors,
+    harness_verification_ok: trust.signature_valid && trust.currently_valid
+      && stored.scenario_id === "approved" && stored.request_status === "completed"
+      && stored.idempotency_key?.startsWith(`harness:${app.id}:approved:`) === true
+      && bindingMatches && storageCurrent,
     storage_revoked_at: stored.revoked_at,
     expires_at: stored.expires_at,
   });
 }
+

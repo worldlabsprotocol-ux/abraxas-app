@@ -25,6 +25,7 @@ import {
 } from "@/lib/home/homeBuilderIntegrationStack";
 import type { BuilderHarnessOutcome } from "@/lib/partner/launchpad/formatHarnessResultForBuilder";
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 
@@ -44,15 +45,18 @@ function writeFlag(key: string): void {
 
 export function ApplicationIntegrationJourneyPanel({
   applicationId,
+  applicationName = "Your application",
   signedIn,
   packId,
   pathId,
+  policyId,
   returnUrl,
   outcome,
   testSucceeded = false,
   startWithExample = false,
 }: {
   applicationId: string;
+  applicationName?: string;
   signedIn: boolean;
   packId: PolicyPackId;
   pathId: IntegrationStudioPathId;
@@ -70,6 +74,7 @@ export function ApplicationIntegrationJourneyPanel({
   const [pollError, setPollError] = useState("");
   const [acceptance, setAcceptance] = useState<BuilderIntegrationAcceptanceView | null>(null);
   const [surface, setSurface] = useState<"connect" | "example">(startWithExample ? "example" : "connect");
+  const [pathChosen, setPathChosen] = useState(false);
 
   useEffect(() => {
     setIntent(readHomeBuilderDiscoveryIntent());
@@ -214,6 +219,23 @@ export function ApplicationIntegrationJourneyPanel({
     || (journey.primaryAction === "get_files" && !starterPlatform);
 
   const enforcement = acceptance?.external_enforcement;
+  const choosePath = (platformChoice: "website" | "application" | "api", stack: HomeBuilderIntegrationStackId) => {
+    writeHomeBuilderDiscoveryIntent({ platform: platformChoice, policyPackId: packId, integrationStack: stack });
+    setIntent(readHomeBuilderDiscoveryIntent());
+    setPathChosen(true);
+  };
+
+  const testSummary = (
+    <div className="abx-builder-test-summary" aria-label="Sandbox test result">
+      <span className="abx-builder-test-summary__tag">Sandbox test passed</span>
+      <dl>
+        <div><dt>Application</dt><dd>{applicationName}</dd></div>
+        <div><dt>Policy</dt><dd>{resolvePolicyPack(packId)?.display_name ?? policyId}</dd></div>
+        <div><dt>Receipt</dt><dd>Verified for this sandbox test</dd></div>
+        <div><dt>External enforcement</dt><dd>{journey.connectionVerified ? "Verified" : "Not connected"}</dd></div>
+      </dl>
+    </div>
+  );
 
   if (surface === "example") {
     return (
@@ -228,6 +250,23 @@ export function ApplicationIntegrationJourneyPanel({
         </div>
       </div>
     );
+  }
+
+  if (!pathChosen && !journey.connectionVerified) {
+    return <BuilderActiveTask taskKey="choose-connection-path" testId="builder-integration-journey"
+      title="Connect your application"
+      description="Your sandbox test passed. Choose where Abraxas should work."
+      advanced={<details className="abx-builder-technical-panel"><summary className="abx-builder-technical-toggle">Technical details</summary>
+        <p>Sandbox receipt: <code>{outcome.receiptId}</code></p>
+        <p>Starter kits require server setup. Selecting a path does not connect an external application.</p>
+      </details>}>
+      {testSummary}
+      <div className="abx-builder-connection-paths" aria-label="Choose an integration path">
+        <button type="button" onClick={() => choosePath("website", "wix_velo")}><strong>Website builder</strong><span>Wix Velo backend kit</span></button>
+        <button type="button" onClick={() => choosePath("application", "nextjs")}><strong>Web application</strong><span>Next.js server kit</span></button>
+        <button type="button" onClick={() => choosePath("api", "express")}><strong>API / backend</strong><span>Node server kit</span></button>
+      </div>
+    </BuilderActiveTask>;
   }
 
   return (
@@ -260,6 +299,7 @@ export function ApplicationIntegrationJourneyPanel({
         </details>
       }
     >
+      {testSummary}
       {needsWebsiteStack ? (
         <>
           <div data-testid="builder-stack-picker" className="abx-builder-stack-grid" role="radiogroup" aria-label="Website stack">
@@ -286,3 +326,4 @@ export function ApplicationIntegrationJourneyPanel({
     </BuilderActiveTask>
   );
 }
+

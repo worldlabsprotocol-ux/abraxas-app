@@ -30,6 +30,7 @@ export function IntegrationStudioRequestWorkbench({
   packId,
   pathId,
   policyId,
+  applicationName,
   beginnerSurface = false,
   autoRunOnReady = false,
   startWithExample = false,
@@ -39,6 +40,7 @@ export function IntegrationStudioRequestWorkbench({
   packId: PolicyPackId | null;
   pathId: IntegrationStudioPathId;
   policyId: string | null;
+  applicationName?: string;
   beginnerSurface?: boolean;
   autoRunOnReady?: boolean;
   startWithExample?: boolean;
@@ -54,11 +56,33 @@ export function IntegrationStudioRequestWorkbench({
   const [error, setError] = useState("");
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
 
+  async function verifyHarnessReceipt(receiptId: string): Promise<boolean> {
+    if (!applicationId || !signedIn) return false;
+    const res = await fetch(`/api/launchpad/applications/${applicationId}/receipts/validate?receipt_id=${encodeURIComponent(receiptId)}`, {
+      credentials: "include", cache: "no-store",
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.ok === true && data.receipt_id === receiptId && data.harness_verification_ok === true;
+  }
+
   useEffect(() => {
-    if (!applicationId) return;
+    setOutcome(null);
+    setError("");
+    if (!applicationId || !signedIn || autoRunOnReady || autoRunStartedFor.current === applicationId) return;
     const restored = readPersistedHarnessSuccess(applicationId);
-    if (restored) setOutcome(restored);
-  }, [applicationId]);
+    if (!restored?.receiptId) return;
+    let active = true;
+    void verifyHarnessReceipt(restored.receiptId).then((valid) => {
+      if (active && valid) setOutcome(restored);
+      if (active && !valid) setError("The previous test result is no longer confirmed. Run the test again.");
+    }).catch(() => {
+      if (active) setError("Could not confirm the previous test. Run it again.");
+    });
+    return () => { active = false; };
+  // A browser hint never establishes a current verified result.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applicationId, signedIn, autoRunOnReady]);
 
   async function runHarness() {
     if (!applicationId || !signedIn) return;
@@ -89,10 +113,15 @@ export function IntegrationStudioRequestWorkbench({
       }
       if (data.result && typeof data.result === "object") {
         const formatted = formatHarnessResultForBuilder(data.result as LaunchpadTestRunResult);
-        setOutcome(formatted);
-        if (applicationId && formatted.tone === "success") {
+        if (formatted.tone === "success") {
+          const verified = formatted.receiptId && await verifyHarnessReceipt(formatted.receiptId);
+          if (!verified) {
+            setError("The sandbox test ran, but its receipt could not be confirmed. Try again.");
+            return;
+          }
           persistHarnessSuccess(applicationId, formatted);
         }
+        setOutcome(formatted);
       }
     } catch {
       setError("Test failed");
@@ -118,6 +147,7 @@ export function IntegrationStudioRequestWorkbench({
     return (
       <ApplicationConnectionAfterTestPanel
         applicationId={applicationId!}
+        applicationName={applicationName ?? "Your application"}
         signedIn={signedIn}
         packId={packId!}
         pathId={pathId}
@@ -252,4 +282,5 @@ export function IntegrationStudioRequestWorkbench({
     </ContentCard>
   );
 }
+
 

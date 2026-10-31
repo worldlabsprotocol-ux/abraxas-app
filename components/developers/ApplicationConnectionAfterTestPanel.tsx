@@ -31,6 +31,7 @@ export function readPersistedHarnessSuccess(applicationId: string): BuilderHarne
 /** @deprecated Use ApplicationIntegrationJourneyPanel — kept for import stability. */
 export function ApplicationConnectionAfterTestPanel(props: {
   applicationId: string;
+  applicationName?: string;
   signedIn: boolean;
   packId: PolicyPackId;
   pathId: IntegrationStudioPathId;
@@ -42,3 +43,4 @@ export function ApplicationConnectionAfterTestPanel(props: {
 }) {
   return <ApplicationIntegrationJourneyPanel {...props} />;
 }
+

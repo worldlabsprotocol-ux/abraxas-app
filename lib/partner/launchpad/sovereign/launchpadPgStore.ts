@@ -196,6 +196,9 @@ export async function pgGetSignedReceiptForApplication(input: {
   signature: string;
   expires_at: string;
   revoked_at: string | null;
+  scenario_id: string | null;
+  request_status: string | null;
+  idempotency_key: string | null;
 } | null> {
   const { rows } = await queryAbraxasPg<{
     receipt_id: string;
@@ -203,10 +206,15 @@ export async function pgGetSignedReceiptForApplication(input: {
     signature: string;
     expires_at: string;
     revoked_at: string | null;
+    scenario_id: string | null;
+    request_status: string | null;
+    idempotency_key: string | null;
   }>(
-    `select receipt_id, public_payload, signature, expires_at, revoked_at
-       from public.partner_launchpad_signed_receipts
-      where receipt_id = $1 and application_id = $2::uuid and partner_id = $3
+    `select r.receipt_id, r.public_payload, r.signature, r.expires_at, r.revoked_at,
+            v.scenario_id, v.status as request_status, v.idempotency_key
+       from public.partner_launchpad_signed_receipts r
+       left join public.partner_launchpad_verification_requests v on v.id = r.verification_request_id
+      where r.receipt_id = $1 and r.application_id = $2::uuid and r.partner_id = $3
       limit 1`,
     [input.receiptId, input.applicationId, input.partnerId],
   );
@@ -265,3 +273,4 @@ export async function pgInsertSandboxAuditEvent(input: {
     [input.accountId, input.partnerId, input.eventType, JSON.stringify(input.metadata ?? {})],
   );
 }
+
