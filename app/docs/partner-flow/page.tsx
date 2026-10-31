@@ -3,6 +3,7 @@
 // Partner Flow integrator guide — browser redirect + public receipt verification.
 
 import Link from "next/link";
+import { useRef } from "react";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
@@ -10,8 +11,6 @@ import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSt
 import { PartnerFlowDocToc, PartnerFlowStartHereCard, PartnerFlowDocMobileJump, PartnerFlowMobileReceiptCallout } from "@/components/docs/PartnerFlowDocToc";
 import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
 import {
-  PARTNER_FLOW_HEADLINE,
-  PARTNER_FLOW_SUMMARY,
   PARTNER_FLOW_CANONICAL_HOST,
   INTEGRATION_PATH_DECISION_TREE,
   PARTNER_FLOW_ENTRY_PARAMS,
@@ -72,6 +71,7 @@ function SectionCard({
 }
 
 export default function PartnerFlowDocsPage() {
+  const referenceRef = useRef<HTMLDetailsElement>(null);
   const sampleUrl = buildPartnerFlowEntryUrl({
     partnerId: "your-partner-id",
     policyId: "your-policy-v1",
@@ -82,32 +82,34 @@ export default function PartnerFlowDocsPage() {
     <RedesignPage accent="developer" maxWidth={1100}>
       <PageHeader
         eyebrow="Integrators · Partner Flow"
-        title={PARTNER_FLOW_HEADLINE}
-        subtitle={PARTNER_FLOW_SUMMARY}
+        title="Connect a hosted verification flow"
+        subtitle="Choose how your application starts verification. Your server checks the signed result before granting access."
       />
 
-      <p style={{ ...body, marginBottom: "1.25rem" }}>
-        Canonical production host:{" "}
-        <code style={{ fontFamily: MONO, fontSize: "0.75rem" }}>{PARTNER_FLOW_CANONICAL_HOST}</code>
-        {" · "}
-        <Link href="/docs/selective-disclosure" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
-          Selective disclosure
-        </Link>
-        {" · "}
-        <Link href="/docs/policy-compatibility" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
-          Policy compatibility
-        </Link>
-        {" · "}
-        <Link href="/docs/reusable-eligibility" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
-          Reusable eligibility
-        </Link>
-        {" · "}
-        <Link href="/verify?mode=receipt" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
-          Open receipt tester →
-        </Link>
-      </p>
+      <section aria-labelledby="partner-flow-path-heading" style={{ maxWidth: 780, margin: "1.5rem auto" }}>
+        <h2 id="partner-flow-path-heading" style={{ fontFamily: FONT, fontSize: "1.15rem", margin: "0 0 0.4rem" }}>Choose your integration path</h2>
+        <p style={{ ...body, marginBottom: "1rem" }}>Start with the flow that matches your application. The full request and verification reference is below.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "0.75rem" }}>
+          {INTEGRATION_PATH_DECISION_TREE.map((row) => (
+            <div key={row.path} style={{ padding: "1rem", borderRadius: 14, border: `1px solid ${row.path.startsWith("Partner Flow") ? `${ACCENT}66` : "var(--border)"}`, background: "var(--surface)" }}>
+              <h3 style={{ fontFamily: FONT, fontSize: "0.9rem", margin: "0 0 0.4rem" }}>{row.path}</h3>
+              <p style={body}>{row.when.split(";")[0]}</p>
+              {row.path.startsWith("Partner Flow") && <button type="button" onClick={() => {
+                if (referenceRef.current) {
+                  referenceRef.current.open = true;
+                  referenceRef.current.scrollIntoView({ block: "start" });
+                }
+              }} style={{ display: "inline-block", marginTop: "0.8rem", padding: 0, border: 0, background: "none", color: ACCENT, fontFamily: FONT, fontSize: "0.8rem", cursor: "pointer" }}>Open guide ↓</button>}
+              {"docs" in row && row.docs && <Link href={row.docs} style={{ display: "inline-block", marginTop: "0.8rem", color: ACCENT, fontFamily: FONT, fontSize: "0.8rem" }}>Read guide →</Link>}
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <PartnerFlowDocMobileJump />
+      <details ref={referenceRef} className="partner-flow-technical-reference" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <summary style={{ cursor: "pointer", fontFamily: FONT, fontWeight: 700, padding: "0.9rem 0", color: "var(--text-primary)" }}>Open technical reference: setup, callbacks, and receipt checks</summary>
+        <p style={{ ...body, marginBottom: "0.9rem" }}>Canonical production host: <code style={{ fontFamily: MONO }}>{PARTNER_FLOW_CANONICAL_HOST}</code>. Your server must verify the signed receipt before granting access.</p>
+        <PartnerFlowDocMobileJump />
 
       <div
         className="partner-flow-doc-layout"
@@ -384,6 +386,7 @@ export default function PartnerFlowDocsPage() {
           </SectionCard>
         </div>
       </div>
+      </details>
       <style>{`
         @media (max-width: 960px) {
           .partner-flow-doc-layout { grid-template-columns: 1fr !important; }
@@ -396,3 +399,4 @@ export default function PartnerFlowDocsPage() {
     </RedesignPage>
   );
 }
+
