@@ -496,17 +496,19 @@ export async function approveDeletionPrivacyRequest(input: {
     access_revoked?: boolean;
   };
 
-  if (!result?.ok) {
+  if (!result?.ok || result.access_revoked !== true) {
     return { ok: false, error: result?.error ?? "deletion_approve_failed" };
   }
 
   const updated = await getPrivacyRequestById(input.requestId);
-  if (!updated) return { ok: false, error: "request_not_found_after_rpc" };
+  if (!updated || updated.status !== "access_revoked_pending_purge") {
+    return { ok: false, error: "deletion_status_unconfirmed" };
+  }
 
   return {
     ok: true,
     request: toAdminView(updated),
-    accessRevoked: Boolean(result.access_revoked),
+    accessRevoked: true,
   };
 }
 
