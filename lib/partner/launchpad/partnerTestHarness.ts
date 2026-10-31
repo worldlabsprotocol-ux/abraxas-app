@@ -237,7 +237,7 @@ function buildSignedPublicReceipt(input: {
     signature_valid: signatureValid,
     currently_valid: input.status === "active" && input.decision === "approved",
     validity: input.status === "active" ? "active" : input.status,
-    invalidation_reasons: [],
+    invalidation_reasons: input.context === "sandbox_only" ? ["production_not_usable:false"] : [],
     artifact_type: "eligibility_decision_receipt",
     anchor_reference: null,
   };
