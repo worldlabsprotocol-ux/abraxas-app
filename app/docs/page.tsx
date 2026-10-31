@@ -1,55 +1,30 @@
 "use client";
-// FILE: app/docs/page.tsx
-// Documentation hub with section nav and short summaries.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RedesignPage } from "@/components/redesign/RedesignPage";
-import { AbxCard } from "@/components/design/AbxPrimitives";
 import { AbxInnerPage } from "@/components/design/AbxInnerPage";
-import { DOCS_HUB_GROUPS, DOCS_HUB_NAV, type DocTopic } from "@/lib/docs/docsHub";
-import { ABX_FONT_SANS, ABX_TAB_ACCENTS } from "@/lib/design/abraxasDesignSystem";
+import { RedesignPage } from "@/components/redesign/RedesignPage";
+import { DOCS_HUB_GROUPS, DOCS_HUB_NAV, type DocGroup, type DocTopic } from "@/lib/docs/docsHub";
+import styles from "./DocsPage.module.css";
 
-const FONT = ABX_FONT_SANS;
-const ACCENT = ABX_TAB_ACCENTS.developer.color;
+function DocTopicDisclosure({ group, topic }: { group: DocGroup; topic: DocTopic }) {
+  const title = topic.id === group.id
+    ? topic.id === "overview" ? "About Abraxas" : topic.id === "quick-start" ? "Start here" : "Integration status"
+    : topic.title;
 
-function DocTopicCard({ topic }: { topic: DocTopic }) {
   return (
-    <AbxCard id={topic.id} accent="developer" padding="1rem 1.05rem">
-      <h3 style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.45rem" }}>
-        {topic.title}
-      </h3>
-      <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-        {topic.summary}
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
-        {topic.readMore && (
-          <Link
-            href={topic.readMore.href}
-            style={{
-              padding: "0.4rem 0.75rem", borderRadius: 999,
-              border: `1px solid ${ACCENT}55`, background: `${ACCENT}14`, color: ACCENT,
-              fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, textDecoration: "none",
-            }}
-          >
-            Read more: {topic.readMore.label} →
-          </Link>
-        )}
-        {topic.links?.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            style={{
-              padding: "0.4rem 0.75rem", borderRadius: 999,
-              border: "1px solid var(--border)", color: "var(--text-secondary)",
-              fontFamily: FONT, fontSize: "0.74rem", fontWeight: 600, textDecoration: "none",
-            }}
-          >
-            {link.label} →
-          </Link>
-        ))}
+    <details className={styles.topic}>
+      <summary>{title}</summary>
+      <div className={styles.topicContent}>
+        <p>{topic.summary}</p>
+        <div className={styles.topicLinks}>
+          {topic.readMore ? <Link href={topic.readMore.href}>{topic.readMore.label}</Link> : null}
+          {topic.links?.map((link, index) => (
+            <Link key={`${link.href}-${index}`} href={link.href}>{link.label}</Link>
+          ))}
+        </div>
       </div>
-    </AbxCard>
+    </details>
   );
 }
 
@@ -57,108 +32,57 @@ export default function DocsPage() {
   const [activeGroup, setActiveGroup] = useState(DOCS_HUB_NAV[0]?.id ?? "overview");
 
   useEffect(() => {
-    const onScroll = () => {
-      const offset = 120;
+    const updateActiveGroup = () => {
+      const offset = 150;
+      let nextGroup = DOCS_HUB_NAV[0]?.id ?? "overview";
       for (const group of DOCS_HUB_GROUPS) {
-        const el = document.getElementById(`docs-group-${group.id}`);
-        if (!el) continue;
-        const top = el.getBoundingClientRect().top;
-        if (top <= offset) setActiveGroup(group.id);
+        const section = document.getElementById(`docs-group-${group.id}`);
+        if (section && section.getBoundingClientRect().top <= offset) nextGroup = group.id;
       }
+      setActiveGroup(nextGroup);
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    window.addEventListener("scroll", updateActiveGroup, { passive: true });
+    return () => window.removeEventListener("scroll", updateActiveGroup);
   }, []);
 
-  const scrollToGroup = (groupId: string) => {
-    setActiveGroup(groupId);
-    document.getElementById(`docs-group-${groupId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   return (
-    <RedesignPage accent="developer" maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={1000}>
       <AbxInnerPage
         accent="developer"
         eyebrow="Documentation"
         title="Protocol docs"
-        lead="Each section fits one screen. Jump to a topic or follow Read more for depth."
-        maxWidth={900}
+        lead="Find a topic. Open it for the summary and full references."
+        maxWidth={1000}
       >
-        <nav
-          aria-label="Documentation sections"
-          style={{
-            position: "sticky",
-            top: "clamp(60px, 8vw, 72px)",
-            zIndex: 10,
-            marginBottom: "0.5rem",
-            padding: "0.5rem 0",
-            background: "var(--bg)",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          <div
-            className="docs-hub-nav"
-            style={{
-              display: "flex",
-              gap: "0.45rem",
-              overflowX: "auto",
-              WebkitOverflowScrolling: "touch",
-              paddingBottom: 2,
-              scrollbarWidth: "none",
-            }}
-          >
-            {DOCS_HUB_NAV.map((item) => {
-              const active = activeGroup === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => scrollToGroup(item.id)}
-                  aria-current={active ? "true" : undefined}
-                  style={{
-                    flexShrink: 0,
-                    padding: "0.45rem 0.85rem",
-                    borderRadius: 999,
-                    border: active ? `1px solid ${ACCENT}66` : "1px solid var(--border)",
-                    background: active ? `${ACCENT}18` : "var(--surface)",
-                    color: active ? ACCENT : "var(--text-secondary)",
-                    fontFamily: FONT,
-                    fontSize: "0.76rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.title}
-                </button>
-              );
-            })}
-          </div>
+        <nav className={styles.navigation} aria-label="Documentation sections">
+          {DOCS_HUB_NAV.map((item) => (
+            <a
+              key={item.id}
+              href={`#docs-group-${item.id}`}
+              aria-current={activeGroup === item.id ? "location" : undefined}
+              onClick={() => setActiveGroup(item.id)}
+            >
+              {item.title}
+            </a>
+          ))}
         </nav>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
+        <div className={styles.groups}>
           {DOCS_HUB_GROUPS.map((group) => (
-            <section key={group.id} id={`docs-group-${group.id}`} style={{ scrollMarginTop: 130 }}>
-              <h2 style={{
-                fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)",
-                margin: "0 0 0.75rem", letterSpacing: "-0.02em",
-              }}>
-                {group.title}
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-                {group.topics.map((topic) => (
-                  <DocTopicCard key={topic.id} topic={topic} />
-                ))}
-              </div>
+            <section
+              key={group.id}
+              id={`docs-group-${group.id}`}
+              className={styles.group}
+              aria-labelledby={`docs-heading-${group.id}`}
+            >
+              <h2 id={`docs-heading-${group.id}`}>{group.title}</h2>
+              {group.topics.map((topic) => (
+                <DocTopicDisclosure key={topic.id} group={group} topic={topic} />
+              ))}
             </section>
           ))}
         </div>
-
-        <style jsx global>{`
-          .docs-hub-nav::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
       </AbxInnerPage>
     </RedesignPage>
   );
