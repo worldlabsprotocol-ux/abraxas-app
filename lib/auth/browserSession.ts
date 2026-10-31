@@ -5,7 +5,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { createClient } from "@supabase/supabase-js";
 import type { NextRequest, NextResponse } from "next/server";
-import { assertHolderSubjectExists } from "@/lib/auth/holderSubject/service";
+import { assertHolderSubjectExists, resolveVerifiedWalletSubjectId } from "@/lib/auth/holderSubject/service";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 
 export const BROWSER_SESSION_COOKIE = "abraxas_browser_session";
@@ -122,6 +122,10 @@ export async function resolveBrowserSession(req: NextRequest): Promise<BrowserSe
 
     if (holderSubjectId && isChainNeutralHolderSubjectId(holderSubjectId)) {
       if (await assertHolderSubjectExists(holderSubjectId)) {
+        if (authMethod === "solana_wallet") {
+          if (!walletCaip10?.startsWith("solana:")
+            || await resolveVerifiedWalletSubjectId(walletCaip10) !== holderSubjectId) return null;
+        }
         return finalizeBrowserSession({
           holderSubjectId,
           suiAddress: suiRaw ? normalizeSuiAddress(suiRaw) : undefined,

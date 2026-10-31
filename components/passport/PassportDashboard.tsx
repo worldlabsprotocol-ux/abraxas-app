@@ -960,7 +960,7 @@ function PassportCustomerAdvancedDetails({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+        body: JSON.stringify({ policy_id: "partner-sandbox-gate-v1" }),
       });
       const data = await res.json() as { consent_url?: string; error?: string };
       if (!res.ok || !data.consent_url) throw new Error(data.error ?? "Demo request failed");

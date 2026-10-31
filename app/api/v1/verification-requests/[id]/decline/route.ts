@@ -2,16 +2,16 @@
 // Holder declines a partner verification request — no claims shared.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { declineVerificationRequest } from "@/lib/verification/requestsService";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireBrowserSession(req);
+  const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
-    return NextResponse.json({ error: session.error }, { status: session.status });
+    return NextResponse.json({ error: session.message }, { status: session.error === "forbidden" ? 403 : 401 });
   }
 
   const { id } = await params;
@@ -19,7 +19,7 @@ export async function POST(
   try {
     const result = await declineVerificationRequest({
       requestId: id,
-      suiAddress: session.session.subjectId,
+      subjectId: session.subjectId,
     });
     return NextResponse.json(result);
   } catch (e: unknown) {

@@ -2,6 +2,7 @@
 // Partner verification requests, consent, and policy decisions.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { claimTypeLabel, type ClaimType, type CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
@@ -41,17 +42,52 @@ export { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewA
 
 export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
+async function assertApplicationPolicyBinding(input: {
+  applicationId: string;
+  partnerId: string;
+  policyId: string;
+  policyVersion: number;
+}): Promise<void> {
+  const sb = requireSupabaseAdmin();
+  const { data: app, error } = await sb.from("partner_launchpad_applications")
+    .select("partner_id,policy_id,policy_version,status")
+    .eq("id", input.applicationId).maybeSingle();
+  if (error || !app || app.status !== "active" || app.partner_id !== input.partnerId) {
+    throw new Error("application_binding_unavailable");
+  }
+  if (app.policy_id === input.policyId) {
+    if (app.policy_version !== input.policyVersion) throw new Error("application_policy_binding_changed");
+    return;
+  }
+  const { data: binding, error: bindingError } = await sb
+    .from("partner_launchpad_application_policies")
+    .select("policy_version,status")
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .eq("policy_id", input.policyId)
+    .maybeSingle();
+  if (bindingError || !binding || binding.status !== "active"
+    || binding.policy_version !== input.policyVersion) {
+    throw new Error("application_policy_binding_changed");
+  }
+}
+
 export async function createVerificationRequest(input: {
   partnerId: string;
   policyId: string;
   purpose?: string | null;
   requestedAction?: string;
   requestedClaims?: string[];
+  holderSubjectId?: string;
+  launchpadApplicationId?: string;
   suiAddress?: string;
   returnUrl?: string;
   appOrigin?: string;
   expectedPolicyVersion?: number;
 }): Promise<{ request_id: string; consent_url: string; expires_at: string }> {
+  if (input.holderSubjectId && (!isChainNeutralHolderSubjectId(input.holderSubjectId) || input.suiAddress)) {
+    throw new Error("invalid_request_holder_binding");
+  }
   const sb = requireSupabaseAdmin();
   const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
   const policy = input.expectedPolicyVersion != null
@@ -69,6 +105,14 @@ export async function createVerificationRequest(input: {
     expectedVersion: input.expectedPolicyVersion,
     mode: "production_receipt",
   });
+  if (input.launchpadApplicationId) {
+    await assertApplicationPolicyBinding({
+      applicationId: input.launchpadApplicationId,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      policyVersion: policy.version,
+    });
+  }
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const requestedClaims = input.requestedClaims?.length
@@ -81,6 +125,9 @@ export async function createVerificationRequest(input: {
     purpose: input.purpose?.trim() || null,
     requested_action: input.requestedAction ?? null,
     requested_claims: requestedClaims,
+    subject_id: input.holderSubjectId ?? null,
+    launchpad_application_id: input.launchpadApplicationId ?? null,
+    policy_version: policy.version,
     sui_address: input.suiAddress ? normalizeSuiAddress(input.suiAddress) : null,
     status: "pending",
     expires_at: expiresAt,
@@ -140,7 +187,9 @@ export async function getVerificationRequestPreview(
   if (!request) return null;
   if (subjectId && !requestPreviewMatchesSubject(request, subjectId)) return null;
 
-  const policy = await getPartnerPolicy(request.policy_id as string);
+  const policy = Number.isInteger(request.policy_version)
+    ? await getPartnerPolicyAtVersion(request.policy_id as string, request.policy_version as number)
+    : await getPartnerPolicy(request.policy_id as string);
   const requestedClaims = (request.requested_claims as string[]) ?? [];
   const policyClaims = (policy?.rules_json.required_claims ?? []).map(r => r.claim_type);
   const allClaims = Array.from(new Set([...requestedClaims, ...policyClaims]));
@@ -190,7 +239,7 @@ export async function getVerificationRequestPreview(
 
 export async function consentAndDecide(input: {
   requestId: string;
-  suiAddress: string;
+  subjectId: string;
   request?: NextRequest;
 }): Promise<{
   decision_id: string;
@@ -201,7 +250,8 @@ export async function consentAndDecide(input: {
   valid_until: string | null;
 }> {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(input.suiAddress);
+  if (!isChainNeutralHolderSubjectId(input.subjectId)) throw new Error("holder_subject_required");
+  const subject = input.subjectId;
 
   const { data: request } = await sb
     .from("verification_requests")
@@ -210,6 +260,12 @@ export async function consentAndDecide(input: {
     .maybeSingle();
 
   if (!request) throw new Error("Request not found");
+  if (request.sui_address || (request.subject_id && request.subject_id !== subject)) {
+    throw new Error("This request is for a different Passport");
+  }
+  if (!Number.isInteger(request.policy_version) || Number(request.policy_version) < 1) {
+    throw new Error("Request policy version unavailable");
+  }
 
   if (request.status === "decided") {
     return getExistingConsentDecision(input.requestId, subject);
@@ -220,12 +276,18 @@ export async function consentAndDecide(input: {
     throw new Error("Request expired");
   }
 
-  if (request.sui_address && normalizeSuiAddress(request.sui_address as string) !== subject) {
-    throw new Error("This request is for a different Passport");
-  }
-
   const partnerId = request.partner_id as string;
   const policyId = request.policy_id as string;
+  if (request.launchpad_application_id) {
+    await assertApplicationPolicyBinding({
+      applicationId: request.launchpad_application_id as string,
+      partnerId,
+      policyId,
+      policyVersion: Number(request.policy_version),
+    });
+  } else if (!isSandboxPolicyId(policyId) || !input.request) {
+    throw new Error("application_binding_required");
+  }
   let additionalClaims: CredentialClaimRecord[] = [];
   let reuseFact: InternalReusableFact | null = null;
   if (input.request) {
@@ -236,6 +298,7 @@ export async function consentAndDecide(input: {
       policyId,
       sessionSubject: subject,
     });
+    if (!qualified.ok) throw new Error("qualifying_method_required");
     if (qualified.ok) {
       if (qualified.record.methodId === "reuse_existing_proof") {
         const policyVersion = qualified.record.policyVersion
@@ -289,10 +352,16 @@ export async function consentAndDecide(input: {
     suiAddress: subject,
     policyId,
     partnerId,
-    policyVersion: typeof request.policy_version === "number" ? request.policy_version : undefined,
+    policyVersion: Number(request.policy_version),
     additionalClaims,
   });
   let { policy, evaluation, claims } = evaluated;
+  assertPolicyVersionIssuable({
+    policy,
+    partnerId,
+    expectedVersion: Number(request.policy_version),
+    mode: "production_receipt",
+  });
   if (reuseFact && evaluation.decision !== "approved") {
     const pack = inferPolicyPackFromPolicyId(policyId);
     evaluation = {
@@ -311,7 +380,6 @@ export async function consentAndDecide(input: {
     .update({
       status: "decided",
       subject_id: subject,
-      sui_address: subject,
     })
     .eq("id", input.requestId)
     .eq("status", "pending")
@@ -324,7 +392,7 @@ export async function consentAndDecide(input: {
     return getExistingConsentDecision(input.requestId, subject);
   }
 
-  const { data: consent } = await sb.from("consent_receipts").insert({
+  const { data: consent, error: consentError } = await sb.from("consent_receipts").insert({
     subject_id: subject,
     partner_id: partnerId,
     request_id: input.requestId,
@@ -332,8 +400,9 @@ export async function consentAndDecide(input: {
     claims_authorized: Object.keys(evaluation.claims),
     expires_at: evaluation.valid_until,
   }).select("id").single();
+  if (consentError || !consent?.id) throw new Error("consent_persistence_unavailable");
 
-  const { data: decisionRow } = await sb.from("verification_decisions").insert({
+  const { data: decisionRow, error: decisionError } = await sb.from("verification_decisions").insert({
     request_id: input.requestId,
     partner_id: partnerId,
     subject_id: subject,
@@ -345,11 +414,13 @@ export async function consentAndDecide(input: {
     valid_until: evaluation.valid_until,
     status: "active",
   }).select("id").single();
+  if (decisionError || !decisionRow?.id) throw new Error("decision_persistence_unavailable");
 
   if (consent?.id) {
-    await sb.from("verification_requests")
+    const { error: updateError } = await sb.from("verification_requests")
       .update({ consent_id: consent.id })
       .eq("id", input.requestId);
+    if (updateError) throw new Error("consent_binding_unavailable");
   }
 
   await appendAuditEvent({
@@ -473,6 +544,7 @@ async function getExistingConsentDecision(
 
   const { getReceiptByDecisionId } = await import("@/lib/decisionReceipts/service");
   const receipt = await getReceiptByDecisionId(decisionRow.id as string);
+  if (!receipt) throw new Error("decision_receipt_unavailable");
 
   return {
     decision_id: decisionRow.id as string,
@@ -487,10 +559,11 @@ async function getExistingConsentDecision(
 /** Holder declines — no claims shared, request cancelled */
 export async function declineVerificationRequest(input: {
   requestId: string;
-  suiAddress: string;
+  subjectId: string;
 }): Promise<{ status: "cancelled" }> {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(input.suiAddress);
+  if (!isChainNeutralHolderSubjectId(input.subjectId)) throw new Error("holder_subject_required");
+  const subject = input.subjectId;
 
   const { data: request } = await sb
     .from("verification_requests")
@@ -499,6 +572,9 @@ export async function declineVerificationRequest(input: {
     .maybeSingle();
 
   if (!request) throw new Error("Request not found");
+  if (request.sui_address || (request.subject_id && request.subject_id !== subject)) {
+    throw new Error("This request is for a different Passport");
+  }
   if (request.status === "decided") throw new Error("Request already decided");
   if (request.status === "cancelled") return { status: "cancelled" };
   if (new Date(request.expires_at as string) < new Date()) {
@@ -506,15 +582,11 @@ export async function declineVerificationRequest(input: {
     throw new Error("Request expired");
   }
 
-  if (request.sui_address && normalizeSuiAddress(request.sui_address as string) !== subject) {
-    throw new Error("This request is for a different Passport");
-  }
-
-  await sb.from("verification_requests").update({
+  const { data: cancelled, error: cancelError } = await sb.from("verification_requests").update({
     status: "cancelled",
     subject_id: subject,
-    sui_address: subject,
-  }).eq("id", input.requestId);
+  }).eq("id", input.requestId).eq("status", "pending").select("id").maybeSingle();
+  if (cancelError || !cancelled) throw new Error("Request is no longer pending");
 
   await appendAuditEvent({
     actor_type: "subject",

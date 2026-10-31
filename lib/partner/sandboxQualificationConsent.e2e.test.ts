@@ -19,6 +19,7 @@ const mockInsertDecision = vi.fn();
 const mockInsertConsent = vi.fn();
 const mockMaybeSingle = vi.fn();
 const mockUpdateMaybeSingle = vi.fn();
+const mockAppBinding = vi.fn();
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
@@ -69,6 +70,9 @@ function chain(result: unknown) {
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: () => ({
     from: (table: string) => {
+      if (table === "partner_launchpad_applications") return {
+        select: () => chain(mockAppBinding()),
+      };
       if (table === "verification_requests") {
         return {
           select: () => chain(mockMaybeSingle()),
@@ -95,9 +99,12 @@ const REQUEST_ROW = {
   id: "vr-sandbox-e2e",
   status: "pending",
   expires_at: new Date(Date.now() + 3600_000).toISOString(),
-  sui_address: "0x0000000000000000000000000000000000000000000000000000000000000abc",
+  subject_id: "abx_hs_0123456789abcdef0123456789abcdef",
+  sui_address: null,
   partner_id: POLICY.partner_id,
   policy_id: POLICY.id,
+  policy_version: 1,
+  launchpad_application_id: "00000000-0000-4000-8000-000000000001",
   requested_action: "sandbox_economic_demo",
 };
 
@@ -105,12 +112,17 @@ describe("sign-in → qualify → consent → sandbox receipt", () => {
   beforeEach(() => {
     process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-method-qualification-secret";
     mockPeek.mockReset();
+    mockIssueReceipt.mockReset();
     mockGetActiveClaims.mockResolvedValue([]);
     mockGetPolicy.mockResolvedValue(POLICY);
     mockIssueReceipt.mockResolvedValue({ id: "receipt-sandbox", decision_context: "sandbox_only" });
     mockInsertConsent.mockResolvedValue({ data: { id: "consent-row" } });
     mockInsertDecision.mockResolvedValue({ data: { id: "decision-row" } });
     mockMaybeSingle.mockResolvedValue({ data: REQUEST_ROW });
+    mockAppBinding.mockReturnValue({ data: {
+      partner_id: POLICY.partner_id, policy_id: POLICY.id,
+      policy_version: POLICY.version, status: "active",
+    }, error: null });
     mockUpdateMaybeSingle.mockResolvedValue({ data: REQUEST_ROW, error: null });
     mockPeek.mockResolvedValue({
       partnerId: POLICY.partner_id,
@@ -118,6 +130,38 @@ describe("sign-in → qualify → consent → sandbox receipt", () => {
       expiresAt: new Date(Date.now() + 3600_000).toISOString(),
       consumedAt: new Date().toISOString(),
     });
+  });
+
+  it("rejects another wallet's subject before qualification or issuance", async () => {
+    const { consentAndDecide } = await import("@/lib/verification/requestsService");
+    await expect(consentAndDecide({
+      requestId: REQUEST_ROW.id,
+      subjectId: "abx_hs_ffffffffffffffffffffffffffffffff",
+    })).rejects.toThrow("different Passport");
+    expect(mockIssueReceipt).not.toHaveBeenCalled();
+  }, 15000);
+
+  it("rejects a request without a pinned policy version", async () => {
+    mockMaybeSingle.mockResolvedValue({ data: { ...REQUEST_ROW, policy_version: null } });
+    const { consentAndDecide } = await import("@/lib/verification/requestsService");
+    await expect(consentAndDecide({
+      requestId: REQUEST_ROW.id,
+      subjectId: REQUEST_ROW.subject_id,
+    })).rejects.toThrow("policy version unavailable");
+    expect(mockIssueReceipt).not.toHaveBeenCalled();
+  });
+
+  it("rejects a changed application policy before issuance", async () => {
+    mockAppBinding.mockReturnValue({ data: {
+      partner_id: POLICY.partner_id, policy_id: POLICY.id,
+      policy_version: 2, status: "active",
+    }, error: null });
+    const { consentAndDecide } = await import("@/lib/verification/requestsService");
+    await expect(consentAndDecide({
+      requestId: REQUEST_ROW.id,
+      subjectId: REQUEST_ROW.subject_id,
+    })).rejects.toThrow("application_policy_binding_changed");
+    expect(mockIssueReceipt).not.toHaveBeenCalled();
   });
 
   it("issues one sandbox-only receipt after qualification and consent, and denies otherwise", async () => {
@@ -141,7 +185,7 @@ describe("sign-in → qualify → consent → sandbox receipt", () => {
     const { consentAndDecide } = await import("@/lib/verification/requestsService");
     const permitted = await consentAndDecide({
       requestId: REQUEST_ROW.id,
-      suiAddress: "0xabc",
+      subjectId: REQUEST_ROW.subject_id,
       request: req,
     });
     expect(permitted.decision).toBe("approved");

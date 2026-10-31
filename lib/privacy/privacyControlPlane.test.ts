@@ -195,18 +195,48 @@ describe("privacy control plane", () => {
     expect(result).toEqual({ ok: false, error: "privacy_request_owner_mismatch" });
   });
 
-  it("keeps canonical deletion approval fail-closed until its revocation RPC is migrated", async () => {
+  it("uses the atomic holder revocation RPC and confirms the persisted status", async () => {
+    let lookups = 0;
+    fromMock.mockImplementation(() => privacyRequestTableMock({
+      maybeSingle: vi.fn().mockImplementation(async () => ({
+        data: { ...sampleRecord, subject_sui: SOLANA_HOLDER,
+          status: ++lookups === 1 ? "under_review" : "access_revoked_pending_purge" }, error: null,
+      })),
+    }));
+    rpcMock.mockResolvedValue({ data: { ok: true, access_revoked: true }, error: null });
+    const result = await approveDeletionPrivacyRequest({
+      requestId: sampleRecord.id,
+      adminActorCategory: "admin_pin",
+    });
+    expect(result).toMatchObject({ ok: true, accessRevoked: true,
+      request: { status: "access_revoked_pending_purge" } });
+    expect(rpcMock).toHaveBeenCalledWith("approve_privacy_deletion_holder_atomic", expect.objectContaining({
+      p_request_id: sampleRecord.id,
+    }));
+  });
+
+  it("does not report holder access revoked when the atomic RPC fails", async () => {
     fromMock.mockImplementation(() => privacyRequestTableMock({
       maybeSingle: vi.fn().mockResolvedValue({
         data: { ...sampleRecord, subject_sui: SOLANA_HOLDER }, error: null,
       }),
     }));
-    const result = await approveDeletionPrivacyRequest({
-      requestId: sampleRecord.id,
-      adminActorCategory: "admin_pin",
-    });
-    expect(result).toEqual({ ok: false, error: "canonical_deletion_review_required" });
-    expect(rpcMock).not.toHaveBeenCalled();
+    rpcMock.mockResolvedValue({ data: null, error: { message: "transaction_rolled_back" } });
+    expect(await approveDeletionPrivacyRequest({
+      requestId: sampleRecord.id, adminActorCategory: "admin_pin",
+    })).toEqual({ ok: false, error: "transaction_rolled_back" });
+  });
+
+  it("does not report success until the revoked request status is visible", async () => {
+    fromMock.mockImplementation(() => privacyRequestTableMock({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { ...sampleRecord, subject_sui: SOLANA_HOLDER }, error: null,
+      }),
+    }));
+    rpcMock.mockResolvedValue({ data: { ok: true, access_revoked: true }, error: null });
+    expect(await approveDeletionPrivacyRequest({
+      requestId: sampleRecord.id, adminActorCategory: "admin_pin",
+    })).toEqual({ ok: false, error: "deletion_status_unconfirmed" });
   });
 
   it("approved deletion uses atomic RPC and does not call revokeSubjectClaims directly", async () => {

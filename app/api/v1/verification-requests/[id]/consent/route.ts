@@ -2,7 +2,7 @@
 // Holder consents via browser session; policy engine returns decision.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { requireQualifiedPartnerMethod } from "@/lib/partner/requirePartnerMethodQualification";
 import { consentAndDecide } from "@/lib/verification/requestsService";
@@ -19,16 +19,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const started = Date.now();
-  const session = await requireBrowserSession(req);
+  const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
     recordPartnerFlowRequestOutcome({
       request: req,
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      httpStatus: session.status,
+      httpStatus: session.error === "forbidden" ? 403 : 401,
     });
-    return NextResponse.json({ error: session.error }, { status: session.status });
+    return NextResponse.json({ error: session.message }, { status: session.error === "forbidden" ? 403 : 401 });
   }
 
   const rateLimited = await enforcePartnerFlowRateLimit({
@@ -36,7 +36,7 @@ export async function POST(
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.subjectId,
+    sessionSubject: session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -57,7 +57,7 @@ export async function POST(
       verifyRequestId: id,
       partnerId: String(requestRow.partner_id ?? ""),
       policyId: String(requestRow.policy_id ?? ""),
-      sessionSubject: session.session.subjectId,
+      sessionSubject: session.subjectId,
     });
     if (!qualified.ok) {
       recordPartnerFlowRequestOutcome({
@@ -65,7 +65,7 @@ export async function POST(
         endpoint: ENDPOINT,
         method: "POST",
         started,
-        sessionSubject: session.session.subjectId,
+        sessionSubject: session.subjectId,
         httpStatus: 403,
       });
       return NextResponse.json({
@@ -77,7 +77,7 @@ export async function POST(
 
     const result = await consentAndDecide({
       requestId: id,
-      suiAddress: session.session.subjectId,
+      subjectId: session.subjectId,
       request: req,
     });
 
@@ -88,7 +88,7 @@ export async function POST(
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.subjectId,
+      sessionSubject: session.subjectId,
       httpStatus: 200,
     });
 
@@ -110,7 +110,7 @@ export async function POST(
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.subjectId,
+      sessionSubject: session.subjectId,
       httpStatus: 400,
     });
     return NextResponse.json({ error: msg }, { status: 400 });
