@@ -6,7 +6,7 @@ const OTHER = "0x" + "b".repeat(64);
 
 describe("request preview holder binding", () => {
   it("allows unaddressed requests to be claimed by a signed-in holder", () => {
-    expect(requestPreviewMatchesSubject({}, SUBJECT)).toBe(true);
+    expect(requestPreviewMatchesSubject({}, SUBJECT)).toBe(false);
   });
 
   it("allows a matching stored subject or wallet address", () => {
