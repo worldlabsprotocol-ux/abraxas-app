@@ -137,12 +137,21 @@ export function PassportEntryPanel({ compact = false }: { compact?: boolean }) {
             textAlign: "left",
           }}
         >
-          <span>Wallet sign-in or account recovery</span>
+          <span>Other sign-in options and account recovery</span>
           <span aria-hidden="true">{recoveryOpen ? "−" : "+"}</span>
         </button>
 
         {recoveryOpen ? (
           <div id={recoveryId} style={{ marginTop: "0.85rem", display: "grid", gap: "0.85rem" }}>
+            <p style={{
+              fontFamily: FONT,
+              fontSize: "0.72rem",
+              lineHeight: 1.55,
+              color: "var(--text-muted)",
+              margin: 0,
+            }}>
+              Connecting a wallet does not sign you in or approve sharing. Choose a sign-in action when you are ready.
+            </p>
             <HolderWalletAuthPanel compact secondaryMode />
             {showLegacy ? (
               <div>

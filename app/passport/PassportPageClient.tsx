@@ -250,9 +250,33 @@ function PassportPageInner() {
         </Suspense>
 
         {pageView === "passport" ? (
-          <div className="abx-surface-protocol-visual">
-            <PassportHolderFlowVisual />
-          </div>
+          <details style={{
+            marginBottom: "1.25rem",
+            border: "1px solid var(--border)",
+            borderRadius: 12,
+            background: "var(--surface-inset)",
+          }}>
+            <summary style={{
+              padding: "0.85rem 1rem",
+              color: "var(--text-primary)",
+              fontFamily: S,
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}>
+              How Passport protects your choices
+            </summary>
+            <div style={{
+              display: "grid",
+              gap: "0.75rem",
+              padding: "0 1rem 1rem",
+            }}>
+              <div className="abx-surface-protocol-visual">
+                <PassportHolderFlowVisual />
+              </div>
+              <PassportAssuranceBoundaryNotice />
+            </div>
+          </details>
         ) : null}
 
         {pageView === "verify" ? (
@@ -442,8 +466,6 @@ function PassportPageInner() {
                 onBindWallet={() => setShowSuccessPanel(false)}
               />
             )}
-
-            <PassportAssuranceBoundaryNotice />
 
             <PassportCustomerView
               walletDone={walletDone}
