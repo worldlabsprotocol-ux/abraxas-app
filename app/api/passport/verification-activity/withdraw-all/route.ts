@@ -2,7 +2,7 @@
 // Emergency holder control: withdraw every current result visible to this Passport session.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 import { loadPassportVerificationActivity } from "@/lib/passport/verificationActivity/load";
 import { withdrawHolderSharedResult } from "@/lib/passport/verificationActivity/withdraw";
@@ -13,9 +13,9 @@ export const dynamic = "force-dynamic";
 const CONFIRMATION = "withdraw_all_current";
 
 export async function POST(req: NextRequest) {
-  const session = await requireBrowserSession(req);
+  const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
-    return NextResponse.json({ ok: false, error: "Sign in required" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: session.message }, { status: session.error === "forbidden" ? 403 : 401 });
   }
 
   const limited = await checkLaunchpadRateLimit(
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const activity = await loadPassportVerificationActivity(session.session.subjectId);
+    const activity = await loadPassportVerificationActivity(session.subjectId);
     const current = activity.items.filter(item => item.current);
 
     let withdrawn = 0;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     for (const item of current) {
       const result = await withdrawHolderSharedResult({
-        subjectId: session.session.subjectId,
+        subjectId: session.subjectId,
         activityRef: item.activity_ref,
         clientBody: { activity_ref: item.activity_ref },
       });
