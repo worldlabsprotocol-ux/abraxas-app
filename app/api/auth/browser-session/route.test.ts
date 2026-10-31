@@ -42,13 +42,32 @@ describe("GET /api/auth/browser-session readiness probe", () => {
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
   });
 
-  it("returns only boolean readiness for authenticated session", async () => {
+  it("returns authenticated session identity without a Solana wallet binding for OAuth", async () => {
     mockResolve.mockResolvedValue({ suiAddress: "0xabc" });
     const res = await GET(new NextRequest("http://localhost/api/auth/browser-session"));
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(res.headers.get("pragma")).toBe("no-cache");
-    expect(await res.json()).toEqual({ ok: true });
+    expect(await res.json()).toEqual({
+      ok: true,
+      holder_subject_id: null,
+      sui_address: "0xabc",
+      auth_method: null,
+      wallet_caip10: null,
+    });
+  });
+
+  it("returns the signed Solana wallet binding for lifecycle checks", async () => {
+    mockResolve.mockResolvedValue({
+      holderSubjectId: "abx_hs_example",
+      authMethod: "solana_wallet",
+      walletCaip10: "solana:devnet:wallet-a",
+    });
+    const res = await GET(new NextRequest("http://localhost/api/auth/browser-session"));
+    expect(await res.json()).toMatchObject({
+      auth_method: "solana_wallet",
+      wallet_caip10: "solana:devnet:wallet-a",
+    });
   });
 
   it("returns generic 401 for unauthenticated probe", async () => {

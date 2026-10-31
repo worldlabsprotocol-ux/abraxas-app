@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
       holder_subject_id: session.holderSubjectId ?? null,
       sui_address: session.suiAddress ?? null,
       auth_method: session.authMethod ?? null,
+      wallet_caip10: session.authMethod === "solana_wallet" ? session.walletCaip10 ?? null : null,
     },
     { status: 200, headers: NO_STORE_HEADERS },
   );
