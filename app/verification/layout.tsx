@@ -1,14 +1,13 @@
 // FILE: app/verification/layout.tsx
-// Internal engineering dashboard — exclude from public search indexes.
+// Keep request-oriented verification entry points out of public search indexes.
 
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = {
   ...pageMetadata({
-    title: "Engineering status · Abraxas",
-    description:
-      "Internal verification-layer engineering checklist and bootstrap diagnostics. Not a public attestation or third party certification.",
+    title: "Review a verification request · Abraxas",
+    description: "Review a partner request before choosing whether to consent or verify.",
     path: "/verification",
   }),
   robots: {

@@ -1,0 +1,87 @@
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0 1.5rem;
+}
+
+.categoryButton {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.categories button:focus-visible,
+.topic summary:focus-visible,
+.topicLinks a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.topics h2 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.topic {
+  border-top: 1px solid var(--border);
+}
+
+.topic:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.topic summary {
+  display: flex;
+  min-height: 2.9rem;
+  align-items: center;
+  padding: 0.65rem 0.15rem;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.topicContent {
+  padding: 0 0.15rem 1rem 1.25rem;
+}
+
+.topicContent p {
+  margin: 0 0 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.topicLinks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.topicLinks a {
+  color: var(--accent);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.topicLinks a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
