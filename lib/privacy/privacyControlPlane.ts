@@ -469,18 +469,16 @@ export async function approveDeletionPrivacyRequest(input: {
   if (existing.request_type !== "account_deletion") {
     return { ok: false, error: "not_deletion_request" };
   }
-  // Migration 061's approval RPC does not revoke holder-subject credential
-  // and wallet bindings. Never report access revoked for a canonical holder.
-  if (isChainNeutralHolderSubjectId(existing.subject_sui)) {
-    return { ok: false, error: "canonical_deletion_review_required" };
-  }
-  if (existing.status === "access_revoked_pending_purge" || existing.status === "completed") {
+  const canonicalHolder = isChainNeutralHolderSubjectId(existing.subject_sui);
+  if (!canonicalHolder && (existing.status === "access_revoked_pending_purge" || existing.status === "completed")) {
     return { ok: true, request: toAdminView(existing), accessRevoked: true };
   }
 
   const approveKey = input.idempotencyKey ?? `approve_deletion:${input.requestId}`;
   const sb = requireSupabaseAdmin();
-  const { data, error } = await sb.rpc("approve_privacy_deletion_atomic", {
+  const { data, error } = await sb.rpc(canonicalHolder
+    ? "approve_privacy_deletion_holder_atomic"
+    : "approve_privacy_deletion_atomic", {
     p_request_id: input.requestId,
     p_admin_actor_category: input.adminActorCategory,
     p_idempotency_key: approveKey,
