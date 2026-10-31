@@ -10,8 +10,6 @@ import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSt
 import { PartnerFlowDocToc, PartnerFlowStartHereCard, PartnerFlowDocMobileJump, PartnerFlowMobileReceiptCallout } from "@/components/docs/PartnerFlowDocToc";
 import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
 import {
-  PARTNER_FLOW_HEADLINE,
-  PARTNER_FLOW_SUMMARY,
   PARTNER_FLOW_CANONICAL_HOST,
   INTEGRATION_PATH_DECISION_TREE,
   PARTNER_FLOW_ENTRY_PARAMS,
@@ -82,8 +80,8 @@ export default function PartnerFlowDocsPage() {
     <RedesignPage accent="developer" maxWidth={1100}>
       <PageHeader
         eyebrow="Integrators · Partner Flow"
-        title={PARTNER_FLOW_HEADLINE}
-        subtitle={PARTNER_FLOW_SUMMARY}
+        title="Connect a hosted verification flow"
+        subtitle="Choose how your application starts verification. Your server checks the signed result before granting access."
       />
 
       <section aria-labelledby="partner-flow-path-heading" style={{ maxWidth: 780, margin: "1.5rem auto" }}>
