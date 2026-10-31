@@ -927,7 +927,7 @@ function PartnerAccessSection({
           : "When a service requests eligibility, you see what information is needed, why, and what access it unlocks."}
       </p>
       <PassportVerificationActivity />
-      <PassportPrivacyCenter suiAddress={suiAddress} />
+      <PassportPrivacyCenter holderKey={suiAddress} />
     </section>
   );
 }
@@ -1098,3 +1098,4 @@ function PassportVerifiedDetails({
     </details>
   );
 }
+
