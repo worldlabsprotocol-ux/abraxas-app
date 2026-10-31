@@ -44,19 +44,31 @@ export default function VerifyPage({ searchParams }: PageProps) {
         </Suspense>
       </div>
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(2rem, 6vw, 4rem)" }}>
-        <p style={{
-          fontFamily: "'Inter',system-ui,sans-serif",
-          fontSize: "0.72rem",
-          fontWeight: 700,
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-          color: "var(--text-muted)",
-          margin: "0 0 0.75rem",
-        }}>
-          Reference demos (below the live tools)
-        </p>
-        <VerifyPageIntroDemo />
-        <VerifyStaticSample />
+        <details>
+          <summary style={{
+            width: "fit-content",
+            fontFamily: "'Inter',system-ui,sans-serif",
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+          }}>
+            Technical reference demos (illustrative, not live verification)
+          </summary>
+          <div style={{ paddingTop: "0.75rem" }}>
+            <p style={{
+              fontFamily: "'Inter',system-ui,sans-serif",
+              fontSize: "0.72rem",
+              color: "var(--text-muted)",
+              lineHeight: 1.55,
+              margin: "0 0 0.75rem",
+            }}>
+              These examples explain the verification flow. Use the lookup above for current record status.
+            </p>
+            <VerifyPageIntroDemo />
+            <VerifyStaticSample />
+          </div>
+        </details>
       </div>
     </AbxPageShell>
   );
