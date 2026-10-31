@@ -1,7 +1,7 @@
 // Holder-safe access check for verification request previews.
 // A pre-addressed request may only be previewed by that Passport subject.
 
-import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizeStoredHolderKey } from "@/lib/auth/holderSubject/normalizeSubjectKey";
 
 export function requestPreviewMatchesSubject(
   request: { subject_id?: unknown; sui_address?: unknown },
@@ -9,7 +9,7 @@ export function requestPreviewMatchesSubject(
 ): boolean {
   let subject: string;
   try {
-    subject = normalizeSuiAddress(subjectId);
+    subject = normalizeStoredHolderKey(subjectId);
   } catch {
     return false;
   }
@@ -17,9 +17,9 @@ export function requestPreviewMatchesSubject(
   const stored = [request.subject_id, request.sui_address]
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
 
-  return stored.every(value => {
+  return stored.length > 0 && stored.every(value => {
     try {
-      return normalizeSuiAddress(value) === subject;
+      return normalizeStoredHolderKey(value) === subject;
     } catch {
       return false;
     }
