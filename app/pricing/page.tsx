@@ -38,7 +38,11 @@ export default function PricingPage() {
           }}
         >
           {PUBLIC_PRICING_TIERS.map((tier) => (
-            <AbxCard key={tier.id} accent={tier.id === "enterprise" ? "partner" : "developer"}>
+            <AbxCard
+              key={tier.id}
+              accent={tier.id === "enterprise" ? "partner" : "developer"}
+              style={{ height: "100%", display: "flex", flexDirection: "column" }}
+            >
               <p
                 style={{
                   margin: "0 0 0.35rem",
@@ -87,28 +91,13 @@ export default function PricingPage() {
               >
                 {tier.summary}
               </p>
-              <ul
-                style={{
-                  margin: "0 0 1rem",
-                  paddingLeft: "1.1rem",
-                  fontFamily: FONT,
-                  fontSize: "0.82rem",
-                  lineHeight: 1.6,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {tier.features.map((feature) => (
-                  <li key={feature.text} style={{ marginBottom: "0.35rem" }}>
-                    {feature.text}
-                  </li>
-                ))}
-              </ul>
               <Btn
                 href={tier.ctaHref}
                 variant={tier.ctaVariant}
                 size="md"
                 fullWidth
                 ariaLabel={`${tier.ctaLabel} — ${tier.title}`}
+                style={{ marginTop: "auto" }}
               >
                 {tier.ctaLabel}
               </Btn>
@@ -116,126 +105,184 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <AbxCard accent="developer" id="production-plans">
-          <h2
-            style={{
-              margin: "0 0 0.35rem",
-              fontFamily: FONT,
-              fontSize: "var(--fs-h2)",
-              fontWeight: 700,
-              color: "var(--text-primary)",
-            }}
-          >
-            Production plan details
-          </h2>
-          <p
-            style={{
-              margin: "0 0 0.85rem",
-              fontFamily: FONT,
-              fontSize: "0.86rem",
-              lineHeight: 1.6,
-              color: "var(--text-secondary)",
-            }}
-          >
-            List pricing for reviewed production applications. Estimates are observe-only until billing collection is enabled.
-          </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-              gap: "0.75rem",
-            }}
-          >
-            {PUBLIC_PRODUCTION_PLAN_DISPLAYS.map((plan) => (
+        <AbxCard accent="developer" padding="0">
+          <details>
+            <summary
+              style={{
+                padding: "1rem 1.15rem",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.92rem",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              What each plan includes
+            </summary>
+            <div style={{ padding: "0 1.15rem 1.15rem" }}>
               <div
-                key={plan.planId}
                 style={{
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 12,
-                  padding: "0.95rem 1rem",
-                  background: "rgba(255,255,255,0.02)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+                  gap: "1.25rem",
                 }}
               >
-                <h3
-                  style={{
-                    margin: "0 0 0.25rem",
-                    fontFamily: FONT,
-                    fontSize: "0.95rem",
-                    fontWeight: 800,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {plan.label}
-                </h3>
-                <p
-                  style={{
-                    margin: "0 0 0.65rem",
-                    fontFamily: FONT,
-                    fontSize: "1.25rem",
-                    fontWeight: 800,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {plan.monthlyPriceLabel}
-                </p>
-                <ul
-                  style={{
-                    margin: 0,
-                    paddingLeft: "1.1rem",
-                    fontFamily: FONT,
-                    fontSize: "0.8rem",
-                    lineHeight: 1.55,
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  <li>{plan.includedReceiptsLabel}</li>
-                  <li>{plan.includedApiCallsLabel}</li>
-                  <li>{plan.receiptOverageLabel}</li>
-                  <li>{plan.apiOverageLabel}</li>
-                </ul>
+                {PUBLIC_PRICING_TIERS.map((tier) => (
+                  <section key={tier.id}>
+                    <h2
+                      style={{
+                        margin: "0 0 0.45rem",
+                        fontFamily: FONT,
+                        fontSize: "0.95rem",
+                        fontWeight: 800,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {tier.title}
+                    </h2>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingLeft: "1.1rem",
+                        fontFamily: FONT,
+                        fontSize: "0.82rem",
+                        lineHeight: 1.6,
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {tier.features.map((feature) => (
+                        <li key={feature.text} style={{ marginBottom: "0.35rem" }}>
+                          {feature.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </details>
         </AbxCard>
 
-        <AbxCard accent="neutral">
-          <h2
-            style={{
-              margin: "0 0 0.75rem",
-              fontFamily: FONT,
-              fontSize: "var(--fs-h2)",
-              fontWeight: 700,
-              color: "var(--text-primary)",
-            }}
-          >
-            FAQ
-          </h2>
-          <dl style={{ margin: 0, fontFamily: FONT }}>
-            {PUBLIC_PRICING_FAQ.map((item) => (
-              <div key={item.question} style={{ marginBottom: "0.85rem" }}>
-                <dt
-                  style={{
-                    margin: "0 0 0.25rem",
-                    fontSize: "0.88rem",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  {item.question}
-                </dt>
-                <dd
-                  style={{
-                    margin: 0,
-                    fontSize: "0.84rem",
-                    lineHeight: 1.6,
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {item.answer}
-                </dd>
+        <AbxCard accent="developer" padding="0" id="production-plans">
+          <details>
+            <summary
+              style={{
+                padding: "1rem 1.15rem",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.92rem",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Production volumes and overage rates
+            </summary>
+            <div style={{ padding: "0 1.15rem 1.15rem" }}>
+              <p
+                style={{
+                  margin: "0 0 0.85rem",
+                  fontFamily: FONT,
+                  fontSize: "0.86rem",
+                  lineHeight: 1.6,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                List pricing for reviewed production applications. Estimates are observe-only until billing collection is enabled.
+              </p>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                  gap: "1.25rem",
+                }}
+              >
+                {PUBLIC_PRODUCTION_PLAN_DISPLAYS.map((plan) => (
+                  <section key={plan.planId}>
+                    <h2
+                      style={{
+                        margin: "0 0 0.25rem",
+                        fontFamily: FONT,
+                        fontSize: "0.95rem",
+                        fontWeight: 800,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {plan.label}
+                    </h2>
+                    <p
+                      style={{
+                        margin: "0 0 0.65rem",
+                        fontFamily: FONT,
+                        fontSize: "1.25rem",
+                        fontWeight: 800,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {plan.monthlyPriceLabel}
+                    </p>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingLeft: "1.1rem",
+                        fontFamily: FONT,
+                        fontSize: "0.8rem",
+                        lineHeight: 1.55,
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      <li>{plan.includedReceiptsLabel}</li>
+                      <li>{plan.includedApiCallsLabel}</li>
+                      <li>{plan.receiptOverageLabel}</li>
+                      <li>{plan.apiOverageLabel}</li>
+                    </ul>
+                  </section>
+                ))}
               </div>
-            ))}
-          </dl>
+            </div>
+          </details>
+        </AbxCard>
+
+        <AbxCard accent="neutral" padding="0">
+          <details>
+            <summary
+              style={{
+                padding: "1rem 1.15rem",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.92rem",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Pricing FAQs
+            </summary>
+            <dl style={{ margin: "0 1.15rem 1.15rem", fontFamily: FONT }}>
+              {PUBLIC_PRICING_FAQ.map((item) => (
+                <div key={item.question} style={{ marginBottom: "0.85rem" }}>
+                  <dt
+                    style={{
+                      margin: "0 0 0.25rem",
+                      fontSize: "0.88rem",
+                      fontWeight: 700,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {item.question}
+                  </dt>
+                  <dd
+                    style={{
+                      margin: 0,
+                      fontSize: "0.84rem",
+                      lineHeight: 1.6,
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {item.answer}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </details>
         </AbxCard>
       </AbxInnerPage>
     </RedesignPage>

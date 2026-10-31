@@ -71,6 +71,16 @@ describe("public pricing surface", () => {
     expect(page).toContain("<dd");
   });
 
+  it("keeps one primary action and progressive disclosure for pricing details", () => {
+    const page = read("app/pricing/page.tsx");
+    expect(PUBLIC_PRICING_TIERS.filter((tier) => tier.ctaVariant === "primary")).toHaveLength(1);
+    expect(PUBLIC_PRICING_TIERS.find((tier) => tier.ctaVariant === "primary")?.id).toBe("sandbox");
+    expect(page.match(/<details>/g)).toHaveLength(3);
+    expect(page).toContain("What each plan includes");
+    expect(page).toContain("Production volumes and overage rates");
+    expect(page).toContain("Pricing FAQs");
+  });
+
   it("does not introduce fake checkout or unsupported billing claims", () => {
     const copy = read("lib/product/publicPricingCopy.ts");
     const page = read("app/pricing/page.tsx");
