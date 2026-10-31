@@ -38,7 +38,9 @@ async function selectPersistedWalletOwner(
   caip10: string,
 ): Promise<string | null> {
   const result = await client.query<{ subject_id: string }>(
-    `SELECT subject_id FROM public.passport_holder_wallet_accounts WHERE caip10 = $1 LIMIT 1`,
+    `SELECT w.subject_id FROM public.passport_holder_wallet_accounts w
+     JOIN public.passport_holder_subjects s ON s.subject_id = w.subject_id
+     WHERE w.caip10 = $1 AND w.revoked_at IS NULL AND s.status = 'active' LIMIT 1`,
     [caip10],
   );
   return result.rows[0]?.subject_id ?? null;
@@ -46,7 +48,9 @@ async function selectPersistedWalletOwner(
 
 export async function queryPersistedWalletOwner(caip10: string): Promise<string | null> {
   const result = await queryAbraxasPg<{ subject_id: string }>(
-    `SELECT subject_id FROM public.passport_holder_wallet_accounts WHERE caip10 = $1 LIMIT 1`,
+    `SELECT w.subject_id FROM public.passport_holder_wallet_accounts w
+     JOIN public.passport_holder_subjects s ON s.subject_id = w.subject_id
+     WHERE w.caip10 = $1 AND w.revoked_at IS NULL AND s.status = 'active' LIMIT 1`,
     [caip10],
   );
   return result.rows[0]?.subject_id ?? null;
@@ -91,7 +95,17 @@ export async function bindVerifiedWalletAccountDirect(input: {
   try {
     return await withAbraxasPgTransaction(async (client) => {
       await lockWalletCaip10(client, input.caip.caip10);
+      const reserved = await client.query<{ subject_id: string }>(
+        `SELECT subject_id FROM public.passport_holder_wallet_accounts WHERE caip10 = $1 LIMIT 1`,
+        [input.caip.caip10],
+      );
+      if (reserved.rows[0] && reserved.rows[0].subject_id !== input.subjectId) {
+        return { ok: false as const, code: "wallet_bound_to_other_subject" as const };
+      }
       const owner = await selectPersistedWalletOwner(client, input.caip.caip10);
+      if (reserved.rows[0] && !owner) {
+        return { ok: false as const, code: "persist_failed" as const };
+      }
       if (owner && owner !== input.subjectId) {
         return { ok: false as const, code: "wallet_bound_to_other_subject" as const };
       }
@@ -100,7 +114,7 @@ export async function bindVerifiedWalletAccountDirect(input: {
       }
 
       const subjectExists = await client.query<{ subject_id: string }>(
-        `SELECT subject_id FROM public.passport_holder_subjects WHERE subject_id = $1 LIMIT 1`,
+        `SELECT subject_id FROM public.passport_holder_subjects WHERE subject_id = $1 AND status = 'active' LIMIT 1`,
         [input.subjectId],
       );
       if (!subjectExists.rows[0]) {
@@ -150,7 +164,14 @@ export async function resolveSubjectForVerifiedWalletDirect(input: {
   try {
     return await withAbraxasPgTransaction(async (client) => {
       await lockWalletCaip10(client, input.caip.caip10);
+      const reserved = await client.query(
+        `SELECT 1 FROM public.passport_holder_wallet_accounts WHERE caip10 = $1 LIMIT 1`,
+        [input.caip.caip10],
+      );
       const existing = await selectPersistedWalletOwner(client, input.caip.caip10);
+      if (reserved.rows[0] && !existing) {
+        return { ok: false as const, code: "persist_failed" as const };
+      }
       if (existing) {
         return { ok: true as const, subjectId: existing, created: false as const };
       }
@@ -252,7 +273,7 @@ export async function resolveLegacySubjectIdDirect(
 export async function assertHolderSubjectExistsDirect(subjectId: string): Promise<boolean> {
   try {
     const result = await queryAbraxasPg<{ subject_id: string }>(
-      `SELECT subject_id FROM public.passport_holder_subjects WHERE subject_id = $1 LIMIT 1`,
+      `SELECT subject_id FROM public.passport_holder_subjects WHERE subject_id = $1 AND status = 'active' LIMIT 1`,
       [subjectId],
     );
     return Boolean(result.rows[0]);
