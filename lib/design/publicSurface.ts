@@ -57,6 +57,16 @@ export const PUBLIC_NAV_MENUS: readonly PublicNavMenuGroup[] = [
   },
 ] as const;
 
+export function publicNavMenusForPath(pathname: string | null): readonly PublicNavMenuGroup[] {
+  if (pathname !== "/") return PUBLIC_NAV_MENUS;
+
+  return PUBLIC_NAV_MENUS.map((menu) => (
+    menu.id === "product"
+      ? { ...menu, links: menu.links.filter((link) => link.href !== "/") }
+      : menu
+  ));
+}
+
 export const PUBLIC_NAV_START_BUILDING = {
   href: "/#start-sandbox",
   label: "Start building",

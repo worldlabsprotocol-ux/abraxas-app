@@ -8,10 +8,11 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
 import { PublicNavSectionMenu } from "@/components/nav/PublicNavSectionMenu";
 import { AbraxasGuideNavButton } from "@/components/product/AbraxasGuideDialog";
+import { usePathname } from "next/navigation";
 import {
   PUBLIC_FONT_SANS,
-  PUBLIC_NAV_MENUS,
   PUBLIC_NAV_PRIMARY_CTA,
+  publicNavMenusForPath,
 } from "@/lib/design/publicSurface";
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -20,6 +21,8 @@ const FONT = PUBLIC_FONT_SANS;
 
 export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
   const reduce = useReducedMotion();
+  const pathname = usePathname();
+  const navMenus = publicNavMenusForPath(pathname);
   const [open, setOpen] = useState(false);
 
   return (
@@ -41,7 +44,7 @@ export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
       <AbraxasLogo variant="lockup" emblemSize={32} href="/" />
 
       <div className="rd-nav-menus-desktop" aria-label="Site sections">
-        {PUBLIC_NAV_MENUS.map((menu) => (
+        {navMenus.map((menu) => (
           <PublicNavSectionMenu key={menu.id} menu={menu} />
         ))}
       </div>
@@ -105,7 +108,7 @@ export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
               gap: "0.35rem",
             }}
           >
-            {PUBLIC_NAV_MENUS.map((menu) => (
+            {navMenus.map((menu) => (
               <div key={menu.id}>
                 <p style={mobileSectionLabel}>{menu.label}</p>
                 {menu.links.map((link) => (

@@ -5,10 +5,9 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { VerifierResponse } from "@/lib/verifyRegistry";
 import { resolveRegistryAsset } from "@/lib/data/registryAssets";
-import { CIELO_VERIFIER_PREVIEW, NOT_FOUND_VERIFIER_PREVIEW, REVOKED_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
+import { NOT_FOUND_VERIFIER_PREVIEW, REVOKED_VERIFIER_PREVIEW } from "@/lib/verifierPreviewSample";
 import { CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 import { VerifierResultCard } from "./VerifierResultCard";
-import { VerifyAssetsShowcase } from "./VerifyAssetsShowcase";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { Skeleton } from "@/lib/motion/Skeleton";
@@ -41,6 +40,7 @@ export function PublicVerifierPanel() {
       router.push(`/verify/${encodeURIComponent(asset.abxId)}`);
       return;
     }
+    setSampleKind(null);
     setLoading(true);
     setErr(null);
     setResult(null);
@@ -56,7 +56,6 @@ export function PublicVerifierPanel() {
     }
   }
 
-  const showPreview = !result && !loading && !err;
   type SampleKind = "valid" | "not_found" | "revoked" | null;
   const [sampleKind, setSampleKind] = useState<SampleKind>(null);
 
@@ -78,31 +77,13 @@ export function PublicVerifierPanel() {
 
   return (
     <div>
-      <VerifyAssetsShowcase onSelectAsset={abxId => { setQuery(abxId); void runVerify(abxId); }} />
-
-      <div style={{
-        padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1.25rem",
-        background: "var(--surface-inset)", border: "1px solid var(--border)",
-      }}>
-        <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.45rem" }}>
-          Quick tests (15 seconds)
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
-          <Btn size="sm" onClick={() => showSample("valid")} disabled={loading}>Cielo (ABX-RE-HOSP-001)</Btn>
-          <Btn size="sm" variant="secondary" onClick={() => { setQuery("ABX-RE-RES-002"); void runVerify("ABX-RE-RES-002"); }} disabled={loading}>Smyrna townhome</Btn>
-          <Btn size="sm" variant="secondary" onClick={() => showSample("not_found")} disabled={loading}>Not found demo</Btn>
-          <Btn size="sm" variant="tertiary" onClick={() => showSample("revoked")} disabled={loading}>Revoked demo</Btn>
-          <Btn href="/verify?mode=credential" variant="ghost" size="sm">Policy gate demo</Btn>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "stretch" }}>
+      <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "0.75rem", alignItems: "stretch" }}>
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") void runVerify(query); }}
-          aria-label="Credential or asset identifier to verify"
-          placeholder="Paste Passport DID, Sui address, credential JWT, or asset ID (e.g. ABX-RE-HOSP-001)…"
+          aria-label="Public record identifier"
+          placeholder="Enter a public record ID (e.g. ABX-RE-HOSP-001)"
           style={{
             flex: "1 1 280px", minWidth: 0,
             minHeight: 44,
@@ -119,16 +100,37 @@ export function PublicVerifierPanel() {
           loading={loading}
           ariaLabel="Verify identifier"
         >
-          Verify
-        </Btn>
-        <Btn
-          variant="tertiary"
-          onClick={() => { setQuery("ABX-RE-HOSP-001"); void runVerify("ABX-RE-HOSP-001"); }}
-          disabled={loading}
-        >
-          Try Cielo example
+          Verify record
         </Btn>
       </div>
+
+      <details style={{ marginBottom: "1.25rem" }}>
+        <summary style={{
+          width: "fit-content",
+          color: "var(--text-secondary)",
+          fontFamily: FONT,
+          fontSize: "0.78rem",
+          cursor: "pointer",
+        }}>
+          Reference examples and test outcomes
+        </summary>
+        <p style={{
+          fontFamily: FONT,
+          fontSize: "0.72rem",
+          color: "var(--text-muted)",
+          lineHeight: 1.55,
+          margin: "0.6rem 0",
+        }}>
+          Historical record examples resolve through the live lookup. Not-found and revoked outcomes below are illustrative test states, not live records.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+          <Btn size="sm" onClick={() => showSample("valid")} disabled={loading}>Verify historical Cielo record</Btn>
+          <Btn size="sm" variant="secondary" onClick={() => { setQuery("ABX-RE-RES-002"); void runVerify("ABX-RE-RES-002"); }} disabled={loading}>Verify historical Smyrna record</Btn>
+          <Btn size="sm" variant="secondary" onClick={() => showSample("not_found")} disabled={loading}>Not-found test state</Btn>
+          <Btn size="sm" variant="tertiary" onClick={() => showSample("revoked")} disabled={loading}>Revoked test state</Btn>
+          <Btn href="/verify?mode=credential" variant="ghost" size="sm">Policy gate reference</Btn>
+        </div>
+      </details>
 
       {err && (
         <div style={{ marginBottom: "1rem" }}>
@@ -177,9 +179,9 @@ export function PublicVerifierPanel() {
         </div>
       )}
 
-      <div className="verify-results-grid" style={{
+      <div style={{
         display: "grid",
-        gridTemplateColumns: showPreview && !previewResult ? "1fr 1fr" : "1fr",
+        gridTemplateColumns: "minmax(0, 1fr)",
         gap: "1.25rem",
         alignItems: "start",
       }}>
@@ -201,36 +203,21 @@ export function PublicVerifierPanel() {
           />
         )}
 
-        {showPreview && !previewResult && (
-          <>
-            <div style={{
-              padding: "1.25rem", borderRadius: 16,
-              border: "1px dashed var(--border)",
-              fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-muted)",
-              lineHeight: 1.65, display: "flex", flexDirection: "column", justifyContent: "center",
-              minHeight: 200,
-            }}>
-              <div style={{ fontWeight: 700, color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
-                Your check runs here
-              </div>
-              Paste any identifier, or click <strong style={{ color: "var(--accent)" }}>Try Cielo example</strong> for a live API response.
-              Relying parties integrate the same endpoint server-side.
-            </div>
-            <VerifierResultCard
-              result={CIELO_VERIFIER_PREVIEW}
-              previewLabel="Example · valid credential (Cielo Sunrise)"
-              heroImage={CIELO_HERO_IMAGE.src}
-              compact
-            />
-          </>
+        {!result && !loading && !previewResult && !err && (
+          <p style={{
+            padding: "1rem",
+            borderRadius: 12,
+            border: "1px dashed var(--border)",
+            color: "var(--text-muted)",
+            fontFamily: FONT,
+            fontSize: "0.82rem",
+            lineHeight: 1.6,
+            margin: 0,
+          }}>
+            Enter a public record ID to check its signature, issuer, and current validity.
+          </p>
         )}
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .verify-results-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 }

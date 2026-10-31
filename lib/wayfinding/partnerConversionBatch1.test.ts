@@ -126,15 +126,21 @@ describe("phase 7 partner conversion batch 1", () => {
     expect(verifyClient).not.toContain("tied to your Passport");
   });
 
-  it("places verification demos below live tools on /verify", () => {
+  it("places verification demos behind an explicit disclosure below live tools on /verify", () => {
     const page = read("app/verify/page.tsx");
     const introIdx = page.indexOf("<VerifyPageIntro");
     const clientIdx = page.indexOf("<VerifyClient");
+    const disclosureIdx = page.indexOf("<details>");
     const demoIdx = page.indexOf("<VerifyPageIntroDemo");
+    const sampleIdx = page.indexOf("<VerifyStaticSample");
+    const disclosureEndIdx = page.indexOf("</details>", sampleIdx);
     expect(introIdx).toBeGreaterThan(-1);
     expect(clientIdx).toBeGreaterThan(introIdx);
-    expect(demoIdx).toBeGreaterThan(clientIdx);
-    expect(page).toContain("Reference demos (below the live tools)");
+    expect(disclosureIdx).toBeGreaterThan(clientIdx);
+    expect(demoIdx).toBeGreaterThan(disclosureIdx);
+    expect(sampleIdx).toBeGreaterThan(demoIdx);
+    expect(disclosureEndIdx).toBeGreaterThan(sampleIdx);
+    expect(page).toContain("Technical reference demos (illustrative, not live verification)");
   });
 
   it("labels passport tabs for partner vs holder contexts", () => {
