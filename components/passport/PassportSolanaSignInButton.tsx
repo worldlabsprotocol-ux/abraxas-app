@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/passport/PassportSolanaSignInButton.tsx
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 import { describeWalletVerifyRecoveryCode } from "@/lib/auth/holderAuthErrorCopy";
@@ -24,6 +24,7 @@ export function PassportSolanaSignInButton({
   const [phaseLabel, setPhaseLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const attemptRef = useRef<ReturnType<typeof createWalletVerifyAttempt> | null>(null);
+  const address = publicKey?.toBase58() ?? null;
 
   const cancel = useCallback(() => {
     attemptRef.current?.invalidate();
@@ -31,6 +32,14 @@ export function PassportSolanaSignInButton({
     setBusy(false);
     setPhaseLabel(null);
   }, []);
+
+  useEffect(() => {
+    if (attemptRef.current) {
+      cancel();
+      setError("Wallet changed. Sign in again with the connected account.");
+    }
+    return () => attemptRef.current?.invalidate();
+  }, [address, connected, cancel]);
 
   const authenticate = useCallback(async () => {
     if (!publicKey || !signMessage) {
