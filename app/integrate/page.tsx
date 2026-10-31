@@ -12,12 +12,12 @@ const choices = [
   {
     title: "Create an integration",
     description: "Set up a sandbox application and choose a policy.",
-    href: "/developers/integration-studio?source=integrate",
+    href: "/developers/integration-studio?source=integrate&start=new",
   },
   {
     title: "Connect an application",
     description: "Continue with an application in your workspace.",
-    href: "/developers/integration-studio?source=integrate",
+    href: "/developers/integration-studio?source=integrate&start=existing",
   },
 ] as const;
 
