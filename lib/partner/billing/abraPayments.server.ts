@@ -10,6 +10,10 @@ import { verifyFinalizedAbraPayment } from "./abraSettlement";
 
 type AbraServerConfig = { rpcUrl: string; recipient: PublicKey; networkId: "solana_devnet" | "solana_mainnet";
   rateUrl: URL; rateSource: string; rateApiKey: string };
+const GENESIS_HASH = {
+  solana_devnet: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  solana_mainnet: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+} as const;
 
 function readConfig(): AbraServerConfig {
   const rpcUrl = process.env.ABRAXAS_ABRA_RPC_URL?.trim() ?? "";
@@ -42,6 +46,8 @@ export async function prepareAbraPaymentQuote(input: {
 }): Promise<{ quote: AbraPaymentQuote; networkId: string }> {
   const config = readConfig();
   const connection = new Connection(config.rpcUrl, "finalized");
+  if (await connection.getGenesisHash() !== GENESIS_HASH[config.networkId])
+    throw new AbraQuoteUnavailable();
   const mint = new PublicKey(ABRA_SOLANA_MINT);
   const mintAccount = await connection.getAccountInfo(mint, "finalized");
   if (!mintAccount || ![TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID].some((p) => p.equals(mintAccount.owner)))
@@ -75,6 +81,9 @@ export async function settleAbraPayment(input: {
   partnerId: string; applicationId: string; intentId: string; signature: string;
 }): Promise<"credited" | "already_settled" | "pending"> {
   const config = readConfig();
+  const cluster = new Connection(config.rpcUrl, "finalized");
+  if (await cluster.getGenesisHash() !== GENESIS_HASH[config.networkId])
+    throw new AbraQuoteUnavailable();
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb.from("partner_abra_payment_intents")
     .select("*").eq("intent_id", input.intentId).eq("partner_id", input.partnerId)
