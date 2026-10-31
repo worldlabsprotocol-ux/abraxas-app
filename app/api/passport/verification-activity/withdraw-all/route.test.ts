@@ -6,8 +6,8 @@ const sessionMock = vi.fn();
 const loadMock = vi.fn();
 const withdrawMock = vi.fn();
 
-vi.mock("@/lib/auth/browserSession", () => ({
-  requireBrowserSession: (...args: unknown[]) => sessionMock(...args),
+vi.mock("@/lib/passport/portableTrust/resolveHolderSession", () => ({
+  resolveAuthenticatedHolderSession: (...args: unknown[]) => sessionMock(...args),
 }));
 vi.mock("@/lib/passport/verificationActivity/load", () => ({
   loadPassportVerificationActivity: (...args: unknown[]) => loadMock(...args),
@@ -18,7 +18,7 @@ vi.mock("@/lib/passport/verificationActivity/withdraw", () => ({
 
 import { POST } from "./route";
 
-const SUBJECT = "0x" + "e".repeat(64);
+const SUBJECT = "abx_hs_" + "e".repeat(32);
 
 function post(body: unknown, suffix = "") {
   return new NextRequest(`http://localhost/api/passport/verification-activity/withdraw-all${suffix}`, {
@@ -39,7 +39,7 @@ describe("POST /api/passport/verification-activity/withdraw-all", () => {
   beforeEach(() => {
     resetLaunchpadRateLimitStoreForTests();
     vi.clearAllMocks();
-    sessionMock.mockResolvedValue({ ok: true, session: { suiAddress: SUBJECT } });
+    sessionMock.mockResolvedValue({ ok: true, subjectId: SUBJECT });
     loadMock.mockResolvedValue({
       items: [activity("pa_current_1", true), activity("pa_history", false), activity("pa_current_2", true)],
     });
@@ -50,7 +50,7 @@ describe("POST /api/passport/verification-activity/withdraw-all", () => {
   });
 
   it("requires the signed-in Passport session", async () => {
-    sessionMock.mockResolvedValueOnce({ ok: false, status: 401 });
+    sessionMock.mockResolvedValueOnce({ ok: false, error: "unauthorized", message: "Sign in required" });
     const response = await POST(post({ confirm: "withdraw_all_current" }));
     expect(response.status).toBe(401);
     expect(loadMock).not.toHaveBeenCalled();
