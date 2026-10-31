@@ -32,9 +32,24 @@ describe("PassportSolanaSessionBoundary", () => {
   });
 
   it("ends a Solana-authenticated session after wallet disconnection", async () => {
+    mocks.wallet.current = {
+      connected: true,
+      connecting: false,
+      publicKey: { toBase58: () => "wallet-a" },
+    };
+    browserSession("solana_wallet", "solana:devnet:wallet-a");
+    const view = render(<PassportSolanaSessionBoundary />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    mocks.wallet.current = { connected: false, connecting: false, publicKey: null };
+    view.rerender(<PassportSolanaSessionBoundary />);
+    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce());
+  });
+
+  it("allows a refreshed tab to reconnect the same wallet before restoring access", async () => {
     browserSession("solana_wallet", "solana:devnet:wallet-a");
     render(<PassportSolanaSessionBoundary />);
-    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce());
+    await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    expect(mocks.signOut).not.toHaveBeenCalled();
   });
 
   it("ends a Solana-authenticated session when another account is connected", async () => {
@@ -67,3 +82,4 @@ describe("PassportSolanaSessionBoundary", () => {
     expect(mocks.signOut).not.toHaveBeenCalled();
   });
 });
+

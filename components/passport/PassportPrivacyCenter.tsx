@@ -54,16 +54,16 @@ function formatType(type: string): string {
   return type === "data_export" ? "Data export" : "Account / data deletion";
 }
 
-export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | null }) {
+export function PassportPrivacyCenter({ holderKey }: { holderKey: string | null }) {
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [confirmDeletion, setConfirmDeletion] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["passport", "privacy", suiAddress],
+    queryKey: ["passport", "privacy", holderKey],
     queryFn: fetchPrivacyCenter,
-    enabled: Boolean(suiAddress),
+    enabled: Boolean(holderKey),
     staleTime: 30_000,
   });
 
@@ -74,7 +74,7 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
       setActionMessage(result.message ?? "Request submitted.");
       setActionError("");
       setConfirmDeletion(false);
-      void queryClient.invalidateQueries({ queryKey: ["passport", "privacy", suiAddress] });
+      void queryClient.invalidateQueries({ queryKey: ["passport", "privacy", holderKey] });
     },
     onError: (e: Error) => {
       setActionError(e.message);
@@ -83,16 +83,16 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
   });
 
   const requestExport = useCallback(() => {
-    const key = `export:${suiAddress}:${new Date().toISOString().slice(0, 10)}`;
+    const key = `export:${holderKey}:${new Date().toISOString().slice(0, 10)}`;
     mutation.mutate({ type: "data_export", key });
-  }, [mutation, suiAddress]);
+  }, [mutation, holderKey]);
 
   const requestDeletion = useCallback(() => {
-    const key = `deletion:${suiAddress}:${new Date().toISOString().slice(0, 10)}`;
+    const key = `deletion:${holderKey}:${new Date().toISOString().slice(0, 10)}`;
     mutation.mutate({ type: "account_deletion", key });
-  }, [mutation, suiAddress]);
+  }, [mutation, holderKey]);
 
-  if (!suiAddress) return null;
+  if (!holderKey) return null;
 
   return (
     <section style={{ marginBottom: "2rem" }}>
@@ -312,3 +312,4 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
     </section>
   );
 }
+

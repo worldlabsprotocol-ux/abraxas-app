@@ -6,6 +6,9 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { PassportCustomerView } from "@/components/passport/PassportCustomerView";
+import { PassportSolanaWorkspace } from "@/components/passport/PassportSolanaWorkspace";
+import { PassportSolanaWalletConnection } from "@/components/passport/PassportSolanaWalletConnection";
+import { useSolanaPassportSession } from "@/lib/passport/useSolanaPassportSession";
 import { PassportVerifySetupRequired } from "@/components/passport/PassportVerifySetupRequired";
 import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
 import { PassportSupportCenter } from "@/components/passport/PassportSupportCenter";
@@ -54,14 +57,36 @@ const S = ABRAXAS_FONT_SANS;
 export function PassportPageClient() {
   return (
     <Suspense fallback={<AccountAccessFirstPaint />}>
-      <PassportPageInner />
+      <PassportSessionRouter />
     </Suspense>
   );
 }
 
+function PassportSessionRouter() {
+  const { state, refresh } = useSolanaPassportSession();
+  if (state.kind === "loading") return <AccountAccessFirstPaint />;
+  if (state.kind === "unavailable") return (
+    <AbxPageShell accent="passport"><p role="alert">Passport session is temporarily unavailable.</p><Btn onClick={() => void refresh()}>Try again</Btn></AbxPageShell>
+  );
+  if (state.kind === "reconnect") return (
+    <AbxPageShell accent="passport"><h1>Reconnect your wallet</h1><p>Connect the wallet that opened this Passport to continue.</p><PassportSolanaWalletConnection /></AbxPageShell>
+  );
+  if (state.kind === "authenticated") return (
+    <PassportSolanaWorkspace
+      holderSubjectId={state.holderSubjectId}
+      onSignOut={async () => {
+        const response = await fetch("/api/auth/browser-session", { method: "DELETE", credentials: "include" });
+        if (!response.ok) throw new Error("sign_out_failed");
+        await refresh();
+      }}
+    />
+  );
+  return <PassportPageInner />;
+}
+
 function PassportPageInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading, refreshSession } = useSuiAuth();
+  const { suiAddress, session, isLoading: authLoading, refreshSession, signOut } = useSuiAuth();
   const email = session?.email ?? "";
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -377,7 +402,7 @@ function PassportPageInner() {
             ) : authLoading ? (
               <RedesignPageLoading label="Loading help and safety…" compact />
             ) : (
-              <PassportSupportCenter />
+              <PassportSupportCenter email={email} onSignOut={signOut} />
             )}
           </>
         ) : pageView === "privacy" ? (
@@ -407,7 +432,7 @@ function PassportPageInner() {
             ) : authLoading ? (
               <RedesignPageLoading label="Loading privacy controls…" compact />
             ) : (
-              <PassportPrivacyCenter suiAddress={suiAddress} />
+              <PassportPrivacyCenter holderKey={suiAddress} />
             )}
           </>
         ) : (
@@ -505,3 +530,4 @@ function PassportPageInner() {
     </AbxPageShell>
   );
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 
@@ -10,6 +10,8 @@ export function PassportSolanaSessionBoundary() {
   const { connected, connecting, publicKey } = useWallet();
   const { signOut } = useSuiAuth();
   const address = publicKey?.toBase58() ?? null;
+  const observedConnectedRef = useRef(false);
+  if (connected && address) observedConnectedRef.current = true;
 
   useEffect(() => {
     if (connecting) return;
@@ -29,7 +31,11 @@ export function PassportSolanaSessionBoundary() {
         if (cancelled || session.auth_method !== "solana_wallet") return;
 
         const signedAddress = session.wallet_caip10?.split(":")[2] ?? null;
-        if (!connected || !address || signedAddress !== address) signOut();
+        // A refreshed tab starts disconnected because the root adapter does
+        // not auto-connect. Keep the cookie locked behind an explicit
+        // reconnect; only a real disconnect transition revokes it.
+        if ((!connected && observedConnectedRef.current)
+          || (connected && (!address || signedAddress !== address))) signOut();
       } catch {
         // Protected APIs still require the server session. Recheck on the
         // next wallet change or holder-session event if the probe failed.
@@ -46,3 +52,4 @@ export function PassportSolanaSessionBoundary() {
 
   return null;
 }
+

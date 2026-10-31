@@ -3,7 +3,6 @@
 // Plain-language holder support and current-device session controls.
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { Btn } from "@/components/redesign/ui";
 import {
   PASSPORT_SUPPORT_ISSUES,
@@ -16,8 +15,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const ACCENT = "#10B981";
 
-export function PassportSupportCenter() {
-  const { session, signOut } = useSuiAuth();
+export function PassportSupportCenter({ email, onSignOut }: { email?: string | null; onSignOut: () => void }) {
   const [issueType, setIssueType] = useState<PassportSupportIssue>("account_access");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -308,7 +306,7 @@ export function PassportSupportCenter() {
           fontFamily: FONT, fontSize: "0.74rem", lineHeight: 1.6,
           color: "var(--text-secondary)", margin: "0 0 0.8rem",
         }}>
-          Signed in{session?.email ? ` as ${session.email}` : " to your Passport account"}.
+          Signed in{email ? ` as ${email}` : " to your Passport account"}.
           Sign out when you are finished on a shared device.
         </p>
         {!confirmSignOut ? (
@@ -322,7 +320,7 @@ export function PassportSupportCenter() {
               You will need to sign in again to view Passport records or support requests.
             </p>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Btn size="sm" onClick={signOut}>Confirm sign out</Btn>
+              <Btn size="sm" onClick={onSignOut}>Confirm sign out</Btn>
               <Btn size="sm" variant="secondary" onClick={() => setConfirmSignOut(false)}>Cancel</Btn>
             </div>
           </div>
@@ -331,3 +329,4 @@ export function PassportSupportCenter() {
     </section>
   );
 }
+
