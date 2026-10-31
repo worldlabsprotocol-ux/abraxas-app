@@ -137,7 +137,7 @@ describe("PassportPrivacyCenter unavailable state", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 500 })));
 
     render(
-      privacyWrapper(<PassportPrivacyCenter suiAddress="0xabc" />),
+      privacyWrapper(<PassportPrivacyCenter holderKey="0xabc" />),
     );
 
     expect(await screen.findByText(/Privacy settings aren't available right now/i)).toBeInTheDocument();
@@ -158,7 +158,7 @@ describe("PassportPrivacyCenter unavailable state", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(
-      privacyWrapper(<PassportPrivacyCenter suiAddress="0xabc" />),
+      privacyWrapper(<PassportPrivacyCenter holderKey="0xabc" />),
     );
 
     const user = userEvent.setup();
@@ -170,3 +170,4 @@ describe("PassportPrivacyCenter unavailable state", () => {
     });
   });
 });
+
