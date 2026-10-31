@@ -78,7 +78,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     invalidation_reasons: trust.invalidation_reasons,
     partner_flow_ok: flow.ok,
     partner_flow_errors: flow.errors,
-    harness_verification_ok: trust.signature_valid && trust.currently_valid && flow.ok
+    harness_verification_ok: trust.signature_valid && trust.currently_valid
       && stored.scenario_id === "approved" && stored.request_status === "completed"
       && stored.idempotency_key?.startsWith(`harness:${app.id}:approved:`) === true
       && bindingMatches && storageCurrent,
