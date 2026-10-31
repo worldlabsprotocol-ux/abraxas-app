@@ -31,6 +31,9 @@ async function authorize(req: NextRequest, applicationId: string) {
 export async function POST(req: NextRequest, { params }: Context) {
   const access = await authorize(req, params.id);
   if (!access.ok) return access.response;
+  const application = access.application;
+  const partnerId = access.partnerId;
+  if (!application || !partnerId) return launchpadError("not_found", 404);
   let body: { plan_id?: unknown };
   try { body = await req.json(); } catch { return launchpadError("invalid_json", 400); }
   if (body.plan_id !== "launch" && body.plan_id !== "scale")
@@ -38,15 +41,15 @@ export async function POST(req: NextRequest, { params }: Context) {
   const creditCents = PARTNER_COMMERCIAL_PLANS[body.plan_id].monthly_base_cents!;
   const eligibility = abraServiceCreditEligibility({
     planId: body.plan_id,
-    environment: access.application.environment === "production" ? "production" : "sandbox",
+    environment: application.environment === "production" ? "production" : "sandbox",
     chargeCents: creditCents,
   });
-  if (!eligibility.eligible) return launchpadError(eligibility.reason, 400);
+  if (eligibility.eligible !== true) return launchpadError(eligibility.reason, 400);
   try {
     assertAbraCheckoutEnabled();
     // This path becomes reachable only after explicit founder-reviewed activation.
     const { quote, networkId } = await prepareAbraPaymentQuote({
-      partnerId: access.partnerId, applicationId: access.application.id,
+      partnerId, applicationId: application.id,
       creditCents: eligibility.charge_cents,
     });
     await persistAbraPaymentQuote(quote, networkId);
@@ -61,6 +64,9 @@ export async function POST(req: NextRequest, { params }: Context) {
 export async function PUT(req: NextRequest, { params }: Context) {
   const access = await authorize(req, params.id);
   if (!access.ok) return access.response;
+  const application = access.application;
+  const partnerId = access.partnerId;
+  if (!application || !partnerId) return launchpadError("not_found", 404);
   let body: { intent_id?: unknown; signature?: unknown };
   try { body = await req.json(); } catch { return launchpadError("invalid_json", 400); }
   const intentId = String(body.intent_id ?? "");
@@ -69,8 +75,8 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return launchpadError("invalid_payment_reference", 400);
   try {
     assertAbraCheckoutEnabled();
-    const status = await settleAbraPayment({ partnerId: access.partnerId,
-      applicationId: access.application.id, intentId, signature });
+    const status = await settleAbraPayment({ partnerId,
+      applicationId: application.id, intentId, signature });
     return launchpadJson({ ok: true, status });
   } catch {
     return launchpadError("abra_checkout_unavailable", 503);

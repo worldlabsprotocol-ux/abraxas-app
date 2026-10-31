@@ -33,7 +33,7 @@ export type AbraPaymentQuote = {
 export class AbraQuoteUnavailable extends Error {
   constructor() { super("abra_quote_unavailable"); }
 }
-function ceilDiv(a: bigint, b: bigint): bigint { return (a + b - 1n) / b; }
+function ceilDiv(a: bigint, b: bigint): bigint { return (a + b - BigInt(1)) / b; }
 
 export function createAbraPaymentQuote(input: {
   intentId: string; partnerId: string; applicationId: string;
@@ -46,7 +46,7 @@ export function createAbraPaymentQuote(input: {
   const bps = input.slippageBps ?? 50;
   if (rate.mint !== ABRA_SOLANA_MINT || !rate.source || rate.source !== input.expectedSource
     || !Number.isFinite(observedMs) || observedMs > nowMs + 5_000 || nowMs - observedMs > 30_000
-    || !/^\d+$/.test(rate.usd_micro_per_token) || BigInt(rate.usd_micro_per_token) <= 0n
+    || !/^\d+$/.test(rate.usd_micro_per_token) || BigInt(rate.usd_micro_per_token) <= BigInt(0)
     || !Number.isFinite(rate.liquidity_usd) || rate.liquidity_usd < 10_000
     || !Number.isInteger(rate.spread_bps) || rate.spread_bps < 0 || rate.spread_bps > 100
     || !Number.isInteger(bps) || bps < 0 || bps > 100
@@ -56,9 +56,11 @@ export function createAbraPaymentQuote(input: {
     || !input.tokenProgram) throw new AbraQuoteUnavailable();
   // USD cents are converted to microUSD, rounded up to raw token units, and
   // adjusted by an explicit 0-1% quote allowance.
-  const raw = ceilDiv(BigInt(input.creditCents) * 10_000n * 10n ** BigInt(input.tokenDecimals)
-    * BigInt(10_000 + bps), BigInt(rate.usd_micro_per_token) * 10_000n);
-  if (raw <= 0n || raw > 9_223_372_036_854_775_807n) throw new AbraQuoteUnavailable();
+  let tokenBase = BigInt(1);
+  for (let i = 0; i < input.tokenDecimals; i += 1) tokenBase *= BigInt(10);
+  const raw = ceilDiv(BigInt(input.creditCents) * BigInt(10_000) * tokenBase
+    * BigInt(10_000 + bps), BigInt(rate.usd_micro_per_token) * BigInt(10_000));
+  if (raw <= BigInt(0) || raw > BigInt("9223372036854775807")) throw new AbraQuoteUnavailable();
   return {
     intent_id: input.intentId, partner_id: input.partnerId, application_id: input.applicationId,
     mint: ABRA_SOLANA_MINT, token_program: input.tokenProgram,
