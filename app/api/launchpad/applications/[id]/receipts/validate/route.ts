@@ -27,33 +27,22 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (!receiptId) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "receipt_id required");
   }
+  if (!launchpadUsesSovereignPostgres()) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503,
+      "Sovereign receipt storage is unavailable");
+  }
 
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   }
 
-  const stored = launchpadUsesSovereignPostgres()
-    ? await (async () => {
-        const { pgGetSignedReceiptForApplication } = await import(
-          "@/lib/partner/launchpad/sovereign/launchpadPgStore"
-        );
-        return pgGetSignedReceiptForApplication({
-          applicationId: params.id, partnerId: auth.session.partnerId, receiptId,
-        });
-      })()
-    : await (async () => {
-        const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
-        const { data, error } = await requireSupabaseAdmin()
-          .from("partner_launchpad_harness_receipts")
-          .select("receipt_id,policy_id,policy_version,public_payload,signature,expires_at,revoked_at,scenario_id,request_status")
-          .eq("receipt_id", receiptId)
-          .eq("application_id", params.id)
-          .eq("partner_id", auth.session.partnerId)
-          .maybeSingle();
-        if (error) return null;
-        return data;
-      })();
+  const { pgGetSignedReceiptForApplication } = await import(
+    "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+  );
+  const stored = await pgGetSignedReceiptForApplication({
+    applicationId: params.id, partnerId: auth.session.partnerId, receiptId,
+  });
   if (!stored) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 404, "Receipt not found for application");
   }
@@ -104,4 +93,5 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     expires_at: stored.expires_at,
   });
 }
+
 
