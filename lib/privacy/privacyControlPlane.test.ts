@@ -227,6 +227,18 @@ describe("privacy control plane", () => {
     })).toEqual({ ok: false, error: "transaction_rolled_back" });
   });
 
+  it("does not report success until the revoked request status is visible", async () => {
+    fromMock.mockImplementation(() => privacyRequestTableMock({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { ...sampleRecord, subject_sui: SOLANA_HOLDER }, error: null,
+      }),
+    }));
+    rpcMock.mockResolvedValue({ data: { ok: true, access_revoked: true }, error: null });
+    expect(await approveDeletionPrivacyRequest({
+      requestId: sampleRecord.id, adminActorCategory: "admin_pin",
+    })).toEqual({ ok: false, error: "deletion_status_unconfirmed" });
+  });
+
   it("approved deletion uses atomic RPC and does not call revokeSubjectClaims directly", async () => {
     const pendingRecord = {
       ...sampleRecord,
