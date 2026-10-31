@@ -483,6 +483,8 @@ jobs:
           ABRAXAS_EPHEMERAL_INTEGRATION_TEST: "1"
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
           NEXT_PUBLIC_SOLANA_NETWORK: devnet
+      - name: Passport Solana wallet lifecycle
+        run: npx vitest run app/api/auth/browser-session/route.test.ts components/passport/PassportSolanaWalletConnection.test.tsx components/passport/PassportSolanaSessionBoundary.test.tsx components/passport/PassportSolanaSignInButton.lifecycle.test.tsx lib/wallet/passportSolanaAuthClient.test.ts lib/wallet/passportSolanaAuthClient.isolation.test.ts
       - name: Ephemeral wallet auth (TCP Redis replay)
         run: npx vitest run lib/auth/ephemeralWallet/ephemeralWallet.redis.integration.test.ts
         env:
