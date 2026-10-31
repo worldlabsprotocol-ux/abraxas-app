@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, { params }: Context) {
     // This path becomes reachable only after explicit founder-reviewed activation.
     const { quote, networkId } = await prepareAbraPaymentQuote({
       partnerId, applicationId: application.id,
-      creditCents: eligibility.charge_cents,
+      creditCents,
     });
     await persistAbraPaymentQuote(quote, networkId);
     return launchpadJson({ ok: true, quote }, 201);
