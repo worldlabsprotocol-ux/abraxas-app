@@ -3,6 +3,7 @@
 
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
+import { useEffect } from "react";
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
@@ -16,6 +17,7 @@ import { GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON } from "@/lib/partner/goodTroubleBro
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 
 const mockEnsureReady = vi.fn();
+let mockSolanaSession = true;
 const mockSignInWithGoogle = vi.fn();
 const mockRefreshSession = vi.fn();
 const mockEvaluateResponse = vi.fn();
@@ -34,8 +36,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
-vi.mock("@/components/sui/SuiAuthProvider", () => ({
-  useSuiAuth: () => ({
+vi.mock("@/lib/auth/useLegacyPartnerAuth", () => ({
+  useLegacyPartnerAuth: () => ({
     suiAddress: mockAuthState.suiAddress,
     isLoading: mockAuthState.isLoading,
     signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
@@ -45,6 +47,30 @@ vi.mock("@/components/sui/SuiAuthProvider", () => ({
 
 vi.mock("@/lib/auth/ensureBrowserSession", () => ({
   ensureBrowserSessionReady: (...args: unknown[]) => mockEnsureReady(...args),
+  ensureBrowserSessionReadyForWalletAuth: (...args: unknown[]) => mockEnsureReady(...args),
+  probeBrowserSessionDetails: () => Promise.resolve(mockSolanaSession
+    ? { ok: true, authMethod: "solana_wallet", holderSubjectId: "abx_hs_test", walletCaip10: "solana:mainnet:wallet-test" }
+    : { ok: false }),
+}));
+
+vi.mock("@/lib/auth/useHostedSolanaHolderSession", () => ({
+  useHostedSolanaHolderSession: () => ({
+    holderSubjectId: mockSolanaSession ? "abx_hs_test" : null,
+    refresh: vi.fn(),
+  }),
+}));
+
+vi.mock("@/components/partner/HostedSolanaHolderSignIn", () => ({
+  HostedSolanaHolderSignIn: () => <button type="button">Sign in with Solana wallet</button>,
+}));
+
+vi.mock("@/lib/partner/useHostedHolderBootstrap", () => ({
+  useHostedHolderBootstrap: (input: { holderSubjectId: string | null; onBootstrapped?: (subjectId: string) => void }) => {
+    useEffect(() => {
+      if (input.holderSubjectId) input.onBootstrapped?.(input.holderSubjectId);
+    }, [input.holderSubjectId]);
+    return { eligible: true, state: mockSolanaSession ? "ready" : "sign_in_required", bootstrapping: false, retry: vi.fn() };
+  },
 }));
 
 vi.mock("@/lib/hooks/useGoogleSignIn", () => ({
@@ -61,6 +87,7 @@ describe("PartnerVerifyClient auth/session gating", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthState.suiAddress = "0xabc";
+    mockSolanaSession = true;
     mockAuthState.isLoading = false;
     mockSearchParams = new URLSearchParams({
       partner_id: GOOD_TROUBLE_PARTNER_ID,
@@ -174,6 +201,7 @@ describe("PartnerVerifyClient auth/session gating", () => {
 describe("PartnerVerifyClient canonical Good Trouble purchase bootstrap", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSolanaSession = true;
     mockAuthState.suiAddress = null;
     mockAuthState.isLoading = false;
     mockSearchParams = new URLSearchParams({
@@ -224,13 +252,11 @@ describe("PartnerVerifyClient canonical Good Trouble purchase bootstrap", () => 
   });
 
   it("does not redirect unauthenticated holders to Google for canonical purchase flow", async () => {
+    mockSolanaSession = false;
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
-        expect.objectContaining({ method: "POST" }),
-      );
+      expect(screen.getByRole("button", { name: "Sign in with Solana wallet" })).toBeTruthy();
     });
 
     expect(mockSignInWithGoogle).not.toHaveBeenCalled();
@@ -241,6 +267,7 @@ describe("PartnerVerifyClient canonical Good Trouble purchase bootstrap", () => 
 describe("PartnerVerifyClient Good Trouble browse hosted handoff", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSolanaSession = true;
     mockAuthState.suiAddress = null;
     mockAuthState.isLoading = false;
     mockSearchParams = new URLSearchParams({
@@ -284,10 +311,7 @@ describe("PartnerVerifyClient Good Trouble browse hosted handoff", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
-        expect.objectContaining({ method: "POST" }),
-      );
+      expect(mockEvaluateResponse).toHaveBeenCalled();
     });
     expect(mockSignInWithGoogle).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeNull();
@@ -296,13 +320,11 @@ describe("PartnerVerifyClient Good Trouble browse hosted handoff", () => {
   });
 
   it("does not start OAuth when hosted bootstrap is in progress", async () => {
+    mockSolanaSession = false;
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
-        expect.any(Object),
-      );
+      expect(screen.getByText(/Solana wallet/i)).toBeTruthy();
     });
     expect(mockSignInWithGoogle).not.toHaveBeenCalled();
   });
@@ -339,10 +361,7 @@ describe("PartnerVerifyClient Good Trouble browse hosted handoff", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
-        expect.any(Object),
-      );
+      expect(mockEvaluateResponse).toHaveBeenCalled();
     });
     expect(screen.queryByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeNull();
   });
@@ -376,12 +395,13 @@ describe("PartnerVerifyClient Good Trouble browse hosted handoff", () => {
 
   it("does not call evaluate after browser-session creation fails", async () => {
     mockAuthState.suiAddress = "0xabc";
+    mockSolanaSession = false;
     mockEnsureReady.mockResolvedValue({ ok: false, error: "expired" });
 
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Already have a Passport/i)).toBeTruthy();
+      expect(screen.getByText(/Solana wallet/i)).toBeTruthy();
     });
     expect(mockEvaluateResponse).not.toHaveBeenCalled();
   });

@@ -10,6 +10,7 @@ export type BrowserSessionProbe = {
   holderSubjectId?: string | null;
   suiAddress?: string | null;
   authMethod?: string | null;
+  walletCaip10?: string | null;
 };
 
 export async function probeBrowserSession(): Promise<boolean> {
@@ -30,6 +31,7 @@ export async function probeBrowserSessionDetails(): Promise<BrowserSessionProbe>
       holder_subject_id?: string | null;
       sui_address?: string | null;
       auth_method?: string | null;
+      wallet_caip10?: string | null;
     };
     if (data.ok !== true) return { ok: false };
     return {
@@ -37,6 +39,7 @@ export async function probeBrowserSessionDetails(): Promise<BrowserSessionProbe>
       holderSubjectId: data.holder_subject_id ?? null,
       suiAddress: data.sui_address ?? null,
       authMethod: data.auth_method ?? null,
+      walletCaip10: data.wallet_caip10 ?? null,
     };
   } catch {
     return { ok: false };

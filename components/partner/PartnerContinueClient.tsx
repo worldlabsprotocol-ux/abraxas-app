@@ -4,11 +4,10 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useLegacyPartnerAuth } from "@/lib/auth/useLegacyPartnerAuth";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import {
-  HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
   HOSTED_HOLDER_PRIMARY_ACTION,
 } from "@/lib/auth/hostedHolderEligibility";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
@@ -77,9 +76,10 @@ import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { ProvenanceContinueFlow } from "@/components/partner/ProvenanceContinueFlow";
 import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
-import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
+import { useHostedSolanaHolderSession } from "@/lib/auth/useHostedSolanaHolderSession";
 import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
 import { PartnerWalletControlContinueFlow } from "@/components/partner/PartnerWalletControlContinueFlow";
+import { HostedSolanaHolderSignIn } from "@/components/partner/HostedSolanaHolderSignIn";
 import {
   inferPolicyPackFromPolicyId,
   policyPackIsSandboxOnly,
@@ -104,7 +104,7 @@ function mapHostedHandoffContinueFailure(
 
 function PartnerContinueInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading, refreshSession, signInWithGoogle } = useSuiAuth();
+  const { suiAddress, session, isLoading: legacyAuthLoading, refreshSession, signInWithGoogle } = useLegacyPartnerAuth();
   const email = session?.email ?? "";
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -119,8 +119,10 @@ function PartnerContinueInner() {
   const [methodSelected, setMethodSelected] = useState(false);
   const [methodQualified, setMethodQualified] = useState(false);
   const [provenanceEvidenceComplete, setProvenanceEvidenceComplete] = useState(false);
-  const [walletBrowserSession, setWalletBrowserSession] = useState(false);
-  const [holderSubjectId, setHolderSubjectId] = useState<string | null>(null);
+  const signedSolanaSession = useHostedSolanaHolderSession();
+  const holderSubjectId = signedSolanaSession.holderSubjectId;
+  const [bootstrapHolderSubjectId, setBootstrapHolderSubjectId] = useState<string | null>(null);
+  const [hostedBootstrapConfirmed, setHostedBootstrapConfirmed] = useState(false);
   const [hostedHandoffEnvironment, setHostedHandoffEnvironment] = useState<"sandbox" | "production" | null>(null);
 
   const verifyRequestId = searchParams.get("verify_request");
@@ -309,8 +311,16 @@ function PartnerContinueInner() {
     if (pack && policyPackIsSandboxOnly(pack)) return "sandbox";
     return "production";
   }, [hostedHandoffEnvironment, policyId]);
-  const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
-  const sessionSubjectForHandoff = suiAddress ?? holderSubjectId;
+  const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
+  const authLoading = !hostedBootstrapEligible && legacyAuthLoading;
+  const holderBrowserAuthenticated = hostedBootstrapEligible
+    ? Boolean(holderSubjectId && bootstrapHolderSubjectId === holderSubjectId && hostedBootstrapConfirmed)
+    : Boolean(suiAddress || holderSubjectId);
+  const sessionSubjectForHandoff = hostedBootstrapEligible ? holderSubjectId : (suiAddress ?? holderSubjectId);
 
   useEffect(() => {
     setMethodSelected(false);
@@ -340,20 +350,7 @@ function PartnerContinueInner() {
     };
   }, [verifyRequestId, searchParams, walletControlPolicy, holderBrowserAuthenticated]);
 
-  const syncWalletBrowserSession = useCallback(() => {
-    void probeBrowserSessionDetails().then((probe) => {
-      if (probe.ok && (probe.holderSubjectId || probe.authMethod === "evm_wallet" || probe.authMethod === "solana_wallet" || probe.authMethod === "wallet")) {
-        setWalletBrowserSession(true);
-        setHolderSubjectId(probe.holderSubjectId ?? probe.suiAddress ?? null);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    syncWalletBrowserSession();
-    window.addEventListener("abraxas:holder-session", syncWalletBrowserSession);
-    return () => window.removeEventListener("abraxas:holder-session", syncWalletBrowserSession);
-  }, [syncWalletBrowserSession]);
+  const syncWalletBrowserSession = signedSolanaSession.refresh;
 
   const {
     identityStatus,
@@ -363,9 +360,10 @@ function PartnerContinueInner() {
     veriffConfigured,
     idvProvider,
     walletBindingL3,
-  } = usePassportVerification(sessionSubjectForHandoff, email || null);
+  } = usePassportVerification(hostedBootstrapEligible ? null : sessionSubjectForHandoff,
+    hostedBootstrapEligible ? null : (email || null));
 
-  const walletDone = Boolean(suiAddress);
+  const walletDone = Boolean(sessionSubjectForHandoff);
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const minimumAge = resolveMinimumAge(policyId);
 
@@ -399,7 +397,7 @@ function PartnerContinueInner() {
   const returnLabel = resolvePartnerReturnLabel(partnerId);
 
   const holderState: PartnerHolderState = useMemo(() => {
-    if (!suiAddress) return "confirm_account";
+    if (!sessionSubjectForHandoff) return "confirm_account";
     if (credential && new Date(credential.expires_at) < new Date()) return "verification_expired";
     if (identityStatus === "pending") return "under_review";
     if (handoff.ready) return "age_confirmed";
@@ -408,7 +406,7 @@ function PartnerContinueInner() {
     if (setup.walletBound && !setup.identityComplete) return "verify_age";
     if (decodedReturnUrl && handoff.ready) return "return_to_partner";
     return "verify_age";
-  }, [suiAddress, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
+  }, [sessionSubjectForHandoff, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
   const qualifyingMethodSucceeded = methodQualified;
@@ -436,11 +434,6 @@ function PartnerContinueInner() {
   const isOpaqueHostedHandoff = Boolean(verifyRequestId?.startsWith("vr_"));
   const continueContextIncomplete = !verifyRequestId || (!partnerId && !isOpaqueHostedHandoff);
 
-  const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
-    partnerId,
-    policyId,
-    purpose: purposeParam,
-  });
   const directHandoff = isGoodTroubleHostedDirectHandoff({
     hostedBootstrapEligible,
     partnerId,
@@ -450,17 +443,21 @@ function PartnerContinueInner() {
 
   const hostedBootstrap = useHostedHolderBootstrap({
     enabled: hostedBootstrapEligible && Boolean(partnerId && policyId && (decodedReturnUrl || verifyRequestId)),
-    suiAddress,
+    holderSubjectId,
     authLoading,
     partnerId,
     policyId,
     returnUrl: decodedReturnUrl,
     purpose: purposeParam,
     verifyRequestId,
-    onBootstrapped: () => {
-      refreshSession();
+    onBootstrapped: (subjectId) => {
+      setBootstrapHolderSubjectId(subjectId);
+      setHostedBootstrapConfirmed(true);
     },
   });
+  useEffect(() => {
+    if (hostedBootstrap.state !== "ready") setHostedBootstrapConfirmed(false);
+  }, [hostedBootstrap.state]);
 
   const verificationPathStep = resolveVerificationPathStep({
     showConsent: showPartnerConsent,
@@ -503,7 +500,7 @@ function PartnerContinueInner() {
   }
 
   async function startIdentityVerification() {
-    if (!suiAddress) return;
+    if (!sessionSubjectForHandoff) return;
     if (idvProvider === "manual") {
       setCaptureStarted(true);
       setShowIdFallback(true);
@@ -515,7 +512,7 @@ function PartnerContinueInner() {
       const sessionRes = await fetch("/api/idv/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress, document_type: "PASSPORT" }),
+        body: JSON.stringify({ document_type: "PASSPORT" }),
       });
       const sessionData = await sessionRes.json() as { session_url?: string | null; error?: string };
       if (!sessionRes.ok || !sessionData.session_url) {
@@ -587,7 +584,7 @@ function PartnerContinueInner() {
       >
         {authLoading || contextLoading ? (
           <p role="status">Preparing verification…</p>
-        ) : !suiAddress ? (
+        ) : !holderBrowserAuthenticated ? (
           <p role="status">Sign in to continue this content disclosure request.</p>
         ) : (
           <>
@@ -619,7 +616,7 @@ function PartnerContinueInner() {
       >
         {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
           <p role="status">Preparing verification…</p>
-        ) : !suiAddress ? (
+        ) : !holderBrowserAuthenticated ? (
           hostedBootstrapEligible ? (
             <div>
               <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
@@ -627,8 +624,10 @@ function PartnerContinueInner() {
                   ? "Verification could not be started. Try again."
                   : "Starting your private age check…"}
               </p>
-              {hostedBootstrap.state === "failed" ? (
-                <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+              {hostedBootstrap.state === "failed" ? <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn> : null}
+              {hostedBootstrap.state === "sign_in_required" ? (
+                <HostedSolanaHolderSignIn
+                  onSuccess={() => { syncWalletBrowserSession(); hostedBootstrap.retry(); }} />
               ) : null}
             </div>
           ) : (
@@ -696,26 +695,11 @@ function PartnerContinueInner() {
                 ? "Verification could not be started securely. Try again or sign in with an existing Passport."
                 : "Preparing your verification request…"}
             </p>
-            {hostedBootstrap.state === "failed" ? (
-              <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+            {hostedBootstrap.state === "failed" ? <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn> : null}
+            {hostedBootstrap.state === "sign_in_required" ? (
+              <HostedSolanaHolderSignIn
+                onSuccess={() => { syncWalletBrowserSession(); hostedBootstrap.retry(); }} />
             ) : null}
-            <p style={{ margin: "0.75rem 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              <button
-                type="button"
-                onClick={() => void signInWithGoogle?.()}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  color: "var(--accent)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
-              </button>
-            </p>
           </div>
         ) : walletControlPolicy && verifyRequestId ? (
           <PartnerWalletControlContinueFlow
@@ -855,7 +839,7 @@ function PartnerContinueInner() {
                   {idvProvider === "manual" && captureStarted ? (
                     <AbraxasIdentityCapture
                       email={email}
-                      suiAddress={suiAddress}
+                      suiAddress={sessionSubjectForHandoff}
                       pendingReview={identityStatus === "pending"}
                       capturePolicy={{
                         verificationRequestId: verifyRequestId,

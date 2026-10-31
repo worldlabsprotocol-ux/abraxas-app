@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createVerificationRequest } from "@/lib/verification/requestsService";
 import { PolicyOwnershipError } from "@/lib/policy/assertPolicyOwnership";
+const insertRequest = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/policy/getPolicy", () => ({
   getPartnerPolicy: vi.fn(),
@@ -10,11 +11,14 @@ vi.mock("@/lib/policy/getPolicy", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: () => ({
     from: () => ({
-      insert: () => ({
+      insert: (row: unknown) => {
+        insertRequest(row);
+        return ({
         select: () => ({
           single: async () => ({ data: { id: "req_1" }, error: null }),
         }),
-      }),
+      });
+      },
     }),
   }),
 }));
@@ -104,6 +108,22 @@ describe("P0-CNS-3: createVerificationRequest tenancy", () => {
     expect(result.consent_url).not.toContain("policy_id");
     expect(result.consent_url).not.toContain("evil.example");
     expect(result.consent_url).not.toContain("@");
+  });
+
+  it("stores a canonical signed Solana holder under subject_id, never sui_address", async () => {
+    const { getPartnerPolicy } = await import("@/lib/policy/getPolicy");
+    vi.mocked(getPartnerPolicy).mockResolvedValue({
+      id: "good-trouble-retail-v1", partner_id: "good-trouble-cannabis", version: 1,
+      name: "GT", rules_json: { required_claims: [] }, status: "active",
+    });
+    const subject = `abx_hs_${"a".repeat(32)}`;
+    await createVerificationRequest({
+      partnerId: "good-trouble-cannabis", policyId: "good-trouble-retail-v1",
+      suiAddress: subject,
+    });
+    expect(insertRequest).toHaveBeenCalledWith(expect.objectContaining({
+      subject_id: subject, sui_address: null,
+    }));
   });
 
   it("fails closed when the target policy version is still draft", async () => {

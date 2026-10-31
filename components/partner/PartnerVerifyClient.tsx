@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useLegacyPartnerAuth } from "@/lib/auth/useLegacyPartnerAuth";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import {
   ensureBrowserSessionReady,
@@ -37,8 +37,8 @@ import {
   resolvePartnerJourneyPresentation,
 } from "@/lib/partner/partnerJourneyStateMachine";
 import { PartnerVerifyShell, type PartnerVerifyPhase } from "./PartnerVerifyShell";
-import { HolderWalletAuthPanel } from "@/components/passport/HolderWalletAuthPanel";
-import { PASSPORT_WALLET_ACTIONS } from "@/lib/auth/passportWalletAuth/contract";
+import { HostedSolanaHolderSignIn } from "@/components/partner/HostedSolanaHolderSignIn";
+import { useHostedSolanaHolderSession } from "@/lib/auth/useHostedSolanaHolderSession";
 
 interface FlowResult {
   next: string;
@@ -83,14 +83,15 @@ export function PartnerVerifyClient({
   previewPartnerName = null,
 }: PartnerVerifyClientProps) {
   const searchParams = useSearchParams();
-  const { suiAddress, isLoading: authLoading, signInWithGoogle, refreshSession } = useSuiAuth();
+  const { suiAddress, isLoading: legacyAuthLoading, signInWithGoogle, refreshSession } = useLegacyPartnerAuth();
   const { signIn, busy: signInBusy, configured: signInConfigured } = useGoogleSignIn();
 
   const [phase, setPhase] = useState<PartnerVerifyPhase>(previewPhase ?? "loading");
   const [statusMessage, setStatusMessage] = useState("Preparing verification…");
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [oauthReturnReady, setOauthReturnReady] = useState(false);
-  const [walletBrowserSession, setWalletBrowserSession] = useState(false);
+  const signedSolanaSession = useHostedSolanaHolderSession();
+  const [bootstrapHolderSubjectId, setBootstrapHolderSubjectId] = useState<string | null>(null);
 
   const evaluateOnceRef = useRef(false);
   const signInOnceRef = useRef(false);
@@ -161,17 +162,18 @@ export function PartnerVerifyClient({
     policyId,
     purpose,
   });
+  const authLoading = !hostedBootstrapEligible && legacyAuthLoading;
 
   const hostedBootstrap = useHostedHolderBootstrap({
     enabled: !previewPhase && !invalidLinkMessage && flowParamsReady,
-    suiAddress,
+    holderSubjectId: signedSolanaSession.holderSubjectId,
     authLoading,
     partnerId: relyingPartyId,
     policyId,
     returnUrl,
     purpose,
-    onBootstrapped: () => {
-      refreshSession();
+    onBootstrapped: (subjectId) => {
+      setBootstrapHolderSubjectId(subjectId);
       evaluateOnceRef.current = false;
     },
   });
@@ -184,21 +186,11 @@ export function PartnerVerifyClient({
   const policyRequirement = launchpadResolution.resolved?.userExplanation
     ?? resolvePolicyRequirement(policyId, permission || null);
 
-  const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const syncWalletSession = () => {
-      void probeBrowserSessionDetails().then((probe) => {
-        if (probe.ok && (probe.holderSubjectId || probe.authMethod === "evm_wallet" || probe.authMethod === "solana_wallet" || probe.authMethod === "wallet")) {
-          setWalletBrowserSession(true);
-        }
-      });
-    };
-    syncWalletSession();
-    window.addEventListener("abraxas:holder-session", syncWalletSession);
-    return () => window.removeEventListener("abraxas:holder-session", syncWalletSession);
-  }, []);
+  const holderBrowserAuthenticated = hostedBootstrapEligible
+    ? Boolean(signedSolanaSession.holderSubjectId
+      && bootstrapHolderSubjectId === signedSolanaSession.holderSubjectId
+      && hostedBootstrap.state === "ready")
+    : Boolean(suiAddress || signedSolanaSession.holderSubjectId);
 
   useEffect(() => {
     clearStaleLoginInFlight();
@@ -261,7 +253,7 @@ export function PartnerVerifyClient({
     logPartnerVerifyAuthEvent("partner_evaluate_started", { correlationId: cid });
 
     try {
-      const browserSession = suiAddress
+      const browserSession = suiAddress && !hostedBootstrapEligible
         ? await ensureBrowserSessionReady(suiAddress)
         : await ensureBrowserSessionReadyForWalletAuth();
       if (!browserSession.ok) {
@@ -275,6 +267,16 @@ export function PartnerVerifyClient({
         setPhase("sign_in");
         setStatusMessage("Sign in to continue with Abraxas.");
         return;
+      }
+      if (hostedBootstrapEligible) {
+        const current = await probeBrowserSessionDetails();
+        if (!current.ok || current.authMethod !== "solana_wallet"
+          || current.holderSubjectId !== signedSolanaSession.holderSubjectId) {
+          evaluateOnceRef.current = false;
+          setPhase("sign_in");
+          setStatusMessage("Sign in with your Solana wallet to continue.");
+          return;
+        }
       }
 
       setPhase("verifying");
@@ -394,6 +396,8 @@ export function PartnerVerifyClient({
     invalidLinkMessage,
     holderBrowserAuthenticated,
     suiAddress,
+    hostedBootstrapEligible,
+    signedSolanaSession.holderSubjectId,
     relyingPartyId,
     permission,
     permissionVersion,
@@ -428,6 +432,11 @@ export function PartnerVerifyClient({
           setStatusMessage("Preparing your verification request…");
           return;
         }
+        if (hostedBootstrap.state === "sign_in_required") {
+          setPhase("sign_in");
+          setStatusMessage("Sign in with your Solana wallet to continue.");
+          return;
+        }
         if (hostedBootstrap.state === "failed") {
           setPhase("error");
           setStatusMessage("Verification could not be started securely. Try again.");
@@ -438,7 +447,7 @@ export function PartnerVerifyClient({
           setStatusMessage("Sign in to continue with Abraxas.");
           return;
         }
-        // pending ready — refreshSession should populate suiAddress on next tick
+        // The signed session is being confirmed against the hosted request.
         setPhase("bootstrapping");
         return;
       }
@@ -547,18 +556,12 @@ export function PartnerVerifyClient({
       hostedBootstrapEligible={hostedBootstrapEligible}
       onOptionalSignIn={() => { void handleSignIn(); }}
       onWalletSignIn={(
-        <HolderWalletAuthPanel
-          compact
-          intendedAction={PASSPORT_WALLET_ACTIONS.partnerVerify}
+        <HostedSolanaHolderSignIn
           onSuccess={() => {
-            void probeBrowserSessionDetails().then((probe) => {
-              if (probe.ok) {
-                setWalletBrowserSession(true);
-                evaluateOnceRef.current = false;
-                void runEvaluate();
-              }
-            });
-            refreshSession();
+            signedSolanaSession.refresh();
+            hostedBootstrap.retry();
+            evaluateOnceRef.current = false;
+            if (!hostedBootstrapEligible) refreshSession();
           }}
         />
       )}

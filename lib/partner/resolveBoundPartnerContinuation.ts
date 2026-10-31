@@ -31,6 +31,7 @@ export type BoundContinuationResult =
 type VerificationBindingRow = {
   partner_id: string;
   policy_id: string;
+  subject_id?: string | null;
   sui_address?: string | null;
   status?: string | null;
   expires_at?: string | null;
@@ -48,7 +49,7 @@ async function loadVerificationBinding(verifyRequestId: string): Promise<
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb
       .from("verification_requests")
-      .select("partner_id, policy_id, sui_address, status, expires_at")
+      .select("partner_id, policy_id, subject_id, sui_address, status, expires_at")
       .eq("id", verifyRequestId)
       .maybeSingle();
     if (error) return { ok: false, code: CONTINUATION_STORE_UNAVAILABLE };
@@ -77,7 +78,12 @@ function bindVerificationToContinuation(input: {
       return { ok: false, code: "stale" };
     }
   }
+  const canonicalSubject = String(input.row.subject_id ?? "").trim();
+  if (canonicalSubject && canonicalSubject !== input.sessionSubject) {
+    return { ok: false, code: "invalid_session" };
+  }
   const subject = String(input.row.sui_address ?? "").trim();
+  if (canonicalSubject && subject) return { ok: false, code: "invalid_session" };
   if (subject) {
     try {
       if (normalizeSuiAddress(subject) !== normalizeSuiAddress(input.sessionSubject)) {

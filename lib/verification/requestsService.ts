@@ -88,6 +88,11 @@ export async function createVerificationRequest(input: {
   if (input.holderSubjectId && (!isChainNeutralHolderSubjectId(input.holderSubjectId) || input.suiAddress)) {
     throw new Error("invalid_request_holder_binding");
   }
+  // Older server callers still name the authenticated subject `suiAddress`.
+  // Canonical Solana subjects belong in subject_id and must never be coerced
+  // into a Sui address or assigned to a historical Sui credential.
+  const holderSubjectId = input.holderSubjectId
+    ?? (input.suiAddress && isChainNeutralHolderSubjectId(input.suiAddress) ? input.suiAddress : null);
   const sb = requireSupabaseAdmin();
   const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
   const policy = input.expectedPolicyVersion != null
@@ -125,10 +130,10 @@ export async function createVerificationRequest(input: {
     purpose: input.purpose?.trim() || null,
     requested_action: input.requestedAction ?? null,
     requested_claims: requestedClaims,
-    subject_id: input.holderSubjectId ?? null,
+    subject_id: holderSubjectId,
     launchpad_application_id: input.launchpadApplicationId ?? null,
     policy_version: policy.version,
-    sui_address: input.suiAddress ? normalizeSuiAddress(input.suiAddress) : null,
+    sui_address: input.suiAddress && !holderSubjectId ? normalizeSuiAddress(input.suiAddress) : null,
     status: "pending",
     expires_at: expiresAt,
   }).select("id").single();
