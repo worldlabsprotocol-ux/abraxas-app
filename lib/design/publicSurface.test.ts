@@ -3,7 +3,12 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { describe, expect, it } from "vitest";
-import { PUBLIC_NAV_LINKS, PUBLIC_NAV_MENUS, PUBLIC_NAV_START_BUILDING } from "./publicSurface";
+import {
+  PUBLIC_NAV_LINKS,
+  PUBLIC_NAV_MENUS,
+  PUBLIC_NAV_START_BUILDING,
+  publicNavMenusForPath,
+} from "./publicSurface";
 
 const ROOT = resolve(__dirname, "../..");
 
@@ -19,6 +24,14 @@ describe("public surface tokens", () => {
     expect(hrefs).not.toContain("/judge-demo");
   });
 
+  it("does not show the homepage overview link on the homepage itself", () => {
+    const productLinks = (pathname: string) =>
+      publicNavMenusForPath(pathname).find((group) => group.id === "product")?.links ?? [];
+
+    expect(productLinks("/").some((link) => link.href === "/")).toBe(false);
+    expect(productLinks("/verify").some((link) => link.href === "/")).toBe(true);
+  });
+
   it("mounts Solana WalletProvider once at the application root", () => {
     const providers = readFileSync(resolve(ROOT, "components/providers/AppProviders.tsx"), "utf8");
     expect(providers).toContain("WalletContextProvider");
@@ -32,7 +45,7 @@ describe("public surface tokens", () => {
     expect(nav).not.toContain("PublicNavPrimaryActionLink");
     expect(nav).not.toContain("PublicNavLaunchAppLink");
     expect(nav).toContain("PublicNavSectionMenu");
-    expect(nav).toContain("PUBLIC_NAV_MENUS");
+    expect(nav).toContain("publicNavMenusForPath");
     expect(nav).toContain("LanguageSelector");
     expect(nav).not.toContain("NavSignInButton");
     expect(nav).not.toContain("PublicNavWalletButton");

@@ -19,6 +19,7 @@ import { HOME_PARTNER_PROOF_FALLBACK, HOME_PARTNER_PROOF_SUBHEAD } from "@/lib/h
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("next/image", () => ({
