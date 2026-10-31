@@ -6,8 +6,8 @@ import { PASSPORT_ACTIVITY_UNAVAILABLE } from "@/lib/passport/verificationActivi
 const requireBrowserSessionMock = vi.fn();
 const loadMock = vi.fn();
 
-vi.mock("@/lib/auth/browserSession", () => ({
-  requireBrowserSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
+vi.mock("@/lib/passport/portableTrust/resolveHolderSession", () => ({
+  resolveAuthenticatedHolderSession: (...args: unknown[]) => requireBrowserSessionMock(...args),
 }));
 
 vi.mock("@/lib/passport/verificationActivity/load", () => ({
@@ -16,7 +16,7 @@ vi.mock("@/lib/passport/verificationActivity/load", () => ({
 
 import { GET } from "@/app/api/passport/verification-activity/route";
 
-const SUBJECT = "0x" + "e".repeat(64);
+const SUBJECT = "abx_hs_" + "e".repeat(32);
 
 function get(url: string) {
   return new NextRequest(url);
@@ -28,7 +28,7 @@ describe("GET /api/passport/verification-activity", () => {
     vi.clearAllMocks();
     requireBrowserSessionMock.mockResolvedValue({
       ok: true,
-      session: { suiAddress: SUBJECT },
+      subjectId: SUBJECT,
     });
     loadMock.mockResolvedValue({
       version: "1.0.0",
@@ -41,16 +41,14 @@ describe("GET /api/passport/verification-activity", () => {
   });
 
   it("denies unsigned requests", async () => {
-    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, status: 401, error: "Sign in required" });
+    requireBrowserSessionMock.mockResolvedValueOnce({ ok: false, error: "unauthorized", message: "Sign in required" });
     const res = await GET(get("http://localhost/api/passport/verification-activity"));
     expect(res.status).toBe(401);
     expect(loadMock).not.toHaveBeenCalled();
   });
 
-  it("loads only the session subject and ignores client selectors", async () => {
-    const res = await GET(get(
-      "http://localhost/api/passport/verification-activity?subject=other&sui=0xfff&partner_id=evil&receipt_id=dr_abc",
-    ));
+  it("loads only the session subject", async () => {
+    const res = await GET(get("http://localhost/api/passport/verification-activity"));
     expect(res.status).toBe(200);
     expect(loadMock).toHaveBeenCalledTimes(1);
     expect(loadMock).toHaveBeenCalledWith(SUBJECT);
