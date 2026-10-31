@@ -25,6 +25,23 @@ import {
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
+const pendingReceiptKey = (applicationId: string) => `abraxas:harness-pending:${applicationId}`;
+
+function readPendingReceipt(applicationId: string): ReturnType<typeof formatHarnessResultForBuilder> | null {
+  try {
+    const raw = sessionStorage.getItem(pendingReceiptKey(applicationId));
+    const value = raw ? JSON.parse(raw) as ReturnType<typeof formatHarnessResultForBuilder> : null;
+    return value?.tone === "success" && typeof value.receiptId === "string" ? value : null;
+  } catch { return null; }
+}
+
+function savePendingReceipt(applicationId: string, result: ReturnType<typeof formatHarnessResultForBuilder>) {
+  try { sessionStorage.setItem(pendingReceiptKey(applicationId), JSON.stringify(result)); } catch { /* recheck remains available in this view */ }
+}
+
+function clearPendingReceipt(applicationId: string) {
+  try { sessionStorage.removeItem(pendingReceiptKey(applicationId)); } catch { /* no security state stored here */ }
+}
 
 export function IntegrationStudioRequestWorkbench({
   packId,
@@ -55,27 +72,52 @@ export function IntegrationStudioRequestWorkbench({
   const autoRunStartedFor = useRef<string | null>(null);
   const [error, setError] = useState("");
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
+  const [pendingReceipt, setPendingReceipt] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
 
-  async function verifyHarnessReceipt(receiptId: string): Promise<boolean> {
-    if (!applicationId || !signedIn) return false;
+  async function verifyHarnessReceipt(receiptId: string): Promise<"confirmed" | "invalid" | "unavailable"> {
+    if (!applicationId || !signedIn) return "unavailable";
     const res = await fetch(`/api/launchpad/applications/${applicationId}/receipts/validate?receipt_id=${encodeURIComponent(receiptId)}`, {
       credentials: "include", cache: "no-store",
     });
-    if (!res.ok) return false;
+    if (!res.ok) return res.status === 404 ? "invalid" : "unavailable";
     const data = await res.json();
-    return data.ok === true && data.receipt_id === receiptId && data.harness_verification_ok === true;
+    if (data.ok !== true || data.receipt_id !== receiptId) return "unavailable";
+    return data.harness_verification_ok === true ? "confirmed" : "invalid";
   }
 
   useEffect(() => {
     setOutcome(null);
     setError("");
-    if (!applicationId || !signedIn || autoRunOnReady || autoRunStartedFor.current === applicationId) return;
+    if (!applicationId || !signedIn || autoRunStartedFor.current === applicationId) return;
+    const pending = readPendingReceipt(applicationId);
+    if (pending?.receiptId) {
+      autoRunStartedFor.current = applicationId;
+      onAutoRunConsumed?.();
+      let active = true;
+      setPendingReceipt(pending);
+      void verifyHarnessReceipt(pending.receiptId).then((status) => {
+        if (!active) return;
+        if (status === "confirmed") {
+          persistHarnessSuccess(applicationId, pending);
+          clearPendingReceipt(applicationId);
+          setPendingReceipt(null);
+          setOutcome(pending);
+        } else if (status === "invalid") {
+          clearPendingReceipt(applicationId);
+          setPendingReceipt(null);
+          setError("That receipt is no longer valid. Run a new test.");
+        } else setError("We could not recheck the receipt. Try again shortly.");
+      }).catch(() => { if (active) setError("We could not recheck the receipt. Try again shortly."); });
+      return () => { active = false; };
+    }
+    if (autoRunOnReady) return;
     const restored = readPersistedHarnessSuccess(applicationId);
     if (!restored?.receiptId) return;
     let active = true;
-    void verifyHarnessReceipt(restored.receiptId).then((valid) => {
-      if (active && valid) setOutcome(restored);
-      if (active && !valid) setError("The previous test result is no longer confirmed. Run the test again.");
+    void verifyHarnessReceipt(restored.receiptId).then((status) => {
+      if (active && status === "confirmed") setOutcome(restored);
+      if (active && status === "invalid") setError("The previous receipt is no longer valid. Run a new test.");
+      if (active && status === "unavailable") setError("We could not recheck the receipt. Try again shortly.");
     }).catch(() => {
       if (active) setError("Could not confirm the previous test. Run it again.");
     });
@@ -86,6 +128,26 @@ export function IntegrationStudioRequestWorkbench({
 
   async function runHarness() {
     if (!applicationId || !signedIn) return;
+    const pending = pendingReceipt ?? readPendingReceipt(applicationId);
+    if (pending?.receiptId) {
+      setBusy(true);
+      try {
+        const status = await verifyHarnessReceipt(pending.receiptId);
+        if (status === "confirmed") {
+          persistHarnessSuccess(applicationId, pending);
+          clearPendingReceipt(applicationId);
+          setPendingReceipt(null);
+          setError("");
+          setOutcome(pending);
+        } else if (status === "invalid") {
+          clearPendingReceipt(applicationId);
+          setPendingReceipt(null);
+          setError("That receipt is no longer valid. Run a new test.");
+        } else setError("We could not recheck the receipt. Try again shortly.");
+      } catch { setError("We could not recheck the receipt. Try again shortly."); }
+      finally { setBusy(false); }
+      return;
+    }
     setBusy(true);
     setError("");
     setOutcome(null);
@@ -114,9 +176,14 @@ export function IntegrationStudioRequestWorkbench({
       if (data.result && typeof data.result === "object") {
         const formatted = formatHarnessResultForBuilder(data.result as LaunchpadTestRunResult);
         if (formatted.tone === "success") {
-          const verified = formatted.receiptId && await verifyHarnessReceipt(formatted.receiptId);
-          if (!verified) {
-            setError("The sandbox test ran, but its receipt could not be confirmed. Try again.");
+          const verification = formatted.receiptId
+            ? await verifyHarnessReceipt(formatted.receiptId) : "invalid";
+          if (verification !== "confirmed") {
+            if (formatted.receiptId && verification === "unavailable") {
+              savePendingReceipt(applicationId, formatted);
+              setPendingReceipt(formatted);
+              setError("Your test ran. Recheck its receipt before running another test.");
+            } else setError("The test receipt is invalid. Run a new test.");
             return;
           }
           persistHarnessSuccess(applicationId, formatted);
@@ -132,7 +199,7 @@ export function IntegrationStudioRequestWorkbench({
   }
 
   useEffect(() => {
-    if (!autoRunOnReady || !applicationId || autoRunStartedFor.current === applicationId || !signedIn || !packId || !policyId) return;
+    if (!autoRunOnReady || !applicationId || autoRunStartedFor.current === applicationId || !signedIn || !packId || !policyId || readPendingReceipt(applicationId)) return;
     autoRunStartedFor.current = applicationId;
     onAutoRunConsumed?.();
     void runHarness();
@@ -177,7 +244,7 @@ export function IntegrationStudioRequestWorkbench({
         error={error}
         action={applicationId && signedIn ? (
           <Btn size="sm" disabled={busy} loading={busy} onClick={() => void runHarness()}>
-            {failed ? "Try test again" : "Run test"}
+            {pendingReceipt ? "Recheck receipt" : failed ? "Try test again" : "Run test"}
           </Btn>
         ) : null}
       >

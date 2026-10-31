@@ -192,6 +192,8 @@ export async function pgGetSignedReceiptForApplication(input: {
   receiptId: string;
 }): Promise<{
   receipt_id: string;
+  policy_id: string;
+  policy_version: number;
   public_payload: Record<string, unknown>;
   signature: string;
   expires_at: string;
@@ -202,6 +204,8 @@ export async function pgGetSignedReceiptForApplication(input: {
 } | null> {
   const { rows } = await queryAbraxasPg<{
     receipt_id: string;
+    policy_id: string;
+    policy_version: number;
     public_payload: Record<string, unknown>;
     signature: string;
     expires_at: string;
@@ -210,7 +214,7 @@ export async function pgGetSignedReceiptForApplication(input: {
     request_status: string | null;
     idempotency_key: string | null;
   }>(
-    `select r.receipt_id, r.public_payload, r.signature, r.expires_at, r.revoked_at,
+    `select r.receipt_id, r.policy_id, r.policy_version, r.public_payload, r.signature, r.expires_at, r.revoked_at,
             v.scenario_id, v.status as request_status, v.idempotency_key
        from public.partner_launchpad_signed_receipts r
        left join public.partner_launchpad_verification_requests v on v.id = r.verification_request_id

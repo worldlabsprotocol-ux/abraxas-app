@@ -13,6 +13,7 @@ import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpa
 import { evaluatePublicReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
+import { verifyStoredHarnessReceipt } from "@/lib/partner/launchpad/verifyStoredHarnessReceipt";
 
 export const dynamic = "force-dynamic";
 
@@ -32,23 +33,39 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   }
 
-  if (!launchpadUsesSovereignPostgres()) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 501, "Sovereign receipt store required");
-  }
-
-  const { pgGetSignedReceiptForApplication } = await import(
-    "@/lib/partner/launchpad/sovereign/launchpadPgStore"
-  );
-  const stored = await pgGetSignedReceiptForApplication({
-    applicationId: params.id,
-    partnerId: auth.session.partnerId,
-    receiptId,
-  });
+  const stored = launchpadUsesSovereignPostgres()
+    ? await (async () => {
+        const { pgGetSignedReceiptForApplication } = await import(
+          "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+        );
+        return pgGetSignedReceiptForApplication({
+          applicationId: params.id, partnerId: auth.session.partnerId, receiptId,
+        });
+      })()
+    : await (async () => {
+        const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+        const { data, error } = await requireSupabaseAdmin()
+          .from("partner_launchpad_harness_receipts")
+          .select("receipt_id,policy_id,policy_version,public_payload,signature,expires_at,revoked_at,scenario_id,request_status")
+          .eq("receipt_id", receiptId)
+          .eq("application_id", params.id)
+          .eq("partner_id", auth.session.partnerId)
+          .maybeSingle();
+        if (error) return null;
+        return data;
+      })();
   if (!stored) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 404, "Receipt not found for application");
   }
 
-  const receipt = stored.public_payload as PartnerFlowPublicReceipt;
+  const cryptographic = verifyStoredHarnessReceipt(stored.public_payload, stored.signature);
+  const receipt = {
+    ...(cryptographic.receipt ?? {}),
+    signature_valid: cryptographic.signatureValid,
+    // The stored lifecycle is authoritative even if the public view was
+    // copied before a revocation.
+    status: stored.revoked_at ? "revoked" : cryptographic.receipt?.status,
+  } as PartnerFlowPublicReceipt;
   const trust = evaluatePublicReceiptTrust(receipt, {
     partnerId: app.partner_id,
     policyId: app.policy_id,
@@ -61,8 +78,10 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     allowSandbox: true,
   });
   const bindingMatches = receipt.receipt_id === stored.receipt_id
-    && stored.public_payload.signature === stored.signature
-    && stored.public_payload.policy_version === app.policy_version
+    && cryptographic.signatureValid
+    && stored.policy_id === app.policy_id
+    && stored.policy_version === app.policy_version
+    && cryptographic.receipt?.policy_version === app.policy_version
     && receipt.decision_context === "sandbox_only"
     && app.environment === "sandbox";
   const storageCurrent = !stored.revoked_at
@@ -79,8 +98,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     partner_flow_ok: flow.ok,
     partner_flow_errors: flow.errors,
     harness_verification_ok: trust.signature_valid && trust.currently_valid
-      && stored.scenario_id === "approved" && stored.request_status === "completed"
-      && stored.idempotency_key?.startsWith(`harness:${app.id}:approved:`) === true
+      && flow.ok && stored.scenario_id === "approved" && stored.request_status === "completed"
       && bindingMatches && storageCurrent,
     storage_revoked_at: stored.revoked_at,
     expires_at: stored.expires_at,

@@ -13,6 +13,8 @@ import {
   type PartnerHarnessCaseResult,
 } from "@/lib/partner/launchpad/partnerTestHarness";
 import { SITE_URL } from "@/lib/siteUrl";
+import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
+import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve";
 
 export type LaunchpadTestRunResult = PartnerHarnessCaseResult & {
   policy_template_id: string;
@@ -42,12 +44,22 @@ export async function runLaunchpadTestScenario(input: {
     return { ok: false, code: "return_url_rejected" };
   }
 
+  // Persisted harness receipts must be verifiable after this request and on
+  // another server instance. An ephemeral test key cannot provide that.
+  const signingKey = loadReceiptSigningKey();
+  const authorizedKey = resolveIssuanceSigningKey({ schemaVersion: "1.0.0" });
+  if (!signingKey || !authorizedKey.ok || authorizedKey.key_id !== signingKey.signingKeyId) {
+    return { ok: false, code: "signing_unavailable" };
+  }
+
   const caseResult = runPartnerHarnessCase({
     partnerId: app.partner_id,
     policyId: app.policy_id,
     policyVersion: app.policy_version,
     policyTemplateId: app.policy_template_id,
     scenarioId: scenario.id,
+    signingKey,
+    signingSource: "configured_issuer_key",
   });
   if ("ok" in caseResult && caseResult.ok === false) {
     return { ok: false, code: caseResult.code };
@@ -71,6 +83,21 @@ export async function runLaunchpadTestScenario(input: {
     const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
     const { recordLaunchpadActivity } = await import("@/lib/partner/launchpad/recordActivity");
     const sb = requireSupabaseAdmin();
+    const persistence = result.persistence;
+    if (!persistence) return { ok: false, code: "receipt_unavailable" };
+    const { error: persistError } = await sb.from("partner_launchpad_harness_receipts").insert({
+      receipt_id: persistence.receipt_id,
+      application_id: app.id,
+      partner_id: app.partner_id,
+      policy_id: app.policy_id,
+      policy_version: app.policy_version,
+      scenario_id: scenario.id,
+      request_status: "completed",
+      public_payload: persistence.public_payload,
+      signature: persistence.signature,
+      expires_at: persistence.expires_at,
+    });
+    if (persistError) return { ok: false, code: "receipt_unavailable" };
     await recordLaunchpadActivity(sb, {
       applicationId: app.id,
       partnerId: input.partnerId,
