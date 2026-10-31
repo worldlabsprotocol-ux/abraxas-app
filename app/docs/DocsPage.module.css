@@ -1,0 +1,112 @@
+.navigation {
+  position: sticky;
+  top: clamp(60px, 8vw, 72px);
+  z-index: 10;
+  display: flex;
+  gap: 1.15rem;
+  overflow-x: auto;
+  margin: 0 0 1.25rem;
+  padding: 0.65rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.navigation a {
+  flex: 0 0 auto;
+  padding: 0.3rem 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navigation a[aria-current="location"] {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.navigation a:focus-visible,
+.topic summary:focus-visible,
+.topicLinks a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.groups {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.group {
+  scroll-margin-top: 140px;
+}
+
+.group h2 {
+  margin: 0 0 0.35rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.topic {
+  border-top: 1px solid var(--border);
+}
+
+.topic:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.topic summary {
+  display: flex;
+  min-height: 2.8rem;
+  align-items: center;
+  padding: 0.6rem 0.15rem;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.topicContent {
+  padding: 0 0.15rem 0.9rem 1.25rem;
+}
+
+.topicContent p {
+  margin: 0 0 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.83rem;
+  line-height: 1.6;
+}
+
+.topicLinks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.45rem 1rem;
+}
+
+.topicLinks a {
+  color: var(--accent);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.topicLinks a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .navigation {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.3rem 0.75rem;
+    margin-inline: -0.5rem;
+    padding-inline: 0.5rem;
+    overflow: visible;
+  }
+}
