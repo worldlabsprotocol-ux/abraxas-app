@@ -832,6 +832,7 @@ export function IntegrationStudioClient({
           signedIn={signedIn}
           walletAuthorized={walletAuthorized}
           configuredAppId={beginnerAppId}
+          configuredAppName={created && beginnerAppId === created.application_id ? applicationName : beginnerExistingApp?.application_name}
           availableApps={availableApps}
           choice={beginnerChoice}
           onChoiceChange={selectBeginnerChoice}
@@ -1706,4 +1707,5 @@ export function IntegrationStudioClient({
     </>
   );
 }
+
 

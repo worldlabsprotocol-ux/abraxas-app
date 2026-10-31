@@ -161,6 +161,7 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
       expect(validateRes.status).toBe(200);
       const validateBody = await validateRes.json();
       expect(validateBody.signature_valid).toBe(true);
+      expect(validateBody.harness_verification_ok).toBe(true);
 
       const { GET: activity } = await import(
         `@/app/api/launchpad/applications/[id]/activity/route`
@@ -271,3 +272,4 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
     });
   },
 );
+

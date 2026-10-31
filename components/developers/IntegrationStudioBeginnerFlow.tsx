@@ -12,7 +12,7 @@ type ExistingApp = { id: string; application_name: string; policy_id: string };
 type Choice = "choose" | "new" | "existing" | "example";
 
 export function IntegrationStudioBeginnerFlow({
-  sessionChecked, signedIn, walletAuthorized, configuredAppId, availableApps, choice,
+  sessionChecked, signedIn, walletAuthorized, configuredAppId, configuredAppName, availableApps, choice,
   onChoiceChange, selectedAppId, onSelectedAppIdChange, autoRunTest,
   onAutoRunTestConsumed, packId, pathId, policyId, applicationName,
   onApplicationNameChange, onCreateSandbox, submitting, createError,
@@ -23,6 +23,7 @@ export function IntegrationStudioBeginnerFlow({
   signedIn: boolean;
   walletAuthorized: boolean;
   configuredAppId: string | null;
+  configuredAppName?: string;
   availableApps: ExistingApp[];
   choice: Choice;
   onChoiceChange: (choice: Choice) => void;
@@ -88,7 +89,8 @@ export function IntegrationStudioBeginnerFlow({
       onApplicationNameChange={onApplicationNameChange} onSubmit={onCreateSandbox} submitting={submitting} error={createError} onBack={() => onChoiceChange("choose")} />;
   }
 
-  return <IntegrationStudioRequestWorkbench packId={packId} pathId={pathId} policyId={policyId}
+  return <IntegrationStudioRequestWorkbench packId={packId} pathId={pathId} policyId={policyId} applicationName={configuredAppName}
     beginnerSurface autoRunOnReady={autoRunTest} startWithExample={choice === "example"} onAutoRunConsumed={onAutoRunTestConsumed}
     onRefreshSession={onRefreshSession} />;
 }
+
