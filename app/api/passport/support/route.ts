@@ -4,14 +4,14 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 import {
   isPassportSupportIssue,
+  isPassportSupportStatus,
   normalizePassportSupportMessage,
-  passportSupportCategory,
   passportSupportIssueLabel,
-  toPassportSupportHistoryItem,
+  passportSupportStatusLabel,
 } from "@/lib/passport/passportSupport";
 
 function supportDatabase(): SupabaseClient | null {
@@ -21,24 +21,10 @@ function supportDatabase(): SupabaseClient | null {
   return createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 }
 
-async function resolveHolderEmail(
-  supabase: SupabaseClient,
-  suiAddress: string,
-): Promise<string | null> {
-  const { data: identity, error } = await supabase
-    .from("sui_zklogin_identities")
-    .select("email")
-    .eq("sui_address", suiAddress)
-    .maybeSingle();
-
-  const email = typeof identity?.email === "string" ? identity.email.trim() : "";
-  return !error && email.includes("@") ? email : null;
-}
-
 export async function GET(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await resolveAuthenticatedHolderSession(req);
   if (!auth.ok) {
-    return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
+    return NextResponse.json({ ok: false, error: auth.message }, { status: auth.error === "forbidden" ? 403 : 401 });
   }
 
   const supabase = supportDatabase();
@@ -46,19 +32,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Support is unavailable right now." }, { status: 503 });
   }
 
-  const email = await resolveHolderEmail(supabase, auth.session.subjectId);
-  if (!email) {
-    return NextResponse.json(
-      { ok: false, error: "We could not connect support history to your signed-in account." },
-      { status: 409 },
-    );
-  }
-
   const { data, error } = await supabase
-    .from("contact_submissions")
-    .select("category,message,created_at")
-    .eq("email", email)
-    .like("category", "passport-support:%")
+    .from("passport_subject_support_requests")
+    .select("reference,issue_type,status,created_at")
+    .eq("holder_subject_id", auth.subjectId)
     .order("created_at", { ascending: false })
     .limit(10);
 
@@ -66,17 +43,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Support history is unavailable right now." }, { status: 500 });
   }
 
-  const requests = (data ?? [])
-    .map(toPassportSupportHistoryItem)
-    .filter(item => item !== null);
+  const requests = (data ?? []).flatMap(row => {
+    if (!isPassportSupportIssue(row.issue_type) || !isPassportSupportStatus(row.status)) return [];
+    return [{
+      reference: row.reference,
+      issue_type: row.issue_type,
+      issue_label: passportSupportIssueLabel(row.issue_type),
+      status: row.status,
+      status_label: passportSupportStatusLabel(row.status),
+      submitted_at: row.created_at,
+    }];
+  });
 
   return NextResponse.json({ ok: true, requests });
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await resolveAuthenticatedHolderSession(req);
   if (!auth.ok) {
-    return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
+    return NextResponse.json({ ok: false, error: auth.message }, { status: auth.error === "forbidden" ? 403 : 401 });
   }
 
   const rate = await checkLaunchpadRateLimit(req, "passport-support", 3, 60 * 60);
@@ -110,22 +95,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Support is unavailable right now." }, { status: 503 });
   }
 
-  const email = await resolveHolderEmail(supabase, auth.session.subjectId);
-  if (!email) {
-    return NextResponse.json(
-      { ok: false, error: "We could not connect this request to your signed-in account." },
-      { status: 409 },
-    );
-  }
-
   const reference = `PS-${randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
-  const issueLabel = passportSupportIssueLabel(body.issue_type);
-  const { error: insertError } = await supabase.from("contact_submissions").insert({
-    name: "Passport holder",
-    email,
-    organization: null,
-    category: passportSupportCategory(body.issue_type),
-    message: `[${reference}] ${issueLabel}\n\n${message}`,
+  const { error: insertError } = await supabase.from("passport_subject_support_requests").insert({
+    id: `ps_${randomUUID().replace(/-/g, "")}`,
+    holder_subject_id: auth.subjectId,
+    reference,
+    issue_type: body.issue_type,
+    status: "received",
+    message,
   });
 
   if (insertError) {
