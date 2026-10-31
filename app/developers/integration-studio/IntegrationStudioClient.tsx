@@ -232,13 +232,19 @@ export function IntegrationStudioClient({
   const [beginnerChoice, setBeginnerChoice] = useState<"choose" | "new" | "existing" | "example">("choose");
   const [beginnerSelectedAppId, setBeginnerSelectedAppId] = useState<string | null>(null);
   const [autoTestNewAppId, setAutoTestNewAppId] = useState<string | null>(null);
+  const requestedStart = searchParams.get("start");
   useEffect(() => {
     try {
+      if (requestedStart === "new" || requestedStart === "existing") {
+        setBeginnerChoice(requestedStart);
+        setBeginnerSelectedAppId(null);
+        return;
+      }
       const saved = JSON.parse(window.sessionStorage.getItem(BEGINNER_CHOICE_STORAGE_KEY) ?? "null") as { choice?: string; appId?: string } | null;
       if (saved?.choice === "new" || saved?.choice === "existing" || saved?.choice === "example") setBeginnerChoice(saved.choice);
       if (typeof saved?.appId === "string") setBeginnerSelectedAppId(saved.appId);
     } catch { /* A damaged client hint cannot grant access. */ }
-  }, []);
+  }, [requestedStart]);
   const selectBeginnerChoice = (choice: "choose" | "new" | "existing" | "example") => {
     const appId = choice === "new" || (choice === "existing" && beginnerChoice !== "existing") ? null : beginnerSelectedAppId;
     if (choice === "new") setCreated(null);
