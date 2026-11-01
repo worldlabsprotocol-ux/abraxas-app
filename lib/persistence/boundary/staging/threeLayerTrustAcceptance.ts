@@ -193,9 +193,6 @@ async function verifyThreeLayer(input: {
     expectedEnvironment: "demo",
     env: input.env,
   });
-  if (evaluation.lifecycle_status === "invalidated") {
-    throw new Error(`build820_authoritative_validity_invalidated:${evaluation.invalidation_reasons.join(",")}`);
-  }
   const signedStatus = input.signedStatusOverride
     ? assertSignedStatus(input.signedStatusOverride)
     : assertSignedStatus(
@@ -445,6 +442,9 @@ export async function runBuild820Acceptance(input: {
     env: revokedRegistryEnv,
     anchorKey,
     registryVersion: 5,
+    // Status was signed while the issuer was authorized. Current signed issuer
+    // authority must independently reject that otherwise authentic receipt.
+    signedStatusOverride: statusForAudience,
   });
   adverse.push({
     id: "issuer_signing_key_revoked",
