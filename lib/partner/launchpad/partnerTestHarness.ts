@@ -182,8 +182,9 @@ function buildSignedPublicReceipt(input: {
   status: "active" | "expired" | "revoked";
   key: ReceiptSigningKeyPair;
   claimType: string;
+  evaluatedAt: string;
 }): PartnerFlowPublicReceipt & DecisionReceiptPublicView {
-  const evaluatedAt = "2026-09-01T00:00:00.000Z";
+  const evaluatedAt = input.evaluatedAt;
   const payload = buildCanonicalPayload({
     receipt_id: `dr_harness_${randomBytes(8).toString("hex")}`,
     decision_id: `00000000-0000-4000-8000-${randomBytes(6).toString("hex").slice(0, 12)}`,
@@ -213,6 +214,9 @@ function buildSignedPublicReceipt(input: {
   const productionUsable = input.context === "production";
   return {
     receipt_id: payload.receipt_id,
+    verification_decision_id: payload.decision_id,
+    wallet_binding_ref: payload.wallet_binding_ref,
+    consent_receipt_id: payload.consent_receipt_id,
     schema_version: payload.schema_version,
     policy_id: payload.policy_id,
     policy_version: payload.policy_version,
@@ -233,7 +237,7 @@ function buildSignedPublicReceipt(input: {
     signature_valid: signatureValid,
     currently_valid: input.status === "active" && input.decision === "approved",
     validity: input.status === "active" ? "active" : input.status,
-    invalidation_reasons: [],
+    invalidation_reasons: input.context === "sandbox_only" ? ["production_not_usable:false"] : [],
     artifact_type: "eligibility_decision_receipt",
     anchor_reference: null,
   };
@@ -273,21 +277,22 @@ export function runPartnerHarnessCase(input: {
   scenarioId: string;
   now?: Date;
   signingKey?: ReceiptSigningKeyPair;
+  signingSource?: PartnerHarnessCaseResult["signing_source"];
 }): PartnerHarnessCaseResult | { ok: false; code: "invalid_scenario" } {
   const scenario = resolvePartnerHarnessScenario(input.scenarioId);
   if (!scenario) return { ok: false, code: "invalid_scenario" };
 
   const { key, source } = input.signingKey
-    ? { key: input.signingKey, source: "ephemeral_harness_key" as const }
+    ? { key: input.signingKey, source: input.signingSource ?? "ephemeral_harness_key" as const }
     : resolveHarnessSigningKey();
 
   const pack = resolvePolicyPack(input.policyTemplateId);
   const claimType = pack?.required_claims[0]
     ?? (input.policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID ? "identity_verified" : "identity_verified");
 
-  const future = "2026-12-01T00:00:00.000Z";
+  const now = input.now ?? new Date();
+  const future = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
   const past = "2020-01-01T00:00:00.000Z";
-  const now = input.now ?? new Date("2026-09-18T00:00:00.000Z");
 
   let receiptPartner = input.partnerId;
   let receiptPolicy = input.policyId;
@@ -315,6 +320,7 @@ export function runPartnerHarnessCase(input: {
     status,
     key,
     claimType,
+    evaluatedAt: now.toISOString(),
   });
 
   const sandboxTrust = evaluatePublicReceiptTrust(receipt, {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { IntegrationStudioRequestWorkbench } from "./IntegrationStudioRequestWorkbench";
 vi.mock("@/components/developers/BeginnerPartnerAccessGate", () => ({
@@ -76,8 +76,22 @@ describe("beginner sandbox test access", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: false }) });
     vi.stubGlobal("fetch", fetch);
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady />);
-    await waitFor(() => expect(screen.getByText(/receipt could not be confirmed/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/test receipt is invalid/i)).toBeInTheDocument());
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
+  });
+  it("rechecks an issued receipt without running a duplicate test", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: { passed: true, observed_access: "allow", persistence: { receipt_id: "receipt-1" } } }) })
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: true }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Recheck receipt" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Recheck receipt" }));
+    await waitFor(() => expect(screen.getByText("Sandbox test passed")).toBeInTheDocument());
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(String(fetch.mock.calls[2]?.[0])).toContain("/receipts/validate?");
   });
   it("revalidates a restored result instead of trusting session storage", async () => {
     operational.signedIn = true;
@@ -85,7 +99,7 @@ describe("beginner sandbox test access", () => {
     const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: false }) });
     vi.stubGlobal("fetch", fetch);
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
-    await waitFor(() => expect(screen.getByText(/previous test result is no longer confirmed/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/previous receipt is no longer valid/i)).toBeInTheDocument());
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
 });

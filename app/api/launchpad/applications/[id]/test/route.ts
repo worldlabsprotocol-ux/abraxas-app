@@ -42,6 +42,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (result.code === "return_url_rejected") {
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected, 400);
     }
+    if (result.code === "signing_unavailable" || result.code === "receipt_unavailable") {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.signing_unavailable, 503,
+        "Sandbox receipt issuance is temporarily unavailable");
+    }
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400);
   }
 

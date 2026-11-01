@@ -4,6 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { NextRequest } from "next/server";
+import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { insertNativeAccount } from "@/lib/auth/nativeAccount/store";
 import { enrollSandboxForAccount } from "@/lib/auth/nativeAccount/sandboxEnroll";
@@ -51,6 +52,10 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
 
     beforeAll(async () => {
       Object.assign(process.env, testEnv);
+      const signingKey = generateTestSigningKeyPair("sovereign-http-harness-test");
+      process.env.ABRAXAS_SIGNING_KEY = JSON.stringify(signingKey.privateKeyJwk);
+      process.env.ABRAXAS_PUBLIC_KEY = JSON.stringify(signingKey.publicKeyJwk);
+      process.env.ABRAXAS_SIGNING_KEY_ID = signingKey.signingKeyId;
       resetAbraxasPgPoolForTests();
       admin = new pg.Client({ connectionString: databaseUrl });
       await admin.connect();
@@ -80,6 +85,9 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
     afterAll(async () => {
       await admin?.end().catch(() => undefined);
       resetAbraxasPgPoolForTests();
+      delete process.env.ABRAXAS_SIGNING_KEY;
+      delete process.env.ABRAXAS_PUBLIC_KEY;
+      delete process.env.ABRAXAS_SIGNING_KEY_ID;
     });
 
     it("exercises launchpad HTTP routes with real authorization", async () => {

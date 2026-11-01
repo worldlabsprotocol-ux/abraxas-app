@@ -9,10 +9,11 @@ import {
 import {
   runPartnerHarnessCase,
   resolvePartnerHarnessScenario,
-  harnessPassPublicCode,
   type PartnerHarnessCaseResult,
 } from "@/lib/partner/launchpad/partnerTestHarness";
 import { SITE_URL } from "@/lib/siteUrl";
+import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
+import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve";
 
 export type LaunchpadTestRunResult = PartnerHarnessCaseResult & {
   policy_template_id: string;
@@ -33,6 +34,9 @@ export async function runLaunchpadTestScenario(input: {
 > {
   const scenario = resolvePartnerHarnessScenario(input.scenarioId);
   if (!scenario) return { ok: false, code: "invalid_scenario" };
+  // A durable receipt and its confirmation must resolve through the same
+  // sovereign store. Do not issue a receipt on the legacy PostgREST path.
+  if (!launchpadUsesSovereignPostgres()) return { ok: false, code: "receipt_unavailable" };
 
   const app = await getLaunchpadApplicationForPartner(input.applicationId, input.partnerId);
   if (!app) return { ok: false, code: "not_found" };
@@ -42,12 +46,22 @@ export async function runLaunchpadTestScenario(input: {
     return { ok: false, code: "return_url_rejected" };
   }
 
+  // Persisted harness receipts must be verifiable after this request and on
+  // another server instance. An ephemeral test key cannot provide that.
+  const signingKey = loadReceiptSigningKey();
+  const authorizedKey = resolveIssuanceSigningKey({ schemaVersion: "1.0.0" });
+  if (!signingKey || !authorizedKey.ok || authorizedKey.key_id !== signingKey.signingKeyId) {
+    return { ok: false, code: "signing_unavailable" };
+  }
+
   const caseResult = runPartnerHarnessCase({
     partnerId: app.partner_id,
     policyId: app.policy_id,
     policyVersion: app.policy_version,
     policyTemplateId: app.policy_template_id,
     scenarioId: scenario.id,
+    signingKey,
+    signingSource: "configured_issuer_key",
   });
   if ("ok" in caseResult && caseResult.ok === false) {
     return { ok: false, code: caseResult.code };
@@ -56,34 +70,16 @@ export async function runLaunchpadTestScenario(input: {
   const result = caseResult as PartnerHarnessCaseResult;
   const hostedVerifyUrl = `${SITE_URL}/partner/verify?app=${encodeURIComponent(app.public_slug)}&return_url=${encodeURIComponent(returnUrl)}`;
 
-  if (launchpadUsesSovereignPostgres()) {
-    const { recordSovereignVerificationRun } = await import(
-      "@/lib/partner/launchpad/sovereign/verificationExecution"
-    );
-    await recordSovereignVerificationRun({
-      app,
-      partnerId: input.partnerId,
-      scenarioId: scenario.id,
-      harness: result,
-      idempotencyKey: `harness:${app.id}:${scenario.id}:${result.callback_params.receipt_id}`,
-    });
-  } else {
-    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
-    const { recordLaunchpadActivity } = await import("@/lib/partner/launchpad/recordActivity");
-    const sb = requireSupabaseAdmin();
-    await recordLaunchpadActivity(sb, {
-      applicationId: app.id,
-      partnerId: input.partnerId,
-      eventType: result.passed ? "receipt_verified" : "verification_failed",
-      publicCode: result.passed ? harnessPassPublicCode(result.scenario_id) : `harness_${result.scenario_id}_fail`,
-      metadata: {
-        scenario: result.scenario_id,
-        simulated: false,
-        harness: true,
-        passed: result.passed,
-      },
-    });
-  }
+  const { recordSovereignVerificationRun } = await import(
+    "@/lib/partner/launchpad/sovereign/verificationExecution"
+  );
+  await recordSovereignVerificationRun({
+    app,
+    partnerId: input.partnerId,
+    scenarioId: scenario.id,
+    harness: result,
+    idempotencyKey: `harness:${app.id}:${scenario.id}:${result.callback_params.receipt_id}`,
+  });
 
   return {
     ok: true,
@@ -97,3 +93,4 @@ export async function runLaunchpadTestScenario(input: {
     },
   };
 }
+
