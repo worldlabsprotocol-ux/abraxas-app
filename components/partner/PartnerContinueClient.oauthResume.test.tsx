@@ -270,7 +270,7 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
     const chooser = await screen.findByText(/Choose how to satisfy this requirement/i);
     expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
 
-    await userEvent.click(screen.getByRole("button", { name: /Partner-provided eligibility check/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Privacy-preserving verification/i }));
     expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
     await waitFor(() => {
