@@ -247,7 +247,7 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
       }
       if (url.includes("/api/age-assurance/providers")) {
         return new Response(JSON.stringify({
-          providers: [],
+          providers: [{ id: "demo", displayName: "Partner-provided eligibility check", configured: true }],
           existing_proof: { eligible_for_reuse: false },
         }), { status: 200 });
       }
