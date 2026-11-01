@@ -17,6 +17,35 @@ afterEach(() => {
 });
 
 describe("PassportRequestInbox", () => {
+  it("does not reuse another wallet's cached requests after a subject change", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, requests: [{
+        request_ref: "request:one",
+        partner_label: "First wallet partner",
+        request_title: "First wallet request",
+        purpose: "test",
+        shared_result: "result",
+        received_at: "2026-09-27T10:00:00.000Z",
+        expires_at: "2026-09-28T10:00:00.000Z",
+        continue_href: "/partner/continue?verify_request=one",
+      }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, requests: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const renderInbox = (holderSubjectId: string) => (
+      <QueryClientProvider client={client}>
+        <PassportRequestInbox showEmpty holderSubjectId={holderSubjectId} />
+      </QueryClientProvider>
+    );
+
+    const view = render(renderInbox("abx_hs_first"));
+    expect(await screen.findByText("First wallet partner")).toBeInTheDocument();
+    view.rerender(renderInbox("abx_hs_second"));
+    expect(screen.queryByText("First wallet partner")).toBeNull();
+    expect(await screen.findByText("No requests waiting")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("stays out of the Passport home when no action is waiting", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: true,
@@ -87,3 +116,4 @@ describe("PassportRequestInbox", () => {
     expect(screen.queryByText(/vr-123/)).not.toBeInTheDocument();
   });
 });
+
