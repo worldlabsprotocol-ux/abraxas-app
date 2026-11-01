@@ -2,8 +2,11 @@
 // Partner verification requests, consent, and policy decisions.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { createHash } from "node:crypto";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg, withAbraxasPgTransaction } from "@/lib/persistence/pgPool";
 import { claimTypeLabel, type ClaimType, type CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
@@ -48,6 +51,29 @@ async function assertApplicationPolicyBinding(input: {
   policyId: string;
   policyVersion: number;
 }): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{
+      partner_id: string; policy_id: string; policy_version: number; status: string;
+    }>(
+      `select partner_id, policy_id, policy_version, status
+       from public.partner_launchpad_applications where id = $1::uuid limit 1`,
+      [input.applicationId],
+    );
+    const app = rows[0];
+    if (!app || app.status !== "active" || app.partner_id !== input.partnerId) {
+      throw new Error("application_binding_unavailable");
+    }
+    if (app.policy_id === input.policyId && app.policy_version === input.policyVersion) return;
+    const binding = await queryAbraxasPg<{ policy_version: number; status: string }>(
+      `select policy_version, status from public.partner_launchpad_application_policies
+       where application_id = $1::uuid and partner_id = $2 and policy_id = $3 limit 1`,
+      [input.applicationId, input.partnerId, input.policyId],
+    );
+    if (binding.rows[0]?.status !== "active" || binding.rows[0]?.policy_version !== input.policyVersion) {
+      throw new Error("application_policy_binding_changed");
+    }
+    return;
+  }
   const sb = requireSupabaseAdmin();
   const { data: app, error } = await sb.from("partner_launchpad_applications")
     .select("partner_id,policy_id,policy_version,status")
@@ -93,7 +119,7 @@ export async function createVerificationRequest(input: {
   // into a Sui address or assigned to a historical Sui credential.
   const holderSubjectId = input.holderSubjectId
     ?? (input.suiAddress && isChainNeutralHolderSubjectId(input.suiAddress) ? input.suiAddress : null);
-  const sb = requireSupabaseAdmin();
+  if (persistenceUsesDirectPostgres() && input.suiAddress) throw new Error("legacy_subject_not_supported");
   const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
   const policy = input.expectedPolicyVersion != null
     ? await getPartnerPolicyAtVersion(input.policyId, input.expectedPolicyVersion)
@@ -123,6 +149,45 @@ export async function createVerificationRequest(input: {
   const requestedClaims = input.requestedClaims?.length
     ? input.requestedClaims
     : (policy.rules_json.required_claims ?? []).map(r => r.claim_type);
+
+  if (persistenceUsesDirectPostgres()) {
+    const requestId = await withAbraxasPgTransaction(async (client) => {
+      const inserted = await client.query<{ id: string }>(
+        `insert into public.verification_requests
+           (partner_id, policy_id, purpose, requested_action, requested_claims,
+            subject_id, launchpad_application_id, policy_version, status, expires_at)
+         values ($1, $2, $3, $4, $5::text[], $6, $7::uuid, $8, 'pending', $9::timestamptz)
+         returning id::text`,
+        [input.partnerId, input.policyId, input.purpose?.trim() || null,
+          input.requestedAction ?? null, requestedClaims, holderSubjectId,
+          input.launchpadApplicationId ?? null, policy.version, expiresAt],
+      );
+      const id = inserted.rows[0]?.id;
+      if (!id) throw new Error("request_persistence_unavailable");
+      const metadata = { requested_action: input.requestedAction ?? null };
+      const eventHash = createHash("sha256").update(JSON.stringify({
+        actor_type: "partner", actor_id: input.partnerId, action: "verification_request.created",
+        object_type: "verification_request", object_id: id,
+        policy_id: input.policyId, policy_version: policy.version,
+        metadata, ts: new Date().toISOString(),
+      })).digest("hex");
+      await client.query(
+        `insert into public.audit_events
+           (actor_type, actor_id, action, object_type, object_id, policy_id, policy_version, metadata, event_hash)
+         values ('partner', $1, 'verification_request.created', 'verification_request', $2,
+                 $3, $4, $5::jsonb, $6)`,
+        [input.partnerId, id, input.policyId, policy.version, JSON.stringify(metadata), eventHash],
+      );
+      return id;
+    });
+    return {
+      request_id: requestId,
+      consent_url: buildHolderConsentUrl({ verifyRequestId: requestId, appOrigin: appUrl }),
+      expires_at: expiresAt,
+    };
+  }
+
+  const sb = requireSupabaseAdmin();
 
   const { data, error } = await sb.from("verification_requests").insert({
     partner_id: input.partnerId,
