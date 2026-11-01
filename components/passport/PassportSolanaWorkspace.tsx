@@ -52,13 +52,13 @@ export function PassportSolanaWorkspace({
       </section>
       {view === "passport" ? (
         <>
-          <PassportRequestInbox />
+          <PassportRequestInbox holderSubjectId={holderSubjectId} />
           <PassportReusableCredentialsPanel sessionReady />
         </>
       ) : view === "requests" ? (
-        <PassportRequestInbox showEmpty />
+        <PassportRequestInbox showEmpty holderSubjectId={holderSubjectId} />
       ) : view === "activity" ? (
-        <PassportActivityCenter />
+        <PassportActivityCenter holderSubjectId={holderSubjectId} />
       ) : view === "privacy" ? (
         <PassportPrivacyCenter holderKey={holderSubjectId} />
       ) : view === "support" ? (
@@ -69,4 +69,5 @@ export function PassportSolanaWorkspace({
     </AbxPageShell>
   );
 }
+
 
