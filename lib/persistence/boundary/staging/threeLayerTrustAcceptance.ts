@@ -193,6 +193,9 @@ async function verifyThreeLayer(input: {
     expectedEnvironment: "demo",
     env: input.env,
   });
+  if (evaluation.lifecycle_status === "invalidated") {
+    throw new Error(`build820_authoritative_validity_invalidated:${evaluation.invalidation_reasons.join(",")}`);
+  }
   const signedStatus = input.signedStatusOverride
     ? assertSignedStatus(input.signedStatusOverride)
     : assertSignedStatus(
