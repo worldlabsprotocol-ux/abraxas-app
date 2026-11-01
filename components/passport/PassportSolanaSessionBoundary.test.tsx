@@ -7,11 +7,9 @@ import { PassportSolanaSessionBoundary } from "./PassportSolanaSessionBoundary";
 
 const mocks = vi.hoisted(() => ({
   wallet: { current: { connected: false, connecting: false, publicKey: null as { toBase58: () => string } | null } },
-  signOut: vi.fn(),
 }));
 
 vi.mock("@solana/wallet-adapter-react", () => ({ useWallet: () => mocks.wallet.current }));
-vi.mock("@/components/sui/SuiAuthProvider", () => ({ useSuiAuth: () => ({ signOut: mocks.signOut }) }));
 
 function browserSession(authMethod: string, walletCaip10: string | null = null) {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
@@ -22,7 +20,6 @@ function browserSession(authMethod: string, walletCaip10: string | null = null) 
 
 describe("PassportSolanaSessionBoundary", () => {
   beforeEach(() => {
-    mocks.signOut.mockReset();
     mocks.wallet.current = { connected: false, connecting: false, publicKey: null };
   });
 
@@ -42,14 +39,18 @@ describe("PassportSolanaSessionBoundary", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
     mocks.wallet.current = { connected: false, connecting: false, publicKey: null };
     view.rerender(<PassportSolanaSessionBoundary />);
-    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce());
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/auth/browser-session", {
+      method: "DELETE", credentials: "include",
+    }));
   });
 
   it("allows a refreshed tab to reconnect the same wallet before restoring access", async () => {
     browserSession("solana_wallet", "solana:devnet:wallet-a");
     render(<PassportSolanaSessionBoundary />);
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-    expect(mocks.signOut).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalledWith("/api/auth/browser-session", {
+      method: "DELETE", credentials: "include",
+    });
   });
 
   it("ends a Solana-authenticated session when another account is connected", async () => {
@@ -60,7 +61,9 @@ describe("PassportSolanaSessionBoundary", () => {
     };
     browserSession("solana_wallet", "solana:devnet:wallet-a");
     render(<PassportSolanaSessionBoundary />);
-    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce());
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/auth/browser-session", {
+      method: "DELETE", credentials: "include",
+    }));
   });
 
   it("keeps a session signed by the currently connected account", async () => {
@@ -72,14 +75,18 @@ describe("PassportSolanaSessionBoundary", () => {
     browserSession("solana_wallet", "solana:devnet:wallet-a");
     render(<PassportSolanaSessionBoundary />);
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-    expect(mocks.signOut).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalledWith("/api/auth/browser-session", {
+      method: "DELETE", credentials: "include",
+    });
   });
 
   it("does not sign out Google or Sui sessions on Solana disconnect", async () => {
     browserSession("oauth");
     render(<PassportSolanaSessionBoundary />);
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-    expect(mocks.signOut).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalledWith("/api/auth/browser-session", {
+      method: "DELETE", credentials: "include",
+    });
   });
 });
 

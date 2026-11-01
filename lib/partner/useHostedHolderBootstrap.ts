@@ -9,23 +9,26 @@ export type HostedHolderBootstrapState =
   | "idle"
   | "pending"
   | "ready"
+  | "sign_in_required"
   | "ineligible"
   | "failed";
 
 export function useHostedHolderBootstrap(input: {
   enabled: boolean;
-  suiAddress: string | null;
+  holderSubjectId: string | null;
   authLoading: boolean;
   partnerId: string;
   policyId: string;
   returnUrl: string;
   purpose?: string | null;
   verifyRequestId?: string | null;
-  onBootstrapped?: (suiAddress: string) => void;
+  onBootstrapped?: (holderSubjectId: string) => void;
 }) {
   const [state, setState] = useState<HostedHolderBootstrapState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const attemptedRef = useRef(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const onBootstrappedRef = useRef(input.onBootstrapped);
+  onBootstrappedRef.current = input.onBootstrapped;
 
   const eligible = isHostedHolderBootstrapEligible({
     partnerId: input.partnerId,
@@ -34,18 +37,19 @@ export function useHostedHolderBootstrap(input: {
   });
 
   useEffect(() => {
-    if (!input.enabled || input.authLoading || input.suiAddress) {
-      if (input.suiAddress) setState("ready");
-      return;
-    }
+    if (!input.enabled || input.authLoading) return;
 
     if (!eligible) {
       setState("ineligible");
       return;
     }
 
-    if (attemptedRef.current) return;
-    attemptedRef.current = true;
+    if (!input.holderSubjectId) {
+      setState("sign_in_required");
+      return;
+    }
+
+    let cancelled = false;
     setState("pending");
     setError(null);
 
@@ -56,36 +60,46 @@ export function useHostedHolderBootstrap(input: {
       purpose: input.purpose,
       verifyRequestId: input.verifyRequestId,
     }).then((result) => {
+      if (cancelled) return;
       if (result.ok) {
+        if (result.holderSubjectId !== input.holderSubjectId) {
+          setState("failed");
+          setError("Signed holder does not match this verification session.");
+          return;
+        }
         setState("ready");
-        input.onBootstrapped?.(result.suiAddress);
+        onBootstrappedRef.current?.(result.holderSubjectId);
         return;
       }
       if (result.ineligible) {
         setState("ineligible");
         return;
       }
+      if (result.signInRequired) {
+        setState("sign_in_required");
+        return;
+      }
       setState("failed");
       setError(result.error);
-      attemptedRef.current = false;
     });
+    return () => { cancelled = true; };
   }, [
     input.enabled,
     input.authLoading,
-    input.suiAddress,
+    input.holderSubjectId,
     input.partnerId,
     input.policyId,
     input.returnUrl,
     input.purpose,
     input.verifyRequestId,
-    input.onBootstrapped,
     eligible,
+    retryCount,
   ]);
 
   const retry = () => {
-    attemptedRef.current = false;
     setState("idle");
     setError(null);
+    setRetryCount((value) => value + 1);
   };
 
   return {

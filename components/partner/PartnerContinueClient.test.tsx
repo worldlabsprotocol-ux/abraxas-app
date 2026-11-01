@@ -3,6 +3,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
 import {
   GOOD_TROUBLE_BROWSE_CHECKING_STATE,
   GOOD_TROUBLE_BROWSE_EYEBROW,
@@ -46,6 +47,33 @@ const mockAuthState = {
   isLoading: false,
   session: { email: "user@example.com" },
 };
+let mockSolanaSession = true;
+
+vi.mock("@/lib/auth/ensureBrowserSession", () => ({
+  probeBrowserSessionDetails: () => Promise.resolve(mockSolanaSession
+    ? { ok: true, authMethod: "solana_wallet", holderSubjectId: "abx_hs_test" }
+    : { ok: false }),
+}));
+
+vi.mock("@/lib/auth/useHostedSolanaHolderSession", () => ({
+  useHostedSolanaHolderSession: () => ({
+    holderSubjectId: mockSolanaSession ? "abx_hs_test" : null,
+    refresh: vi.fn(),
+  }),
+}));
+
+vi.mock("@/components/partner/HostedSolanaHolderSignIn", () => ({
+  HostedSolanaHolderSignIn: () => <button type="button">Sign in with Solana wallet</button>,
+}));
+
+vi.mock("@/lib/partner/useHostedHolderBootstrap", () => ({
+  useHostedHolderBootstrap: (input: { holderSubjectId: string | null; onBootstrapped?: (subjectId: string) => void }) => {
+    useEffect(() => {
+      if (input.holderSubjectId) input.onBootstrapped?.(input.holderSubjectId);
+    }, [input.holderSubjectId]);
+    return { eligible: true, state: mockSolanaSession ? "ready" : "sign_in_required", bootstrapping: false, retry: vi.fn() };
+  },
+}));
 
 let mockSearchParams = new URLSearchParams();
 
@@ -53,8 +81,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
-vi.mock("@/components/sui/SuiAuthProvider", () => ({
-  useSuiAuth: () => ({
+vi.mock("@/lib/auth/useLegacyPartnerAuth", () => ({
+  useLegacyPartnerAuth: () => ({
     suiAddress: mockAuthState.suiAddress,
     isLoading: mockAuthState.isLoading,
     session: mockAuthState.session,
@@ -93,6 +121,7 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthState.suiAddress = "0xabc";
+    mockSolanaSession = true;
     mockAuthState.isLoading = false;
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-browse-1",
@@ -223,7 +252,6 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     });
 
     expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeNull();
     expect(screen.queryByText("Verify")).toBeNull();
     expect(screen.queryByRole("button", { name: /Secure your Passport/i })).toBeNull();
     expect(screen.queryByText(/Use selected method/i)).toBeNull();
@@ -393,7 +421,7 @@ describe("PartnerContinueClient holder recovery", () => {
     expect(container.textContent).not.toMatch(/SHARED RESULT CATEGORY|WITHHELD|SHARED ✓/i);
   });
 
-  it("bootstraps canonical Good Trouble purchase continue flow without mandatory Google", async () => {
+  it("uses an existing signed Solana holder session for canonical purchase", async () => {
     mockAuthState.suiAddress = null;
     mockAuthState.isLoading = false;
     mockSearchParams = new URLSearchParams({
@@ -421,10 +449,7 @@ describe("PartnerContinueClient holder recovery", () => {
 
     render(<PartnerContinueClient />);
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
-        expect.objectContaining({ method: "POST" }),
-      );
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE })).toBeTruthy();
     });
     expect(screen.queryByText(/Sign in to continue/i)).toBeNull();
   });
@@ -654,20 +679,21 @@ describe("PartnerContinueClient holder recovery", () => {
     expect(screen.queryByText(/could not be found/i)).toBeNull();
   });
 
-  it("asks the holder to sign in again after session loss without exposing wallet copy", async () => {
+  it("asks the holder to sign with a wallet after session loss", async () => {
     mockAuthState.suiAddress = null;
+    mockSolanaSession = false;
     mockAuthState.isLoading = false;
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-session",
-      partner_id: GOOD_TROUBLE_PARTNER_ID,
-      policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
     });
     global.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/v1/verification-requests/vr-session")) {
         return new Response(JSON.stringify({
-          partner_id: GOOD_TROUBLE_PARTNER_ID,
-          policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
         }), { status: 200 });
       }
       if (url.includes("continue-binding") || url.includes("method-qualification")) {
@@ -677,7 +703,7 @@ describe("PartnerContinueClient holder recovery", () => {
     }) as typeof fetch;
     const { container } = render(<PartnerContinueClient />);
     await waitFor(() => {
-      expect(screen.getByText(/Sign in to continue/i)).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Sign in with Solana wallet" })).toBeTruthy();
     });
     expect(container.textContent).not.toMatch(/0xabc|receipt_id|jwt /i);
   });

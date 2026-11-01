@@ -110,6 +110,22 @@ describe("resolveBoundPartnerContinuation", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts only the holder subject pinned to a Solana verification request", async () => {
+    const holderSubject = `abx_hs_${"a".repeat(32)}`;
+    mockMaybeSingle.mockResolvedValue(vrRow({ subject_id: holderSubject, sui_address: null }));
+    const request = new NextRequest("http://localhost/qualify");
+    expect((await resolveBoundPartnerContinuation({
+      request, verifyRequestId: "vr-sandbox-1", sessionSubject: holderSubject,
+    })).ok).toBe(true);
+    expect(await resolveBoundPartnerContinuation({
+      request, verifyRequestId: "vr-sandbox-1", sessionSubject: `abx_hs_${"b".repeat(32)}`,
+    })).toMatchObject({ ok: false, code: "invalid_session" });
+    mockMaybeSingle.mockResolvedValue(vrRow({ subject_id: holderSubject, sui_address: SUBJECT }));
+    expect(await resolveBoundPartnerContinuation({
+      request, verifyRequestId: "vr-sandbox-1", sessionSubject: holderSubject,
+    })).toMatchObject({ ok: false, code: "invalid_session" });
+  });
+
   it("binds from session, store, and verification when the continue-binding cookie is absent", async () => {
     const req = new NextRequest("http://localhost/qualify");
     const result = await resolveBoundPartnerContinuation({

@@ -29,13 +29,17 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 
-vi.mock("@/components/sui/SuiAuthProvider", () => ({
-  useSuiAuth: () => ({
+vi.mock("@/lib/auth/useLegacyPartnerAuth", () => ({
+  useLegacyPartnerAuth: () => ({
     suiAddress: "0xabc",
     isLoading: false,
     session: { email: "holder@example.com" },
     signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
   }),
+}));
+
+vi.mock("@/lib/auth/useHostedSolanaHolderSession", () => ({
+  useHostedSolanaHolderSession: () => ({ holderSubjectId: null, refresh: vi.fn() }),
 }));
 
 vi.mock("@/lib/hooks/usePassportVerification", () => ({
@@ -66,6 +70,7 @@ vi.mock("@/lib/passport/partnerFlowHandoff", () => ({
 
 vi.mock("@/lib/sui/zklogin/completeLogin", () => ({
   completeGoogleZkLogin: (...args: unknown[]) => mockComplete(...args),
+  resolveVerifiedLoginMode: () => Promise.resolve({ mode: "canonical", continue_path: null }),
 }));
 
 vi.mock("@/lib/auth/ensureBrowserSession", () => ({
@@ -242,7 +247,7 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
       }
       if (url.includes("/api/age-assurance/providers")) {
         return new Response(JSON.stringify({
-          providers: [],
+          providers: [{ id: "demo", displayName: "Partner-provided eligibility check", configured: true }],
           existing_proof: { eligible_for_reuse: false },
         }), { status: 200 });
       }
@@ -265,7 +270,7 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
     const chooser = await screen.findByText(/Choose how to satisfy this requirement/i);
     expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
 
-    await userEvent.click(screen.getByRole("button", { name: /Partner-provided eligibility check/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Privacy-preserving verification/i }));
     expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
     await waitFor(() => {

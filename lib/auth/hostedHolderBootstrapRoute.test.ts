@@ -1,98 +1,89 @@
-// FILE: lib/auth/hostedHolderBootstrapRoute.test.ts
-
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import {
-  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
-  GOOD_TROUBLE_CANONICAL_POLICY_ID,
-} from "@/lib/goodTrouble/canonicalProductionConfig";
+import { GOOD_TROUBLE_CANONICAL_PARTNER_ID, GOOD_TROUBLE_CANONICAL_POLICY_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
 
-const mockCreateHosted = vi.fn();
-const mockAttachSession = vi.fn();
-const mockResolveExisting = vi.fn();
-const mockIsAllowed = vi.fn();
-const mockRequireAdmin = vi.fn();
+const resolveSession = vi.fn();
+const allowedReturn = vi.fn();
+const admin = vi.fn();
+vi.mock("@/lib/auth/browserSession", () => ({ resolveBrowserSession: (...args: unknown[]) => resolveSession(...args) }));
+vi.mock("@/lib/partner/returnUrlAllowlist", () => ({ isAllowedPartnerReturnUrl: (...args: unknown[]) => allowedReturn(...args) }));
+vi.mock("@/lib/supabase/admin", () => ({ requireSupabaseAdmin: (...args: unknown[]) => admin(...args) }));
 
-vi.mock("@/lib/auth/hostedHolderSession", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/auth/hostedHolderSession")>();
-  return {
-    ...actual,
-    createHostedHolderIdentity: (...args: unknown[]) => mockCreateHosted(...args),
-    attachHostedHolderBrowserSession: (...args: unknown[]) => mockAttachSession(...args),
-    resolveExistingBootstrapBrowserSession: (...args: unknown[]) => mockResolveExisting(...args),
-  };
-});
+import { POST } from "@/app/api/auth/hosted-holder/bootstrap/route";
 
-vi.mock("@/lib/partner/returnUrlAllowlist", () => ({
-  isAllowedPartnerReturnUrl: (...args: unknown[]) => mockIsAllowed(...args),
-}));
+function request(body: Record<string, unknown> = {}) {
+  return new NextRequest("http://localhost/api/auth/hosted-holder/bootstrap", {
+    method: "POST",
+    body: JSON.stringify({
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      return_url: "https://www.goodtroublecanna.com/age-verification-result",
+      ...body,
+    }),
+  });
+}
 
-vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: (...args: unknown[]) => mockRequireAdmin(...args),
-}));
-
-describe("POST /api/auth/hosted-holder/bootstrap", () => {
+describe("hosted holder Solana session boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsAllowed.mockResolvedValue(true);
-    mockCreateHosted.mockResolvedValue({
-      sessionId: "sess-1",
-      oauthSub: "hosted:sess-1",
-      suiAddress: "0x" + "a".repeat(64),
-      provider: "abraxas_hosted",
-    });
-    mockAttachSession.mockResolvedValue(true);
-    mockResolveExisting.mockResolvedValue(null);
-    process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-secret";
+    resolveSession.mockResolvedValue({ authMethod: "solana_wallet", holderSubjectId: "abx_hs_holder", walletCaip10: "solana:devnet:wallet" });
+    allowedReturn.mockResolvedValue(true);
   });
 
-  it("bootstraps canonical Good Trouble purchase flow without Google", async () => {
-    const { POST } = await import("@/app/api/auth/hosted-holder/bootstrap/route");
-    const res = await POST(new NextRequest("http://localhost/api/auth/hosted-holder/bootstrap", {
-      method: "POST",
-      body: JSON.stringify({
-        partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
-        policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
-        return_url: "https://www.goodtroublecanna.com/age-verification-result",
-      }),
-    }));
-
+  it("accepts a signed Solana subject without creating another identity or cookie", async () => {
+    const res = await POST(request());
     expect(res.status).toBe(200);
-    const json = await res.json() as { ok?: boolean; session_kind?: string };
-    expect(json.ok).toBe(true);
-    expect(json.session_kind).toBe("hosted");
-    expect(mockCreateHosted).toHaveBeenCalled();
-    expect(mockAttachSession).toHaveBeenCalled();
+    expect(await res.json()).toEqual({ ok: true, holder_subject_id: "abx_hs_holder", session_kind: "solana_wallet" });
+    expect(res.headers.get("set-cookie")).toBeNull();
   });
 
-  it("rejects ineligible partner/policy tuples", async () => {
-    const { POST } = await import("@/app/api/auth/hosted-holder/bootstrap/route");
-    const res = await POST(new NextRequest("http://localhost/api/auth/hosted-holder/bootstrap", {
-      method: "POST",
-      body: JSON.stringify({
-        partner_id: "other-partner",
-        policy_id: "other-policy-v1",
-        return_url: "https://www.goodtroublecanna.com/age-verification-result",
-      }),
-    }));
+  it.each([null, { authMethod: "wallet", holderSubjectId: "abx_hs_holder" }, { authMethod: "solana_wallet", holderSubjectId: null }])(
+    "rejects missing or non-Solana authentication: %s", async (session) => {
+      resolveSession.mockResolvedValue(session);
+      const res = await POST(request());
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ ok: false, code: "holder_sign_in_required" });
+      expect(allowedReturn).not.toHaveBeenCalled();
+    },
+  );
 
-    expect(res.status).toBe(403);
-    expect(mockCreateHosted).not.toHaveBeenCalled();
-  });
-
-  it("rejects disallowed return URLs", async () => {
-    mockIsAllowed.mockResolvedValue(false);
-    const { POST } = await import("@/app/api/auth/hosted-holder/bootstrap/route");
-    const res = await POST(new NextRequest("http://localhost/api/auth/hosted-holder/bootstrap", {
-      method: "POST",
-      body: JSON.stringify({
-        partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
-        policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
-        return_url: "https://evil.example/callback",
-      }),
-    }));
-
+  it("rejects client identity overrides", async () => {
+    const res = await POST(request({ holder_subject_id: "abx_hs_other" }));
     expect(res.status).toBe(400);
-    expect(mockCreateHosted).not.toHaveBeenCalled();
+    expect((await res.json()).code).toBe("client_identity_rejected");
+  });
+
+  it("rejects disallowed callbacks", async () => {
+    allowedReturn.mockResolvedValue(false);
+    const res = await POST(request({ return_url: "https://evil.example/return" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects expired requests before returning a holder subject", async () => {
+    admin.mockReturnValue({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: {
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      return_url: "https://www.goodtroublecanna.com/age-verification-result",
+      status: "pending",
+      expires_at: "2020-01-01T00:00:00Z",
+    }, error: null }) }) }) }) });
+    const res = await POST(request({ verify_request: "vr_expired" }));
+    expect(res.status).toBe(410);
+    expect((await res.json()).code).toBe("request_expired");
+  });
+
+  it("rejects a request already pinned to another holder", async () => {
+    const eq = vi.fn().mockReturnValue({ maybeSingle: async () => ({ data: {
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      return_url: "https://www.goodtroublecanna.com/age-verification-result",
+      status: "pending", expires_at: "2099-01-01T00:00:00Z",
+      subject_id: "abx_hs_other", sui_address: null,
+    }, error: null }) });
+    admin.mockReturnValue({ from: () => ({ select: () => ({ eq }) }) });
+    const res = await POST(request({ verify_request: "vr_bound" }));
+    expect(eq).toHaveBeenCalledWith("id", "vr_bound");
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("holder_mismatch");
   });
 });

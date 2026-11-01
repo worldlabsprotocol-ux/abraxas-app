@@ -1,8 +1,5 @@
 // FILE: lib/auth/bootstrapHostedHolderSession.ts
-// Client helper — establish hosted holder session without Google OAuth redirect.
-
-import { saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
-import { restoreUserSessionFromBrowserSession } from "@/lib/sui/zklogin/restoreBrowserSession";
+// Confirm a signed holder session against the server-bound hosted request.
 
 export interface BootstrapHostedHolderInput {
   partnerId: string;
@@ -14,7 +11,7 @@ export interface BootstrapHostedHolderInput {
 
 export async function bootstrapHostedHolderSession(
   input: BootstrapHostedHolderInput,
-): Promise<{ ok: true; suiAddress: string } | { ok: false; error: string; ineligible?: boolean }> {
+): Promise<{ ok: true; holderSubjectId: string } | { ok: false; error: string; ineligible?: boolean; signInRequired?: boolean }> {
   try {
     const res = await fetch("/api/auth/hosted-holder/bootstrap", {
       method: "POST",
@@ -28,55 +25,20 @@ export async function bootstrapHostedHolderSession(
         verify_request: input.verifyRequestId ?? undefined,
       }),
     });
-
     const data = await res.json().catch(() => ({})) as {
       ok?: boolean;
-      sui_address?: string;
-      session_kind?: "hosted" | "oauth";
-      provider?: string;
-      reused?: boolean;
-      error?: string;
+      holder_subject_id?: string;
       code?: string;
     };
-
+    if (res.status === 401) return { ok: false, error: "Sign in with your Solana wallet to continue.", signInRequired: true };
     if (res.status === 403 && data.code === "hosted_bootstrap_ineligible") {
-      return { ok: false, error: data.error ?? "ineligible", ineligible: true };
+      return { ok: false, error: "This verification link is unavailable.", ineligible: true };
     }
-
-    if (!res.ok || !data.ok || !data.sui_address) {
-      return { ok: false, error: data.error ?? `Bootstrap failed (${res.status})` };
+    if (!res.ok || data.ok !== true || !data.holder_subject_id) {
+      return { ok: false, error: "Verification request could not be confirmed." };
     }
-
-    if (data.session_kind === "oauth") {
-      const restored = await restoreUserSessionFromBrowserSession();
-      if (restored) {
-        saveUserSession(restored);
-        return { ok: true, suiAddress: restored.suiAddress };
-      }
-    }
-
-    const provider = data.provider === "abraxas_hosted"
-      ? "abraxas_hosted"
-      : data.provider === "apple"
-        ? "apple"
-        : "google";
-
-    const session: ZkLoginUserSession = {
-      suiAddress: data.sui_address,
-      provider,
-      oauthSub: undefined,
-      email: undefined,
-      maxEpoch: 0,
-      loggedInAt: new Date().toISOString(),
-      sessionKind: data.session_kind === "hosted" ? "hosted" : "oauth",
-    };
-    saveUserSession(session);
-
-    return { ok: true, suiAddress: data.sui_address };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Network error",
-    };
+    return { ok: true, holderSubjectId: data.holder_subject_id };
+  } catch {
+    return { ok: false, error: "Verification request could not be confirmed." };
   }
 }

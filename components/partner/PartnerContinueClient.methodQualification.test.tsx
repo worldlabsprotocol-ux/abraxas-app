@@ -16,12 +16,16 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 
-vi.mock("@/components/sui/SuiAuthProvider", () => ({
-  useSuiAuth: () => ({
+vi.mock("@/lib/auth/useLegacyPartnerAuth", () => ({
+  useLegacyPartnerAuth: () => ({
     suiAddress: "0xabc",
     isLoading: false,
     session: { email: "holder@example.com" },
   }),
+}));
+
+vi.mock("@/lib/auth/useHostedSolanaHolderSession", () => ({
+  useHostedSolanaHolderSession: () => ({ holderSubjectId: null, refresh: vi.fn() }),
 }));
 
 vi.mock("@/lib/hooks/usePassportVerification", () => ({

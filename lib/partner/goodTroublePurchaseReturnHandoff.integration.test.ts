@@ -16,6 +16,7 @@ const VERIFY_REQUEST_ID = "vr-gt-return-1";
 const RECEIPT_ID = "dr_gt_return_1";
 const DECISION_ID = "vd_gt_return_1";
 const SUBJECT = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+const SOLANA_SUBJECT = `abx_hs_${"a".repeat(32)}`;
 
 const mockPeekByVerifyRequestId = vi.fn();
 const mockConsume = vi.fn();
@@ -149,6 +150,40 @@ describe("Good Trouble purchase return handoff integration", () => {
     expect(url.searchParams.get("status")).toBe("approved");
     expect(url.searchParams.get("decision_id")).toBe(DECISION_ID);
     expect(mockConsume).toHaveBeenCalledWith("jti-return-1");
+  });
+
+  it("accepts the signed Solana holder subject when the request is bound to subject_id", async () => {
+    stubHappyPath();
+    mockLoadVr.mockResolvedValue({ data: {
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      purpose: "purchase",
+      status: "decided",
+      sui_address: null,
+      subject_id: SOLANA_SUBJECT,
+    } });
+    const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
+    const result = await completeAgeEligibilityPurchaseReturn({
+      suiAddress: SOLANA_SUBJECT,
+      verificationRequestId: VERIFY_REQUEST_ID,
+      receiptId: RECEIPT_ID,
+    });
+    expect(result.ok).toBe(true);
+    expect(mockFindReceipt).toHaveBeenCalledWith({
+      verificationRequestId: VERIFY_REQUEST_ID,
+      subjectId: SOLANA_SUBJECT,
+    });
+  });
+
+  it("rejects a Solana subject when the request has a legacy Sui binding", async () => {
+    stubHappyPath();
+    const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
+    const result = await completeAgeEligibilityPurchaseReturn({
+      suiAddress: SOLANA_SUBJECT,
+      verificationRequestId: VERIFY_REQUEST_ID,
+    });
+    expect(result).toMatchObject({ ok: false, code: "invalid_session" });
+    expect(mockConsume).not.toHaveBeenCalled();
   });
 
   it("2. uses stored authoritative continuation, not client return_url override", async () => {

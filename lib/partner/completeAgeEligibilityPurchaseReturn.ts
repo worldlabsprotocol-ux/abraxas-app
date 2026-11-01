@@ -5,6 +5,7 @@
 // government-ID verification or a dispensary point-of-sale ID replacement.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { buildRedirectUrl, isReturnUrlAllowed } from "@/lib/connect/returnUrlAllowlist";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
 import {
@@ -45,7 +46,13 @@ async function loadDecidedVerificationRequest(input: {
   | { ok: false; code: string }
 > {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(input.sessionSubject);
+  const canonicalSubject = isChainNeutralHolderSubjectId(input.sessionSubject);
+  let subject: string;
+  try {
+    subject = canonicalSubject ? input.sessionSubject : normalizeSuiAddress(input.sessionSubject);
+  } catch {
+    return { ok: false, code: "invalid_session" };
+  }
   const { data, error } = await sb
     .from("verification_requests")
     .select("partner_id, policy_id, purpose, status, sui_address, subject_id")
@@ -59,7 +66,11 @@ async function loadDecidedVerificationRequest(input: {
   if (status !== "decided") return { ok: false, code: "not_decided" };
 
   const boundSubject = String(data.sui_address ?? data.subject_id ?? "").trim();
-  if (boundSubject) {
+  if (canonicalSubject) {
+    if (data.sui_address || data.subject_id !== subject) {
+      return { ok: false, code: "invalid_session" };
+    }
+  } else if (boundSubject) {
     try {
       if (normalizeSuiAddress(boundSubject) !== subject) {
         return { ok: false, code: "invalid_session" };

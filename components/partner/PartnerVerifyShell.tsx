@@ -27,7 +27,6 @@ import {
   type HolderRequestBrief,
 } from "@/lib/partner/holderExperience";
 import {
-  HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
   HOSTED_HOLDER_PRIMARY_ACTION,
 } from "@/lib/auth/hostedHolderEligibility";
 import {
@@ -310,28 +309,9 @@ export function PartnerVerifyShell({
             </>
           )}
 
-          {showSignIn(phase) && signInConfigured && hostedBootstrapEligible && onOptionalSignIn && (
-            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              <button
-                type="button"
-                onClick={onOptionalSignIn}
-                disabled={primaryDisabled || busy}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  color: "var(--accent)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
-              </button>
-            </p>
-          )}
+          {showSignIn(phase) && hostedBootstrapEligible && onWalletSignIn ? onWalletSignIn : null}
 
-          {showSignIn(phase) && !signInConfigured && (
+          {showSignIn(phase) && !signInConfigured && !hostedBootstrapEligible && (
             <p role="alert" style={{ fontSize: "0.86rem" }}>
               Sign-in is not configured in this environment.
             </p>

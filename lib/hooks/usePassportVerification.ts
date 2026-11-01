@@ -28,6 +28,7 @@ import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWall
 import { IdentityStatusFetchError, type IdentityStatusFailureKind } from "@/lib/passport/identityStatusFetch";
 import { shouldFetchProtectedPassportData } from "@/lib/passport/passportEntryState";
 import type { PassportBrowserSessionState } from "@/lib/passport/passportBrowserSessionAuth";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 
 export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined" | "resubmission_requested";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
@@ -162,7 +163,8 @@ async function runIdentityPipeline(
       }
     }
 
-    onChain = await fetchOnChainPassportStatus(suiAddress);
+    // Canonical Solana holders have no Sui passport object to provision.
+    if (!isChainNeutralHolderSubjectId(suiAddress)) onChain = await fetchOnChainPassportStatus(suiAddress);
     if (onChain?.needs_provision) {
       try {
         const provisioned = await provisionOnChainPassport(suiAddress);
@@ -195,7 +197,7 @@ async function runIdentityPipeline(
       } catch {
         verifyState = "invalid";
       }
-      onChain = await fetchOnChainPassportStatus(suiAddress);
+      if (!isChainNeutralHolderSubjectId(suiAddress)) onChain = await fetchOnChainPassportStatus(suiAddress);
     }
   }
 
@@ -290,7 +292,7 @@ export function usePassportVerification(
   }, [queryClient, suiAddress, email]);
 
   const retryProvision = useCallback(async () => {
-    if (!suiAddress || provisioningRef.current) return;
+    if (!suiAddress || isChainNeutralHolderSubjectId(suiAddress) || provisioningRef.current) return;
     provisioningRef.current = true;
     setIsProvisioning(true);
     setProvisionFailed(false);

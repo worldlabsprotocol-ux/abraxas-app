@@ -2,13 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 
 // A connected adapter is not authentication. Once a Solana signature has
 // authenticated Passport, the browser session must not outlive that account.
 export function PassportSolanaSessionBoundary() {
   const { connected, connecting, publicKey } = useWallet();
-  const { signOut } = useSuiAuth();
   const address = publicKey?.toBase58() ?? null;
   const observedConnectedRef = useRef(false);
   if (connected && address) observedConnectedRef.current = true;
@@ -35,7 +33,11 @@ export function PassportSolanaSessionBoundary() {
         // not auto-connect. Keep the cookie locked behind an explicit
         // reconnect; only a real disconnect transition revokes it.
         if ((!connected && observedConnectedRef.current)
-          || (connected && (!address || signedAddress !== address))) signOut();
+          || (connected && (!address || signedAddress !== address))) {
+          // Wallet state changed: invalidate the server cookie without asking
+          // the legacy Sui provider to manage a Solana-authenticated session.
+          await fetch("/api/auth/browser-session", { method: "DELETE", credentials: "include" });
+        }
       } catch {
         // Protected APIs still require the server session. Recheck on the
         // next wallet change or holder-session event if the probe failed.
@@ -48,7 +50,7 @@ export function PassportSolanaSessionBoundary() {
       cancelled = true;
       window.removeEventListener("abraxas:holder-session", check);
     };
-  }, [address, connected, connecting, signOut]);
+  }, [address, connected, connecting]);
 
   return null;
 }

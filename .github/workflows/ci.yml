@@ -103,6 +103,9 @@ jobs:
           test "$code" -eq 1
           echo "$output" | grep -q 'application_partner_account_arguments_required'
 
+      - name: Hosted Solana holder continuity tests
+        run: npx vitest run components/partner/PartnerVerifyClient.test.tsx components/partner/PartnerContinueClient.test.tsx components/partner/PartnerContinueClient.oauthResume.test.tsx components/partner/PartnerContinueClient.methodQualification.test.tsx components/partner/PartnerContinueClient.redirect.test.tsx lib/partner/goodTroublePurchaseReturnHandoff.integration.test.ts lib/auth/hostedHolderBootstrapRoute.test.ts lib/auth/hostedHolderSession.test.ts lib/auth/hostedHolderBootstrapIdempotency.test.ts lib/auth/useHostedSolanaHolderSession.test.tsx lib/partner/resolveBoundPartnerContinuation.test.ts lib/verification/createVerificationRequest.test.ts
+
       - name: Build #865 evidence continuity + #868 portable relying party (contract)
         run: npm run test:build-865-evidence-continuity && npm run test:build-868-portable-relying-party
 
