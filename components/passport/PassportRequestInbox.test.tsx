@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { PassportRequestInbox } from "./PassportRequestInbox";
+import { SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
 
 function wrap(children: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -17,6 +18,35 @@ afterEach(() => {
 });
 
 describe("PassportRequestInbox", () => {
+  it("does not reuse another wallet's cached requests after a subject change", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, requests: [{
+        request_ref: "request:one",
+        partner_label: "First wallet partner",
+        request_title: "First wallet request",
+        purpose: "test",
+        shared_result: "result",
+        received_at: "2026-09-27T10:00:00.000Z",
+        expires_at: "2026-09-28T10:00:00.000Z",
+        continue_href: "/partner/continue?verify_request=one",
+      }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, requests: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const renderInbox = (holderSubjectId: string) => (
+      <QueryClientProvider client={client}>
+        <PassportRequestInbox showEmpty holderSubjectId={holderSubjectId} />
+      </QueryClientProvider>
+    );
+
+    const view = render(renderInbox("abx_hs_first"));
+    expect(await screen.findByText("First wallet partner")).toBeInTheDocument();
+    view.rerender(renderInbox("abx_hs_second"));
+    expect(screen.queryByText("First wallet partner")).toBeNull();
+    expect(await screen.findByText("No requests waiting")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("stays out of the Passport home when no action is waiting", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: true,
@@ -28,7 +58,7 @@ describe("PassportRequestInbox", () => {
     await vi.waitFor(() => expect(container).toBeEmptyDOMElement());
   });
 
-  it("shows a reassuring empty state and a three-step sandbox demo on the Requests page", async () => {
+  it("shows a reassuring empty state and a sandbox consent action on the Requests page", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: true,
       requests: [],
@@ -37,9 +67,8 @@ describe("PassportRequestInbox", () => {
     render(wrap(<PassportRequestInbox showEmpty />));
     expect(await screen.findByText("No requests waiting")).toBeInTheDocument();
     expect(screen.getByText(/before anything is shared/i)).toBeInTheDocument();
-    expect(screen.getByText("Try the real consent flow")).toBeInTheDocument();
-    expect(screen.getByText("Create a sandbox partner request.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create demo request →" })).toBeEnabled();
+    expect(screen.getByText("No partner requests yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try sandbox consent flow" })).toBeEnabled();
     expect(screen.getByText(/does not create a production decision/i)).toBeInTheDocument();
   });
 
@@ -50,14 +79,14 @@ describe("PassportRequestInbox", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(wrap(<PassportRequestInbox showEmpty />));
-    fireEvent.click(await screen.findByRole("button", { name: "Create demo request →" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Try sandbox consent flow" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       "/api/passport/demo-partner-request",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
-        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+        body: JSON.stringify({ policy_id: SANDBOX_POLICY_ID }),
       }),
     ));
     expect(await screen.findByRole("alert")).toHaveTextContent("Demo temporarily unavailable");
@@ -87,3 +116,4 @@ describe("PassportRequestInbox", () => {
     expect(screen.queryByText(/vr-123/)).not.toBeInTheDocument();
   });
 });
+
