@@ -57,7 +57,7 @@ describe("PassportRequestInbox", () => {
     await vi.waitFor(() => expect(container).toBeEmptyDOMElement());
   });
 
-  it("shows a reassuring empty state and a three-step sandbox demo on the Requests page", async () => {
+  it("shows a reassuring empty state and a sandbox consent action on the Requests page", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: true,
       requests: [],
@@ -66,9 +66,8 @@ describe("PassportRequestInbox", () => {
     render(wrap(<PassportRequestInbox showEmpty />));
     expect(await screen.findByText("No requests waiting")).toBeInTheDocument();
     expect(screen.getByText(/before anything is shared/i)).toBeInTheDocument();
-    expect(screen.getByText("Try the real consent flow")).toBeInTheDocument();
-    expect(screen.getByText("Create a sandbox partner request.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Create demo request →" })).toBeEnabled();
+    expect(screen.getByText("No partner requests yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try sandbox consent flow" })).toBeEnabled();
     expect(screen.getByText(/does not create a production decision/i)).toBeInTheDocument();
   });
 
@@ -79,7 +78,7 @@ describe("PassportRequestInbox", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(wrap(<PassportRequestInbox showEmpty />));
-    fireEvent.click(await screen.findByRole("button", { name: "Create demo request →" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Try sandbox consent flow" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       "/api/passport/demo-partner-request",
