@@ -41,7 +41,7 @@ export default function PricingPage() {
             <AbxCard
               key={tier.id}
               accent={tier.id === "enterprise" ? "partner" : "developer"}
-              style={{ height: "100%", display: "flex", flexDirection: "column" }}
+              style={{ height: "100%", display: "flex", flexDirection: "column", marginTop: 0 }}
             >
               <p
                 style={{
@@ -105,7 +105,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <AbxCard accent="developer" padding="0">
+        <AbxCard accent="developer" padding="0" style={{ marginTop: 0 }}>
           <details>
             <summary
               style={{
@@ -163,7 +163,7 @@ export default function PricingPage() {
           </details>
         </AbxCard>
 
-        <AbxCard accent="developer" padding="0" id="production-plans">
+        <AbxCard accent="developer" padding="0" id="production-plans" style={{ marginTop: 0 }}>
           <details>
             <summary
               style={{
@@ -242,7 +242,7 @@ export default function PricingPage() {
           </details>
         </AbxCard>
 
-        <AbxCard accent="neutral" padding="0">
+        <AbxCard accent="neutral" padding="0" style={{ marginTop: 0 }}>
           <details>
             <summary
               style={{
