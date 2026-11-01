@@ -332,7 +332,12 @@ export async function issueDecisionReceipt(
     record = mapRow(data as Record<string, unknown>);
   }
 
-  await recordReceiptClaimDependencies(receiptId, input.evaluatedClaimRefs, undefined, transaction);
+  const reuseReferences = persistenceUsesDirectPostgres() && pendingEvidence
+    && input.evaluatedClaimRefs.length > 0
+    && input.evaluatedClaimRefs.every((ref) => /^clm_[a-f0-9]{16}$/.test(ref.claim_id));
+  if (!reuseReferences) {
+    await recordReceiptClaimDependencies(receiptId, input.evaluatedClaimRefs, undefined, transaction);
+  }
 
   await appendAuditEvent({
     actor_type: "system",

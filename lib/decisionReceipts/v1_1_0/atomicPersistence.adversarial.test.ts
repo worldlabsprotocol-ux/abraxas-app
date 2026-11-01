@@ -183,6 +183,42 @@ describe("Build #847 atomic v1.1.0 persistence", () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
+  it("finalizes a reusable receipt from evidence locked in the same PostgreSQL transaction", async () => {
+    const previousBackend = process.env.ABRAXAS_PERSISTENCE_BACKEND;
+    process.env.ABRAXAS_PERSISTENCE_BACKEND = "postgres_direct";
+    const queries: string[] = [];
+    const transaction = {
+      query: vi.fn(async (sql: string) => {
+        queries.push(sql);
+        if (sql.includes("from public.decision_receipts r")) {
+          return { rows: [{ receipt: pendingRecord() }] };
+        }
+        if (sql.includes("from public.decision_receipt_evidence_dependencies")) {
+          return { rows: [{ dependency_type: "reusable_fact", fact_id: "fact-1", source_credential_id: "dr_source" }] };
+        }
+        if (sql.includes("information_schema.columns")) return { rows: [] };
+        if (sql.includes("update public.decision_receipts")) {
+          return { rows: [{ receipt: { ...pendingRecord(), status: "active", issuance_finalized_at: new Date().toISOString() } }] };
+        }
+        throw new Error("unexpected_sql");
+      }),
+    };
+    try {
+      const result = await finalizePendingV11ReceiptCryptographic({
+        receiptId: "dr_atomic", applicationId: APP_ID,
+        applicationScopeRequired: true, transaction,
+      });
+      expect(result.status).toBe("active");
+      expect(queries.findIndex((sql) => sql.includes("decision_receipt_evidence_dependencies")))
+        .toBeLessThan(queries.findIndex((sql) => sql.includes("update public.decision_receipts")));
+      expect(mockGetReceiptById).not.toHaveBeenCalled();
+      expect(mockUpdate).not.toHaveBeenCalled();
+    } finally {
+      if (previousBackend === undefined) delete process.env.ABRAXAS_PERSISTENCE_BACKEND;
+      else process.env.ABRAXAS_PERSISTENCE_BACKEND = previousBackend;
+    }
+  });
+
   it("atomic path calls RPC with full dedicated field set when authorized", async () => {
     mockCapability.mockResolvedValue({
       dedicatedMode: "v152",

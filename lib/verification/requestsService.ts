@@ -31,6 +31,12 @@ import {
   claimTypesFromEvaluation,
 } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { getReceiptById } from "@/lib/decisionReceipts/service";
+import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity/evaluate";
+import { recordDerivation } from "@/lib/passport/reusableEligibility/store";
+import { recordReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import { finalizePendingV11ReceiptCryptographic } from "@/lib/decisionReceipts/v1_1_0/finalizePending.server";
+import { resolveAuthoritativeApplicationIdForIssuance } from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
 import { StagedIssuanceUnavailableError } from "@/lib/decisionReceipts/issuanceSchemaCapability";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
@@ -463,12 +469,24 @@ export async function consentAndDecide(input: {
   }
 
   if (direct) {
-    if (reuseFact) throw new Error("reuse_issuance_unavailable");
     const claimTypes = claimTypesFromEvaluation(evaluation.claims);
-    const evaluatedClaimRefs = buildEvaluatedClaimRefs(
-      claims, claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
-      evaluation.matched_claim_ids,
-    );
+    const evaluatedClaimRefs = reuseFact
+      ? derivedClaimRefs(reuseFact, policy.id)
+      : buildEvaluatedClaimRefs(claims,
+          claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+          evaluation.matched_claim_ids);
+    if (reuseFact) {
+      const source = await getReceiptById(reuseFact.source_receipt_id);
+      if (!source || source.verification_decision_id !== reuseFact.source_decision_id) {
+        throw new Error("reusable_source_unavailable");
+      }
+      const current = await evaluateReceiptCurrentValidity({
+        record: source, expectedPartnerId: source.partner_id,
+        expectedPolicyId: source.policy_id,
+        expectedEnvironment: source.decision_context === "sandbox_only" ? "sandbox" : "production",
+      });
+      if (!current.currently_valid) throw new Error("reusable_source_not_current");
+    }
     return withAbraxasPgTransaction(async (client) => {
       const locked = await client.query<Record<string, unknown>>(
         `select * from public.verification_requests where id = $1::uuid for update`,
@@ -484,6 +502,34 @@ export async function consentAndDecide(input: {
       if (current.status === "decided") return getExistingConsentDecision(input.requestId, subject);
       if (current.status !== "pending") throw new Error("Request is no longer pending");
       if (Date.parse(String(current.expires_at)) <= Date.now()) throw new Error("Request expired");
+      if (reuseFact) {
+        const source = await client.query<{
+          status: string; revoked_at: string | null; expires_at: string | null;
+          decision_status: string; consent_revoked_at: string | null;
+          verification_decision_id: string;
+          policy_id: string; decision_context: string;
+        }>(
+          `select r.status, r.revoked_at, r.expires_at,
+                  d.status as decision_status, c.revoked_at as consent_revoked_at,
+                  r.verification_decision_id::text,
+                  r.policy_id, r.decision_context
+           from public.decision_receipts r
+           join public.verification_decisions d on d.id = r.verification_decision_id
+           join public.consent_receipts c on c.id = r.consent_receipt_id
+           where r.id = $1 and d.subject_id = $2 and c.subject_id = $2
+           for share of r, d, c`,
+          [reuseFact.source_receipt_id, subject],
+        );
+        const bound = source.rows[0];
+        if (!bound || bound.status !== "active" || bound.revoked_at
+          || bound.decision_status !== "active" || bound.consent_revoked_at
+          || (bound.expires_at && Date.parse(bound.expires_at) <= Date.now())
+          || bound.verification_decision_id !== reuseFact.source_decision_id
+          || bound.policy_id !== reuseFact.source_policy_id
+          || bound.decision_context !== reuseFact.decision_context) {
+          throw new Error("reusable_source_binding_changed");
+        }
+      }
       const consent = await client.query<{ id: string }>(
         `insert into public.consent_receipts
           (subject_id, partner_id, request_id, purpose, claims_authorized, expires_at)
@@ -526,8 +572,28 @@ export async function consentAndDecide(input: {
         expiresAt: evaluation.valid_until,
         decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
           ? "sandbox_only" : "production",
+        pendingEvidenceFinalization: Boolean(reuseFact && evaluation.decision === "approved"),
       }, client);
       if (!receipt) throw new Error("receipt_persistence_unavailable");
+      if (reuseFact && evaluation.decision === "approved") {
+        await recordDerivation({
+          fact: reuseFact, derivedReceiptId: receipt.id, derivedDecisionId: decisionId,
+          requestingPartnerId: partnerId, requestingPolicyId: policy.id,
+          requestingPolicyVersion: policy.version, verifyRequestId: input.requestId,
+        }, client);
+        const graph = await recordReceiptEvidenceDependencies({ receiptId: receipt.id, fact: reuseFact }, client);
+        if (!graph.ok) throw new Error("evidence_dependency_persist_failed");
+        const scope = await resolveAuthoritativeApplicationIdForIssuance({
+          verificationDecisionId: decisionId, partnerId,
+          callerApplicationId: (request.launchpad_application_id as string | null) ?? null,
+          transaction: client,
+        });
+        const finalized = await finalizePendingV11ReceiptCryptographic({
+          receiptId: receipt.id, applicationId: scope.applicationId,
+          applicationScopeRequired: scope.applicationScopeRequired, transaction: client,
+        });
+        if (finalized.status !== "active") throw new Error("receipt_finalization_failed");
+      }
       return {
         decision_id: decisionId, receipt_id: receipt.id, decision: evaluation.decision,
         claims: evaluation.claims, reason_codes: evaluation.reason_codes,

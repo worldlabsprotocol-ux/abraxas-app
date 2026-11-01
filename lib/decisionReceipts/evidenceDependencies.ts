@@ -50,8 +50,7 @@ export async function receiptRequiresEvidenceDependencyGraph(receiptId: string):
 export async function recordReceiptEvidenceDependencies(input: {
   receiptId: string;
   fact: InternalReusableFact;
-}): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const sb = requireSupabaseAdmin();
+}, transaction?: { query: (sql: string, params: unknown[]) => Promise<unknown> }): Promise<{ ok: true } | { ok: false; reason: string }> {
   const rows: EvidenceDependencyInsertRow[] = [
     {
       receipt_id: input.receiptId,
@@ -74,6 +73,21 @@ export async function recordReceiptEvidenceDependencies(input: {
       dependency_type: "derived_from",
     });
   }
+
+  if (persistenceUsesDirectPostgres()) {
+    if (!transaction) throw new Error("evidence_dependency_transaction_required");
+    for (const row of rows) {
+      await transaction.query(
+        `insert into public.decision_receipt_evidence_dependencies
+          (receipt_id, fact_id, source_credential_id, dependency_type)
+         values ($1,$2,$3,$4)`,
+        [row.receipt_id, row.fact_id, row.source_credential_id, row.dependency_type],
+      );
+    }
+    return { ok: true };
+  }
+
+  const sb = requireSupabaseAdmin();
 
   const { error } = await sb.from("decision_receipt_evidence_dependencies").upsert(rows, {
     onConflict: "receipt_id,dependency_type",

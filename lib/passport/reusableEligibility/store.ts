@@ -8,6 +8,8 @@ import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { projectInternalFact, type SourceReceiptRow } from "./facts";
 import type { InternalReusableFact } from "./contract";
 
+type PgTransaction = { query: (sql: string, params: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> };
+
 function mapReceipt(row: Record<string, unknown>): SourceReceiptRow {
   return {
     id: String(row.id ?? ""),
@@ -71,21 +73,33 @@ export async function listHolderFacts(subjectId: string, now = new Date()): Prom
     .filter((fact): fact is InternalReusableFact => fact !== null);
 }
 
-export async function upsertReusableFact(fact: InternalReusableFact): Promise<void> {
+export async function upsertReusableFact(fact: InternalReusableFact, transaction?: PgTransaction): Promise<void> {
   if (persistenceUsesDirectPostgres()) {
-    await queryAbraxasPg(
+    const query = transaction ? transaction.query.bind(transaction) : queryAbraxasPg;
+    await query(
       `insert into public.reusable_eligibility_facts
         (id, subject_pseudonym_id, pack_id, policy_version, minimum_assurance,
          result_category, decision_context, source_decision_id, source_receipt_id,
          issued_at, expires_at, revoked_at, status)
        values ($1,$2,$3,$4,$5,$6,$7,$8::uuid,$9,$10::timestamptz,$11::timestamptz,$12::timestamptz,$13)
-       on conflict (id) do update set status = excluded.status,
-         revoked_at = excluded.revoked_at, expires_at = excluded.expires_at`,
+       on conflict (id) do nothing`,
       [fact.fact_id, fact.subject_pseudonym_id, fact.pack_id, fact.policy_version,
         fact.minimum_assurance, fact.result_category, fact.decision_context,
         fact.source_decision_id, fact.source_receipt_id, fact.issued_at, fact.expires_at,
         fact.status === "revoked" ? new Date().toISOString() : null, fact.status],
     );
+    const existing = await query(
+      `select source_decision_id::text, source_receipt_id, subject_pseudonym_id, status,
+              revoked_at from public.reusable_eligibility_facts where id = $1 for update`,
+      [fact.fact_id],
+    );
+    const row = existing.rows[0];
+    if (!row || row.source_decision_id !== fact.source_decision_id
+      || row.source_receipt_id !== fact.source_receipt_id
+      || row.subject_pseudonym_id !== fact.subject_pseudonym_id
+      || row.status !== "active" || row.revoked_at) {
+      throw new Error("reusable_fact_not_current");
+    }
     return;
   }
   const sb = requireSupabaseAdmin();
@@ -115,19 +129,23 @@ export async function recordDerivation(input: {
   requestingPolicyId: string;
   requestingPolicyVersion: number;
   verifyRequestId: string;
-}): Promise<void> {
+}, transaction?: PgTransaction): Promise<void> {
   if (persistenceUsesDirectPostgres()) {
-    await upsertReusableFact(input.fact);
-    await queryAbraxasPg(
+    if (!transaction) throw new Error("reusable_derivation_transaction_required");
+    await upsertReusableFact(input.fact, transaction);
+    const inserted = await transaction.query(
       `insert into public.reusable_eligibility_derivations
         (fact_id, source_receipt_id, derived_receipt_id, derived_decision_id,
          requesting_partner_id, requesting_policy_id, requesting_policy_version, verify_request_id)
        values ($1,$2,$3,$4::uuid,$5,$6,$7,$8)
-       on conflict (derived_receipt_id) do nothing`,
+       on conflict (derived_receipt_id) do nothing returning derived_receipt_id`,
       [input.fact.fact_id, input.fact.source_receipt_id, input.derivedReceiptId,
         input.derivedDecisionId, input.requestingPartnerId, input.requestingPolicyId,
         input.requestingPolicyVersion, input.verifyRequestId],
     );
+    if (inserted.rows[0]?.derived_receipt_id !== input.derivedReceiptId) {
+      throw new Error("reusable_derivation_conflict");
+    }
     return;
   }
   const sb = requireSupabaseAdmin();

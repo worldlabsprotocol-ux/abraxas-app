@@ -19,6 +19,9 @@ import { decodeReceiptV11Sidecar, encodeReceiptV11Sidecar, V1_1_SIDECAR_SCHEMA }
 import { isReceiptIssuanceFinalized } from "@/lib/decisionReceipts/issuanceFinalization";
 import { persistV11FinalizationAtomic } from "@/lib/decisionReceipts/v1_1_0/atomicFinalization.server";
 import { resolveV11PersistenceCapability } from "@/lib/decisionReceipts/v1_1_0/v11PersistenceCapability.server";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+
+type PgTransaction = { query: (sql: string, params: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
 
 /**
  * Atomically transition pending → active with the final v1.1.0 signature.
@@ -29,43 +32,54 @@ export async function finalizePendingV11ReceiptCryptographic(input: {
   applicationId: string | null;
   applicationScopeRequired: boolean;
   env?: Record<string, string | undefined>;
+  transaction?: PgTransaction;
 }): Promise<DecisionReceiptRecord> {
-  const existing = await getReceiptById(input.receiptId);
-  if (!existing) throw new Error("receipt_missing");
-  if (existing.schema_version !== DECISION_RECEIPT_SCHEMA_V1_1) {
+  const existing = input.transaction && persistenceUsesDirectPostgres()
+    ? null : await getReceiptById(input.receiptId);
+  const locked = input.transaction && persistenceUsesDirectPostgres()
+    ? await input.transaction.query(
+        `select to_jsonb(r) as receipt from public.decision_receipts r
+         where r.id = $1 for update`, [input.receiptId],
+      ) : null;
+  const pendingRecord = locked?.rows[0]?.receipt
+    ? mapReceiptRow(locked.rows[0].receipt as Record<string, unknown>) : existing;
+  if (!pendingRecord) throw new Error("receipt_missing");
+  const receipt = pendingRecord;
+  if (receipt.schema_version !== DECISION_RECEIPT_SCHEMA_V1_1) {
     throw new ReceiptCryptographicImmutabilityError(
       "not_v11_receipt",
       "receipt_immutability_violation",
     );
   }
 
-  if (existing.status !== "pending_finalization") {
-    if (existing.status === "active" && isReceiptIssuanceFinalized(existing)) {
-      const sidecar = decodeReceiptV11Sidecar(existing.anchor_reference);
+  if (receipt.status !== "pending_finalization") {
+    if (receipt.status === "active" && isReceiptIssuanceFinalized(receipt)) {
+      const sidecar = decodeReceiptV11Sidecar(receipt.anchor_reference);
       if (sidecar.ok && sidecar.sidecar.issuance_phase === "final") {
-        return existing;
+        return receipt;
       }
     }
     throw new ReceiptCryptographicImmutabilityError(
-      `cannot_finalize_from_status:${existing.status}`,
+      `cannot_finalize_from_status:${receipt.status}`,
       "receipt_immutability_violation",
     );
   }
 
   const application_binding_ref = await resolveAuthoritativeApplicationBindingRef({
-    partnerId: existing.partner_id,
-    policyId: existing.policy_id,
-    policyVersion: existing.policy_version,
-    decisionContext: existing.decision_context,
+    partnerId: receipt.partner_id,
+    policyId: receipt.policy_id,
+    policyVersion: receipt.policy_version,
+    decisionContext: receipt.decision_context,
     applicationId: input.applicationId,
     applicationScopeRequired: input.applicationScopeRequired,
     env: input.env,
   });
 
   const { commitment, manifest } = await buildAuthoritativeEvidenceCommitmentAndManifest({
-    receiptId: existing.id,
+    receiptId: receipt.id,
     requireFinalizedGraph: true,
     env: input.env,
+    transaction: input.transaction,
   });
 
   const anchor_reference = encodeReceiptV11Sidecar({
@@ -77,7 +91,7 @@ export async function finalizePendingV11ReceiptCryptographic(input: {
   });
 
   const recordForSign = attachV11FieldsFromSidecar({
-    ...existing,
+    ...receipt,
     anchor_reference,
     application_binding_ref,
     evidence_commitment: commitment,
@@ -96,12 +110,40 @@ export async function finalizePendingV11ReceiptCryptographic(input: {
   );
 
   const finalizedAt = new Date().toISOString();
+  if (input.transaction && persistenceUsesDirectPostgres()) {
+    const columns = await input.transaction.query(
+      `select column_name from information_schema.columns
+       where table_schema = 'public' and table_name = 'decision_receipts'
+         and column_name = any($1::text[])`,
+      [["application_binding_ref", "evidence_commitment", "evidence_commitment_manifest", "v11_issuance_phase"]],
+    );
+    const dedicated = columns.rows.length;
+    if (dedicated !== 0 && dedicated !== 4) throw new Error("v11_dedicated_schema_incomplete");
+    const dedicatedSet = dedicated === 4
+      ? `, application_binding_ref = $7,
+           evidence_commitment = $8::jsonb,
+           evidence_commitment_manifest = $9::jsonb,
+           v11_issuance_phase = 'final'` : "";
+    const updated = await input.transaction.query(
+      `update public.decision_receipts set status = 'active',
+         issuance_finalized_at = $3::timestamptz, payload_hash = $4,
+         signature = $5, anchor_reference = $6${dedicatedSet}
+       where id = $1 and status = 'pending_finalization' and payload_hash = $2
+       returning to_jsonb(decision_receipts) as receipt`,
+      [receipt.id, receipt.payload_hash, finalizedAt, payloadHash, signature,
+        anchor_reference, ...(dedicated === 4
+          ? [application_binding_ref, JSON.stringify(commitment), JSON.stringify(manifest)] : [])],
+    );
+    const row = updated.rows[0]?.receipt;
+    if (!row) throw new ReceiptCryptographicImmutabilityError("finalization_race", "finalization_race");
+    return mapReceiptRow(row as Record<string, unknown>);
+  }
   const persistenceCap = await resolveV11PersistenceCapability(input.env);
 
   if (persistenceCap.atomicFinalizeEnabled && persistenceCap.dedicatedColumnsEnabled) {
     return persistV11FinalizationAtomic({
-      receiptId: existing.id,
-      expectedProvisionalPayloadHash: existing.payload_hash,
+      receiptId: receipt.id,
+      expectedProvisionalPayloadHash: receipt.payload_hash,
       write: {
         payload_hash: payloadHash,
         signature,
@@ -125,15 +167,15 @@ export async function finalizePendingV11ReceiptCryptographic(input: {
       signature,
       anchor_reference,
     })
-    .eq("id", existing.id)
+    .eq("id", receipt.id)
     .eq("status", "pending_finalization")
-    .eq("payload_hash", existing.payload_hash)
+    .eq("payload_hash", receipt.payload_hash)
     .select("*")
     .maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) {
-    const raced = await getReceiptById(existing.id);
+    const raced = await getReceiptById(receipt.id);
     if (raced && raced.status === "active" && isReceiptIssuanceFinalized(raced)) {
       const sidecar = decodeReceiptV11Sidecar(raced.anchor_reference);
       if (sidecar.ok && sidecar.sidecar.issuance_phase === "final") return raced;
