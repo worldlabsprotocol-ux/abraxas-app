@@ -30,11 +30,11 @@ function formatExpiry(iso: string): string {
   return `Expires ${date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
 }
 
-export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolean }) {
+export function PassportRequestInbox({ showEmpty = false, holderSubjectId }: { showEmpty?: boolean; holderSubjectId?: string }) {
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["passport", "request-inbox"],
+    queryKey: ["passport", "request-inbox", holderSubjectId ?? "legacy"],
     queryFn: fetchRequests,
     staleTime: 15_000,
     retry: false,
@@ -233,3 +233,4 @@ export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolea
     </section>
   );
 }
+
