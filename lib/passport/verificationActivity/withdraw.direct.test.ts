@@ -61,7 +61,9 @@ describe("sovereign holder withdrawal", () => {
         if (sql.includes("from public.reusable_eligibility_derivations")) {
           return { rows: params[0] === receiptId ? [{ derived_receipt_id: "dr_derived" }] : [] };
         }
-        if (sql.includes("from public.decision_receipts where id")) return { rows: [{ status: "active", revoked_at: null }] };
+        if (sql.includes("from public.decision_receipts r") && sql.includes("for update of r, d")) {
+          return { rows: [{ status: "active", revoked_at: null, subject_id: subjectId }] };
+        }
         return { rows: [] };
       }) as typeof queryMock,
     }));
@@ -71,6 +73,8 @@ describe("sovereign holder withdrawal", () => {
     expect(statements[0]?.params).toEqual([decisionId, subjectId, receiptId, subjectPseudonymId(subjectId)]);
     expect(statements.filter((item) => item.sql.includes("revoke_decision_receipt_atomic"))).toHaveLength(2);
     expect(statements.some((item) => item.sql.includes("update public.reusable_eligibility_facts"))).toBe(true);
+    expect(statements.filter((item) => item.sql.includes("update public.verification_decisions d"))).toHaveLength(2);
+    expect(statements.filter((item) => item.sql.includes("update public.consent_receipts c"))).toHaveLength(2);
     expect(statements.some((item) => item.sql.includes("insert into public.audit_events"))).toBe(true);
     expect(postgrestMock).not.toHaveBeenCalled();
   });
@@ -91,7 +95,32 @@ describe("sovereign holder withdrawal", () => {
           return { rows: [{ result: { ok: params[0] === receiptId } }] };
         }
         if (sql.includes("from public.reusable_eligibility_derivations")) return { rows: [{ derived_receipt_id: "dr_derived" }] };
-        if (sql.includes("from public.decision_receipts where id")) return { rows: [{ status: "active", revoked_at: null }] };
+        if (sql.includes("from public.decision_receipts r") && sql.includes("for update of r, d")) {
+          return { rows: [{ status: "active", revoked_at: null, subject_id: subjectId }] };
+        }
+        return { rows: [] };
+      }) as typeof queryMock,
+    }));
+    const result = await withdrawHolderSharedResult({ subjectId, activityRef });
+    expect(result).toMatchObject({ ok: false, error: "unavailable", status: 503 });
+    expect(postgrestMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a descendant linked to another holder", async () => {
+    queryMock.mockResolvedValue({ rows: [activity()] });
+    transactionMock.mockImplementation(async (fn: (client: { query: typeof queryMock }) => Promise<unknown>) => fn({
+      query: (async (sql: string) => {
+        if (sql.includes("from public.verification_decisions d") && sql.includes("for update")) {
+          return { rows: [{ id: receiptId, status: "active", revoked_at: null }] };
+        }
+        if (sql.includes("revoke_decision_receipt_atomic")) return { rows: [{ result: { ok: true } }] };
+        if (sql.includes("from public.reusable_eligibility_derivations")) {
+          return { rows: [{ derived_receipt_id: "dr_other_holder" }] };
+        }
+        if (sql.includes("for update of r, d")) {
+          return { rows: [{ status: "active", revoked_at: null,
+            subject_id: `abx_hs_${"b".repeat(32)}` }] };
+        }
         return { rows: [] };
       }) as typeof queryMock,
     }));

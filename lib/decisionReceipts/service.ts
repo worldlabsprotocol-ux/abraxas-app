@@ -425,6 +425,15 @@ export async function listApprovedReceiptsForSubject(
   subjectId: string,
   limit = 25,
 ): Promise<DecisionReceiptRecord[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ receipt: Record<string, unknown> }>(
+      `select to_jsonb(r) as receipt from public.decision_receipts r
+       join public.verification_decisions d on d.id = r.verification_decision_id
+       where d.subject_id = $1 and r.decision_result = 'approved'
+       order by r.evaluated_at desc limit $2`, [subjectId, limit],
+    );
+    return rows.map((row) => mapRow(row.receipt));
+  }
   const sb = requireSupabaseAdmin();
   const { data: decisions } = await sb
     .from("verification_decisions")
@@ -451,6 +460,13 @@ export async function getReceiptOwnedBySubject(input: {
 }): Promise<DecisionReceiptRecord | null> {
   const record = await getReceiptById(input.receiptId);
   if (!record) return null;
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ subject_id: string }>(
+      `select subject_id from public.verification_decisions
+       where id = $1::uuid limit 1`, [record.verification_decision_id],
+    );
+    return rows[0]?.subject_id === input.subjectId ? record : null;
+  }
   const sb = requireSupabaseAdmin();
   const { data: decision } = await sb
     .from("verification_decisions")
@@ -462,6 +478,13 @@ export async function getReceiptOwnedBySubject(input: {
 }
 
 export async function listReceiptsForAdmin(limit = 50): Promise<DecisionReceiptRecord[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ receipt: Record<string, unknown> }>(
+      `select to_jsonb(r) as receipt from public.decision_receipts r
+       order by r.evaluated_at desc limit $1`, [limit],
+    );
+    return rows.map((row) => mapRow(row.receipt));
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("decision_receipts")
@@ -472,6 +495,14 @@ export async function listReceiptsForAdmin(limit = 50): Promise<DecisionReceiptR
 }
 
 export async function getReceiptAuditTimeline(receiptId: string) {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+      `select * from public.audit_events
+       where object_type = 'decision_receipt' and object_id = $1
+       order by created_at asc`, [receiptId],
+    );
+    return rows;
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("audit_events")

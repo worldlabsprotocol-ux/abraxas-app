@@ -1,8 +1,10 @@
 // FILE: lib/persistence/chainNeutralSchemaReady.ts
 // Runtime probe for migration 136 objects — allows #676 merge before Production apply.
+//
+// This module is reachable from client components, so it must not statically
+// import server-only modules (admin/env -> pgPool). Both the PostgREST admin
+// client and the direct-PostgreSQL probe are loaded lazily inside the functions.
 
-import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 const HOLDER_SUBJECTS_TABLE = "passport_holder_subjects";
 
 let cachedReady: boolean | null = null;
@@ -27,12 +29,14 @@ export async function chainNeutralIdentitySchemaReady(forceRefresh = false): Pro
   }
 
   try {
+    const { persistenceUsesDirectPostgres } = await import("@/lib/persistence/env");
     if (persistenceUsesDirectPostgres()) {
       const { chainNeutralIdentitySchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
       cachedReady = await chainNeutralIdentitySchemaReadyDirect();
       cachedAtMs = now;
       return cachedReady;
     }
+    const { requirePersistenceAdmin } = await import("@/lib/persistence/admin");
     const sb = requirePersistenceAdmin();
     const { error: subjectsError } = await sb
       .from(HOLDER_SUBJECTS_TABLE)
@@ -83,12 +87,14 @@ export async function chainNeutralIdvDocumentSchemaReady(forceRefresh = false): 
   }
 
   try {
+    const { persistenceUsesDirectPostgres } = await import("@/lib/persistence/env");
     if (persistenceUsesDirectPostgres()) {
       const { chainNeutralIdvDocumentSchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
       cachedDocReady = await chainNeutralIdvDocumentSchemaReadyDirect();
       cachedDocAtMs = now;
       return cachedDocReady;
     }
+    const { requirePersistenceAdmin } = await import("@/lib/persistence/admin");
     const sb = requirePersistenceAdmin();
     const { error } = await sb
       .from("passport_documents")

@@ -56,6 +56,9 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   if (typeof version !== "number") return { ok: false, reason: version.error };
 
   const stored = resolveReceiptStatus(input.record);
+  if (input.evaluation.lifecycle_status === "invalidated") {
+    return { ok: false, reason: "authoritative_validity_indeterminate" };
+  }
   if (isReceiptPendingEvidenceFinalization(input.record)) {
     return { ok: false, reason: "issuance_not_finalized" };
   }
@@ -75,7 +78,10 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
     environment: input.signedIssuerAuthorityEnvironment,
     status_version: version,
     supersedes_status_version: supersedes,
-    receipt_status: stored === "revoked" ? "revoked" : stored === "expired" ? "expired" : "active",
+    receipt_status: input.evaluation.lifecycle_status === "revoked" || stored === "revoked"
+      ? "revoked"
+      : input.evaluation.lifecycle_status === "expired" || stored === "expired"
+        ? "expired" : "active",
     superseded: input.evaluation.superseded,
     partner_operational: !input.evaluation.invalidation_reasons.includes("partner_inactive"),
     policy_active: !input.evaluation.invalidation_reasons.includes("policy_no_longer_valid"),

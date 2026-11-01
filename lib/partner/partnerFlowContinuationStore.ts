@@ -167,9 +167,16 @@ export function createSupabaseContinuationStore(
   const traceContext = options?.traceContext ?? "primary";
 
   if (persistenceUsesDirectPostgres()) {
-    const unavailable = async <T>(operation: () => Promise<T>): Promise<T> => {
+    const unavailable = async <T>(
+      operation: () => Promise<T>, uniqueConflictId?: string,
+    ): Promise<T> => {
       try { return await operation(); }
-      catch { throw new ContinuationStoreUnavailableError(); }
+      catch (error) {
+        if (uniqueConflictId && isPostgresUniqueViolation(error as { code?: string; message?: string })) {
+          throw new ContinuationUniqueConflictError(uniqueConflictId);
+        }
+        throw new ContinuationStoreUnavailableError();
+      }
     };
     return {
       save: (record) => unavailable(async () => {
@@ -196,7 +203,8 @@ export function createSupabaseContinuationStore(
             record.expiresAt, record.createdAt],
         );
         if (!rows[0]) throw new ContinuationStoreUnavailableError();
-      }),
+      }, record.verifyRequestId && isOpaqueVerifyRequest(record.verifyRequestId)
+        ? record.verifyRequestId : undefined),
       peek: (jti) => unavailable(async () => {
         const { rows } = await queryAbraxasPg<Record<string, unknown>>(
           `select * from public.partner_flow_continuations where jti = $1 limit 1`, [jti],
@@ -248,7 +256,9 @@ export function createSupabaseContinuationStore(
         const { rows } = await queryAbraxasPg<{ jti: string }>(
           `update public.partner_flow_continuations
            set verify_request_id = $2::uuid, opaque_verify_request = null
-           where jti = $1 returning jti`,
+           where jti = $1 and consumed_at is null and expires_at > now()
+             and (verify_request_id is null or verify_request_id = $2::uuid)
+           returning jti`,
           [jti, verifyRequestId],
         );
         if (!rows[0]) throw new ContinuationStoreUnavailableError();

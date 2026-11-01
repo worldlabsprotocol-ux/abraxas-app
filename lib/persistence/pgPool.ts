@@ -1,9 +1,10 @@
 // FILE: lib/persistence/pgPool.ts
 // Abraxas-operated PostgreSQL pool (no Supabase SDK).
+//
+// Reachable from client-reachable modules, so no `import "server-only"` here.
+// `pg` is required lazily inside the pool factory so it is only ever connected
+// on the server at call time; the client bundle never opens a pool.
 
-import "server-only";
-
-import pg from "pg";
 import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
 import {
   isPassportDirectPostgresEnabled,
@@ -99,7 +100,8 @@ export function getAbraxasPgPool(
   const url = resolveAbraxasDirectPostgresUrl(env);
   if (!url) return null;
   if (!cachedPool) {
-    cachedPool = new pg.Pool(buildPgPoolConfig(url, env));
+    const { Pool: PgPool } = require("pg") as typeof import("pg");
+    cachedPool = new PgPool(buildPgPoolConfig(url, env));
   }
   return cachedPool;
 }

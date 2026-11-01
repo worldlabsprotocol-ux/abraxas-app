@@ -262,6 +262,23 @@ async function withdrawOnSovereignPostgres(
   if (!match.receipt_id) return { ok: false, error: "unavailable", status: 503 };
   const pseudonym = subjectPseudonymId(subjectId);
   return withAbraxasPgTransaction(async (client) => {
+    const revokeAuthorization = async (receiptId: string) => {
+      await client.query(
+        `update public.verification_decisions d set status = 'revoked'
+         from public.decision_receipts r
+         where r.id = $1 and d.id = r.verification_decision_id
+           and d.subject_id = $2 and d.status = 'active'`,
+        [receiptId, subjectId],
+      );
+      await client.query(
+        `update public.consent_receipts c
+         set revoked_at = coalesce(c.revoked_at, now())
+         from public.decision_receipts r
+         where r.id = $1 and c.id = r.consent_receipt_id
+           and c.subject_id = $2`,
+        [receiptId, subjectId],
+      );
+    };
     const bound = await client.query<{ id: string; status: string; revoked_at: string | null }>(
       `select c.id, c.status, c.revoked_at::text from public.verification_decisions d
        join public.decision_receipts c on c.verification_decision_id = d.id
@@ -285,6 +302,7 @@ async function withdrawOnSovereignPostgres(
       );
       if (revoked.rows[0]?.result?.ok !== true) throw new Error("receipt_revoke_failed");
     }
+    await revokeAuthorization(receipt.id);
 
     // Revoke every descendant in the same transaction. A missing lifecycle table or
     // failed revoke rolls back the source receipt, so no partial success is shown.
@@ -301,11 +319,18 @@ async function withdrawOnSovereignPostgres(
         [sourceId],
       );
       for (const row of derived.rows) {
-        const child = await client.query<{ status: string; revoked_at: string | null }>(
-          `select status, revoked_at::text from public.decision_receipts where id = $1 for update`,
+        const child = await client.query<{
+          status: string; revoked_at: string | null; subject_id: string;
+        }>(
+          `select r.status, r.revoked_at::text, d.subject_id
+           from public.decision_receipts r
+           join public.verification_decisions d on d.id = r.verification_decision_id
+           where r.id = $1 for update of r, d`,
           [row.derived_receipt_id],
         );
-        if (!child.rows[0]) throw new Error("derived_receipt_missing");
+        if (!child.rows[0] || child.rows[0].subject_id !== subjectId) {
+          throw new Error("derived_receipt_binding_changed");
+        }
         if (child.rows[0].status === "active" && !child.rows[0].revoked_at) {
           const revoked = await client.query<{ result: { ok: boolean } }>(
             `select public.revoke_decision_receipt_atomic($1, $2, $3, $4) as result`,
@@ -314,6 +339,7 @@ async function withdrawOnSovereignPostgres(
           );
           if (revoked.rows[0]?.result?.ok !== true) throw new Error("derived_receipt_revoke_failed");
         }
+        await revokeAuthorization(row.derived_receipt_id);
         queue.push(row.derived_receipt_id);
       }
       await client.query(

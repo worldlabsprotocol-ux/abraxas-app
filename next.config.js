@@ -99,6 +99,7 @@ const nextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false, os: false, path: false, crypto: false, stream: false,
+        dns: false, net: false, tls: false, "util/types": false,
       };
       // Client bundles only — server API routes (EVM SIWE bind, gate validation) need viem.
       config.resolve.alias = {
