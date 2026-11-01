@@ -21,6 +21,8 @@ import {
 } from "@/lib/partner/hostedHandoff/continuationOpaqueRpcDiagnostics";
 import type { ContinueContextTraceCollector } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   ContinuationStoreUnavailableError,
   ContinuationUniqueConflictError,
@@ -163,6 +165,96 @@ export function createSupabaseContinuationStore(
 ): PartnerFlowContinuationStore {
   const trace = options?.trace;
   const traceContext = options?.traceContext ?? "primary";
+
+  if (persistenceUsesDirectPostgres()) {
+    const unavailable = async <T>(operation: () => Promise<T>): Promise<T> => {
+      try { return await operation(); }
+      catch { throw new ContinuationStoreUnavailableError(); }
+    };
+    return {
+      save: (record) => unavailable(async () => {
+        const ids = continuationVerifyRequestColumns(record.verifyRequestId);
+        const { rows } = await queryAbraxasPg<{ jti: string }>(
+          `insert into public.partner_flow_continuations
+            (jti, partner_id, policy_id, policy_version, return_url,
+             permission, permission_version, purpose, app_slug,
+             verify_request_id, opaque_verify_request, consumed_at, expires_at, created_at)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::uuid,$11,$12,$13,$14)
+           on conflict (jti) do update set jti = partner_flow_continuations.jti
+           where partner_flow_continuations.partner_id = excluded.partner_id
+             and partner_flow_continuations.policy_id = excluded.policy_id
+             and partner_flow_continuations.policy_version is not distinct from excluded.policy_version
+             and partner_flow_continuations.return_url = excluded.return_url
+             and partner_flow_continuations.verify_request_id is not distinct from excluded.verify_request_id
+             and partner_flow_continuations.opaque_verify_request is not distinct from excluded.opaque_verify_request
+             and partner_flow_continuations.consumed_at is null
+           returning jti`,
+          [record.jti, record.partnerId, record.policyId, record.policyVersion ?? null,
+            record.returnUrl, record.permission ?? null, record.permissionVersion ?? null,
+            record.purpose ?? null, record.appSlug ?? null, ids.verify_request_id,
+            ids.opaque_verify_request, record.consumedAt ?? null,
+            record.expiresAt, record.createdAt],
+        );
+        if (!rows[0]) throw new ContinuationStoreUnavailableError();
+      }),
+      peek: (jti) => unavailable(async () => {
+        const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+          `select * from public.partner_flow_continuations where jti = $1 limit 1`, [jti],
+        );
+        return rows[0] ? mapRow(rows[0]) : null;
+      }),
+      peekByVerifyRequestId: (verifyRequestId) => unavailable(async () => {
+        const normalized = normalizeContinuationVerifyRequestId(verifyRequestId);
+        if (!normalized) return null;
+        const opaque = isOpaqueVerifyRequest(normalized);
+        const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+          opaque
+            ? `select * from public.partner_flow_continuation_peek_by_opaque($1)`
+            : `select * from public.partner_flow_continuations
+               where verify_request_id = $1::uuid limit 1`,
+          [normalized],
+        );
+        return rows[0] ? mapRow(rows[0]) : null;
+      }),
+      ensureByOpaqueVerifyRequest: (record) => unavailable(async () => {
+        const normalized = normalizeContinuationVerifyRequestId(record.verifyRequestId ?? "");
+        if (!normalized || !isOpaqueVerifyRequest(normalized)) {
+          throw new ContinuationStoreUnavailableError();
+        }
+        const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+          `select * from public.ensure_partner_flow_continuation_by_opaque(
+             $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [normalized, record.jti, record.partnerId, record.policyId,
+            record.policyVersion ?? null, record.returnUrl, record.expiresAt,
+            record.createdAt, record.permission ?? null, record.permissionVersion ?? null,
+            record.purpose ?? null, record.appSlug ?? null],
+        );
+        const mapped = mapEnsureOpaqueRpcRow(rows[0]);
+        if (!mapped) throw new ContinuationStoreUnavailableError();
+        return mapped;
+      }),
+      consume: (jti) => unavailable(async () => {
+        const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+          `update public.partner_flow_continuations
+           set consumed_at = now()
+           where jti = $1 and consumed_at is null and expires_at > now()
+           returning *`,
+          [jti],
+        );
+        return rows[0] ? mapRow({ ...rows[0], consumed_at: null }) : null;
+      }),
+      attachVerifyRequestId: (jti, verifyRequestId) => unavailable(async () => {
+        assertAttachableVerificationRequestId(verifyRequestId);
+        const { rows } = await queryAbraxasPg<{ jti: string }>(
+          `update public.partner_flow_continuations
+           set verify_request_id = $2::uuid, opaque_verify_request = null
+           where jti = $1 returning jti`,
+          [jti, verifyRequestId],
+        );
+        if (!rows[0]) throw new ContinuationStoreUnavailableError();
+      }),
+    };
+  }
 
   return {
     async save(record) {

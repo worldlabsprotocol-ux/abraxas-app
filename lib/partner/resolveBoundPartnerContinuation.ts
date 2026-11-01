@@ -12,6 +12,8 @@ import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContin
 import { policyOwnedByPartner } from "@/lib/policy/assertPolicyOwnership";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   PARTNER_CONTINUE_BINDING_COOKIE,
   verifyPartnerContinueBindingCookie,
@@ -46,6 +48,14 @@ async function loadVerificationBinding(verifyRequestId: string): Promise<
   { ok: true; row: VerificationBindingRow } | { ok: false; code: string }
 > {
   try {
+    if (persistenceUsesDirectPostgres()) {
+      const { rows } = await queryAbraxasPg<VerificationBindingRow>(
+        `select partner_id, policy_id, subject_id, sui_address, status, expires_at
+         from public.verification_requests where id = $1::uuid limit 1`,
+        [verifyRequestId],
+      );
+      return rows[0] ? { ok: true, row: rows[0] } : { ok: false, code: "missing" };
+    }
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb
       .from("verification_requests")

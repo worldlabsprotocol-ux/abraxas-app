@@ -18,6 +18,8 @@ import {
   type ReceiptV11IssuancePhase,
 } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 
 export class AuthoritativeIssuanceError extends Error {
   constructor(
@@ -74,21 +76,37 @@ export async function resolveAuthoritativeApplicationIdForIssuance(input: {
   verificationDecisionId: string;
   partnerId: string;
   callerApplicationId?: string | null;
+  transaction?: { query: (sql: string, params: unknown[]) => Promise<{
+    rows: Array<Record<string, unknown>>;
+  }> };
 }): Promise<{ applicationId: string | null; applicationScopeRequired: boolean }> {
-  const sb = requireSupabaseAdmin();
-  const { data: decision } = await sb
-    .from("verification_decisions")
-    .select("request_id")
-    .eq("id", input.verificationDecisionId)
-    .maybeSingle();
   let authoritativeApplicationId: string | null = null;
-  if (decision?.request_id) {
-    const { data: request } = await sb
-      .from("verification_requests")
-      .select("launchpad_application_id")
-      .eq("id", decision.request_id as string)
+  if (persistenceUsesDirectPostgres()) {
+    const sql = `select r.launchpad_application_id
+       from public.verification_decisions d
+       join public.verification_requests r on r.id = d.request_id
+       where d.id = $1::uuid and d.partner_id = $2 limit 1`;
+    const params = [input.verificationDecisionId, input.partnerId];
+    const result = input.transaction
+      ? await input.transaction.query(sql, params)
+      : await queryAbraxasPg<{ launchpad_application_id: string | null }>(sql, params);
+    authoritativeApplicationId = typeof result.rows[0]?.launchpad_application_id === "string"
+      ? result.rows[0].launchpad_application_id : null;
+  } else {
+    const sb = requireSupabaseAdmin();
+    const { data: decision } = await sb
+      .from("verification_decisions")
+      .select("request_id")
+      .eq("id", input.verificationDecisionId)
       .maybeSingle();
-    authoritativeApplicationId = (request?.launchpad_application_id as string | null) ?? null;
+    if (decision?.request_id) {
+      const { data: request } = await sb
+        .from("verification_requests")
+        .select("launchpad_application_id")
+        .eq("id", decision.request_id as string)
+        .maybeSingle();
+      authoritativeApplicationId = (request?.launchpad_application_id as string | null) ?? null;
+    }
   }
 
   if (authoritativeApplicationId) {

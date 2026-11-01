@@ -1,7 +1,6 @@
 // FILE: lib/verification/requestsService.ts
 // Partner verification requests, consent, and policy decisions.
 
-import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { createHash } from "node:crypto";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
@@ -189,6 +188,8 @@ export async function createVerificationRequest(input: {
 
   const sb = requireSupabaseAdmin();
 
+  const legacySuiAddress = input.suiAddress && !holderSubjectId
+    ? (await import("@mysten/sui/utils")).normalizeSuiAddress(input.suiAddress) : null;
   const { data, error } = await sb.from("verification_requests").insert({
     partner_id: input.partnerId,
     policy_id: input.policyId,
@@ -198,7 +199,7 @@ export async function createVerificationRequest(input: {
     subject_id: holderSubjectId,
     launchpad_application_id: input.launchpadApplicationId ?? null,
     policy_version: policy.version,
-    sui_address: input.suiAddress && !holderSubjectId ? normalizeSuiAddress(input.suiAddress) : null,
+    sui_address: legacySuiAddress,
     status: "pending",
     expires_at: expiresAt,
   }).select("id").single();
@@ -327,15 +328,18 @@ export async function consentAndDecide(input: {
   reason_codes: string[];
   valid_until: string | null;
 }> {
-  const sb = requireSupabaseAdmin();
+  const direct = persistenceUsesDirectPostgres();
+  const sb = direct ? null : requireSupabaseAdmin();
   if (!isChainNeutralHolderSubjectId(input.subjectId)) throw new Error("holder_subject_required");
   const subject = input.subjectId;
 
-  const { data: request } = await sb
-    .from("verification_requests")
-    .select("*")
-    .eq("id", input.requestId)
-    .maybeSingle();
+  const request = direct
+    ? (await queryAbraxasPg<Record<string, unknown>>(
+      `select * from public.verification_requests where id = $1::uuid limit 1`,
+      [input.requestId],
+    )).rows[0] ?? null
+    : (await sb!.from("verification_requests").select("*")
+      .eq("id", input.requestId).maybeSingle()).data;
 
   if (!request) throw new Error("Request not found");
   if (request.sui_address || (request.subject_id && request.subject_id !== subject)) {
@@ -350,7 +354,12 @@ export async function consentAndDecide(input: {
   }
 
   if (new Date(request.expires_at as string) < new Date()) {
-    await sb.from("verification_requests").update({ status: "expired" }).eq("id", input.requestId);
+    if (direct) {
+      await queryAbraxasPg(`update public.verification_requests set status = 'expired'
+        where id = $1::uuid and status = 'pending'`, [input.requestId]);
+    } else {
+      await sb!.from("verification_requests").update({ status: "expired" }).eq("id", input.requestId);
+    }
     throw new Error("Request expired");
   }
 
@@ -453,7 +462,81 @@ export async function consentAndDecide(input: {
     };
   }
 
-  const { data: claimed, error: claimError } = await sb
+  if (direct) {
+    if (reuseFact) throw new Error("reuse_issuance_unavailable");
+    const claimTypes = claimTypesFromEvaluation(evaluation.claims);
+    const evaluatedClaimRefs = buildEvaluatedClaimRefs(
+      claims, claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+      evaluation.matched_claim_ids,
+    );
+    return withAbraxasPgTransaction(async (client) => {
+      const locked = await client.query<Record<string, unknown>>(
+        `select * from public.verification_requests where id = $1::uuid for update`,
+        [input.requestId],
+      );
+      const current = locked.rows[0];
+      if (!current || current.partner_id !== partnerId || current.policy_id !== policyId
+        || Number(current.policy_version) !== Number(request.policy_version)
+        || current.launchpad_application_id !== request.launchpad_application_id
+        || (current.subject_id && current.subject_id !== subject) || current.sui_address) {
+        throw new Error("request_binding_changed");
+      }
+      if (current.status === "decided") return getExistingConsentDecision(input.requestId, subject);
+      if (current.status !== "pending") throw new Error("Request is no longer pending");
+      if (Date.parse(String(current.expires_at)) <= Date.now()) throw new Error("Request expired");
+      const consent = await client.query<{ id: string }>(
+        `insert into public.consent_receipts
+          (subject_id, partner_id, request_id, purpose, claims_authorized, expires_at)
+         values ($1,$2,$3::uuid,$4,$5::text[],$6::timestamptz) returning id::text`,
+        [subject, partnerId, input.requestId, request.requested_action,
+          Object.keys(evaluation.claims), evaluation.valid_until],
+      );
+      const consentId = consent.rows[0]?.id;
+      if (!consentId) throw new Error("consent_persistence_unavailable");
+      const decision = await client.query<{ id: string }>(
+        `insert into public.verification_decisions
+          (request_id, partner_id, subject_id, policy_id, policy_version,
+           decision, claims_json, reason_codes, valid_until, status)
+         values ($1::uuid,$2,$3,$4,$5,$6,$7::jsonb,$8::text[],$9::timestamptz,'active')
+         returning id::text`,
+        [input.requestId, partnerId, subject, policy.id, policy.version,
+          evaluation.decision, JSON.stringify(evaluation.claims), evaluation.reason_codes,
+          evaluation.valid_until],
+      );
+      const decisionId = decision.rows[0]?.id;
+      if (!decisionId) throw new Error("decision_persistence_unavailable");
+      await client.query(
+        `update public.verification_requests set status = 'decided', subject_id = $2,
+          consent_id = $3::uuid where id = $1::uuid`,
+        [input.requestId, subject, consentId],
+      );
+      await appendAuditEvent({
+        actor_type: "subject", actor_id: subject, action: "verification.decided",
+        object_type: "verification_decision", object_id: decisionId,
+        policy_id: policy.id, policy_version: policy.version,
+        metadata: { decision: evaluation.decision, reason_codes: evaluation.reason_codes,
+          flow_trace_id: flowTraceIdFromVerificationRequest(input.requestId) },
+      }, client);
+      const receipt = await issueReceiptForDecision({
+        decisionId, consentReceiptId: consentId, partnerId, policyId: policy.id,
+        policyVersion: policy.version, subjectId: subject,
+        applicationId: (request.launchpad_application_id as string | null) ?? null,
+        decisionResult: evaluation.decision, reasonCodes: evaluation.reason_codes,
+        claimsJson: evaluation.claims, evaluatedClaimRefs,
+        expiresAt: evaluation.valid_until,
+        decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
+          ? "sandbox_only" : "production",
+      }, client);
+      if (!receipt) throw new Error("receipt_persistence_unavailable");
+      return {
+        decision_id: decisionId, receipt_id: receipt.id, decision: evaluation.decision,
+        claims: evaluation.claims, reason_codes: evaluation.reason_codes,
+        valid_until: evaluation.valid_until,
+      };
+    });
+  }
+
+  const { data: claimed, error: claimError } = await sb!
     .from("verification_requests")
     .update({
       status: "decided",
@@ -470,7 +553,7 @@ export async function consentAndDecide(input: {
     return getExistingConsentDecision(input.requestId, subject);
   }
 
-  const { data: consent, error: consentError } = await sb.from("consent_receipts").insert({
+  const { data: consent, error: consentError } = await sb!.from("consent_receipts").insert({
     subject_id: subject,
     partner_id: partnerId,
     request_id: input.requestId,
@@ -480,7 +563,7 @@ export async function consentAndDecide(input: {
   }).select("id").single();
   if (consentError || !consent?.id) throw new Error("consent_persistence_unavailable");
 
-  const { data: decisionRow, error: decisionError } = await sb.from("verification_decisions").insert({
+  const { data: decisionRow, error: decisionError } = await sb!.from("verification_decisions").insert({
     request_id: input.requestId,
     partner_id: partnerId,
     subject_id: subject,
@@ -495,7 +578,7 @@ export async function consentAndDecide(input: {
   if (decisionError || !decisionRow?.id) throw new Error("decision_persistence_unavailable");
 
   if (consent?.id) {
-    const { error: updateError } = await sb.from("verification_requests")
+    const { error: updateError } = await sb!.from("verification_requests")
       .update({ consent_id: consent.id })
       .eq("id", input.requestId);
     if (updateError) throw new Error("consent_binding_unavailable");
@@ -608,15 +691,15 @@ async function getExistingConsentDecision(
   reason_codes: string[];
   valid_until: string | null;
 }> {
-  const sb = requireSupabaseAdmin();
-  const { data: decisionRow } = await sb
-    .from("verification_decisions")
-    .select("*")
-    .eq("request_id", requestId)
-    .eq("subject_id", subject)
-    .order("decided_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const decisionRow = persistenceUsesDirectPostgres()
+    ? (await queryAbraxasPg<Record<string, unknown>>(
+      `select * from public.verification_decisions
+       where request_id = $1::uuid and subject_id = $2
+       order by decided_at desc limit 1`, [requestId, subject],
+    )).rows[0] ?? null
+    : (await requireSupabaseAdmin().from("verification_decisions").select("*")
+      .eq("request_id", requestId).eq("subject_id", subject)
+      .order("decided_at", { ascending: false }).limit(1).maybeSingle()).data;
 
   if (!decisionRow) throw new Error("Request already decided");
 
@@ -639,9 +722,37 @@ export async function declineVerificationRequest(input: {
   requestId: string;
   subjectId: string;
 }): Promise<{ status: "cancelled" }> {
-  const sb = requireSupabaseAdmin();
   if (!isChainNeutralHolderSubjectId(input.subjectId)) throw new Error("holder_subject_required");
   const subject = input.subjectId;
+
+  if (persistenceUsesDirectPostgres()) {
+    return withAbraxasPgTransaction(async (client) => {
+      const { rows } = await client.query<Record<string, unknown>>(
+        `select * from public.verification_requests where id = $1::uuid for update`,
+        [input.requestId],
+      );
+      const request = rows[0];
+      if (!request) throw new Error("Request not found");
+      if (request.sui_address || (request.subject_id && request.subject_id !== subject)) {
+        throw new Error("This request is for a different Passport");
+      }
+      if (request.status === "decided") throw new Error("Request already decided");
+      if (request.status === "cancelled") return { status: "cancelled" as const };
+      if (Date.parse(String(request.expires_at)) <= Date.now()) throw new Error("Request expired");
+      if (request.status !== "pending") throw new Error("Request is no longer pending");
+      await client.query(
+        `update public.verification_requests set status = 'cancelled', subject_id = $2
+         where id = $1::uuid`, [input.requestId, subject],
+      );
+      await appendAuditEvent({ actor_type: "subject", actor_id: subject,
+        action: "verification_request.declined", object_type: "verification_request",
+        object_id: input.requestId, policy_id: String(request.policy_id),
+        metadata: { partner_id: request.partner_id },
+      }, client);
+      return { status: "cancelled" as const };
+    });
+  }
+  const sb = requireSupabaseAdmin();
 
   const { data: request } = await sb
     .from("verification_requests")
@@ -697,12 +808,15 @@ function mapDecisionRow(row: Record<string, unknown>): PolicyDecisionRecord {
 }
 
 export async function getDecisionStatus(decisionId: string): Promise<PolicyDecisionRecord | null> {
-  const sb = requireSupabaseAdmin();
-  const { data } = await sb
-    .from("verification_decisions")
-    .select("*")
-    .eq("id", decisionId)
-    .maybeSingle();
+  const direct = persistenceUsesDirectPostgres();
+  const sb = direct ? null : requireSupabaseAdmin();
+  const data = direct
+    ? (await queryAbraxasPg<Record<string, unknown>>(
+      `select * from public.verification_decisions where id = $1::uuid limit 1`,
+      [decisionId],
+    )).rows[0] ?? null
+    : (await sb!.from("verification_decisions").select("*")
+      .eq("id", decisionId).maybeSingle()).data;
 
   if (!data) return null;
 
@@ -714,9 +828,12 @@ export async function getDecisionStatus(decisionId: string): Promise<PolicyDecis
   }
 
   if (mapped.valid_until && new Date(mapped.valid_until) < new Date()) {
-    await sb.from("verification_decisions")
-      .update({ status: "superseded" })
-      .eq("id", decisionId);
+    if (direct) {
+      await queryAbraxasPg(`update public.verification_decisions set status = 'superseded'
+        where id = $1::uuid and status = 'active'`, [decisionId]);
+    } else {
+      await sb!.from("verification_decisions").update({ status: "superseded" }).eq("id", decisionId);
+    }
     return { ...mapped, status: "superseded", decision: "denied" };
   }
 
@@ -724,12 +841,18 @@ export async function getDecisionStatus(decisionId: string): Promise<PolicyDecis
     suiAddress: mapped.subject_id,
     policyId: mapped.policy_id,
     partnerId: mapped.partner_id,
+    policyVersion: mapped.policy_version,
   });
 
   if (evaluation.decision === "denied") {
-      await sb.from("verification_decisions")
-        .update({ status: "revoked", reason_codes: evaluation.reason_codes })
-        .eq("id", decisionId);
+      if (direct) {
+        await queryAbraxasPg(`update public.verification_decisions
+          set status = 'revoked', reason_codes = $2::text[]
+          where id = $1::uuid and status = 'active'`, [decisionId, evaluation.reason_codes]);
+      } else {
+        await sb!.from("verification_decisions")
+          .update({ status: "revoked", reason_codes: evaluation.reason_codes }).eq("id", decisionId);
+      }
       return {
         ...mapped,
         status: "revoked",

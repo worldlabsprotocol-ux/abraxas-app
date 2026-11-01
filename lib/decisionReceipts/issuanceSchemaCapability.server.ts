@@ -3,6 +3,8 @@
 import "server-only";
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   parseIssuanceFinalizationSchemaFromEnv,
   type IssuanceFinalizationSchemaCapability,
@@ -18,6 +20,16 @@ export function resetIssuanceFinalizationSchemaCapabilityCache(): void {
 }
 
 async function probeStagedIssuanceColumn(): Promise<boolean> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ present: boolean }>(
+      `select exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'decision_receipts'
+           and column_name = 'issuance_finalized_at'
+       ) as present`,
+    );
+    return rows[0]?.present === true;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { error } = await sb

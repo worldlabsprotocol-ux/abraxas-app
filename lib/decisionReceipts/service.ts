@@ -4,7 +4,7 @@
 import { randomBytes } from "crypto";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
-import { queryAbraxasPg } from "@/lib/persistence/pgPool";
+import { queryAbraxasPg, withAbraxasPgTransaction } from "@/lib/persistence/pgPool";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
@@ -46,11 +46,23 @@ function mapRow(row: Record<string, unknown>): DecisionReceiptRecord {
   return mapReceiptRow(row);
 }
 
+type ReceiptTransaction = {
+  query: (sql: string, params: unknown[]) => Promise<{ rows: Record<string, unknown>[] }>;
+};
+
 async function resolveWalletBindingRefFromClaimRefs(
   claimRefs: IssueDecisionReceiptInput["evaluatedClaimRefs"],
 ): Promise<string | null> {
   const walletClaimRef = claimRefs.find(ref => ref.claim_type === "wallet_binding_confirmed");
   if (!walletClaimRef) return null;
+
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ evidence_reference: string | null }>(
+      `select evidence_reference from public.credential_claims where id = $1::uuid limit 1`,
+      [walletClaimRef.claim_id],
+    );
+    return parseWalletControlEvidenceRef(rows[0]?.evidence_reference ?? null);
+  }
 
   const sb = requireSupabaseAdmin();
   const { data } = await sb
@@ -104,18 +116,40 @@ export async function getReceiptById(receiptId: string): Promise<DecisionReceipt
 
 export async function issueDecisionReceipt(
   input: IssueDecisionReceiptInput,
+  transaction?: ReceiptTransaction,
 ): Promise<DecisionReceiptRecord> {
+  if (persistenceUsesDirectPostgres() && !transaction) {
+    try {
+      return await withAbraxasPgTransaction((client) => issueDecisionReceipt(input, client));
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+        const retry = await getReceiptByDecisionId(input.verificationDecisionId);
+        if (retry) return retry;
+      }
+      throw error;
+    }
+  }
   const existing = await getReceiptByDecisionId(input.verificationDecisionId);
   if (existing) return existing;
 
   if (input.idempotencyKey) {
-    const sb = requireSupabaseAdmin();
-    const { data: byKey } = await sb
-      .from("decision_receipts")
-      .select("*")
-      .eq("idempotency_key", input.idempotencyKey)
-      .maybeSingle();
-    if (byKey) return mapRow(byKey as Record<string, unknown>);
+    if (persistenceUsesDirectPostgres()) {
+      const sql = `select to_jsonb(r) as receipt from public.decision_receipts r
+        where r.idempotency_key = $1 limit 1`;
+      const result = transaction
+        ? await transaction.query(sql, [input.idempotencyKey])
+        : await queryAbraxasPg<{ receipt: Record<string, unknown> }>(sql, [input.idempotencyKey]);
+      const byKey = result.rows[0]?.receipt as Record<string, unknown> | undefined;
+      if (byKey) return mapRow(byKey);
+    } else {
+      const sb = requireSupabaseAdmin();
+      const { data: byKey } = await sb
+        .from("decision_receipts")
+        .select("*")
+        .eq("idempotency_key", input.idempotencyKey)
+        .maybeSingle();
+      if (byKey) return mapRow(byKey as Record<string, unknown>);
+    }
   }
 
   const issuanceSchemaVersion = resolveIssuanceSchemaVersion();
@@ -166,6 +200,7 @@ export async function issueDecisionReceipt(
       verificationDecisionId: input.verificationDecisionId,
       partnerId: input.partnerId,
       callerApplicationId: input.applicationId,
+      transaction,
     });
     try {
       v11Fields = await buildAuthoritativeV11IssuanceFields({
@@ -238,7 +273,6 @@ export async function issueDecisionReceipt(
     schemaVersionForRow = canonical.schema_version;
   }
 
-  const sb = requireSupabaseAdmin();
   const insertRow: Record<string, unknown> = {
     id: receiptId,
     verification_decision_id: input.verificationDecisionId,
@@ -267,19 +301,38 @@ export async function issueDecisionReceipt(
     insertRow.issuance_finalized_at = issuanceFinalizedAt;
   }
 
-  const { data, error } = await sb.from("decision_receipts").insert(insertRow).select("*").single();
-
-  if (error) {
-    if (error.code === "23505") {
-      const retry = await getReceiptByDecisionId(input.verificationDecisionId);
-      if (retry) return retry;
+  let record: DecisionReceiptRecord;
+  if (persistenceUsesDirectPostgres()) {
+    if (!transaction) throw new Error("receipt_transaction_required");
+    const columns = Object.keys(insertRow);
+    const values = columns.map((column) => {
+      const value = insertRow[column];
+      return column === "evaluated_claim_refs" ? JSON.stringify(value) : value;
+    });
+    const placeholders = columns.map((column, index) =>
+      column === "evaluated_claim_refs" ? `$${index + 1}::jsonb` : `$${index + 1}`);
+    const inserted = await transaction.query(
+      `insert into public.decision_receipts (${columns.join(", ")})
+       values (${placeholders.join(", ")}) returning to_jsonb(decision_receipts) as receipt`,
+      values,
+    );
+    const row = inserted.rows[0]?.receipt as Record<string, unknown> | undefined;
+    if (!row) throw new Error("receipt_persistence_unavailable");
+    record = mapRow(row);
+  } else {
+    const sb = requireSupabaseAdmin();
+    const { data, error } = await sb.from("decision_receipts").insert(insertRow).select("*").single();
+    if (error) {
+      if (error.code === "23505") {
+        const retry = await getReceiptByDecisionId(input.verificationDecisionId);
+        if (retry) return retry;
+      }
+      throw new Error(error.message);
     }
-    throw new Error(error.message);
+    record = mapRow(data as Record<string, unknown>);
   }
 
-  const record = mapRow(data as Record<string, unknown>);
-
-  await recordReceiptClaimDependencies(receiptId, input.evaluatedClaimRefs);
+  await recordReceiptClaimDependencies(receiptId, input.evaluatedClaimRefs, undefined, transaction);
 
   await appendAuditEvent({
     actor_type: "system",
@@ -294,7 +347,7 @@ export async function issueDecisionReceipt(
       decision_result: record.decision_result,
       decision_context: record.decision_context,
     },
-  });
+  }, transaction);
 
   return record;
 }
@@ -319,6 +372,15 @@ export async function consentAllowsPartnerReceipt(
   partnerId: string,
 ): Promise<boolean> {
   if (!consentReceiptId) return false;
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{
+      partner_id: string; revoked_at: string | null; expires_at: string | null;
+    }>(`select partner_id, revoked_at, expires_at from public.consent_receipts
+        where id = $1::uuid limit 1`, [consentReceiptId]);
+    const row = rows[0];
+    return Boolean(row && row.partner_id === partnerId && !row.revoked_at
+      && (!row.expires_at || Date.parse(row.expires_at) > Date.now()));
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("consent_receipts")
@@ -438,7 +500,7 @@ export async function issueReceiptForDecision(input: {
   decisionContext?: DecisionReceiptContext;
   anchorReference?: string | null;
   pendingEvidenceFinalization?: boolean;
-}): Promise<DecisionReceiptRecord | null> {
+}, transaction?: ReceiptTransaction): Promise<DecisionReceiptRecord | null> {
   try {
     return await issueDecisionReceipt({
       verificationDecisionId: input.decisionId,
@@ -459,7 +521,7 @@ export async function issueReceiptForDecision(input: {
       issuanceLifecycle: input.pendingEvidenceFinalization
         ? "pending_evidence_finalization"
         : "immediate",
-    });
+    }, transaction);
   } catch (e) {
     if (
       e instanceof StagedIssuanceUnavailableError
