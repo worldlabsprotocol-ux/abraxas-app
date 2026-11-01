@@ -2,6 +2,8 @@
 // Subject-scoped load from existing decisions, requests, and receipts.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   PASSPORT_ACTIVITY_LIMIT,
   PASSPORT_ACTIVITY_WINDOW_DAYS,
@@ -13,6 +15,28 @@ import {
 } from "./view";
 
 export async function loadPassportVerificationActivity(subjectId: string): Promise<PassportActivityView> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<PassportActivitySourceRow>(
+      `select d.id::text as decision_id, d.partner_id, d.policy_id, d.policy_version,
+              d.decision, d.decided_at::text, d.valid_until::text,
+              d.status as decision_status, r.requested_action,
+              c.status as receipt_status, c.decision_context::text as receipt_context,
+              c.expires_at::text as receipt_expires_at, c.revoked_at::text as receipt_revoked_at
+       from public.verification_decisions d
+       left join public.verification_requests r on r.id = d.request_id
+         and r.subject_id = d.subject_id
+       left join lateral (
+         select status, decision_context, expires_at, revoked_at
+         from public.decision_receipts
+         where verification_decision_id = d.id
+         order by created_at desc limit 1
+       ) c on true
+       where d.subject_id = $1 and d.decided_at >= $2::timestamptz
+       order by d.decided_at desc limit $3`,
+      [subjectId, new Date(Date.now() - PASSPORT_ACTIVITY_WINDOW_DAYS * 86400_000).toISOString(), PASSPORT_ACTIVITY_LIMIT * 2],
+    );
+    return buildPassportActivityView({ subjectId, rows });
+  }
   const sb = requireSupabaseAdmin();
   const since = new Date(Date.now() - PASSPORT_ACTIVITY_WINDOW_DAYS * 86400_000).toISOString();
   const fetchLimit = PASSPORT_ACTIVITY_LIMIT * 2;

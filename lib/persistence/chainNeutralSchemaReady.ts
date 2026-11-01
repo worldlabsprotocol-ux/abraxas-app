@@ -2,6 +2,7 @@
 // Runtime probe for migration 136 objects — allows #676 merge before Production apply.
 
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 const HOLDER_SUBJECTS_TABLE = "passport_holder_subjects";
 
 let cachedReady: boolean | null = null;
@@ -26,6 +27,12 @@ export async function chainNeutralIdentitySchemaReady(forceRefresh = false): Pro
   }
 
   try {
+    if (persistenceUsesDirectPostgres()) {
+      const { chainNeutralIdentitySchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
+      cachedReady = await chainNeutralIdentitySchemaReadyDirect();
+      cachedAtMs = now;
+      return cachedReady;
+    }
     const sb = requirePersistenceAdmin();
     const { error: subjectsError } = await sb
       .from(HOLDER_SUBJECTS_TABLE)
@@ -76,6 +83,12 @@ export async function chainNeutralIdvDocumentSchemaReady(forceRefresh = false): 
   }
 
   try {
+    if (persistenceUsesDirectPostgres()) {
+      const { chainNeutralIdvDocumentSchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
+      cachedDocReady = await chainNeutralIdvDocumentSchemaReadyDirect();
+      cachedDocAtMs = now;
+      return cachedDocReady;
+    }
     const sb = requirePersistenceAdmin();
     const { error } = await sb
       .from("passport_documents")
