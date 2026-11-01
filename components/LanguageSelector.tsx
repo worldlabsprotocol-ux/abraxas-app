@@ -169,7 +169,7 @@ export function LanguageSelector({ compact = false }: { compact?: boolean }) {
         type="button"
         onClick={openDropdown}
         disabled={busy}
-        className="notranslate abx-interactive"
+        className={compact ? "notranslate abx-interactive abr-nav-lang-compact" : "notranslate abx-interactive"}
         style={{
           padding: "0.4rem 0.75rem",
           borderRadius: 999,

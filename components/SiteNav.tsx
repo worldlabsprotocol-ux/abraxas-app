@@ -150,18 +150,22 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
             </span>
           </button>
         )}
-        <WalletConnectButton />
+        <WalletConnectButton compact />
         <ThemeToggle />
-        <LanguageSelector />
+        <LanguageSelector compact />
       </div>
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (min-width: 1100px) {
           .abr-site-nav-links { display: flex !important; }
           .abr-site-nav-spacer { display: none !important; }
           .abr-waitlist-btn, .abr-demo-link { display: inline-flex !important; }
         }
-      `}</style>
+        @media (max-width: 480px) {
+          .abr-nav-wallet-compact { padding: 0.5rem 0.5rem !important; font-size: 0.7rem !important; }
+          .abr-nav-lang-compact { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
+        }
+      ` }} />
     </nav>
   );
 }

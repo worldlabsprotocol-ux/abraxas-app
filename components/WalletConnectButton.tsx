@@ -12,7 +12,7 @@ const S = "system-ui,-apple-system,sans-serif";
 const G = "#10B981";
 const BDR = "var(--border)";
 
-export function WalletConnectButton() {
+export function WalletConnectButton({ compact = false }: { compact?: boolean }) {
   const { wallet, wallets, select, connect, disconnect, connecting, connected, publicKey } = useWallet();
   const [mounted, setMounted] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
@@ -25,6 +25,7 @@ export function WalletConnectButton() {
   if (!mounted) {
     return (
       <button disabled
+        className={compact ? "abr-nav-wallet-compact" : undefined}
         style={{ padding:"0.5rem 1.1rem", borderRadius:8, border:`1px solid ${BDR}`,
                   background:"transparent", color:"var(--text-muted)",
                   fontFamily:S, fontSize:"0.78rem", fontWeight:600 }}>
@@ -36,6 +37,7 @@ export function WalletConnectButton() {
   if (connected && publicKey) {
     return (
       <button onClick={() => disconnect()}
+        className={compact ? "abr-nav-wallet-compact" : undefined}
         style={{ padding:"0.5rem 1.1rem", borderRadius:8, border:`1px solid ${G}40`,
                   background:`${G}12`, color:G, fontFamily:S, fontSize:"0.78rem",
                   fontWeight:700, cursor:"pointer" }}>
@@ -47,6 +49,7 @@ export function WalletConnectButton() {
   return (
     <div style={{ position:"relative" }}>
       <button onClick={() => setShowPicker(s => !s)} disabled={connecting}
+        className={compact ? "abr-nav-wallet-compact" : undefined}
         style={{ padding:"0.5rem 1.1rem", borderRadius:8, border:"none",
                   background:G, color:"#000", fontFamily:S, fontSize:"0.78rem",
                   fontWeight:700, cursor:"pointer" }}>
