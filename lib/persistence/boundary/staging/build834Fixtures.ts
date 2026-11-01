@@ -19,6 +19,7 @@ import {
   RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
   signReceiptStatusStatementForTests,
   verifyAbraxasReceiptIndependently,
+  type SignedReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
 import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 
@@ -172,6 +173,7 @@ export async function verifyThreeLayer(input: {
   env: Record<string, string | undefined>;
   anchorKey: ReceiptSigningKeyPair;
   registryVersion: number;
+  signedStatusOverride?: SignedReceiptStatusStatement;
 }) {
   const signedIssuer = publishSignedIssuerAuthorityFromRegistry({
     registryVersion: input.registryVersion,
@@ -187,12 +189,13 @@ export async function verifyThreeLayer(input: {
     expectedEnvironment: "demo",
     env: input.env,
   });
-  const signedStatus = await publishSignedReceiptStatusFromSovereignEvaluation({
-    record: input.record,
-    evaluation,
-    signedIssuerAuthorityEnvironment: "demo",
-    env: input.env,
-  });
+  const signedStatus = input.signedStatusOverride
+    ?? await publishSignedReceiptStatusFromSovereignEvaluation({
+      record: input.record,
+      evaluation,
+      signedIssuerAuthorityEnvironment: "demo",
+      env: input.env,
+    });
   if (!("payload" in signedStatus)) throw new Error(signedStatus.reason);
   const bundle = buildTrustAnchorBundleV1({
     anchorKeyId: "build834-trust-anchor",
