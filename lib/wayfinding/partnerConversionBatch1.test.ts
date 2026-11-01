@@ -106,7 +106,8 @@ describe("phase 7 partner conversion batch 1", () => {
     expect(nav).not.toContain("Verify a record");
 
     const passport = read("app/passport/PassportPageClient.tsx");
-    expect(passport).toContain("PassportCustomerView");
+    expect(passport).toContain("PassportSolanaWorkspace");
+    expect(passport).toContain("PassportSolanaSignInButton");
     expect(passport).not.toMatch(/Btn href="\/verify"/);
     expect(passport).not.toContain("HOLDER_VERIFY_DEFAULT_PATH");
 
@@ -172,3 +173,4 @@ describe("phase 7 partner conversion batch 1", () => {
     expect(existsSync(resolve(ROOT, "lib/wayfinding/partnerConversionCopy.ts"))).toBe(false);
   });
 });
+
