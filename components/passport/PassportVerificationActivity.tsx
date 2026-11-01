@@ -307,14 +307,14 @@ function ActivityCard({
   );
 }
 
-export function PassportVerificationActivity() {
+export function PassportVerificationActivity({ holderSubjectId }: { holderSubjectId?: string } = {}) {
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<PassportActivityItem | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [connectionFilter, setConnectionFilter] = useState<PassportConnectionFilter>("current");
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["passport", "verification-activity"],
+    queryKey: ["passport", "verification-activity", holderSubjectId ?? "legacy"],
     queryFn: fetchActivity,
     staleTime: 30_000,
     retry: false,
@@ -341,7 +341,7 @@ export function PassportVerificationActivity() {
       setBulkConfirmOpen(false);
       setConnectionFilter("history");
       setNotice(body.next_step ?? "Current shared results moved to History.");
-      await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity"] });
+      await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity", holderSubjectId ?? "legacy"] });
     },
   });
 
@@ -363,7 +363,7 @@ export function PassportVerificationActivity() {
       setPending(null);
       setConnectionFilter("history");
       setNotice(typeof body.next_step === "string" ? body.next_step : PASSPORT_ACTIVITY_WITHDRAW_SUCCESS);
-      await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity"] });
+      await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity", holderSubjectId ?? "legacy"] });
     },
   });
 
@@ -555,3 +555,4 @@ export function PassportVerificationActivity() {
     </section>
   );
 }
+
