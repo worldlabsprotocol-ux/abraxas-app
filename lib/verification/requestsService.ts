@@ -247,12 +247,20 @@ export async function getVerificationRequestPreview(
   requestId: string,
   subjectId?: string,
 ): Promise<VerificationRequestPreview | null> {
-  const sb = requireSupabaseAdmin();
-  const { data: request } = await sb
-    .from("verification_requests")
-    .select("*")
-    .eq("id", requestId)
-    .maybeSingle();
+  let request: Record<string, unknown> | null = null;
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ request: Record<string, unknown> }>(
+      `select to_jsonb(r) as request from public.verification_requests r
+       where r.id = $1::uuid limit 1`,
+      [requestId],
+    );
+    request = rows[0]?.request ?? null;
+  } else {
+    const sb = requireSupabaseAdmin();
+    const result = await sb.from("verification_requests").select("*")
+      .eq("id", requestId).maybeSingle();
+    request = (result.data as Record<string, unknown> | null) ?? null;
+  }
 
   if (!request) return null;
   if (subjectId && !requestPreviewMatchesSubject(request, subjectId)) return null;

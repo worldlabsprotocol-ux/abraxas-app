@@ -2,6 +2,8 @@
 // Internal receipt ↔ reusable evidence dependency records. Never public.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
 import { getDerivationByDerivedReceipt } from "@/lib/passport/reusableEligibility/invalidation";
 
@@ -88,6 +90,20 @@ export async function recordReceiptEvidenceDependencies(input: {
 }
 
 export async function getReceiptEvidenceDependencies(receiptId: string): Promise<ReceiptEvidenceDependency[]> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { rows } = await queryAbraxasPg<ReceiptEvidenceDependency>(
+        `select id::text, receipt_id, fact_id::text, source_credential_id,
+                dependency_type, created_at
+         from public.decision_receipt_evidence_dependencies
+         where receipt_id = $1 order by created_at asc`,
+        [receiptId],
+      );
+      return rows;
+    } catch {
+      throw new EvidenceDependencyStoreUnavailableError();
+    }
+  }
   const sb = requireSupabaseAdmin();
   let data: Record<string, unknown>[] | null = null;
   let error: { message: string } | null = null;

@@ -2,6 +2,8 @@
 // Resolve signed receipt subject_pseudonym_id — global legacy or institutional pairwise.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { resolveAbraxasSubjectFromClaimsKey } from "@/lib/identity/subject/subjectStore";
 import {
   defaultPairwiseBoundary,
@@ -16,6 +18,16 @@ export type ReceiptSubjectPseudonymResult =
 async function resolveApplicationIdFromDecision(
   verificationDecisionId: string,
 ): Promise<string | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ launchpad_application_id: string | null }>(
+      `select r.launchpad_application_id
+       from public.verification_decisions d
+       join public.verification_requests r on r.id = d.request_id
+       where d.id = $1::uuid limit 1`,
+      [verificationDecisionId],
+    );
+    return rows[0]?.launchpad_application_id ?? null;
+  }
   const sb = requireSupabaseAdmin();
   const { data: decision } = await sb
     .from("verification_decisions")

@@ -2,6 +2,8 @@
 // Credential status lifecycle with validated transitions and immutable audit events.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import type { ClaimStatus } from "@/lib/credentials/claimSchema";
 
@@ -47,6 +49,13 @@ export interface CredentialStatusPublicView {
 }
 
 export async function getClaimById(claimId: string) {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ claim: Record<string, unknown> }>(
+      `select to_jsonb(c) as claim from public.credential_claims c where c.id = $1::uuid limit 1`,
+      [claimId],
+    );
+    return rows[0]?.claim ?? null;
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("credential_claims")

@@ -2,6 +2,8 @@
 // Durable receipt supersession — scoped replacement without mutating signed artifacts.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import type { ReceiptSupersessionScope } from "@/lib/decisionReceipts/currentValidity/contract";
 
 const TABLE = "decision_receipt_supersessions";
@@ -48,6 +50,24 @@ export async function isReceiptSuperseded(receiptId: string): Promise<{
   scope?: ReceiptSupersessionScope;
   superseded_at?: string;
 }> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{
+      superseding_receipt_id: string;
+      scope: ReceiptSupersessionScope;
+      superseded_at: string;
+    }>(
+      `select superseding_receipt_id, scope, superseded_at
+       from public.decision_receipt_supersessions
+       where superseded_receipt_id = $1 limit 1`,
+      [receiptId],
+    );
+    return rows[0] ? {
+      superseded: true,
+      superseding_receipt_id: rows[0].superseding_receipt_id,
+      scope: rows[0].scope,
+      superseded_at: rows[0].superseded_at,
+    } : { superseded: false };
+  }
   const cached = memory.get(receiptId);
   if (cached) {
     return {
