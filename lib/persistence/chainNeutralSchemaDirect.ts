@@ -1,6 +1,5 @@
 // FILE: lib/persistence/chainNeutralSchemaDirect.ts
-// Dynamically imported by client-reachable modules; pg access stays server-side
-// via the lazy pool in ./pgPool, so no `server-only` poison here.
+import "server-only";
 
 import { queryAbraxasPg } from "./pgPool";
 

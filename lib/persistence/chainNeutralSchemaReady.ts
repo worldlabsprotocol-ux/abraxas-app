@@ -1,9 +1,7 @@
 // FILE: lib/persistence/chainNeutralSchemaReady.ts
 // Runtime probe for migration 136 objects — allows #676 merge before Production apply.
 //
-// This module is reachable from client components, so it must not statically
-// import server-only modules (admin/env -> pgPool). Both the PostgREST admin
-// client and the direct-PostgreSQL probe are loaded lazily inside the functions.
+import "server-only";
 
 const HOLDER_SUBJECTS_TABLE = "passport_holder_subjects";
 
