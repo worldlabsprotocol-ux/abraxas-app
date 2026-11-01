@@ -30,7 +30,7 @@ describe("PassportVerificationActivity", () => {
     }), { status: 200 })));
 
     render(wrap(<PassportVerificationActivity />));
-    expect(await screen.findByRole("heading", { name: "Connected services" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Verification activity" })).toBeInTheDocument();
     expect(await screen.findByText(PASSPORT_ACTIVITY_EMPTY)).toBeInTheDocument();
     expect(screen.queryByText(/receipt/i)).not.toBeInTheDocument();
   });
@@ -203,3 +203,4 @@ describe("PassportVerificationActivity", () => {
     });
   });
 });
+
