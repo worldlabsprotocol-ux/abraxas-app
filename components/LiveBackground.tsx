@@ -74,7 +74,7 @@ export function LiveBackground() {
         }} />
       ))}
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes abxDrift {
           0%, 100% { transform: translate3d(0, 0, 0); }
           50%      { transform: translate3d(0, calc(var(--drift) * -1), 0); }
@@ -84,7 +84,7 @@ export function LiveBackground() {
         @media (prefers-reduced-motion: reduce) {
           .abr-live-dot { animation: none !important; }
         }
-      `}</style>
+      ` }} />
     </motion.div>
   );
 }
