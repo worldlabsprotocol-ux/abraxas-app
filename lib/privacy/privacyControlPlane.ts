@@ -2,10 +2,13 @@
 // Holder privacy requests — append-only ledger, admin review, safe deletion (access revoke only).
 
 import { normalizeStoredHolderKey } from "@/lib/auth/holderSubject/normalizeSubjectKey";
+import { createHash } from "node:crypto";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg, withAbraxasPgTransaction } from "@/lib/persistence/pgPool";
 import type { AdminActorCategory } from "@/lib/admin/adminActorCategory";
 import {
   buildPrivacyAuditMetadata,
@@ -126,6 +129,64 @@ export async function createPrivacyRequest(input: {
     return { ok: false, error: "invalid_request_type" };
   }
 
+  if (persistenceUsesDirectPostgres()) {
+    const subject = normalizeStoredHolderKey(input.subjectSui);
+    if (!isChainNeutralHolderSubjectId(subject)) return { ok: false, error: "canonical_holder_required" };
+    const pseudonym = subjectPseudonymId(subject);
+    const idempotencyKey = input.idempotencyKey ?? `privacy:${input.requestType}:${subject}:${Date.now()}`;
+    return withAbraxasPgTransaction(async (client) => {
+      const holder = await client.query(
+        `select subject_id from public.passport_holder_subjects
+         where subject_id = $1 and status = 'active' for update`,
+        [subject],
+      );
+      if (!holder.rows.length) return { ok: false as const, error: "canonical_holder_required" };
+      const existing = await client.query<Record<string, unknown>>(
+        `select id::text, subject_sui, subject_pseudonym_id, request_type, status,
+                reason_code, idempotency_key, created_at::text, updated_at::text
+         from public.privacy_requests where idempotency_key = $1
+            or (subject_sui = $2 and request_type = $3 and status = any($4::text[]))
+         order by (idempotency_key = $1) desc, created_at desc limit 1`,
+        [idempotencyKey, subject, input.requestType, [...PRIVACY_ACTIVE_STATUSES]],
+      );
+      if (existing.rows[0]) {
+        const record = mapRequestRow(existing.rows[0]);
+        if (record.subject_sui !== subject) return { ok: false as const, error: "privacy_request_owner_mismatch" };
+        return { ok: true as const, request: toHolderView(record), created: false };
+      }
+      const inserted = await client.query<Record<string, unknown>>(
+        `insert into public.privacy_requests
+           (subject_sui, subject_pseudonym_id, request_type, status, reason_code, idempotency_key)
+         values ($1, $2, $3, 'requested', 'holder_requested', $4)
+         returning id::text, subject_sui, subject_pseudonym_id, request_type, status,
+                   reason_code, idempotency_key, created_at::text, updated_at::text`,
+        [subject, pseudonym, input.requestType, idempotencyKey],
+      );
+      const record = mapRequestRow(inserted.rows[0]);
+      const metadata = buildPrivacyAuditMetadata({
+        requestType: input.requestType, fromStatus: null, toStatus: "requested",
+        reasonCode: "holder_requested", changedByCategory: "holder", idempotencyKey, outcome: "created",
+      });
+      if (!privacyAuditMetadataHasNoPii(metadata)) throw new Error("audit_metadata_contains_pii");
+      await client.query(
+        `insert into public.privacy_request_events
+           (request_id, from_status, to_status, reason_code, changed_by_category, idempotency_key, metadata)
+         values ($1::uuid, null, 'requested', 'holder_requested', 'holder', $2, $3::jsonb)`,
+        [record.id, `event:create:${idempotencyKey}`, JSON.stringify(metadata)],
+      );
+      await client.query(
+        `insert into public.audit_events
+           (actor_type, actor_id, action, object_type, object_id, metadata, event_hash)
+         values ('holder', $1, 'privacy.request.created', 'privacy_request', $2, $3::jsonb, $4)`,
+        [pseudonym, record.id, JSON.stringify(metadata), createHash("sha256").update(JSON.stringify({
+          actor_type: "holder", actor_id: pseudonym, action: "privacy.request.created",
+          object_type: "privacy_request", object_id: record.id, metadata, ts: new Date().toISOString(),
+        })).digest("hex")],
+      );
+      return { ok: true as const, request: toHolderView(record), created: true };
+    });
+  }
+
   const sb = requireSupabaseAdmin();
   const subject = normalizeStoredHolderKey(input.subjectSui);
   const pseudonym = subjectPseudonymId(subject);
@@ -244,6 +305,18 @@ export async function createPrivacyRequest(input: {
 export async function listPrivacyRequestsForSubject(
   subjectSui: string,
 ): Promise<HolderPrivacyRequestView[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const subject = normalizeStoredHolderKey(subjectSui);
+    if (!isChainNeutralHolderSubjectId(subject)) throw new Error("canonical_holder_required");
+    const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+      `select id::text, subject_sui, subject_pseudonym_id, request_type, status,
+              reason_code, idempotency_key, created_at::text, updated_at::text
+       from public.privacy_requests where subject_sui = $1
+       order by created_at desc limit 50`,
+      [subject],
+    );
+    return rows.map(row => toHolderView(mapRequestRow(row)));
+  }
   const sb = requireSupabaseAdmin();
   const subject = normalizeStoredHolderKey(subjectSui);
   const { data } = await sb
