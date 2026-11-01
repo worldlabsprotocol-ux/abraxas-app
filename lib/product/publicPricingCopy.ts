@@ -122,7 +122,7 @@ export const PUBLIC_PRICING_TIERS: PublicPricingTier[] = [
     ],
     ctaLabel: "Request production access",
     ctaHref: PUBLIC_PRICING_LAUNCHPAD_HREF,
-    ctaVariant: "primary",
+    ctaVariant: "secondary",
   },
   {
     id: "enterprise",
