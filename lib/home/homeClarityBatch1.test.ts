@@ -67,7 +67,7 @@ describe("homepage clarity batch 1 static guards", () => {
     const passport = read("app/passport/page.tsx");
     const passportClient = read("app/passport/PassportPageClient.tsx");
     expect(passport).toContain("AccountAccessFirstPaint");
-    expect(passportClient).toContain('label="Loading navigation…"');
+    expect(passportClient).toContain("AccountAccessFirstPaint");
     expect(passport).not.toMatch(/Suspense fallback=\{null\}/);
     expect(passportClient).not.toMatch(/Suspense fallback=\{null\}/);
 
@@ -163,3 +163,4 @@ describe("RedesignNav mobile discoverability", () => {
     expect(screen.getByRole("link", { name: "Start building" })).toBeInTheDocument();
   });
 });
+
