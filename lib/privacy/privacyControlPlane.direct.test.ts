@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const queryMock = vi.hoisted(() => vi.fn());
 const transactionMock = vi.hoisted(() => vi.fn(async (fn: (client: { query: typeof queryMock }) => Promise<unknown>) =>
@@ -17,6 +17,10 @@ import { createPrivacyRequest, listPrivacyRequestsForSubject } from "./privacyCo
 const subject = `abx_hs_${"a".repeat(32)}`;
 
 describe("sovereign Passport privacy requests", () => {
+  beforeEach(() => {
+    queryMock.mockReset();
+    postgrestMock.mockClear();
+  });
   it("lists only the authenticated holder without consulting PostgREST", async () => {
     queryMock.mockResolvedValueOnce({ rows: [] });
     await expect(listPrivacyRequestsForSubject(subject)).resolves.toEqual([]);

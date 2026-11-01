@@ -3,6 +3,8 @@
 
 import { randomBytes } from "crypto";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
@@ -66,6 +68,14 @@ async function resolveWalletBindingRefFromClaimRefs(
 export async function getReceiptByDecisionId(
   verificationDecisionId: string,
 ): Promise<DecisionReceiptRecord | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ receipt: Record<string, unknown> }>(
+      `select to_jsonb(r) as receipt from public.decision_receipts r
+       where r.verification_decision_id = $1::uuid order by r.created_at desc limit 1`,
+      [verificationDecisionId],
+    );
+    return rows[0] ? mapRow(rows[0].receipt) : null;
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("decision_receipts")
@@ -76,6 +86,13 @@ export async function getReceiptByDecisionId(
 }
 
 export async function getReceiptById(receiptId: string): Promise<DecisionReceiptRecord | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ receipt: Record<string, unknown> }>(
+      `select to_jsonb(r) as receipt from public.decision_receipts r where r.id = $1 limit 1`,
+      [receiptId],
+    );
+    return rows[0] ? mapRow(rows[0].receipt) : null;
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("decision_receipts")

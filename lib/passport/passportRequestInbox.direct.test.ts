@@ -6,6 +6,8 @@ const postgrestMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/persistence/env", () => ({ persistenceUsesDirectPostgres: () => true }));
 vi.mock("@/lib/persistence/pgPool", () => ({ queryAbraxasPg: queryMock }));
 vi.mock("@/lib/supabase/admin", () => ({ requireSupabaseAdmin: postgrestMock }));
+vi.mock("@/lib/policy/getPolicy", () => ({ getPartnerPolicy: postgrestMock }));
+vi.mock("@/lib/verification/requestsService", () => ({ getVerificationRequestPreview: postgrestMock }));
 
 import { listPassportRequestInbox } from "./passportRequestInbox";
 
