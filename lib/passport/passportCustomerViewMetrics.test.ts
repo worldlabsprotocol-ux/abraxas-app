@@ -13,9 +13,11 @@ function wordCount(text: string): number {
 }
 
 describe("passport customer view metrics", () => {
-  it("uses PassportCustomerView instead of technical dashboard on default page", () => {
+  it("uses the signed Solana Passport workspace instead of technical dashboard on default page", () => {
     const page = readFileSync(resolve(ROOT, "app/passport/PassportPageClient.tsx"), "utf8");
-    expect(page).toContain("PassportCustomerView");
+    expect(page).toContain("PassportSolanaWorkspace");
+    expect(page).toContain("PassportSolanaSignInButton");
+    expect(page).not.toContain("ZkLoginSignIn");
     expect(page).not.toContain("PassportDashboard");
     expect(page).not.toContain("PassportSetupPanel");
     expect(page).not.toContain("PassportSetupStepRail");
@@ -36,3 +38,4 @@ describe("passport customer view metrics", () => {
     expect(currentWords).toBeLessThan(beforeWords * 0.8);
   });
 });
+
