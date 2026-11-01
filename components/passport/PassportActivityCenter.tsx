@@ -109,9 +109,9 @@ function AccountActivityCard({ item }: { item: PassportAccountActivityItem }) {
   );
 }
 
-export function PassportActivityCenter() {
+export function PassportActivityCenter({ holderSubjectId }: { holderSubjectId?: string } = {}) {
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["passport", "account-activity"],
+    queryKey: ["passport", "account-activity", holderSubjectId ?? "legacy"],
     queryFn: fetchActivitySources,
     staleTime: 30_000,
     retry: false,
@@ -181,7 +181,8 @@ export function PassportActivityCenter() {
         )}
       </div>
 
-      <PassportVerificationActivity />
+      <PassportVerificationActivity holderSubjectId={holderSubjectId} />
     </section>
   );
 }
+
