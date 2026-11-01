@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { PassportRequestInbox } from "./PassportRequestInbox";
+import { SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
 
 function wrap(children: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -85,7 +86,7 @@ describe("PassportRequestInbox", () => {
       expect.objectContaining({
         method: "POST",
         credentials: "include",
-        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+        body: JSON.stringify({ policy_id: SANDBOX_POLICY_ID }),
       }),
     ));
     expect(await screen.findByRole("alert")).toHaveTextContent("Demo temporarily unavailable");
