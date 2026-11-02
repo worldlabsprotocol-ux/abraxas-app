@@ -3,7 +3,7 @@
 
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { getPartnerPolicy } from "@/lib/policy/getPolicy";
 import { getVerificationRequestPreview } from "@/lib/verification/requestsService";
@@ -56,7 +56,7 @@ export async function listPassportRequestInbox(
   subjectId: string,
 ): Promise<PassportRequestInboxItem[]> {
   if (!isChainNeutralHolderSubjectId(subjectId)) throw new Error("canonical_holder_required");
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const { rows } = await queryAbraxasPg<InboxSourceRow & { policy_name: string }>(
       `select r.id::text, r.partner_id, r.policy_id, r.requested_action,
               r.created_at::text, r.expires_at::text, p.name as policy_name

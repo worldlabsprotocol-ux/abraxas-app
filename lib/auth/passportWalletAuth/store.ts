@@ -2,7 +2,7 @@
 
 import { createHash, randomBytes } from "crypto";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 
 export interface PassportWalletChallengeRow {
   id: string;
@@ -30,7 +30,7 @@ export function createPassportWalletChallengeId(): string {
 }
 
 export async function insertPassportWalletChallenge(row: Omit<PassportWalletChallengeRow, "consumed_at">): Promise<void> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const { insertWalletChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
       await insertWalletChallengeDirect(row);
@@ -73,7 +73,7 @@ export async function consumePassportWalletChallenge(input: {
   walletAddress: string;
   sessionContextHash: string;
 }): Promise<PassportWalletChallengeRow | null> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const { consumePassportWalletAuthChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
       const row = await consumePassportWalletAuthChallengeDirect({

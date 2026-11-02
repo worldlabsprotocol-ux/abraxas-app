@@ -2,7 +2,7 @@
 // Persist facts and derivations. Fail closed when lifecycle storage is unavailable.
 
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { projectInternalFact, type SourceReceiptRow } from "./facts";
@@ -28,7 +28,7 @@ function mapReceipt(row: Record<string, unknown>): SourceReceiptRow {
 }
 
 export async function listHolderSourceReceipts(subjectId: string): Promise<SourceReceiptRow[]> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const { rows } = await queryAbraxasPg<Record<string, unknown>>(
       `select r.id, r.verification_decision_id::text, r.partner_id, r.policy_id,
               r.policy_version, r.subject_pseudonym_id, r.decision_result,
@@ -74,7 +74,7 @@ export async function listHolderFacts(subjectId: string, now = new Date()): Prom
 }
 
 export async function upsertReusableFact(fact: InternalReusableFact, transaction?: PgTransaction): Promise<void> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const query = transaction ? transaction.query.bind(transaction) : queryAbraxasPg;
     await query(
       `insert into public.reusable_eligibility_facts
@@ -130,7 +130,7 @@ export async function recordDerivation(input: {
   requestingPolicyVersion: number;
   verifyRequestId: string;
 }, transaction?: PgTransaction): Promise<void> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     if (!transaction) throw new Error("reusable_derivation_transaction_required");
     await upsertReusableFact(input.fact, transaction);
     const inserted = await transaction.query(
@@ -168,7 +168,7 @@ export async function revokeDerivedFromSourceReceipt(input: {
   changedBy: string;
   reasonCode: string;
 }): Promise<{ ok: true } | { ok: false; error: "unavailable" }> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const { rows } = await queryAbraxasPg<{ result: { ok?: boolean } | null }>(
         `select public.revoke_derived_receipts_for_source($1, $2, $3) as result`,

@@ -3,7 +3,7 @@
 
 import { createHash } from "node:crypto";
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import { queryAbraxasPg, withAbraxasPgTransaction } from "@/lib/persistence/pgPool";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
@@ -156,7 +156,7 @@ interface HolderActivityMatch {
 }
 
 async function listHolderActivityMatches(subjectId: string): Promise<HolderActivityMatch[]> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const since = new Date(Date.now() - PASSPORT_ACTIVITY_WINDOW_DAYS * 86400_000).toISOString();
     const { rows } = await queryAbraxasPg<{
       decision_id: string; receipt_id: string | null; partner_id: string; policy_id: string;
@@ -393,7 +393,7 @@ export async function withdrawHolderSharedResult(input: {
     }
 
     const state = resolvePassportActivityState(match.source);
-    if (persistenceUsesDirectPostgres()) {
+    if (isPassportDirectPostgresEnabled()) {
       if (state !== "approved" && state !== "sandbox_only" && state !== "revoked") {
         return { ok: false, error: "result_not_current", status: 409 };
       }

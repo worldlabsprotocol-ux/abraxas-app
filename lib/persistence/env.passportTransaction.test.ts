@@ -6,43 +6,50 @@ import {
   passportTransactionPgExplicitlyEnabled,
   persistenceUsesDirectPostgres,
   resolvePassportDirectPostgresUrl,
+  validatePassportSovereignPostgresBinding,
 } from "./env";
-import { resetAbraxasPgPoolForTests } from "./pgPool";
 
-describe("Passport hybrid transaction PostgreSQL", () => {
+describe("Passport sovereign PostgreSQL binding", () => {
   const base = process.env;
 
   afterEach(() => {
     process.env = { ...base };
-    resetAbraxasPgPoolForTests();
   });
 
-  it("keeps default transport on supabase_postgrest without passport flag", () => {
+  it("fails closed when no Passport PostgreSQL connection is configured", () => {
     expect(persistenceUsesDirectPostgres({})).toBe(false);
     expect(isPassportDirectPostgresEnabled({})).toBe(false);
   });
 
-  it("enables passport pg pool without global backend switch when refs align", () => {
+  it("uses the Passport-owned connection independently of the global backend", () => {
     const env = {
       ABRAXAS_PERSISTENCE_BACKEND: "supabase_postgrest",
-      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
-      SUPABASE_SERVICE_ROLE_KEY: "service-role",
-      ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
-      ABRAXAS_PASSPORT_DATABASE_URL: "postgresql://user:pass@db.example.supabase.co:5432/postgres",
+      ABRAXAS_PASSPORT_DATABASE_URL: "postgresql://passport.internal/abraxas",
     };
     expect(persistenceUsesDirectPostgres(env)).toBe(false);
-    expect(passportTransactionPgExplicitlyEnabled(env)).toBe(true);
+    expect(passportTransactionPgExplicitlyEnabled(env)).toBe(false);
     expect(isPassportDirectPostgresEnabled(env)).toBe(true);
-    expect(resolvePassportDirectPostgresUrl(env)).toContain("supabase.co");
+    expect(resolvePassportDirectPostgresUrl(env)).toBe("postgresql://passport.internal/abraxas");
   });
 
-  it("does not infer hybrid database url from generic DATABASE_URL", () => {
+  it("does not infer the Passport connection from generic DATABASE_URL", () => {
     const env = {
       ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       DATABASE_URL: "postgresql://user:pass@db.example.supabase.co:5432/postgres",
     };
     expect(resolvePassportDirectPostgresUrl(env)).toBeNull();
+    expect(isPassportDirectPostgresEnabled(env)).toBe(false);
+  });
+
+  it("rejects Supabase-hosted PostgreSQL for the sovereign Passport path", () => {
+    const env = {
+      ABRAXAS_PASSPORT_DATABASE_URL: "postgresql://user:pass@db.example.supabase.co:5432/postgres",
+    };
+    expect(validatePassportSovereignPostgresBinding(env)).toEqual({
+      ok: false,
+      code: "passport_supabase_host_rejected",
+    });
     expect(isPassportDirectPostgresEnabled(env)).toBe(false);
   });
 

@@ -1,7 +1,7 @@
 // FILE: lib/persistence/chainNeutralSchemaReady.server.ts
 import "server-only";
 
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import {
   chainNeutralIdentitySchemaReadyDirect,
   chainNeutralIdvDocumentSchemaReadyDirect,
@@ -12,14 +12,14 @@ import {
 } from "@/lib/persistence/chainNeutralSchemaReady";
 
 export async function chainNeutralIdentitySchemaReadyServer(forceRefresh = false): Promise<boolean> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     return chainNeutralIdentitySchemaReadyDirect();
   }
   return postgrestReady(forceRefresh);
 }
 
 export async function chainNeutralIdvDocumentSchemaReadyServer(forceRefresh = false): Promise<boolean> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     return chainNeutralIdvDocumentSchemaReadyDirect();
   }
   return postgrestDocReady(forceRefresh);

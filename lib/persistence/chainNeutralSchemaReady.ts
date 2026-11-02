@@ -3,8 +3,6 @@
 //
 import "server-only";
 
-const HOLDER_SUBJECTS_TABLE = "passport_holder_subjects";
-
 let cachedReady: boolean | null = null;
 let cachedAtMs = 0;
 const CACHE_TTL_MS = 30_000;
@@ -17,8 +15,8 @@ function resetChainNeutralSchemaCacheForTests(): void {
 export { resetChainNeutralSchemaCacheForTests };
 
 /**
- * True when migration 136 holder-subject tables and identity_verifications.holder_subject_id exist.
- * Production without 136 returns false — legacy Sui/zkLogin paths remain available; chain-neutral fails closed.
+ * True when the sovereign Passport database contains the chain-neutral identity schema.
+ * Passport never probes PostgREST as a fallback; a missing sovereign binding fails closed.
  */
 export async function chainNeutralIdentitySchemaReady(forceRefresh = false): Promise<boolean> {
   const now = Date.now();
@@ -27,30 +25,14 @@ export async function chainNeutralIdentitySchemaReady(forceRefresh = false): Pro
   }
 
   try {
-    const { persistenceUsesDirectPostgres } = await import("@/lib/persistence/env");
-    if (persistenceUsesDirectPostgres()) {
-      const { chainNeutralIdentitySchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
-      cachedReady = await chainNeutralIdentitySchemaReadyDirect();
-      cachedAtMs = now;
-      return cachedReady;
-    }
-    const { requirePersistenceAdmin } = await import("@/lib/persistence/admin");
-    const sb = requirePersistenceAdmin();
-    const { error: subjectsError } = await sb
-      .from(HOLDER_SUBJECTS_TABLE)
-      .select("subject_id", { head: true, count: "exact" })
-      .limit(0);
-    if (subjectsError) {
+    const { isPassportDirectPostgresEnabled } = await import("@/lib/persistence/env");
+    if (!isPassportDirectPostgresEnabled()) {
       cachedReady = false;
       cachedAtMs = now;
       return false;
     }
-
-    const { error: columnError } = await sb
-      .from("identity_verifications")
-      .select("holder_subject_id", { head: true, count: "exact" })
-      .limit(0);
-    cachedReady = !columnError;
+    const { chainNeutralIdentitySchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
+    cachedReady = await chainNeutralIdentitySchemaReadyDirect();
     cachedAtMs = now;
     return cachedReady;
   } catch {
@@ -85,20 +67,10 @@ export async function chainNeutralIdvDocumentSchemaReady(forceRefresh = false): 
   }
 
   try {
-    const { persistenceUsesDirectPostgres } = await import("@/lib/persistence/env");
-    if (persistenceUsesDirectPostgres()) {
-      const { chainNeutralIdvDocumentSchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
-      cachedDocReady = await chainNeutralIdvDocumentSchemaReadyDirect();
-      cachedDocAtMs = now;
-      return cachedDocReady;
-    }
-    const { requirePersistenceAdmin } = await import("@/lib/persistence/admin");
-    const sb = requirePersistenceAdmin();
-    const { error } = await sb
-      .from("passport_documents")
-      .select("holder_subject_id", { head: true, count: "exact" })
-      .limit(0);
-    cachedDocReady = !error;
+    const { isPassportDirectPostgresEnabled } = await import("@/lib/persistence/env");
+    if (!isPassportDirectPostgresEnabled()) return false;
+    const { chainNeutralIdvDocumentSchemaReadyDirect } = await import("./chainNeutralSchemaDirect");
+    cachedDocReady = await chainNeutralIdvDocumentSchemaReadyDirect();
     cachedDocAtMs = now;
     return cachedDocReady;
   } catch {

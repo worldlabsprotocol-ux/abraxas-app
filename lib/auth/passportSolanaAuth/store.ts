@@ -2,7 +2,7 @@
 
 import { createHash, randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import { consumePassportSolanaAuthChallenge } from "@/lib/persistence/identityPersistence";
 
 export function hashSessionContext(value: string): string {
@@ -30,7 +30,7 @@ export async function insertSolanaChallenge(row: {
   message: string;
   expires_at: string;
 }): Promise<void> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const { insertSolanaChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
       await insertSolanaChallengeDirect(row);

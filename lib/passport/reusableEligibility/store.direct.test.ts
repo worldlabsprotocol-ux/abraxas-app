@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const queryMock = vi.hoisted(() => vi.fn());
 const postgrestMock = vi.hoisted(() => vi.fn(() => { throw new Error("legacy_store_used"); }));
 
-vi.mock("@/lib/persistence/env", () => ({ persistenceUsesDirectPostgres: () => true }));
+vi.mock("@/lib/persistence/env", () => ({ isPassportDirectPostgresEnabled: () => true }));
 vi.mock("@/lib/persistence/pgPool", () => ({ queryAbraxasPg: queryMock }));
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: postgrestMock,

@@ -2,7 +2,7 @@
 // Narrow persistence ports for chain-neutral identity (no Supabase types in callers).
 
 import { requirePersistenceAdmin } from "./admin";
-import { persistenceUsesDirectPostgres } from "./env";
+import { isPassportDirectPostgresEnabled } from "./env";
 
 export type AuthChallengeConsumeResult = {
   id: string;
@@ -23,7 +23,7 @@ export async function consumePassportEvmAuthChallenge(input: {
   walletAddress: string;
   sessionContextHash: string;
 }): Promise<AuthChallengeConsumeResult> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const { consumePassportEvmAuthChallengeDirect } = await import("./authChallengeDirect");
       return await consumePassportEvmAuthChallengeDirect(input);
@@ -53,7 +53,7 @@ export async function consumePassportSolanaAuthChallenge(input: {
   walletAddress: string;
   sessionContextHash: string;
 }): Promise<AuthChallengeConsumeResult> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const { consumePassportSolanaAuthChallengeDirect } = await import("./authChallengeDirect");
       return await consumePassportSolanaAuthChallengeDirect(input);
