@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { NextRequest, NextResponse } from "next/server";
 import { assertHolderSubjectExists, resolveVerifiedWalletSubjectId } from "@/lib/auth/holderSubject/service";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { walletNativeSubjectId } from "@/lib/auth/passportSolanaAuth/walletNative";
 
 export const BROWSER_SESSION_COOKIE = "abraxas_browser_session";
 const SESSION_TTL_SEC = 60 * 60 * 24 * 7; // 7 days
@@ -121,6 +122,10 @@ export async function resolveBrowserSession(req: NextRequest): Promise<BrowserSe
     const walletCaip10 = typeof payload.wcaip === "string" ? payload.wcaip : undefined;
 
     if (holderSubjectId && isChainNeutralHolderSubjectId(holderSubjectId)) {
+      if (authMethod === "solana_wallet" && walletCaip10?.startsWith("solana:")
+        && walletNativeSubjectId(walletCaip10) === holderSubjectId) {
+        return finalizeBrowserSession({ holderSubjectId, authMethod, walletCaip10 });
+      }
       if (await assertHolderSubjectExists(holderSubjectId)) {
         if (authMethod === "solana_wallet") {
           if (!walletCaip10?.startsWith("solana:")

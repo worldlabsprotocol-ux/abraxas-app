@@ -13,6 +13,7 @@ import {
   resolvePassportWalletRequestOrigin,
 } from "@/lib/auth/passportWalletAuth/origin";
 import { requireChainNeutralIdentitySchema } from "@/lib/persistence/chainNeutralSchemaReady";
+import { verifyWalletNativeChallenge, WALLET_NATIVE_CHALLENGE_COOKIE } from "@/lib/auth/passportSolanaAuth/walletNative";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
@@ -20,11 +21,6 @@ const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 const ALLOWED = new Set<string>([HOLDER_AUTH_ACTIONS.passportSignIn, HOLDER_AUTH_ACTIONS.partnerVerify]);
 
 export async function POST(req: NextRequest) {
-  const schema = await requireChainNeutralIdentitySchema();
-  if (!schema.ok) {
-    return NextResponse.json({ ok: false, code: schema.code }, { status: schema.httpStatus, headers: NO_STORE });
-  }
-
   const requestOrigin = resolvePassportWalletRequestOrigin(req);
   if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
     return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403, headers: NO_STORE });
@@ -53,15 +49,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "wrong_action" }, { status: 400, headers: NO_STORE });
   }
 
-  const verified = await verifyPassportSolanaAuth({
-    challengeId: String(body.challenge_id ?? ""),
-    walletAddress: String(body.wallet_address ?? ""),
-    solanaNetwork: String(body.solana_network ?? ""),
-    signature: String(body.signature ?? ""),
-    sessionContext,
-    requestOrigin,
-    expectedIntendedAction: intendedAction as typeof HOLDER_AUTH_ACTIONS.passportSignIn,
-  });
+  let verified;
+  if (intendedAction === HOLDER_AUTH_ACTIONS.passportSignIn) {
+    const token = req.cookies.get(WALLET_NATIVE_CHALLENGE_COOKIE)?.value ?? "";
+    verified = await verifyWalletNativeChallenge({
+      token,
+      challengeId: String(body.challenge_id ?? ""),
+      walletAddress: String(body.wallet_address ?? ""),
+      solanaNetwork: String(body.solana_network ?? ""),
+      signature: String(body.signature ?? ""),
+      sessionContext,
+      requestOrigin,
+    });
+  } else {
+    const schema = await requireChainNeutralIdentitySchema();
+    if (!schema.ok) {
+      return NextResponse.json({ ok: false, code: schema.code }, { status: schema.httpStatus, headers: NO_STORE });
+    }
+    verified = await verifyPassportSolanaAuth({
+      challengeId: String(body.challenge_id ?? ""),
+      walletAddress: String(body.wallet_address ?? ""),
+      solanaNetwork: String(body.solana_network ?? ""),
+      signature: String(body.signature ?? ""),
+      sessionContext,
+      requestOrigin,
+      expectedIntendedAction: intendedAction as typeof HOLDER_AUTH_ACTIONS.passportSignIn,
+    });
+  }
 
   if (!verified.ok) {
     const status =
@@ -91,5 +105,8 @@ export async function POST(req: NextRequest) {
   );
   attachBrowserSessionCookie(res, token);
   clearHolderAuthContextCookie(res);
+  res.cookies.set(WALLET_NATIVE_CHALLENGE_COOKIE, "", {
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0,
+  });
   return res;
 }
