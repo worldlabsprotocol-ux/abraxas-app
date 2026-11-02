@@ -8,7 +8,7 @@ import { Btn } from "@/components/redesign/ui";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { loadUserSession } from "@/lib/sui/zklogin/session";
 import { ensureBrowserSession, probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
-import { IDENTITY_PROCESSING_CONSENT_FIELD } from "@/lib/idv/holderSubjectIdv";
+import { IDENTITY_PROCESSING_CONSENT_FIELD } from "@/lib/idv/identityProcessingConsent";
 import {
   identityCaptureStepLabel,
   identityCaptureSteps,

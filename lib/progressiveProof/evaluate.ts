@@ -1,7 +1,7 @@
 // FILE: lib/progressiveProof/evaluate.ts
 // Progressive proof evaluation — never treat missing proof as eligible.
 
-import { resolveStoredRequiredClaims } from "@/lib/policy/evaluatePolicy";
+import { resolveStoredRequiredClaims } from "@/lib/policy/storedRequiredClaims";
 import type { PartnerPolicyRules, PolicyDecision } from "@/lib/policy/types";
 import { resolveNextEvidenceStep } from "@/lib/progressiveProof/evidenceRouting";
 import type {

@@ -3,6 +3,8 @@
 
 import type { DecisionReceiptPublicView, DecisionReceiptRecord, EvaluatedClaimRef } from "@/lib/decisionReceipts/types";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
@@ -28,6 +30,25 @@ export async function resolveLiveClaimStatuses(
 ): Promise<Map<string, string>> {
   const statuses = new Map<string, string>();
   if (!claimIds.length) return statuses;
+
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{
+      id: string; status: string; expires_at: string | null;
+    }>(
+      `select id::text as id, status, expires_at
+       from public.credential_claims where id = any($1::uuid[])`,
+      [claimIds],
+    );
+    const now = Date.now();
+    for (const row of rows) {
+      statuses.set(row.id, row.status === "active" && row.expires_at
+        && new Date(row.expires_at).getTime() <= now ? "expired" : row.status);
+    }
+    if (claimIds.some((id) => !statuses.has(id))) {
+      throw new Error("receipt_claim_status_unavailable");
+    }
+    return statuses;
+  }
 
   const sb = requireSupabaseAdmin();
   const { data } = await sb

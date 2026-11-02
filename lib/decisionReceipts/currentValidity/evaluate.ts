@@ -6,6 +6,8 @@ import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvalua
 import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views.server";
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { isReceiptSuperseded } from "@/lib/decisionReceipts/receiptSupersession";
 import {
   EvidenceDependencyStoreUnavailableError,
@@ -55,6 +57,17 @@ async function resolvePolicyVersionActive(policyId: string, version: number, now
 }
 
 async function resolvePartnerOperational(partnerId: string): Promise<boolean> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { rows } = await queryAbraxasPg<{ status: string }>(
+        `select status from public.partners where partner_id = $1 limit 1`,
+        [partnerId],
+      );
+      return rows.length > 0 && rows[0].status !== "suspended";
+    } catch {
+      return false;
+    }
+  }
   if (process.env.VITEST) return true;
   try {
     const sb = requireSupabaseAdmin();
@@ -63,6 +76,32 @@ async function resolvePartnerOperational(partnerId: string): Promise<boolean> {
     return String(data.status ?? "active") !== "suspended";
   } catch {
     return false;
+  }
+}
+
+async function readSovereignRevocation(receiptId: string): Promise<"active" | "revoked" | "unavailable"> {
+  try {
+    const { rows } = await queryAbraxasPg<{
+      receipt_status: string;
+      receipt_revoked_at: string | null;
+      decision_status: string;
+      consent_revoked_at: string | null;
+    }>(
+      `select r.status as receipt_status, r.revoked_at as receipt_revoked_at,
+              d.status as decision_status, c.revoked_at as consent_revoked_at
+         from public.decision_receipts r
+         join public.verification_decisions d on d.id = r.verification_decision_id
+         left join public.consent_receipts c on c.id = r.consent_receipt_id
+        where r.id = $1 limit 1`,
+      [receiptId],
+    );
+    const row = rows[0];
+    if (!row) return "unavailable";
+    return row.receipt_status === "revoked" || row.receipt_revoked_at
+      || row.decision_status === "revoked" || row.consent_revoked_at
+      ? "revoked" : "active";
+  } catch {
+    return "unavailable";
   }
 }
 
@@ -75,6 +114,35 @@ export async function evaluateReceiptCurrentValidity(
   const storedStatus = resolveReceiptStatus(record);
   const signatureValid = verifyRecordSignature(record);
   const issuedValid = signatureValid && record.decision_result === "approved";
+
+  if (persistenceUsesDirectPostgres()) {
+    const revocation = await readSovereignRevocation(record.id);
+    if (revocation !== "active") {
+      const reason = revocation === "revoked" ? "receipt_revoked" : "validity_store_unavailable";
+      const lifecycleStatus = revocation === "revoked" ? "revoked" : "invalidated";
+      return {
+        contract_version: RECEIPT_CURRENT_VALIDITY_VERSION,
+        currently_valid: false,
+        issued_valid: issuedValid,
+        cryptographically_valid: signatureValid,
+        lifecycle_status: lifecycleStatus,
+        partner_safe_reason: mapPartnerSafeReceiptReason([reason], lifecycleStatus),
+        checked_at: checkedAt,
+        source_states: {
+          signature_valid: signatureValid,
+          receipt_status: lifecycleStatus,
+          claims_current: false,
+          policy_version_active: false,
+          partner_operational: false,
+          application_active: null,
+          not_superseded: false,
+          not_expired: false,
+          environment_compatible: false,
+        },
+        invalidation_reasons: [reason],
+      };
+    }
+  }
 
   const invalidationReasons: string[] = [];
   invalidationReasons.push(...issuanceFinalizationInvalidationReasons(record));

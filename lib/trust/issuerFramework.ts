@@ -2,6 +2,8 @@
 // Issuer profiles, signing keys, trust rules, and claim attestation verification.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import type { AssuranceLevel } from "@/lib/credentials/claimSchema";
 import { listTrustedIssuers, type TrustedIssuer } from "@/lib/trust/trustRegistry";
@@ -71,6 +73,13 @@ function mapIssuer(row: Record<string, unknown>): IssuerRecord {
 }
 
 export async function getIssuerById(issuerId: string): Promise<IssuerRecord | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ issuer: Record<string, unknown> }>(
+      `select to_jsonb(i) as issuer from public.credential_issuers i where i.id = $1 limit 1`,
+      [issuerId],
+    );
+    return rows[0] ? mapIssuer(rows[0].issuer) : null;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data } = await sb
@@ -102,6 +111,19 @@ export async function getIssuerById(issuerId: string): Promise<IssuerRecord | nu
 }
 
 export async function getIssuerSigningKey(keyId: string): Promise<IssuerSigningKeyRecord | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ signing_key: Record<string, unknown> }>(
+      `select to_jsonb(k) as signing_key from public.issuer_signing_keys k where k.id = $1 limit 1`,
+      [keyId],
+    );
+    const row = rows[0]?.signing_key;
+    if (!row) return null;
+    if (row.revoked_at) return { ...mapKey(row), status: "revoked" };
+    if (row.expires_at && new Date(row.expires_at as string) < new Date()) {
+      return { ...mapKey(row), status: "expired" };
+    }
+    return mapKey(row);
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data } = await sb
@@ -295,6 +317,15 @@ export async function getTrustRulesForPolicy(
   partnerId: string,
   policyId: string,
 ): Promise<PartnerIssuerTrustRule[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{ trust_rule: Record<string, unknown> }>(
+      `select to_jsonb(r) as trust_rule from public.partner_issuer_trust_rules r
+       where r.partner_id = $1 and r.status = 'active'
+         and (r.policy_id = $2 or r.policy_id is null)`,
+      [partnerId, policyId],
+    );
+    return rows.map((row) => mapTrustRule(row.trust_rule));
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data } = await sb

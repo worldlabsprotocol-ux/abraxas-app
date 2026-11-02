@@ -1,10 +1,9 @@
 // FILE: lib/persistence/pgPool.ts
 // Abraxas-operated PostgreSQL pool (no Supabase SDK).
-
 import "server-only";
 
-import pg from "pg";
 import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
+import pg from "pg";
 import {
   isPassportDirectPostgresEnabled,
   passportTransactionPgExplicitlyEnabled,

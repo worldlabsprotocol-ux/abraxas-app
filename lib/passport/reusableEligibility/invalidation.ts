@@ -2,6 +2,8 @@
 // Derived-fact invalidation propagation with cycle protection.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import type { InternalReusableFact } from "./contract";
 import { projectInternalFact, type SourceReceiptRow } from "./facts";
 
@@ -15,6 +17,14 @@ export interface DerivationNode {
 }
 
 export async function listDerivationsForSourceReceipt(sourceReceiptId: string): Promise<DerivationNode[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<DerivationNode>(
+      `select fact_id::text, source_receipt_id, derived_receipt_id, 'active'::text as status
+       from public.reusable_eligibility_derivations where source_receipt_id = $1`,
+      [sourceReceiptId],
+    );
+    return rows;
+  }
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("reusable_eligibility_derivations")
@@ -36,6 +46,19 @@ export async function getDerivationByDerivedReceipt(derivedReceiptId: string): P
   requesting_partner_id: string;
   requesting_policy_id: string;
 } | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<{
+      fact_id: string; source_receipt_id: string; derived_receipt_id: string;
+      requesting_partner_id: string; requesting_policy_id: string;
+    }>(
+      `select fact_id::text, source_receipt_id, derived_receipt_id,
+              requesting_partner_id, requesting_policy_id
+       from public.reusable_eligibility_derivations
+       where derived_receipt_id = $1 limit 1`,
+      [derivedReceiptId],
+    );
+    return rows[0] ?? null;
+  }
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("reusable_eligibility_derivations")
@@ -54,6 +77,16 @@ export async function getDerivationByDerivedReceipt(derivedReceiptId: string): P
 }
 
 export async function loadSourceReceiptRow(receiptId: string): Promise<SourceReceiptRow | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<SourceReceiptRow>(
+      `select id, verification_decision_id::text, partner_id, policy_id, policy_version,
+              subject_pseudonym_id, decision_result, decision_context,
+              evaluated_at, expires_at, revoked_at, status
+       from public.decision_receipts where id = $1 limit 1`,
+      [receiptId],
+    );
+    return rows[0] ?? null;
+  }
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("decision_receipts")

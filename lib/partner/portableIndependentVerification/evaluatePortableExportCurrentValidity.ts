@@ -9,6 +9,9 @@ import type { SignedIssuerAuthorityStatement } from "@/lib/persistence/boundary/
 import type { SovereignCurrentValidityResult } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { getSovereignStagingPgPool } from "@/lib/persistence/boundary/sovereignStagingPg";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { createOperationalApplicationScopeResolver } from "@/lib/decisionReceipts/currentValidity/applicationScope.server";
+import { resolveAuthoritativeApplicationIdForIssuance } from "@/lib/decisionReceipts/v1_1_0/authoritativeIssuance.server";
 
 export type PortableExportValiditySource = "sovereign_pg" | "operational_demo_store";
 
@@ -25,6 +28,7 @@ async function mapOperationalCurrentValidity(input: {
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   trustAnchorPublicJwk: JsonWebKey;
   now: Date;
+  expectedApplicationId?: string | null;
 }): Promise<PortableExportValidityEvaluation> {
   const runtimeEnv = verifierEnvironment(input.record);
   const invalidationReasons: string[] = [];
@@ -61,10 +65,13 @@ async function mapOperationalCurrentValidity(input: {
     expectedPartnerId: input.record.partner_id,
     expectedPolicyId: input.record.policy_id,
     expectedEnvironment: runtimeEnv === "production" ? "production" : "sandbox",
+    applicationId: input.expectedApplicationId,
+    resolveApplicationScope: input.expectedApplicationId
+      ? createOperationalApplicationScopeResolver() : undefined,
     now: input.now,
   });
 
-  if (current.invalidation_reasons.includes("validity_store_unavailable")) {
+  if (current.invalidation_reasons.some((reason) => reason.includes("unavailable"))) {
     storeAvailable = false;
     invalidationReasons.push("validity_store_unavailable");
   }
@@ -84,7 +91,7 @@ async function mapOperationalCurrentValidity(input: {
 
   let lifecycle: SovereignCurrentValidityResult["lifecycle_status"] = "active";
   if (superseded) lifecycle = "superseded";
-  else if (storedStatus === "revoked") lifecycle = "revoked";
+  else if (storedStatus === "revoked" || current.lifecycle_status === "revoked") lifecycle = "revoked";
   else if (storedStatus === "expired" || current.lifecycle_status === "expired") lifecycle = "expired";
   else if (!currentlyAcceptable) lifecycle = "invalidated";
 
@@ -101,7 +108,7 @@ async function mapOperationalCurrentValidity(input: {
     checked_at: current.checked_at,
     claims_current: claimsCurrent,
     evidence_current: evidenceCurrent,
-    source: "operational_demo_store",
+    source: persistenceUsesDirectPostgres() ? "sovereign_pg" : "operational_demo_store",
   };
 }
 
@@ -117,6 +124,21 @@ export async function evaluatePortableExportCurrentValidity(input: {
   const env = input.env ?? process.env;
   const now = input.now ?? new Date();
   const expectedEnvironment = verifierEnvironment(input.record);
+
+  if (persistenceUsesDirectPostgres()) {
+    const authoritative = await resolveAuthoritativeApplicationIdForIssuance({
+      verificationDecisionId: input.record.verification_decision_id,
+      partnerId: input.record.partner_id,
+      callerApplicationId: input.expectedApplicationId,
+    });
+    return mapOperationalCurrentValidity({
+      record: input.record,
+      signedIssuerAuthority: input.signedIssuerAuthority,
+      trustAnchorPublicJwk: input.trustAnchorPublicJwk,
+      now,
+      expectedApplicationId: authoritative.applicationId,
+    });
+  }
 
   if (getSovereignStagingPgPool(env)) {
     const evaluation = await evaluateSovereignCurrentValidity({
@@ -136,5 +158,6 @@ export async function evaluatePortableExportCurrentValidity(input: {
     signedIssuerAuthority: input.signedIssuerAuthority,
     trustAnchorPublicJwk: input.trustAnchorPublicJwk,
     now,
+    expectedApplicationId: input.expectedApplicationId,
   });
 }

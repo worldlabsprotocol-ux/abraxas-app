@@ -7,6 +7,8 @@ import { querySovereignStagingPg } from "../sovereignStagingPg";
 import pg from "pg";
 import type { Pool } from "pg";
 import { assertNotProductionSupabaseProject } from "../isolationGuard";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 
 const DEMO_OPERATIONAL_PROJECT_REF = "ocntwbxarpjeixdnzide";
 
@@ -92,6 +94,22 @@ export async function nextSignedStatusVersion(input: {
   };
 }): Promise<number | { error: string; derived?: boolean }> {
   const env = input.env ?? process.env;
+
+  if (persistenceUsesDirectPostgres(env)) {
+    try {
+      const { rows } = await queryAbraxasPg<{ status_version: number }>(
+        `insert into public.portable_export_status_checkpoints (receipt_id, status_version)
+         values ($1, 1) on conflict (receipt_id) do update
+         set status_version = public.portable_export_status_checkpoints.status_version + 1
+         returning status_version`, [input.receiptId], env,
+      );
+      const version = rows[0]?.status_version;
+      return Number.isInteger(version) && version > 0
+        ? version : { error: "status_checkpoint_unavailable" };
+    } catch {
+      return { error: "status_checkpoint_unavailable" };
+    }
+  }
 
   const sovereign = await querySovereignStagingPg<{ status_version: number }>(
     `insert into public.sovereign_receipt_status_checkpoints (receipt_id, status_version)

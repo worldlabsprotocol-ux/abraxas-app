@@ -3,6 +3,8 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomBytes } from "crypto";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import type { SelfAttestedAgeBand, SelfAttestationPurpose } from "./constants";
 import { resolveSelfAttestedAgeTtlHours } from "./constants";
 
@@ -44,12 +46,29 @@ export async function insertSelfAttestationRecord(input: {
   browseReceiptId?: string | null;
   sb?: SupabaseClient;
 }): Promise<{ ok: true; row: SelfAttestationLedgerRow } | { ok: false; code: string }> {
-  const sb = input.sb ?? getSupabase();
-  if (!sb) return { ok: false, code: "supabase_not_configured" };
-
   const now = new Date();
   const ttlHours = resolveSelfAttestedAgeTtlHours();
   const expiresAt = new Date(now.getTime() + ttlHours * 60 * 60 * 1000);
+
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { rows } = await queryAbraxasPg<SelfAttestationLedgerRow>(
+        `insert into public.self_attestation_ledger
+          (holder_ref, partner_id, policy_id, age_band, assurance_level, provenance,
+           purpose, attested_at, expires_at, browse_receipt_id)
+         values ($1, $2, $3, $4, 'L0', 'user_self_attestation', $5, $6, $7, $8)
+         returning *`,
+        [input.holderRef, input.partnerId, input.policyId, input.ageBand, input.purpose,
+          now.toISOString(), expiresAt.toISOString(), input.browseReceiptId ?? null],
+      );
+      return rows[0] ? { ok: true, row: rows[0] } : { ok: false, code: "insert_failed" };
+    } catch {
+      return { ok: false, code: "insert_failed" };
+    }
+  }
+
+  const sb = input.sb ?? getSupabase();
+  if (!sb) return { ok: false, code: "supabase_not_configured" };
 
   const { data, error } = await sb.from(TABLE).insert({
     holder_ref: input.holderRef,
@@ -75,6 +94,18 @@ export async function getActiveSelfAttestations(input: {
   purpose?: SelfAttestationPurpose;
   sb?: SupabaseClient;
 }): Promise<SelfAttestationLedgerRow[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<SelfAttestationLedgerRow>(
+      `select * from public.self_attestation_ledger
+       where holder_ref = $1 and revoked_at is null and expires_at > now()
+         and ($2::text is null or partner_id = $2)
+         and ($3::text is null or policy_id = $3)
+         and ($4::text is null or purpose = $4)
+       order by attested_at desc`,
+      [input.holderRef, input.partnerId ?? null, input.policyId ?? null, input.purpose ?? null],
+    );
+    return rows;
+  }
   const sb = input.sb ?? getSupabase();
   if (!sb) return [];
 
@@ -98,6 +129,13 @@ export async function getSelfAttestationByReceiptId(
   receiptId: string,
   sb?: SupabaseClient,
 ): Promise<SelfAttestationLedgerRow | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<SelfAttestationLedgerRow>(
+      `select * from public.self_attestation_ledger where browse_receipt_id = $1 limit 1`,
+      [receiptId],
+    );
+    return rows[0] ?? null;
+  }
   const client = sb ?? getSupabase();
   if (!client) return null;
   const { data } = await client

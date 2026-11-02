@@ -2,9 +2,13 @@
 // Persist facts and derivations. Fail closed when lifecycle storage is unavailable.
 
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { projectInternalFact, type SourceReceiptRow } from "./facts";
 import type { InternalReusableFact } from "./contract";
+
+type PgTransaction = { query: (sql: string, params: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> };
 
 function mapReceipt(row: Record<string, unknown>): SourceReceiptRow {
   return {
@@ -24,6 +28,23 @@ function mapReceipt(row: Record<string, unknown>): SourceReceiptRow {
 }
 
 export async function listHolderSourceReceipts(subjectId: string): Promise<SourceReceiptRow[]> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<Record<string, unknown>>(
+      `select r.id, r.verification_decision_id::text, r.partner_id, r.policy_id,
+              r.policy_version, r.subject_pseudonym_id, r.decision_result,
+              r.decision_context, r.evaluated_at, r.expires_at, r.revoked_at, r.status
+       from public.decision_receipts r
+       join public.verification_decisions d on d.id = r.verification_decision_id
+       join public.consent_receipts c on c.id = r.consent_receipt_id
+       where d.subject_id = $1 and d.status = 'active' and c.subject_id = $1
+         and c.revoked_at is null and r.decision_result = 'approved'
+         and r.status = 'active' and r.revoked_at is null
+         and (r.expires_at is null or r.expires_at > now())
+       order by r.evaluated_at desc limit 40`,
+      [subjectId],
+    );
+    return rows.map(mapReceipt).filter((row) => row.id);
+  }
   const sb = requireSupabaseAdmin();
   const { data: decisions, error: decisionError } = await sb
     .from("verification_decisions")
@@ -52,7 +73,35 @@ export async function listHolderFacts(subjectId: string, now = new Date()): Prom
     .filter((fact): fact is InternalReusableFact => fact !== null);
 }
 
-export async function upsertReusableFact(fact: InternalReusableFact): Promise<void> {
+export async function upsertReusableFact(fact: InternalReusableFact, transaction?: PgTransaction): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    const query = transaction ? transaction.query.bind(transaction) : queryAbraxasPg;
+    await query(
+      `insert into public.reusable_eligibility_facts
+        (id, subject_pseudonym_id, pack_id, policy_version, minimum_assurance,
+         result_category, decision_context, source_decision_id, source_receipt_id,
+         issued_at, expires_at, revoked_at, status)
+       values ($1,$2,$3,$4,$5,$6,$7,$8::uuid,$9,$10::timestamptz,$11::timestamptz,$12::timestamptz,$13)
+       on conflict (id) do nothing`,
+      [fact.fact_id, fact.subject_pseudonym_id, fact.pack_id, fact.policy_version,
+        fact.minimum_assurance, fact.result_category, fact.decision_context,
+        fact.source_decision_id, fact.source_receipt_id, fact.issued_at, fact.expires_at,
+        fact.status === "revoked" ? new Date().toISOString() : null, fact.status],
+    );
+    const existing = await query(
+      `select source_decision_id::text, source_receipt_id, subject_pseudonym_id, status,
+              revoked_at from public.reusable_eligibility_facts where id = $1 for update`,
+      [fact.fact_id],
+    );
+    const row = existing.rows[0];
+    if (!row || row.source_decision_id !== fact.source_decision_id
+      || row.source_receipt_id !== fact.source_receipt_id
+      || row.subject_pseudonym_id !== fact.subject_pseudonym_id
+      || row.status !== "active" || row.revoked_at) {
+      throw new Error("reusable_fact_not_current");
+    }
+    return;
+  }
   const sb = requireSupabaseAdmin();
   const { error } = await sb.from("reusable_eligibility_facts").upsert({
     id: fact.fact_id,
@@ -80,7 +129,25 @@ export async function recordDerivation(input: {
   requestingPolicyId: string;
   requestingPolicyVersion: number;
   verifyRequestId: string;
-}): Promise<void> {
+}, transaction?: PgTransaction): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    if (!transaction) throw new Error("reusable_derivation_transaction_required");
+    await upsertReusableFact(input.fact, transaction);
+    const inserted = await transaction.query(
+      `insert into public.reusable_eligibility_derivations
+        (fact_id, source_receipt_id, derived_receipt_id, derived_decision_id,
+         requesting_partner_id, requesting_policy_id, requesting_policy_version, verify_request_id)
+       values ($1,$2,$3,$4::uuid,$5,$6,$7,$8)
+       on conflict (derived_receipt_id) do nothing returning derived_receipt_id`,
+      [input.fact.fact_id, input.fact.source_receipt_id, input.derivedReceiptId,
+        input.derivedDecisionId, input.requestingPartnerId, input.requestingPolicyId,
+        input.requestingPolicyVersion, input.verifyRequestId],
+    );
+    if (inserted.rows[0]?.derived_receipt_id !== input.derivedReceiptId) {
+      throw new Error("reusable_derivation_conflict");
+    }
+    return;
+  }
   const sb = requireSupabaseAdmin();
   await upsertReusableFact(input.fact);
   const { error } = await sb.from("reusable_eligibility_derivations").insert({
@@ -101,6 +168,17 @@ export async function revokeDerivedFromSourceReceipt(input: {
   changedBy: string;
   reasonCode: string;
 }): Promise<{ ok: true } | { ok: false; error: "unavailable" }> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { rows } = await queryAbraxasPg<{ result: { ok?: boolean } | null }>(
+        `select public.revoke_derived_receipts_for_source($1, $2, $3) as result`,
+        [input.sourceReceiptId, input.reasonCode, input.changedBy],
+      );
+      return rows[0]?.result?.ok === true ? { ok: true } : { ok: false, error: "unavailable" };
+    } catch {
+      return { ok: false, error: "unavailable" };
+    }
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { error } = await sb.rpc("revoke_derived_receipts_for_source", {

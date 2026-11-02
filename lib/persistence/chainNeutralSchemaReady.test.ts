@@ -7,6 +7,16 @@ import {
 } from "./chainNeutralSchemaReady";
 
 const fromMock = vi.hoisted(() => vi.fn());
+const directMode = vi.hoisted(() => ({ enabled: false }));
+const directProbe = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/persistence/env", () => ({
+  persistenceUsesDirectPostgres: () => directMode.enabled,
+}));
+
+vi.mock("./chainNeutralSchemaDirect", () => ({
+  chainNeutralIdentitySchemaReadyDirect: directProbe,
+}));
 
 vi.mock("@/lib/persistence/admin", () => ({
   requirePersistenceAdmin: () => ({ from: fromMock }),
@@ -29,6 +39,8 @@ describe("chainNeutralIdentitySchemaReady", () => {
   beforeEach(() => {
     resetChainNeutralSchemaCacheForTests();
     fromMock.mockReset();
+    directMode.enabled = false;
+    directProbe.mockReset();
   });
 
   it("returns false when holder subject table is missing", async () => {
@@ -47,5 +59,13 @@ describe("chainNeutralIdentitySchemaReady", () => {
   it("returns true when migration 136 objects are probeable", async () => {
     mockTableProbe([{ error: null }, { error: null }]);
     await expect(chainNeutralIdentitySchemaReady(true)).resolves.toBe(true);
+  });
+
+  it("checks the sovereign database without consulting PostgREST in direct mode", async () => {
+    directMode.enabled = true;
+    directProbe.mockResolvedValue(true);
+    await expect(chainNeutralIdentitySchemaReady(true)).resolves.toBe(true);
+    expect(directProbe).toHaveBeenCalledOnce();
+    expect(fromMock).not.toHaveBeenCalled();
   });
 });

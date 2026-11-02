@@ -6,6 +6,8 @@ import { WALLET_CONTROL_CLAIM_TYPE } from "@/lib/walletControl/contract";
 import { sanitizeWalletControlClaimForPartner } from "@/lib/walletControl/claim";
 import { isSandboxClaim } from "@/lib/credentials/sandboxClaims";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
+import { resolveStoredRequiredClaims } from "@/lib/policy/storedRequiredClaims";
+export { resolveStoredRequiredClaims } from "@/lib/policy/storedRequiredClaims";
 import { PRODUCT_ELIGIBILITY_OVER_21 } from "@/lib/idv/ageEligibility";
 import type {
   PartnerPolicyRules,
@@ -35,10 +37,6 @@ export function policyExplicitlyRequiresProductEligibility(rules: PartnerPolicyR
  * Returns stored required_claims only — no minimum_age expansion.
  * Historical and active policy evaluation must use immutable rules_json as persisted.
  */
-export function resolveStoredRequiredClaims(rules: PartnerPolicyRules): RequiredClaimRule[] {
-  return [...(rules.required_claims ?? [])];
-}
-
 /**
  * @deprecated Do not use for policy evaluation. minimum_age metadata does not imply
  * product_eligibility until explicitly published in required_claims (migration 076 draft → publish).

@@ -7,6 +7,8 @@ import { resolveSessionHolderSubjectId } from "@/lib/auth/sessionSubject";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { chainNeutralIdvDocumentSchemaReady } from "@/lib/persistence/chainNeutralSchemaReady";
+import { IDENTITY_PROCESSING_CONSENT_FIELD } from "@/lib/idv/identityProcessingConsent";
+export { IDENTITY_PROCESSING_CONSENT_FIELD } from "@/lib/idv/identityProcessingConsent";
 
 export class HolderSubjectResolutionError extends Error {
   constructor(
@@ -112,8 +114,6 @@ export function resolveCaptureContactEmail(input: {
   }
   return null;
 }
-
-export const IDENTITY_PROCESSING_CONSENT_FIELD = "identity_processing_consent";
 
 export function requireIdentityProcessingConsent(formData: FormData): boolean {
   const raw = formData.get(IDENTITY_PROCESSING_CONSENT_FIELD);

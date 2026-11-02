@@ -2,6 +2,8 @@
 // Internal receipt ↔ reusable evidence dependency records. Never public.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
 import { getDerivationByDerivedReceipt } from "@/lib/passport/reusableEligibility/invalidation";
 
@@ -48,8 +50,7 @@ export async function receiptRequiresEvidenceDependencyGraph(receiptId: string):
 export async function recordReceiptEvidenceDependencies(input: {
   receiptId: string;
   fact: InternalReusableFact;
-}): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const sb = requireSupabaseAdmin();
+}, transaction?: { query: (sql: string, params: unknown[]) => Promise<unknown> }): Promise<{ ok: true } | { ok: false; reason: string }> {
   const rows: EvidenceDependencyInsertRow[] = [
     {
       receipt_id: input.receiptId,
@@ -73,6 +74,21 @@ export async function recordReceiptEvidenceDependencies(input: {
     });
   }
 
+  if (persistenceUsesDirectPostgres()) {
+    if (!transaction) throw new Error("evidence_dependency_transaction_required");
+    for (const row of rows) {
+      await transaction.query(
+        `insert into public.decision_receipt_evidence_dependencies
+          (receipt_id, fact_id, source_credential_id, dependency_type)
+         values ($1,$2,$3,$4)`,
+        [row.receipt_id, row.fact_id, row.source_credential_id, row.dependency_type],
+      );
+    }
+    return { ok: true };
+  }
+
+  const sb = requireSupabaseAdmin();
+
   const { error } = await sb.from("decision_receipt_evidence_dependencies").upsert(rows, {
     onConflict: "receipt_id,dependency_type",
     ignoreDuplicates: true,
@@ -88,6 +104,20 @@ export async function recordReceiptEvidenceDependencies(input: {
 }
 
 export async function getReceiptEvidenceDependencies(receiptId: string): Promise<ReceiptEvidenceDependency[]> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { rows } = await queryAbraxasPg<ReceiptEvidenceDependency>(
+        `select id::text, receipt_id, fact_id::text, source_credential_id,
+                dependency_type, created_at
+         from public.decision_receipt_evidence_dependencies
+         where receipt_id = $1 order by created_at asc`,
+        [receiptId],
+      );
+      return rows;
+    } catch {
+      throw new EvidenceDependencyStoreUnavailableError();
+    }
+  }
   const sb = requireSupabaseAdmin();
   let data: Record<string, unknown>[] | null = null;
   let error: { message: string } | null = null;

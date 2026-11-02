@@ -33,6 +33,7 @@ function PassportSessionRouter() {
   );
   if (state.kind === "authenticated") return (
     <PassportSolanaWorkspace
+      key={state.holderSubjectId}
       holderSubjectId={state.holderSubjectId}
       onSignOut={async () => {
         const response = await fetch("/api/auth/browser-session", { method: "DELETE", credentials: "include" });

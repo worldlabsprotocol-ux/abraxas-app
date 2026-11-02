@@ -4,6 +4,8 @@ import "server-only";
 import { evaluateApplicationScopeOnSovereignPg } from "@/lib/persistence/boundary/verticalSlice/applicationScopeRead";
 import { getSovereignStagingPgPool } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   deriveApplicationScopeFromAuthoritativeFacts,
   type ApplicationScopeEvaluation,
@@ -38,6 +40,45 @@ export async function evaluateOperationalApplicationScope(input: {
   }
 
   const env = input.env ?? process.env;
+  if (persistenceUsesDirectPostgres(env)) {
+    try {
+      const { rows } = await queryAbraxasPg<{
+        application_partner_id: string | null;
+        application_status: string | null;
+        binding_application_id: string | null;
+        binding_partner_id: string | null;
+        binding_revoked_at: string | null;
+      }>(
+        `select a.partner_id as application_partner_id, a.status as application_status,
+                v.launchpad_application_id::text as binding_application_id,
+                v.partner_id as binding_partner_id, r.revoked_at as binding_revoked_at
+         from public.decision_receipts r
+         join public.verification_decisions d on d.id = r.verification_decision_id
+         join public.verification_requests v on v.id = d.request_id
+         left join public.partner_launchpad_applications a on a.id = v.launchpad_application_id
+         where r.id = $1
+         limit 1`, [input.receiptId], env,
+      );
+      const row = rows[0];
+      return deriveApplicationScopeFromAuthoritativeFacts({
+        expectedApplicationId: applicationId,
+        receiptPartnerId: input.partnerId,
+        store_available: true,
+        facts: {
+          application_row_present: Boolean(row),
+          application_partner_id: row?.application_partner_id ?? null,
+          application_status: row?.application_status ?? null,
+          binding_row_present: Boolean(row?.binding_application_id && row?.binding_partner_id),
+          binding_application_id: row?.binding_application_id ?? null,
+          binding_partner_id: row?.binding_partner_id ?? null,
+          binding_revoked_at: row?.binding_revoked_at ?? null,
+        },
+      });
+    } catch {
+      return { store_available: false, application_scope_satisfied: false,
+        reasons: ["validity_store_unavailable"] };
+    }
+  }
   if (getSovereignStagingPgPool(env)) {
     const sovereign = await evaluateApplicationScopeOnSovereignPg({
       receiptId: input.receiptId,

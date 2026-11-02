@@ -5,12 +5,11 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import {
-  resolveReceiptValidity,
   type ReceiptValidityResult,
   type ReceiptValidityState,
 } from "@/lib/decisionReceipts/validityResolver";
 import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
-import type { ResolveReceiptValidityOptions } from "@/lib/decisionReceipts/validityResolver";
+import type { ResolveReceiptValidityOptions, resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 
 export type TrustValidityState =
   | ReceiptValidityState
@@ -176,7 +175,10 @@ export async function evaluateDecisionReceiptTrust(
   context?: TrustEvaluationContext,
   deps?: DecisionReceiptTrustDeps,
 ): Promise<TrustEvaluationResult> {
-  const resolveValidity = deps?.resolveValidity ?? resolveReceiptValidity;
+  // An authoritative resolver must be supplied by the server-only entry point.
+  // A browser-safe import must never silently substitute a weaker check.
+  if (!deps?.resolveValidity) throw new Error("authoritative_validity_resolver_required");
+  const resolveValidity = deps.resolveValidity;
   const base = await resolveValidity(
     record,
     {

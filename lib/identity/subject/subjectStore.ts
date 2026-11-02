@@ -2,6 +2,8 @@
 // Durable individual identity subjects. Internal only — never partner-visible.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   claimsSubjectKeyForAbraxasSubject,
   generateAbraxasSubjectId,
@@ -58,6 +60,14 @@ export async function getIdentitySubjectById(id: string): Promise<IdentitySubjec
 export async function getIdentitySubjectByClaimsKey(
   claimsSubjectKey: string,
 ): Promise<IdentitySubjectRecord | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const { rows } = await queryAbraxasPg<IdentitySubjectRecord>(
+      `select id, subject_type, claims_subject_key, status, created_at, updated_at
+       from public.identity_subjects where claims_subject_key = $1 limit 1`,
+      [claimsSubjectKey],
+    );
+    return rows[0] ?? null;
+  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("identity_subjects")

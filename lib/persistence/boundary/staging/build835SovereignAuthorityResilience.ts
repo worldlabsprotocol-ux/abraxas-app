@@ -15,6 +15,7 @@ import {
 import { applySovereignSliceSchema, seedSovereignSliceFixtures } from "../sovereignSlice/bootstrap";
 import { assertNoUnsafePermit } from "@/lib/decisionReceipts/currentValidity/unifiedContract";
 import { evaluateSovereignCurrentValidity } from "../sovereignCurrentValidity/evaluate";
+import { publishSignedReceiptStatusFromSovereignEvaluation } from "../trustDistribution/publishSignedReceiptStatus";
 
 export type Build835ScenarioResult = {
   id: string;
@@ -75,6 +76,28 @@ export async function runBuild835SovereignAuthorityResilience(input: {
   }
 
   await runScenario("compromised_receipt_key_denies_current_authorization", async () => {
+    const issuerBeforeCompromise = assertSignedIssuer(
+      publishSignedIssuerAuthorityFromRegistry({
+        registryVersion: 9,
+        anchorKeyId: "build834-trust-anchor",
+        anchorPrivateJwk: anchorKey.privateKeyJwk,
+        env: baseEnv,
+      }),
+    );
+    const validityBeforeCompromise = await evaluateSovereignCurrentValidity({
+      record,
+      signedIssuerAuthority: issuerBeforeCompromise,
+      trustAnchorPublicJwk: anchorKey.publicKeyJwk,
+      expectedEnvironment: "demo",
+      env: baseEnv,
+    });
+    const statusBeforeCompromise = await publishSignedReceiptStatusFromSovereignEvaluation({
+      record,
+      evaluation: validityBeforeCompromise,
+      signedIssuerAuthorityEnvironment: "demo",
+      env: baseEnv,
+    });
+    if (!("payload" in statusBeforeCompromise)) throw new Error(statusBeforeCompromise.reason);
     const pub = receiptKey.publicKeyJwk;
     const compromisedEnv = {
       ...baseEnv,
@@ -101,6 +124,7 @@ export async function runBuild835SovereignAuthorityResilience(input: {
       env: compromisedEnv,
       anchorKey,
       registryVersion: 10,
+      signedStatusOverride: statusBeforeCompromise,
     });
     if (verifier.currently_acceptable === "yes") throw new Error("unsafe_permit_after_compromise");
     if (!verifier.cryptographically_authentic) throw new Error("expected_historical_signature_valid");

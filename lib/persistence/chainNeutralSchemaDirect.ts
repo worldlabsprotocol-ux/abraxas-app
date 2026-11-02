@@ -23,7 +23,14 @@ async function columnExists(table: string, column: string): Promise<boolean> {
 
 export async function chainNeutralIdentitySchemaReadyDirect(): Promise<boolean> {
   if (!await tableExists("passport_holder_subjects")) return false;
-  return columnExists("identity_verifications", "holder_subject_id");
+  if (!await tableExists("passport_holder_wallet_accounts")) return false;
+  if (!await columnExists("passport_holder_wallet_accounts", "revoked_at")) return false;
+  if (!await tableExists("passport_solana_auth_challenges")) return false;
+  if (!await columnExists("identity_verifications", "holder_subject_id")) return false;
+  const result = await queryAbraxasPg<{ present: boolean }>(
+    `select to_regprocedure('public.consume_passport_solana_auth_challenge(text,text,text)') is not null as present`,
+  );
+  return result.rows[0]?.present === true;
 }
 
 export async function chainNeutralIdvDocumentSchemaReadyDirect(): Promise<boolean> {

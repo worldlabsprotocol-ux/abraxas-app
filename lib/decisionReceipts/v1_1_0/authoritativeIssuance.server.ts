@@ -18,6 +18,8 @@ import {
   type ReceiptV11IssuancePhase,
 } from "@/lib/decisionReceipts/v1_1_0/sidecar";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 
 export class AuthoritativeIssuanceError extends Error {
   constructor(
@@ -74,21 +76,37 @@ export async function resolveAuthoritativeApplicationIdForIssuance(input: {
   verificationDecisionId: string;
   partnerId: string;
   callerApplicationId?: string | null;
+  transaction?: { query: (sql: string, params: unknown[]) => Promise<{
+    rows: Array<Record<string, unknown>>;
+  }> };
 }): Promise<{ applicationId: string | null; applicationScopeRequired: boolean }> {
-  const sb = requireSupabaseAdmin();
-  const { data: decision } = await sb
-    .from("verification_decisions")
-    .select("request_id")
-    .eq("id", input.verificationDecisionId)
-    .maybeSingle();
   let authoritativeApplicationId: string | null = null;
-  if (decision?.request_id) {
-    const { data: request } = await sb
-      .from("verification_requests")
-      .select("launchpad_application_id")
-      .eq("id", decision.request_id as string)
+  if (persistenceUsesDirectPostgres()) {
+    const sql = `select r.launchpad_application_id
+       from public.verification_decisions d
+       join public.verification_requests r on r.id = d.request_id
+       where d.id = $1::uuid and d.partner_id = $2 limit 1`;
+    const params = [input.verificationDecisionId, input.partnerId];
+    const result = input.transaction
+      ? await input.transaction.query(sql, params)
+      : await queryAbraxasPg<{ launchpad_application_id: string | null }>(sql, params);
+    authoritativeApplicationId = typeof result.rows[0]?.launchpad_application_id === "string"
+      ? result.rows[0].launchpad_application_id : null;
+  } else {
+    const sb = requireSupabaseAdmin();
+    const { data: decision } = await sb
+      .from("verification_decisions")
+      .select("request_id")
+      .eq("id", input.verificationDecisionId)
       .maybeSingle();
-    authoritativeApplicationId = (request?.launchpad_application_id as string | null) ?? null;
+    if (decision?.request_id) {
+      const { data: request } = await sb
+        .from("verification_requests")
+        .select("launchpad_application_id")
+        .eq("id", decision.request_id as string)
+        .maybeSingle();
+      authoritativeApplicationId = (request?.launchpad_application_id as string | null) ?? null;
+    }
   }
 
   if (authoritativeApplicationId) {
@@ -185,8 +203,27 @@ export async function buildAuthoritativeEvidenceCommitmentAndManifest(input: {
   receiptId: string;
   requireFinalizedGraph: boolean;
   env?: Record<string, string | undefined>;
+  transaction?: { query: (sql: string, params: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
 }): Promise<{ commitment: EvidenceCommitmentV1; manifest: EvidenceCommitmentEntryV1[] }> {
-  const deps = await getReceiptEvidenceDependencies(input.receiptId);
+  const rawDeps = input.transaction && persistenceUsesDirectPostgres()
+    ? (await input.transaction.query(
+        `select dependency_type, fact_id, source_credential_id
+         from public.decision_receipt_evidence_dependencies
+         where receipt_id = $1 order by created_at asc, id asc`,
+        [input.receiptId],
+      )).rows
+    : await getReceiptEvidenceDependencies(input.receiptId);
+  const deps = rawDeps.map((row) => {
+    if (row.dependency_type !== "reusable_fact" && row.dependency_type !== "source_receipt"
+      && row.dependency_type !== "derived_from") {
+      throw new AuthoritativeIssuanceError("evidence_commitment_incomplete", "evidence_commitment_incomplete");
+    }
+    return {
+      dependency_type: row.dependency_type as EvidenceCommitmentEntryV1["dependency_type"],
+      fact_id: typeof row.fact_id === "string" ? row.fact_id : null,
+      source_credential_id: typeof row.source_credential_id === "string" ? row.source_credential_id : null,
+    };
+  });
   const blindingKey = loadEvidenceBlindingKey(input.env ?? process.env);
 
   const manifest: EvidenceCommitmentEntryV1[] = deps.map((row) => ({
