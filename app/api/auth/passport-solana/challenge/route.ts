@@ -9,16 +9,12 @@ import {
   resolvePassportWalletRequestOrigin,
 } from "@/lib/auth/passportWalletAuth/origin";
 import { requireChainNeutralIdentitySchema } from "@/lib/persistence/chainNeutralSchemaReady";
+import { issueWalletNativeChallenge, WALLET_NATIVE_CHALLENGE_COOKIE } from "@/lib/auth/passportSolanaAuth/walletNative";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 
 export async function POST(req: NextRequest) {
-  const schema = await requireChainNeutralIdentitySchema();
-  if (!schema.ok) {
-    return NextResponse.json({ ok: false, code: schema.code }, { status: schema.httpStatus, headers: NO_STORE });
-  }
-
   const requestOrigin = resolvePassportWalletRequestOrigin(req);
   if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
     return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403, headers: NO_STORE });
@@ -37,6 +33,31 @@ export async function POST(req: NextRequest) {
   }
 
   const sessionContext = randomBytes(16).toString("hex");
+  if (intended === HOLDER_AUTH_ACTIONS.passportSignIn) {
+    const issued = await issueWalletNativeChallenge({
+      origin: requestOrigin,
+      walletAddress: String(body.wallet_address ?? ""),
+      solanaNetwork: String(body.solana_network ?? "devnet"),
+      sessionContext,
+    });
+    if (!issued.ok) {
+      const status = issued.code === "session_unavailable" || issued.code === "network_config_invalid"
+        || issued.code === "replay_store_unavailable" ? 503 : 400;
+      return NextResponse.json({ ok: false, code: issued.code }, { status, headers: NO_STORE });
+    }
+    const res = NextResponse.json({ ok: true, challenge: issued.challenge }, { headers: NO_STORE });
+    attachHolderAuthContextCookie(res, sessionContext);
+    res.cookies.set(WALLET_NATIVE_CHALLENGE_COOKIE, issued.token, {
+      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/",
+      maxAge: 5 * 60,
+    });
+    return res;
+  }
+
+  const schema = await requireChainNeutralIdentitySchema();
+  if (!schema.ok) {
+    return NextResponse.json({ ok: false, code: schema.code }, { status: schema.httpStatus, headers: NO_STORE });
+  }
   const issued = await issuePassportSolanaAuthChallenge({
     origin: requestOrigin,
     walletAddress: String(body.wallet_address ?? ""),
