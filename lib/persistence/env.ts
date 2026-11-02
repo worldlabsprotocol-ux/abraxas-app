@@ -1,10 +1,6 @@
 // FILE: lib/persistence/env.ts
 
 import type { PersistenceBackend, PersistenceConfig } from "./types";
-import {
-  resolveHybridPassportExplicitDatabaseUrl,
-  validatePassportHybridPostgresBinding,
-} from "./passportHybridPostgres";
 
 /**
  * Resolve Abraxas persistence connectivity.
@@ -33,7 +29,7 @@ export function persistenceUsesDirectPostgres(
   return resolvePersistenceBackend(env) === "postgres_direct";
 }
 
-/** Enables transaction sensitive Passport paths via direct pg while default transport stays PostgREST. */
+/** Legacy activation flag retained for deployment compatibility. */
 export const PASSPORT_TRANSACTION_PG_ENV = "ABRAXAS_PASSPORT_TRANSACTION_PG";
 
 export function passportTransactionPgExplicitlyEnabled(
@@ -43,32 +39,53 @@ export function passportTransactionPgExplicitlyEnabled(
   return raw === "1" || raw === "true" || raw === "enabled";
 }
 
-/** Direct PostgreSQL URL for Passport transaction stores. */
+/**
+ * Abraxas-owned PostgreSQL URL for the complete Passport trust path.
+ *
+ * Passport does not derive its persistence authority from the global PostgREST
+ * adapter. An explicit Passport URL is authoritative even while unrelated
+ * legacy product surfaces continue to use the global backend during cutover.
+ */
 export function resolvePassportDirectPostgresUrl(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
+  const passportUrl = env.ABRAXAS_PASSPORT_DATABASE_URL?.trim();
+  if (passportUrl) return passportUrl;
   if (persistenceUsesDirectPostgres(env)) {
     return resolveIndependentPostgresUrl(env);
-  }
-  if (passportTransactionPgExplicitlyEnabled(env)) {
-    return resolveHybridPassportExplicitDatabaseUrl(env);
   }
   return null;
 }
 
+export type PassportSovereignPostgresValidation =
+  | { ok: true; databaseUrl: string }
+  | { ok: false; code: "passport_database_url_missing" | "passport_supabase_host_rejected" };
+
+/** Fail closed when Passport is not bound to Abraxas-controlled PostgreSQL. */
+export function validatePassportSovereignPostgresBinding(
+  env: Record<string, string | undefined> = process.env,
+): PassportSovereignPostgresValidation {
+  const databaseUrl = resolvePassportDirectPostgresUrl(env);
+  if (!databaseUrl) return { ok: false, code: "passport_database_url_missing" };
+  try {
+    const host = new URL(databaseUrl.replace(/^postgres(ql)?:\/\//, "https://")).hostname.toLowerCase();
+    if (host === "supabase.co" || host.endsWith(".supabase.co")) {
+      return { ok: false, code: "passport_supabase_host_rejected" };
+    }
+  } catch {
+    // Permit local socket / libpq connection strings; pg validates them at connection time.
+  }
+  return { ok: true, databaseUrl };
+}
+
 /**
- * Passport reusable credential, consent, and authorization commit paths use `queryAbraxasPg`.
- * True when globally postgres_direct, or hybrid: PostgREST default + explicit passport transaction pg.
+ * Passport challenge, identity, consent, receipt, and authorization paths use
+ * direct PostgreSQL whenever their explicit sovereign binding is configured.
  */
 export function isPassportDirectPostgresEnabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  if (persistenceUsesDirectPostgres(env)) {
-    return Boolean(resolveIndependentPostgresUrl(env));
-  }
-  if (!passportTransactionPgExplicitlyEnabled(env)) return false;
-  if (!resolveHybridPassportExplicitDatabaseUrl(env)) return false;
-  return validatePassportHybridPostgresBinding(env).ok;
+  return validatePassportSovereignPostgresBinding(env).ok;
 }
 
 export function resolvePersistenceConfig(

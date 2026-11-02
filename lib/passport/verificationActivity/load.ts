@@ -2,7 +2,7 @@
 // Subject-scoped load from existing decisions, requests, and receipts.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import {
   PASSPORT_ACTIVITY_LIMIT,
@@ -15,7 +15,7 @@ import {
 } from "./view";
 
 export async function loadPassportVerificationActivity(subjectId: string): Promise<PassportActivityView> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const { rows } = await queryAbraxasPg<PassportActivitySourceRow>(
       `select d.id::text as decision_id, d.partner_id, d.policy_id, d.policy_version,
               d.decision, d.decided_at::text, d.valid_until::text,

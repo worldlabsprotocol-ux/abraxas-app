@@ -2,7 +2,7 @@
 
 import { randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 import { createHolderSubjectId } from "./subjectId";
 import type { Caip10Parts } from "./caip";
 
@@ -19,7 +19,7 @@ async function directModule() {
 }
 
 export async function insertHolderSubject(subjectId: string): Promise<void> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const direct = await directModule();
       await direct.insertHolderSubjectDirect(subjectId);
@@ -50,7 +50,7 @@ export async function bindVerifiedWalletAccount(input: {
   caip: Caip10Parts;
   authMethod: string;
 }): Promise<{ ok: true } | { ok: false; code: "wallet_bound_to_other_subject" | "persist_failed" }> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const direct = await directModule();
       return await direct.bindVerifiedWalletAccountDirect(input);
@@ -106,7 +106,7 @@ export async function resolveSubjectForVerifiedWallet(input: {
   | { ok: true; subjectId: string; created: boolean }
   | { ok: false; code: "wallet_bound_to_other_subject" | "persist_failed" }
 > {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     try {
       const direct = await directModule();
       return await direct.resolveSubjectForVerifiedWalletDirect(input);
@@ -154,7 +154,7 @@ export async function resolveSubjectForVerifiedWallet(input: {
 
 /** Recheck a signed-in wallet's current owner before serving holder records. */
 export async function resolveVerifiedWalletSubjectId(caip10: string): Promise<string | null> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const direct = await directModule();
     return direct.queryPersistedWalletOwner(caip10);
   }
@@ -176,7 +176,7 @@ export async function linkLegacyKeyToSubject(input: {
   legacyKind: string;
   legacyKey: string;
 }): Promise<void> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const direct = await directModule();
     return direct.linkLegacyKeyToSubjectDirect(input);
   }
@@ -193,7 +193,7 @@ export async function linkLegacyKeyToSubject(input: {
 }
 
 export async function resolveLegacySubjectId(legacyKind: string, legacyKey: string): Promise<string | null> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const direct = await directModule();
     return direct.resolveLegacySubjectIdDirect(legacyKind, legacyKey);
   }
@@ -213,7 +213,7 @@ export async function resolveLegacySubjectId(legacyKind: string, legacyKey: stri
 }
 
 export async function assertHolderSubjectExists(subjectId: string): Promise<boolean> {
-  if (persistenceUsesDirectPostgres()) {
+  if (isPassportDirectPostgresEnabled()) {
     const direct = await directModule();
     return direct.assertHolderSubjectExistsDirect(subjectId);
   }

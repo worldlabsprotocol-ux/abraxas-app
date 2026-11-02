@@ -6,15 +6,12 @@ import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
 import pg from "pg";
 import {
   isPassportDirectPostgresEnabled,
-  passportTransactionPgExplicitlyEnabled,
-  persistenceUsesDirectPostgres,
   resolvePassportDirectPostgresUrl,
 } from "./env";
 import {
   isNativeAccountDirectPostgresEnabled,
   resolveNativeAccountDirectPostgresUrl,
 } from "./nativeAccountPg";
-import { validatePassportHybridPostgresBinding } from "./passportHybridPostgres";
 
 let cachedPool: Pool | null = null;
 
@@ -63,18 +60,6 @@ export function resetAbraxasPgPoolForTests(): void {
   cachedPool = null;
 }
 
-function assertPassportPgConfig(env: Record<string, string | undefined>): void {
-  if (
-    passportTransactionPgExplicitlyEnabled(env)
-    && !persistenceUsesDirectPostgres(env)
-  ) {
-    const validation = validatePassportHybridPostgresBinding(env);
-    if (!validation.ok) {
-      throw new Error(`passport_hybrid_postgres_${validation.code}`);
-    }
-  }
-}
-
 function resolveAbraxasDirectPostgresUrl(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
@@ -94,7 +79,6 @@ export function getAbraxasPgPool(
   env: Record<string, string | undefined> = process.env,
 ): Pool | null {
   if (!isAbraxasDirectPostgresEnabled(env)) return null;
-  assertPassportPgConfig(env);
   const url = resolveAbraxasDirectPostgresUrl(env);
   if (!url) return null;
   if (!cachedPool) {
@@ -110,7 +94,7 @@ export function requireAbraxasPgPool(
   if (!pool) {
     throw new Error(
       "Abraxas direct PostgreSQL requires ABRAXAS_DATABASE_URL, ABRAXAS_PASSPORT_DATABASE_URL, "
-      + "or ABRAXAS_NATIVE_ACCOUNT_DATABASE_URL (enable ABRAXAS_PASSPORT_TRANSACTION_PG or ABRAXAS_NATIVE_ACCOUNT_PG)",
+      + "or ABRAXAS_NATIVE_ACCOUNT_DATABASE_URL",
     );
   }
   return pool;
