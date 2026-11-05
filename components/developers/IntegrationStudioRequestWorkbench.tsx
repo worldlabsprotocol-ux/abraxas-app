@@ -18,6 +18,10 @@ import type { LaunchpadTestRunResult } from "@/lib/partner/launchpad/runTestScen
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 import {
+  presentIntegrationTestFailure,
+  type IntegrationTestFailurePresentation,
+} from "@/lib/partner/launchpad/integrationTestFailure";
+import {
   ApplicationConnectionAfterTestPanel,
   persistHarnessSuccess,
   readPersistedHarnessSuccess,
@@ -71,6 +75,7 @@ export function IntegrationStudioRequestWorkbench({
   const [busy, setBusy] = useState(false);
   const autoRunStartedFor = useRef<string | null>(null);
   const [error, setError] = useState("");
+  const [failure, setFailure] = useState<IntegrationTestFailurePresentation | null>(null);
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [pendingReceipt, setPendingReceipt] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
 
@@ -88,6 +93,7 @@ export function IntegrationStudioRequestWorkbench({
   useEffect(() => {
     setOutcome(null);
     setError("");
+    setFailure(null);
     if (!applicationId || !signedIn || autoRunStartedFor.current === applicationId) return;
     const pending = readPendingReceipt(applicationId);
     if (pending?.receiptId) {
@@ -150,6 +156,7 @@ export function IntegrationStudioRequestWorkbench({
     }
     setBusy(true);
     setError("");
+    setFailure(null);
     setOutcome(null);
     const requestBody = buildLaunchpadTestScenarioRequestBody({
       scenarioId,
@@ -162,15 +169,18 @@ export function IntegrationStudioRequestWorkbench({
         credentials: "include",
         body: JSON.stringify(requestBody),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({})) as {
+        code?: string;
+        error?: string;
+        retry_after_sec?: number;
+        result?: LaunchpadTestRunResult;
+      };
       recordHttpTrace(
         { method: "POST", path: `/api/launchpad/applications/${applicationId}/test`, body: requestBody },
         res.ok ? data : { ok: false, status: res.status, ...data },
       );
       if (!res.ok) {
-        setError(res.status === 401 || res.status === 403
-          ? "Access to this app has ended. Confirm your account and try again."
-          : "We could not run the test. Try again.");
+        setFailure(presentIntegrationTestFailure(res.status, data));
         return;
       }
       if (data.result && typeof data.result === "object") {
@@ -191,7 +201,13 @@ export function IntegrationStudioRequestWorkbench({
         setOutcome(formatted);
       }
     } catch {
-      setError("Test failed");
+      setFailure({
+        kind: "test_failed",
+        headline: "Test request did not reach Abraxas",
+        detail: "Check your connection, then try the test again.",
+        actionLabel: "Try test again",
+        refreshSession: false,
+      });
       recordHttpTrace(requestBody, { ok: false, error: "network_error" });
     } finally {
       setBusy(false);
@@ -232,7 +248,7 @@ export function IntegrationStudioRequestWorkbench({
   }
 
   if (beginnerSurface) {
-    const failed = Boolean(error || (outcome && outcome.tone !== "success"));
+    const failed = Boolean(failure || error || (outcome && outcome.tone !== "success"));
     return (
       <BuilderActiveTask
         taskKey="run-sandbox-test"
@@ -240,11 +256,16 @@ export function IntegrationStudioRequestWorkbench({
         title={busy ? "Running your test" : failed ? "Your test needs attention" : "Run a sandbox test"}
         description={failed ? "Check the result, then try again." : "See how your app receives a verified result."}
         state={busy ? "pending" : failed ? "failure" : "ready"}
-        status={busy ? "Running against your sandbox app" : failed ? outcome?.headline : undefined}
-        error={error}
+        status={busy ? "Running against your sandbox app" : failure?.headline ?? (failed ? outcome?.headline : undefined)}
+        error={failure?.detail ?? error}
         action={applicationId && signedIn ? (
-          <Btn size="sm" disabled={busy} loading={busy} onClick={() => void runHarness()}>
-            {pendingReceipt ? "Recheck receipt" : failed ? "Try test again" : "Run test"}
+          <Btn
+            size="sm"
+            disabled={busy}
+            loading={busy}
+            onClick={() => failure?.refreshSession ? void onRefreshSession?.() : void runHarness()}
+          >
+            {pendingReceipt ? "Recheck receipt" : failure?.actionLabel ?? (failed ? "Try test again" : "Run test")}
           </Btn>
         ) : null}
       >
@@ -349,5 +370,6 @@ export function IntegrationStudioRequestWorkbench({
     </ContentCard>
   );
 }
+
 
 
