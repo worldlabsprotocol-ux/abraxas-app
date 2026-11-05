@@ -24,7 +24,7 @@ pub struct PortableAuthorizationReceipt {
 }
 
 /// Values independently fetched from a Solana RPC at verification time.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct CurrentSolanaObservation<'a> {
     pub network_id: [u8; 32],
     pub program_id: Pubkey,
