@@ -79,6 +79,41 @@ describe("beginner sandbox test access", () => {
     await waitFor(() => expect(screen.getByText(/test receipt is invalid/i)).toBeInTheDocument());
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
+  it("explains when Production cannot issue a durable sandbox receipt", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({
+        ok: false,
+        code: "launchpad_signing_unavailable",
+        error: "Sandbox receipt issuance is temporarily unavailable",
+      }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
+    fireEvent.click(screen.getByRole("button", { name: "Run test" }));
+    await waitFor(() => expect(screen.getByText("Sandbox receipt service unavailable")).toBeInTheDocument());
+    expect(screen.getByText(/no test was run/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
+    expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
+  });
+  it("offers session recovery instead of blindly rerunning an unauthorized test", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ ok: false, code: "launchpad_unauthorized" }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    const refreshSession = vi.fn();
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface onRefreshSession={refreshSession} />);
+    fireEvent.click(screen.getByRole("button", { name: "Run test" }));
+    await waitFor(() => expect(screen.getByText("Sign-in required")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Resume sign-in" }));
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
   it("rechecks an issued receipt without running a duplicate test", async () => {
     operational.signedIn = true;
     const fetch = vi.fn()
@@ -103,5 +138,6 @@ describe("beginner sandbox test access", () => {
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
 });
+
 
 
