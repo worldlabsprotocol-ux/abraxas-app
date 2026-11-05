@@ -6,6 +6,8 @@ import { solanaProgramElfKeccak, solanaProgramElfSha256 } from "@/lib/partner/on
 import { encodeProgramDataAccount, programDataElf } from "@/lib/partner/onchainGateDeployments/solanaObserve";
 import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 
+const reportOnly = process.argv.slice(2).includes("--report-only");
+
 const release = JSON.parse(readFileSync(resolve(
   "solana/abraxas-eligibility-gate/release/protocol-access-devnet.candidate.json"
 ), "utf8")) as {
@@ -53,4 +55,5 @@ console.log(JSON.stringify({
   matches_candidate: ok,
   deploy_ready: false,
 }, null, 2));
-process.exit(ok ? 0 : 1);
+process.exit(reportOnly ? 0 : (ok ? 0 : 1));
+

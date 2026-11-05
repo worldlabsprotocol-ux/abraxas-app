@@ -4,7 +4,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{
-    ed25519_program,
+    ed25519_program, keccak,
     sysvar::instructions::{load_current_index_checked, load_instruction_at_checked},
 };
 
@@ -26,7 +26,10 @@ pub mod abraxas_eligibility_gate {
     use super::*;
 
     pub fn initialize_config(ctx: Context<InitializeConfig>, params: ConfigParams) -> Result<()> {
-        require!(!params.partner_program.eq(&Pubkey::default()), GateError::InvalidConfig);
+        require!(
+            !params.partner_program.eq(&Pubkey::default()),
+            GateError::InvalidConfig
+        );
         require!(params.trusted_signer != [0u8; 32], GateError::InvalidConfig);
         require!(params.signer_key_id != [0u8; 32], GateError::InvalidConfig);
         require!(params.network_id != [0u8; 32], GateError::InvalidConfig);
@@ -40,10 +43,21 @@ pub mod abraxas_eligibility_gate {
 
     pub fn update_config(ctx: Context<UpdateConfig>, params: ConfigParams) -> Result<()> {
         // Binding hashes only. Signers rotate through explicit constrained instructions.
-        ctx.accounts.config.apply(params)
+        ctx.accounts.config.apply(params)?;
+        ctx.accounts.config.version = ctx
+            .accounts
+            .config
+            .version
+            .checked_add(1)
+            .ok_or(GateError::InvalidConfig)?;
+        Ok(())
     }
 
-    pub fn add_trusted_signer(ctx: Context<MutateSigner>, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
+    pub fn add_trusted_signer(
+        ctx: Context<MutateSigner>,
+        key_id: [u8; 32],
+        pubkey: [u8; 32],
+    ) -> Result<()> {
         ctx.accounts.config.add_signer(key_id, pubkey)
     }
 
@@ -55,17 +69,29 @@ pub mod abraxas_eligibility_gate {
         ctx.accounts.config.revoke_signer(key_id)
     }
 
+    pub fn revoke_authorization(ctx: Context<RevokeAuthorization>) -> Result<()> {
+        ctx.accounts.authorization.revoked = true;
+        Ok(())
+    }
+
     pub fn authorize(ctx: Context<Authorize>, attestation_id: [u8; 32]) -> Result<()> {
         let ix_sysvar = ctx.accounts.instructions.to_account_info();
         let current = load_current_index_checked(&ix_sysvar)?;
         require!(current > 0, GateError::MissingEd25519Instruction);
         let prior = load_instruction_at_checked((current as usize).saturating_sub(1), &ix_sysvar)?;
-        require_keys_eq!(prior.program_id, ed25519_program::ID, GateError::WrongPriorInstruction);
+        require_keys_eq!(
+            prior.program_id,
+            ed25519_program::ID,
+            GateError::WrongPriorInstruction
+        );
 
-        let (pubkey, message) =
-            extract_ed25519_pubkey_and_message(&prior.data).map_err(|_| GateError::InvalidMessage)?;
+        let (pubkey, message) = extract_ed25519_pubkey_and_message(&prior.data)
+            .map_err(|_| GateError::InvalidMessage)?;
         let config = &ctx.accounts.config;
-        require!(pubkey_allowed(&config.signers, pubkey), GateError::UnknownSigner);
+        require!(
+            pubkey_allowed(&config.signers, pubkey),
+            GateError::UnknownSigner
+        );
 
         let fields = parse_canonical_message_for_config(&message, config.require_institutional)
             .map_err(|_| {
@@ -75,23 +101,66 @@ pub mod abraxas_eligibility_gate {
                     GateError::InvalidMessage
                 }
             })?;
-        require!(fields.attestation_id == attestation_id, GateError::InvalidMessage);
+        require!(
+            fields.attestation_id == attestation_id,
+            GateError::InvalidMessage
+        );
         require!(!is_zero32(&fields.network_id), GateError::NetworkMismatch);
-        require!(fields.network_id == config.network_id, GateError::NetworkMismatch);
-        require!(fields.issued_at > 0 && fields.expires_at > fields.issued_at, GateError::InvalidMessage);
-        require!(fields.partner_hash == config.partner_hash, GateError::PartnerMismatch);
-        require!(fields.policy_hash == config.policy_hash, GateError::PolicyMismatch);
-        require!(fields.action_hash == config.action_hash, GateError::ActionMismatch);
-        require!(fields.environment == config.environment, GateError::EnvironmentMismatch);
+        require!(
+            fields.network_id == config.network_id,
+            GateError::NetworkMismatch
+        );
+        require!(
+            fields.issued_at > 0 && fields.expires_at > fields.issued_at,
+            GateError::InvalidMessage
+        );
+        require!(
+            fields.partner_hash == config.partner_hash,
+            GateError::PartnerMismatch
+        );
+        require!(
+            fields.policy_hash == config.policy_hash,
+            GateError::PolicyMismatch
+        );
+        require!(
+            fields.action_hash == config.action_hash,
+            GateError::ActionMismatch
+        );
+        require!(
+            fields.environment == config.environment,
+            GateError::EnvironmentMismatch
+        );
         require!(
             signer_matches(&config.signers, pubkey, fields.signer_key_id),
             GateError::SignerKeyMismatch
         );
         if config.require_subject {
             require!(!is_zero32(&fields.subject_hash), GateError::SubjectRequired);
+            require!(current > 1, GateError::MissingHolderAuthorization);
+            let holder_ix =
+                load_instruction_at_checked((current as usize).saturating_sub(2), &ix_sysvar)?;
+            require_keys_eq!(
+                holder_ix.program_id,
+                ed25519_program::ID,
+                GateError::WrongHolderInstruction
+            );
+            let (holder_pubkey, holder_message) =
+                extract_ed25519_pubkey_and_message(&holder_ix.data)
+                    .map_err(|_| GateError::InvalidHolderAuthorization)?;
+            require!(
+                holder_message == message,
+                GateError::InvalidHolderAuthorization
+            );
+            require!(
+                keccak::hash(&holder_pubkey).to_bytes() == fields.subject_hash,
+                GateError::HolderMismatch
+            );
         }
         if config.require_institutional {
-            require!(fields.schema_version == SCHEMA_VERSION, GateError::InstitutionalRequired);
+            require!(
+                fields.schema_version == SCHEMA_VERSION,
+                GateError::InstitutionalRequired
+            );
             require!(
                 !is_zero32(&fields.organization_commitment)
                     && !is_zero32(&fields.actor_commitment)
@@ -112,7 +181,8 @@ pub mod abraxas_eligibility_gate {
             }
             if !is_zero32(&config.expected_institutional_result_category) {
                 require!(
-                    fields.institutional_result_category == config.expected_institutional_result_category,
+                    fields.institutional_result_category
+                        == config.expected_institutional_result_category,
                     GateError::CategoryMismatch
                 );
             }
@@ -125,6 +195,8 @@ pub mod abraxas_eligibility_gate {
         require!(!auth.consumed && !auth.revoked, GateError::Replayed);
         auth.config = config.key();
         auth.partner_program = config.partner_program;
+        auth.config_version = config.version;
+        auth.signer_key_id = fields.signer_key_id;
         auth.policy_hash = fields.policy_hash;
         auth.action_hash = fields.action_hash;
         auth.attestation_ref = fields.attestation_id;
@@ -143,9 +215,33 @@ pub mod abraxas_eligibility_gate {
         let config = &ctx.accounts.config;
         let auth = &mut ctx.accounts.authorization;
         require_keys_eq!(auth.config, config.key(), GateError::PartnerMismatch);
-        require_keys_eq!(auth.partner_program, config.partner_program, GateError::WrongPartnerProgram);
-        require_keys_eq!(ctx.accounts.partner_program.key(), config.partner_program, GateError::WrongPartnerProgram);
+        require_keys_eq!(
+            auth.partner_program,
+            config.partner_program,
+            GateError::WrongPartnerProgram
+        );
+        require_keys_eq!(
+            ctx.accounts.partner_program.key(),
+            config.partner_program,
+            GateError::WrongPartnerProgram
+        );
         require!(!auth.consumed && !auth.revoked, GateError::Replayed);
+        require!(
+            auth.config_version == config.version,
+            GateError::StaleConfiguration
+        );
+        require!(
+            auth.policy_hash == config.policy_hash,
+            GateError::PolicyMismatch
+        );
+        require!(
+            auth.action_hash == config.action_hash,
+            GateError::ActionMismatch
+        );
+        require!(
+            signer_key_current(&config.signers, auth.signer_key_id),
+            GateError::UnknownSigner
+        );
         let now = Clock::get()?.unix_timestamp;
         require!(auth.expires_at > now, GateError::Expired);
         require!(
@@ -172,9 +268,18 @@ fn signer_matches(slots: &[SignerSlot; MAX_SIGNERS], pubkey: [u8; 32], key_id: [
     })
 }
 
+fn signer_key_current(slots: &[SignerSlot; MAX_SIGNERS], key_id: [u8; 32]) -> bool {
+    slots.iter().any(|slot| {
+        (slot.status == SIGNER_ACTIVE || slot.status == SIGNER_RETIRING) && slot.key_id == key_id
+    })
+}
+
 impl GateConfig {
     fn apply(&mut self, params: ConfigParams) -> Result<()> {
-        require!(!params.partner_program.eq(&Pubkey::default()), GateError::InvalidConfig);
+        require!(
+            !params.partner_program.eq(&Pubkey::default()),
+            GateError::InvalidConfig
+        );
         require!(params.network_id != [0u8; 32], GateError::InvalidConfig);
         self.partner_program = params.partner_program;
         self.network_id = params.network_id;
@@ -187,11 +292,17 @@ impl GateConfig {
         self.expected_organization_commitment = params.expected_organization_commitment;
         self.expected_actor_commitment = params.expected_actor_commitment;
         self.expected_institutional_result_category = params.expected_institutional_result_category;
+        if self.version == 0 {
+            self.version = 1;
+        }
         Ok(())
     }
 
     fn install_initial_signer(&mut self, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
-        require!(key_id != [0u8; 32] && pubkey != [0u8; 32], GateError::InvalidConfig);
+        require!(
+            key_id != [0u8; 32] && pubkey != [0u8; 32],
+            GateError::InvalidConfig
+        );
         self.signers[0] = SignerSlot {
             key_id,
             pubkey,
@@ -201,11 +312,17 @@ impl GateConfig {
     }
 
     fn add_signer(&mut self, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
-        require!(key_id != [0u8; 32] && pubkey != [0u8; 32], GateError::UnknownSigner);
+        require!(
+            key_id != [0u8; 32] && pubkey != [0u8; 32],
+            GateError::UnknownSigner
+        );
         let mut empty: Option<usize> = None;
         for (i, slot) in self.signers.iter().enumerate() {
             if slot.status != SIGNER_EMPTY {
-                require!(slot.key_id != key_id && slot.pubkey != pubkey, GateError::DuplicateSigner);
+                require!(
+                    slot.key_id != key_id && slot.pubkey != pubkey,
+                    GateError::DuplicateSigner
+                );
             } else if empty.is_none() {
                 empty = Some(i);
             }
@@ -230,7 +347,10 @@ impl GateConfig {
 
     fn retire_signer(&mut self, key_id: [u8; 32]) -> Result<()> {
         let idx = self.index_of(key_id)?;
-        require!(self.signers[idx].status == SIGNER_ACTIVE, GateError::UnknownSigner);
+        require!(
+            self.signers[idx].status == SIGNER_ACTIVE,
+            GateError::UnknownSigner
+        );
         self.signers[idx].status = SIGNER_RETIRING;
         Ok(())
     }
@@ -283,6 +403,7 @@ pub struct GateConfig {
     pub expected_institutional_result_category: [u8; 32],
     pub bump: u8,
     pub signers: [SignerSlot; MAX_SIGNERS],
+    pub version: u64,
 }
 
 #[account]
@@ -290,6 +411,8 @@ pub struct GateConfig {
 pub struct Authorization {
     pub config: Pubkey,
     pub partner_program: Pubkey,
+    pub config_version: u64,
+    pub signer_key_id: [u8; 32],
     pub policy_hash: [u8; 32],
     pub action_hash: [u8; 32],
     pub attestation_ref: [u8; 32],
@@ -330,6 +453,20 @@ pub struct MutateSigner<'info> {
     pub admin: Signer<'info>,
     #[account(mut, has_one = admin, seeds = [CONFIG_SEED, config.admin.as_ref()], bump = config.bump)]
     pub config: Account<'info, GateConfig>,
+}
+
+#[derive(Accounts)]
+pub struct RevokeAuthorization<'info> {
+    pub admin: Signer<'info>,
+    #[account(has_one = admin, seeds = [CONFIG_SEED, config.admin.as_ref()], bump = config.bump)]
+    pub config: Account<'info, GateConfig>,
+    #[account(
+        mut,
+        constraint = authorization.config == config.key() @ GateError::PartnerMismatch,
+        seeds = [AUTH_SEED, config.key().as_ref(), authorization.attestation_ref.as_ref()],
+        bump = authorization.bump
+    )]
+    pub authorization: Account<'info, Authorization>,
 }
 
 #[derive(Accounts)]
@@ -410,4 +547,15 @@ pub enum GateError {
     ActorMismatch,
     #[msg("category_mismatch")]
     CategoryMismatch,
+    #[msg("missing_holder_authorization")]
+    MissingHolderAuthorization,
+    #[msg("wrong_holder_instruction")]
+    WrongHolderInstruction,
+    #[msg("invalid_holder_authorization")]
+    InvalidHolderAuthorization,
+    #[msg("holder_mismatch")]
+    HolderMismatch,
+    #[msg("stale_configuration")]
+    StaleConfiguration,
 }
+

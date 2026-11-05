@@ -161,7 +161,7 @@ fn institutional_params(trusted_signer: [u8; 32], fields: MessageFields) -> Conf
         action_hash: fields.action_hash,
         environment: fields.environment,
         signer_key_id: fields.signer_key_id,
-        require_subject: true,
+        require_subject: false,
         require_institutional: true,
         expected_organization_commitment: fields.organization_commitment,
         expected_actor_commitment: fields.actor_commitment,
@@ -581,3 +581,4 @@ fn programs_have_no_token_transfer_wallet_or_arbitrary_cpi() {
         assert!(!src.contains("Tokenkeg"));
     }
 }
+

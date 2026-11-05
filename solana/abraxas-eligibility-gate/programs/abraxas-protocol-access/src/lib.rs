@@ -31,10 +31,22 @@ pub mod abraxas_protocol_access {
             crate::ID,
             ProtocolAccessError::WrongProgram
         );
-        require!(expected_partner_hash == ctx.accounts.config.partner_hash, ProtocolAccessError::PartnerMismatch);
-        require!(expected_policy_hash == ctx.accounts.config.policy_hash, ProtocolAccessError::PolicyMismatch);
-        require!(expected_action_hash == ctx.accounts.config.action_hash, ProtocolAccessError::ActionMismatch);
-        require!(expected_environment == ctx.accounts.config.environment, ProtocolAccessError::EnvironmentMismatch);
+        require!(
+            expected_partner_hash == ctx.accounts.config.partner_hash,
+            ProtocolAccessError::PartnerMismatch
+        );
+        require!(
+            expected_policy_hash == ctx.accounts.config.policy_hash,
+            ProtocolAccessError::PolicyMismatch
+        );
+        require!(
+            expected_action_hash == ctx.accounts.config.action_hash,
+            ProtocolAccessError::ActionMismatch
+        );
+        require!(
+            expected_environment == ctx.accounts.config.environment,
+            ProtocolAccessError::EnvironmentMismatch
+        );
         let protocol = &mut ctx.accounts.protocol;
         protocol.gate_config = ctx.accounts.config.key();
         protocol.expected_partner_hash = expected_partner_hash;
@@ -50,14 +62,42 @@ pub mod abraxas_protocol_access {
         subject_hash: [u8; 32],
         organization_commitment: [u8; 32],
     ) -> Result<()> {
-        require_keys_eq!(ctx.accounts.partner_program.key(), crate::ID, ProtocolAccessError::WrongProgram);
+        require_keys_eq!(
+            ctx.accounts.partner_program.key(),
+            crate::ID,
+            ProtocolAccessError::WrongProgram
+        );
         let protocol = &ctx.accounts.protocol;
         let config = &ctx.accounts.config;
-        require_keys_eq!(config.key(), protocol.gate_config, ProtocolAccessError::WrongGateConfig);
-        require!(config.partner_hash == protocol.expected_partner_hash, ProtocolAccessError::PartnerMismatch);
-        require!(config.policy_hash == protocol.expected_policy_hash, ProtocolAccessError::PolicyMismatch);
-        require!(config.action_hash == protocol.expected_action_hash, ProtocolAccessError::ActionMismatch);
-        require!(config.environment == protocol.expected_environment, ProtocolAccessError::EnvironmentMismatch);
+        require_keys_eq!(
+            config.key(),
+            protocol.gate_config,
+            ProtocolAccessError::WrongGateConfig
+        );
+        require!(
+            config.partner_hash == protocol.expected_partner_hash,
+            ProtocolAccessError::PartnerMismatch
+        );
+        require!(
+            config.policy_hash == protocol.expected_policy_hash,
+            ProtocolAccessError::PolicyMismatch
+        );
+        require!(
+            config.action_hash == protocol.expected_action_hash,
+            ProtocolAccessError::ActionMismatch
+        );
+        require!(
+            config.environment == protocol.expected_environment,
+            ProtocolAccessError::EnvironmentMismatch
+        );
+        require!(
+            ctx.accounts.authorization.config_version == config.version,
+            ProtocolAccessError::StaleConfiguration
+        );
+        require!(
+            ctx.accounts.authorization.policy_hash == config.policy_hash,
+            ProtocolAccessError::PolicyMismatch
+        );
         require!(
             ctx.accounts.authorization.action_hash == protocol.expected_action_hash,
             ProtocolAccessError::ActionMismatch
@@ -71,12 +111,24 @@ pub mod abraxas_protocol_access {
             ProtocolAccessError::SubjectMismatch
         );
         if config.require_subject {
-            require!(!subject_hash.iter().all(|b| *b == 0), ProtocolAccessError::SubjectRequired);
+            require!(
+                !subject_hash.iter().all(|b| *b == 0),
+                ProtocolAccessError::SubjectRequired
+            );
         }
         if config.require_institutional {
             require!(
-                !ctx.accounts.authorization.actor_commitment.iter().all(|b| *b == 0)
-                    && !ctx.accounts.authorization.institutional_result_category.iter().all(|b| *b == 0)
+                !ctx.accounts
+                    .authorization
+                    .actor_commitment
+                    .iter()
+                    .all(|b| *b == 0)
+                    && !ctx
+                        .accounts
+                        .authorization
+                        .institutional_result_category
+                        .iter()
+                        .all(|b| *b == 0)
                     && !organization_commitment.iter().all(|b| *b == 0),
                 ProtocolAccessError::OrganizationMismatch
             );
@@ -84,7 +136,10 @@ pub mod abraxas_protocol_access {
 
         let until = ctx.accounts.authorization.expires_at;
         let entitlement = &mut ctx.accounts.entitlement;
-        require!(entitlement.valid_until <= until, ProtocolAccessError::StaleAttestation);
+        require!(
+            entitlement.valid_until <= until,
+            ProtocolAccessError::StaleAttestation
+        );
 
         let bump = ctx.bumps.consumer_authority;
         let signer_seeds: &[&[u8]] = &[CONSUMER_AUTH_SEED, &[bump]];
@@ -104,6 +159,8 @@ pub mod abraxas_protocol_access {
         entitlement.subject_hash = subject_hash;
         entitlement.organization_commitment = organization_commitment;
         entitlement.attestation_ref = ctx.accounts.authorization.attestation_ref;
+        entitlement.authorization = ctx.accounts.authorization.key();
+        entitlement.config_version = ctx.accounts.authorization.config_version;
         entitlement.valid_until = until;
         entitlement.bump = ctx.bumps.entitlement;
         Ok(())
@@ -114,13 +171,71 @@ pub mod abraxas_protocol_access {
         subject_hash: [u8; 32],
         organization_commitment: [u8; 32],
     ) -> Result<()> {
-        require!(ctx.accounts.entitlement.subject_hash == subject_hash, ProtocolAccessError::SubjectRequired);
+        let protocol = &ctx.accounts.protocol;
+        let config = &ctx.accounts.config;
+        let authorization = &ctx.accounts.authorization;
+        require_keys_eq!(
+            config.key(),
+            protocol.gate_config,
+            ProtocolAccessError::WrongGateConfig
+        );
+        require_keys_eq!(
+            authorization.key(),
+            ctx.accounts.entitlement.authorization,
+            ProtocolAccessError::WrongAuthorization
+        );
+        require_keys_eq!(
+            authorization.config,
+            config.key(),
+            ProtocolAccessError::WrongGateConfig
+        );
+        require!(!authorization.revoked, ProtocolAccessError::Revoked);
+        require!(authorization.consumed, ProtocolAccessError::NotConsumed);
+        require!(
+            authorization.config_version == config.version,
+            ProtocolAccessError::StaleConfiguration
+        );
+        require!(
+            ctx.accounts.entitlement.config_version == config.version,
+            ProtocolAccessError::StaleConfiguration
+        );
+        require!(
+            authorization.policy_hash == config.policy_hash,
+            ProtocolAccessError::PolicyMismatch
+        );
+        require!(
+            authorization.action_hash == config.action_hash,
+            ProtocolAccessError::ActionMismatch
+        );
+        require!(
+            config.policy_hash == protocol.expected_policy_hash,
+            ProtocolAccessError::PolicyMismatch
+        );
+        require!(
+            config.action_hash == protocol.expected_action_hash,
+            ProtocolAccessError::ActionMismatch
+        );
+        require!(
+            config.partner_hash == protocol.expected_partner_hash,
+            ProtocolAccessError::PartnerMismatch
+        );
+        require!(
+            config.environment == protocol.expected_environment,
+            ProtocolAccessError::EnvironmentMismatch
+        );
+        require!(
+            ctx.accounts.entitlement.subject_hash == subject_hash,
+            ProtocolAccessError::SubjectRequired
+        );
         require!(
             ctx.accounts.entitlement.organization_commitment == organization_commitment,
             ProtocolAccessError::OrganizationMismatch
         );
         let now = Clock::get()?.unix_timestamp;
-        require!(ctx.accounts.entitlement.valid_until > now, ProtocolAccessError::Expired);
+        require!(
+            ctx.accounts.entitlement.valid_until > now,
+            ProtocolAccessError::Expired
+        );
         Ok(())
     }
 }
@@ -144,6 +259,8 @@ pub struct ProtocolEntitlement {
     pub subject_hash: [u8; 32],
     pub organization_commitment: [u8; 32],
     pub attestation_ref: [u8; 32],
+    pub authorization: Pubkey,
+    pub config_version: u64,
     pub valid_until: i64,
     pub bump: u8,
 }
@@ -170,9 +287,9 @@ pub struct ActivateProtocolAccess<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub gate_program: Program<'info, AbraxasEligibilityGate>,
-    pub config: Account<'info, GateConfig>,
+    pub config: Box<Account<'info, GateConfig>>,
     #[account(mut)]
-    pub authorization: Account<'info, Authorization>,
+    pub authorization: Box<Account<'info, Authorization>>,
     /// CHECK: this program id; must match gate config partner_program.
     pub partner_program: UncheckedAccount<'info>,
     /// CHECK: PDA signer of this program.
@@ -182,7 +299,7 @@ pub struct ActivateProtocolAccess<'info> {
         seeds = [PROTOCOL_CONFIG_SEED, config.key().as_ref()],
         bump = protocol.bump
     )]
-    pub protocol: Account<'info, ProtocolAccessConfig>,
+    pub protocol: Box<Account<'info, ProtocolAccessConfig>>,
     #[account(
         init_if_needed,
         payer = payer,
@@ -190,19 +307,21 @@ pub struct ActivateProtocolAccess<'info> {
         seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref(), organization_commitment.as_ref()],
         bump
     )]
-    pub entitlement: Account<'info, ProtocolEntitlement>,
+    pub entitlement: Box<Account<'info, ProtocolEntitlement>>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction(subject_hash: [u8; 32], organization_commitment: [u8; 32])]
 pub struct AssertProtocolAccess<'info> {
-    pub protocol: Account<'info, ProtocolAccessConfig>,
+    pub config: Box<Account<'info, GateConfig>>,
+    pub authorization: Box<Account<'info, Authorization>>,
+    pub protocol: Box<Account<'info, ProtocolAccessConfig>>,
     #[account(
         seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref(), organization_commitment.as_ref()],
         bump = entitlement.bump
     )]
-    pub entitlement: Account<'info, ProtocolEntitlement>,
+    pub entitlement: Box<Account<'info, ProtocolEntitlement>>,
 }
 
 #[error_code]
@@ -229,4 +348,13 @@ pub enum ProtocolAccessError {
     StaleAttestation,
     #[msg("subject_mismatch")]
     SubjectMismatch,
+    #[msg("revoked")]
+    Revoked,
+    #[msg("not_consumed")]
+    NotConsumed,
+    #[msg("stale_configuration")]
+    StaleConfiguration,
+    #[msg("wrong_authorization")]
+    WrongAuthorization,
 }
+
