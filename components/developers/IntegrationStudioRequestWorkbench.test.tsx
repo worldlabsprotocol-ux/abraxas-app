@@ -93,8 +93,9 @@ describe("beginner sandbox test access", () => {
     vi.stubGlobal("fetch", fetch);
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
     fireEvent.click(screen.getByRole("button", { name: "Run test" }));
-    await waitFor(() => expect(screen.getByText("Sandbox receipt service unavailable")).toBeInTheDocument());
-    expect(screen.getByText(/no test was run/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(
+      "Abraxas could not issue the verifiable sandbox receipt, so no test was run.",
+    ));
     expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
@@ -109,7 +110,9 @@ describe("beginner sandbox test access", () => {
     const refreshSession = vi.fn();
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface onRefreshSession={refreshSession} />);
     fireEvent.click(screen.getByRole("button", { name: "Run test" }));
-    await waitFor(() => expect(screen.getByText("Sign-in required")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(
+      "Your test app session ended. Sign in again before running the test.",
+    ));
     fireEvent.click(screen.getByRole("button", { name: "Resume sign-in" }));
     expect(refreshSession).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledTimes(1);
