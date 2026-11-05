@@ -287,9 +287,9 @@ pub struct ActivateProtocolAccess<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub gate_program: Program<'info, AbraxasEligibilityGate>,
-    pub config: Account<'info, GateConfig>,
+    pub config: Box<Account<'info, GateConfig>>,
     #[account(mut)]
-    pub authorization: Account<'info, Authorization>,
+    pub authorization: Box<Account<'info, Authorization>>,
     /// CHECK: this program id; must match gate config partner_program.
     pub partner_program: UncheckedAccount<'info>,
     /// CHECK: PDA signer of this program.
@@ -299,7 +299,7 @@ pub struct ActivateProtocolAccess<'info> {
         seeds = [PROTOCOL_CONFIG_SEED, config.key().as_ref()],
         bump = protocol.bump
     )]
-    pub protocol: Account<'info, ProtocolAccessConfig>,
+    pub protocol: Box<Account<'info, ProtocolAccessConfig>>,
     #[account(
         init_if_needed,
         payer = payer,
@@ -307,21 +307,21 @@ pub struct ActivateProtocolAccess<'info> {
         seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref(), organization_commitment.as_ref()],
         bump
     )]
-    pub entitlement: Account<'info, ProtocolEntitlement>,
+    pub entitlement: Box<Account<'info, ProtocolEntitlement>>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction(subject_hash: [u8; 32], organization_commitment: [u8; 32])]
 pub struct AssertProtocolAccess<'info> {
-    pub config: Account<'info, GateConfig>,
-    pub authorization: Account<'info, Authorization>,
-    pub protocol: Account<'info, ProtocolAccessConfig>,
+    pub config: Box<Account<'info, GateConfig>>,
+    pub authorization: Box<Account<'info, Authorization>>,
+    pub protocol: Box<Account<'info, ProtocolAccessConfig>>,
     #[account(
         seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref(), organization_commitment.as_ref()],
         bump = entitlement.bump
     )]
-    pub entitlement: Account<'info, ProtocolEntitlement>,
+    pub entitlement: Box<Account<'info, ProtocolEntitlement>>,
 }
 
 #[error_code]
