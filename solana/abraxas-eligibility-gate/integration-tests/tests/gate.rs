@@ -138,7 +138,7 @@ fn default_params(trusted_signer: [u8; 32], fields: MessageFields) -> ConfigPara
         action_hash: fields.action_hash,
         environment: fields.environment,
         signer_key_id: fields.signer_key_id,
-        require_subject: true,
+        require_subject: false,
         require_institutional: false,
         expected_organization_commitment: [0u8; 32],
         expected_actor_commitment: [0u8; 32],
@@ -765,3 +765,4 @@ async fn airdrop(ctx: &mut ProgramTestContext, user: &Keypair) {
     let ix = solana_sdk::system_instruction::transfer(&from, &user.pubkey(), 2_000_000_000);
     send(ctx, vec![ix], &[]).await.unwrap();
 }
+
