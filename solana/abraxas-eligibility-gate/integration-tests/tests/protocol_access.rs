@@ -739,12 +739,9 @@ async fn missing_subject_fails() {
     airdrop(&mut ctx, &admin).await;
     let mut fields = MessageFields::default();
     fields.subject_hash = [0u8; 32];
-    let config = initialize_gate(
-        &mut ctx,
-        &admin,
-        default_params(signer.pubkey().to_bytes(), fields),
-    )
-    .await;
+    let mut params = default_params(signer.pubkey().to_bytes(), fields);
+    params.require_subject = true;
+    let config = initialize_gate(&mut ctx, &admin, params).await;
     initialize_protocol(&mut ctx, config, fields).await;
     let message = canonical_message(fields);
     let payer = ctx.payer.pubkey();
