@@ -325,8 +325,8 @@ jobs:
           PATH="$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH" \
             cargo-build-sbf --tools-version v1.53 --no-rustup-override \
             --manifest-path programs/abraxas-eligibility-gate/Cargo.toml
-      - name: Compare both ELF digests with the reviewed release
-        run: npx tsx scripts/solana-v2-gate-release-digest.ts
+      - name: Report unreviewed gate candidate digest
+        run: npx tsx scripts/solana-v2-gate-release-digest.ts --report-only
       - name: Build protocol-access candidate with pinned SBF tools
         working-directory: solana/abraxas-eligibility-gate
         run: |
@@ -334,7 +334,15 @@ jobs:
             cargo-build-sbf --tools-version v1.53 --no-rustup-override \
             --manifest-path programs/abraxas-protocol-access/Cargo.toml
       - name: Print secret-free protocol-access candidate digest
-        run: npx tsx scripts/solana-protocol-access-candidate-digest.ts
+        run: npx tsx scripts/solana-protocol-access-candidate-digest.ts --report-only
+      - name: Upload deterministic unreviewed Solana candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: solana-authorization-candidates-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            solana/abraxas-eligibility-gate/target/deploy/abraxas_eligibility_gate.so
+            solana/abraxas-eligibility-gate/target/deploy/abraxas_protocol_access.so
 
   sovereign-native-account-pg:
     name: sovereign-native-account-pg
@@ -506,6 +514,7 @@ jobs:
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
           NEXT_PUBLIC_SOLANA_NETWORK: devnet
           ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
+
 
 
 

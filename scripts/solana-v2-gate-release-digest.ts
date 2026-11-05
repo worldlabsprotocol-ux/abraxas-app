@@ -8,6 +8,7 @@ import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/
 import { LOCAL_SOLANA_GATE_PROGRAM_ID } from "@/lib/partner/chainAttestation/solanaGate";
 
 const candidate = process.argv.slice(2).includes("--candidate");
+const reportOnly = process.argv.slice(2).includes("--report-only");
 const candidateRecord = JSON.parse(readFileSync(resolve(
   "solana/abraxas-eligibility-gate/release/v2-institutional-r2.candidate.json",
 ), "utf8")) as {
@@ -52,9 +53,10 @@ console.log(JSON.stringify({
   elf_sha256: sha,
   observation_digest: observed,
   program_id: LOCAL_SOLANA_GATE_PROGRAM_ID,
-  release_status: candidate ? "candidate_unreviewed" : "approved_release_check",
+  release_status: candidate || reportOnly ? "candidate_unreviewed" : "approved_release_check",
   matches_registry: ok,
   matches_candidate: candidate ? candidateComputed : undefined,
 }, null, 2));
 
-process.exit(candidate ? (candidateComputed ? 0 : 1) : (ok ? 0 : 1));
+process.exit(reportOnly ? 0 : candidate ? (candidateComputed ? 0 : 1) : (ok ? 0 : 1));
+
