@@ -170,6 +170,9 @@ async fn deployed_591_byte_gate_config_migrates_without_changing_bindings() {
     assert_eq!(migrated.policy_hash, legacy.policy_hash);
     assert_eq!(migrated.signers[0].key_id, legacy.signers[0].key_id);
     assert_eq!(migrated.version, 1);
+    let slot = ctx.banks_client.get_root_slot().await.unwrap();
+    ctx.warp_to_slot(slot + 2).unwrap();
+    ctx.last_blockhash = ctx.banks_client.get_latest_blockhash().await.unwrap();
     assert!(send(&mut ctx, vec![ix], &[&admin]).await.is_err());
 }
 
