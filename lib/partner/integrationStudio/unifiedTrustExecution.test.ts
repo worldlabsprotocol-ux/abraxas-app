@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendSafeReturnPath,
+  buildIntegrationStudioResumeUrl,
+  classifyPortableDecision,
   independentlyAccepted,
   resolveIntegrationStudioExecutionMode,
   SOLANA_EXECUTION_PENDING_MESSAGE,
   shouldContinueAfterHolderAuthorization,
+  safeSameOriginReturnPath,
 } from "./unifiedTrustExecution";
 
 describe("Integration Studio unified trust execution", () => {
@@ -32,4 +36,31 @@ describe("Integration Studio unified trust execution", () => {
     expect(shouldContinueAfterHolderAuthorization("1")).toBe(false);
     expect(shouldContinueAfterHolderAuthorization(null)).toBe(true);
   });
+
+  it("classifies verified decision semantics instead of treating authenticity as approval", () => {
+    const current = { result: { cryptographically_authentic: true, currently_acceptable: "yes" as const } };
+    expect(classifyPortableDecision("approved", current)).toBe("allow");
+    expect(classifyPortableDecision("denied", current)).toBe("deny");
+    expect(classifyPortableDecision("manual_review", current)).toBe("indeterminate");
+    expect(classifyPortableDecision("approved", {
+      result: { cryptographically_authentic: true, currently_acceptable: "no" },
+    })).toBe("revoked_or_stale");
+    expect(classifyPortableDecision("approved", {
+      result: { cryptographically_authentic: false, currently_acceptable: "yes" },
+    })).toBe("malformed");
+  });
+
+  it("builds a same-origin, refresh-safe return path", () => {
+    const resume = buildIntegrationStudioResumeUrl(
+      "https://abraxasworld.xyz/build?integration=1",
+      "challenge-1",
+    );
+    expect(resume).toBe("/build?integration=1&trust_execution_challenge=challenge-1");
+    expect(appendSafeReturnPath("/partner/trust-execution?challenge_id=challenge-1", resume))
+      .toContain(`return_to=${encodeURIComponent(resume)}`);
+    expect(safeSameOriginReturnPath(resume)).toBe(resume);
+    expect(safeSameOriginReturnPath("https://attacker.example/return")).toBeNull();
+    expect(safeSameOriginReturnPath("//attacker.example/return")).toBeNull();
+  });
 });
+

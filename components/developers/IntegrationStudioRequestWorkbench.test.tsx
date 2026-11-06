@@ -22,12 +22,12 @@ vi.mock("@/components/developers/AbraxasJourneyEmblemStatus", () => ({
   AbraxasJourneyEmblemStatus: () => <span role="status" />,
 }));
 vi.mock("@/components/redesign/ui", () => ({
-  Btn: ({ href, children, onClick, disabled }: { href?: string; children: React.ReactNode; onClick?: () => void; disabled?: boolean }) =>
-    href ? <a href={href}>{children}</a> : <button disabled={disabled} onClick={onClick}>{children}</button>,
+  Btn: ({ href, children, onClick, disabled, newTab }: { href?: string; children: React.ReactNode; onClick?: () => void; disabled?: boolean; newTab?: boolean }) =>
+    href ? <a href={href} target={newTab ? "_blank" : undefined}>{children}</a> : <button disabled={disabled} onClick={onClick}>{children}</button>,
 }));
 
 describe("beginner sandbox test access", () => {
-  afterEach(() => { cleanup(); vi.unstubAllGlobals(); operational.signedIn = false; window.sessionStorage.clear(); });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); operational.signedIn = false; window.sessionStorage.clear(); window.history.replaceState({}, "", "/"); });
   const renderTask = () => render(
     <IntegrationStudioRequestWorkbench packId={null} pathId="verify_with_abraxas" policyId={null} beginnerSurface />,
   );
@@ -80,11 +80,42 @@ describe("beginner sandbox test access", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-1", holder_url: "", receipt_id: "receipt-1", decision_result: "approved", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "yes" } } }) });
     vi.stubGlobal("fetch", fetch);
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" applicationName="My test app" beginnerSurface autoRunOnReady />);
-    await waitFor(() => expect(screen.getByRole("link", { name: "Authorize with wallet" })).toBeInTheDocument());
+    const authorizeLink = await screen.findByRole("link", { name: "Authorize with wallet" });
+    expect(authorizeLink).not.toHaveAttribute("target", "_blank");
+    expect(authorizeLink).toHaveAttribute("href", expect.stringContaining("return_to="));
     fireEvent.click(screen.getByRole("button", { name: "Check authorization" }));
     await waitFor(() => expect(screen.getByText("My test app")).toBeInTheDocument());
     expect(screen.getByText("Sandbox test passed")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledTimes(4);
+  });
+  it("presents an independently verified denial as denied, never allowed", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "/holder", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "authorized_pending_execution", challenge_id: "challenge-1", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-1", holder_url: "", receipt_id: "receipt-denied", decision_result: "denied", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "yes" } } }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady />);
+    await screen.findByRole("button", { name: "Check authorization" });
+    fireEvent.click(screen.getByRole("button", { name: "Check authorization" }));
+    await waitFor(() => expect(screen.getByText("This test did not authorize access.")).toBeInTheDocument());
+    expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try test again" })).toBeEnabled();
+  });
+  it("resumes a challenge-bound authorization after same-tab return or refresh", async () => {
+    operational.signedIn = true;
+    window.history.replaceState({}, "", "/?integration=1&trust_execution_challenge=challenge-returned");
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "authorized_pending_execution", challenge_id: "challenge-returned", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-returned", holder_url: "", receipt_id: "receipt-returned", decision_result: "approved", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "yes" } } }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" applicationName="Returned app" beginnerSurface />);
+    const continueButton = await screen.findByRole("button", { name: "Check authorization" });
+    fireEvent.click(continueButton);
+    await waitFor(() => expect(screen.getByText("Sandbox test passed")).toBeInTheDocument());
+    expect(String(fetch.mock.calls[0]?.[0])).toContain("challenge-returned");
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
   it("fails closed when independent verification rejects the portable receipt", async () => {
     operational.signedIn = true;

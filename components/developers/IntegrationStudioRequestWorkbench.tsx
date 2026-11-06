@@ -27,6 +27,9 @@ import {
   readPersistedHarnessSuccess,
 } from "@/components/developers/ApplicationConnectionAfterTestPanel";
 import {
+  appendSafeReturnPath,
+  buildIntegrationStudioResumeUrl,
+  classifyPortableDecision,
   independentlyAccepted,
   resolveIntegrationStudioExecutionMode,
   SOLANA_EXECUTION_PENDING_MESSAGE,
@@ -86,6 +89,19 @@ export function IntegrationStudioRequestWorkbench({
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [pendingReceipt, setPendingReceipt] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [trustJourney, setTrustJourney] = useState<UnifiedTrustExecutionJourney | null>(null);
+
+  useEffect(() => {
+    const challengeId = new URLSearchParams(window.location.search).get("trust_execution_challenge")?.trim();
+    if (!challengeId || trustJourney) return;
+    setTrustJourney({
+      phase: "authorized_pending_execution",
+      challenge_id: challengeId,
+      holder_url: "",
+      receipt_id: null,
+      decision_result: null,
+      evidence_mode: null,
+    });
+  }, [trustJourney]);
 
   async function startUnifiedTrustExecution() {
     if (!applicationId) return;
@@ -181,8 +197,28 @@ export function IntegrationStudioRequestWorkbench({
       setError("A portable receipt was produced, but independent verification did not accept it. No successful test was recorded.");
       return;
     }
+    const classification = classifyPortableDecision(
+      executed.journey.decision_result,
+      executed.independent_verification,
+    );
     setTrustJourney(executed.journey);
     setError("");
+    if (classification === "deny") {
+      setOutcome({
+        headline: "This test did not authorize access.",
+        summary: "Abraxas independently verified a current signed receipt whose policy decision denied this action.",
+        tone: "denied",
+        observedAccess: "deny",
+        passed: false,
+        nextActionLabel: "Review response details",
+        receiptId: executed.journey.receipt_id,
+      });
+      return;
+    }
+    if (classification !== "allow") {
+      setError("The signed receipt did not contain a clear, currently valid allow or deny decision. No authorization result was recorded.");
+      return;
+    }
     setOutcome({
       headline: "Your test worked.",
       summary: "The wallet authorized one policy-bound action. Abraxas issued a portable signed receipt and the existing independent verifier accepted its cryptographic authority and current status.",
@@ -365,7 +401,13 @@ export function IntegrationStudioRequestWorkbench({
 
   const trustAuthorizationAction = trustJourney?.phase === "awaiting_holder_authorization" ? (
     <div className="abx-builder-journey-actions">
-      <Btn href={trustJourney.holder_url} size="sm" newTab>
+      <Btn
+        href={typeof window === "undefined" ? trustJourney.holder_url : appendSafeReturnPath(
+          trustJourney.holder_url,
+          buildIntegrationStudioResumeUrl(window.location.href, trustJourney.challenge_id),
+        )}
+        size="sm"
+      >
         Authorize with wallet
       </Btn>
       <Btn size="sm" variant="secondary" disabled={busy} onClick={() => void continueUnifiedTrustExecution()}>
@@ -525,6 +567,7 @@ export function IntegrationStudioRequestWorkbench({
     </ContentCard>
   );
 }
+
 
 
 

@@ -44,9 +44,50 @@ export function independentlyAccepted(
     && verification.result.currently_acceptable === "yes";
 }
 
+export type PortableDecisionClassification =
+  | "allow"
+  | "deny"
+  | "indeterminate"
+  | "revoked_or_stale"
+  | "malformed";
+
+export function classifyPortableDecision(
+  decisionResult: string | null | undefined,
+  verification: IllustrativeIndependentVerification | null | undefined,
+): PortableDecisionClassification {
+  if (verification?.result?.cryptographically_authentic !== true) return "malformed";
+  if (verification.result.currently_acceptable === "no") return "revoked_or_stale";
+  if (verification.result.currently_acceptable !== "yes") return "indeterminate";
+
+  const decision = decisionResult?.trim().toLowerCase();
+  if (decision === "approved" || decision === "allow") return "allow";
+  if (decision === "denied" || decision === "deny") return "deny";
+  return "indeterminate";
+}
+
+export function buildIntegrationStudioResumeUrl(currentUrl: string, challengeId: string): string {
+  const url = new URL(currentUrl);
+  url.searchParams.set("trust_execution_challenge", challengeId);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function appendSafeReturnPath(holderUrl: string, returnPath: string): string {
+  const url = new URL(holderUrl, "https://abraxas.invalid");
+  if (url.origin !== "https://abraxas.invalid") return holderUrl;
+  if (!returnPath.startsWith("/") || returnPath.startsWith("//")) return holderUrl;
+  url.searchParams.set("return_to", returnPath);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function safeSameOriginReturnPath(value: string | null): string | null {
+  if (!value?.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
+
 export function shouldContinueAfterHolderAuthorization(deferExecution: string | null): boolean {
   return deferExecution !== "1";
 }
 
 export const SOLANA_EXECUTION_PENDING_MESSAGE =
   "This path requires a finalized Solana authorization and consumption transaction. The reviewed program upgrade is not yet deployed, so Abraxas will not report an offchain decision as onchain execution.";
+
