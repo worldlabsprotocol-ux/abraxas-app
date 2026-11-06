@@ -134,8 +134,16 @@ describe("beginner sandbox test access", () => {
   });
   it("rechecks an issued receipt without running a duplicate test", async () => {
     operational.signedIn = true;
+    window.sessionStorage.setItem("abraxas:harness-pending:app-123", JSON.stringify({
+      tone: "success",
+      receiptId: "receipt-1",
+      headline: "Test worked",
+      summary: "",
+      observedAccess: "allow",
+      passed: true,
+      nextActionLabel: "Connect",
+    }));
     const fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: { passed: true, observed_access: "allow", persistence: { receipt_id: "receipt-1" } } }) })
       .mockResolvedValueOnce({ ok: false, status: 503 })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true, receipt_id: "receipt-1", harness_verification_ok: true }) });
     vi.stubGlobal("fetch", fetch);
@@ -143,8 +151,8 @@ describe("beginner sandbox test access", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Recheck receipt" })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Recheck receipt" }));
     await waitFor(() => expect(screen.getByText("Sandbox test passed")).toBeInTheDocument());
-    expect(fetch).toHaveBeenCalledTimes(3);
-    expect(String(fetch.mock.calls[2]?.[0])).toContain("/receipts/validate?");
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(String(fetch.mock.calls[1]?.[0])).toContain("/receipts/validate?");
   });
   it("revalidates a restored result instead of trusting session storage", async () => {
     operational.signedIn = true;
@@ -156,6 +164,7 @@ describe("beginner sandbox test access", () => {
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
 });
+
 
 
 
