@@ -71,12 +71,29 @@ export function buildIntegrationStudioResumeUrl(currentUrl: string, challengeId:
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export function appendSafeReturnPath(holderUrl: string, returnPath: string): string {
-  const url = new URL(holderUrl, "https://abraxas.invalid");
-  if (url.origin !== "https://abraxas.invalid") return holderUrl;
-  if (!returnPath.startsWith("/") || returnPath.startsWith("//")) return holderUrl;
-  url.searchParams.set("return_to", returnPath);
-  return `${url.pathname}${url.search}${url.hash}`;
+export function appendSafeReturnPath(
+  holderUrl: string,
+  returnPath: string,
+  applicationOrigin: string,
+): string | null {
+  if (!returnPath.startsWith("/") || returnPath.startsWith("//")) return null;
+  if (holderUrl.startsWith("//")) return null;
+
+  try {
+    const configuredOrigin = new URL(applicationOrigin).origin;
+    const configuredProtocol = new URL(configuredOrigin).protocol;
+    if (configuredProtocol !== "https:" && configuredProtocol !== "http:") return null;
+
+    const absoluteInput = /^[a-z][a-z0-9+.-]*:\/\//i.test(holderUrl);
+    const url = new URL(holderUrl, configuredOrigin);
+    if (url.origin !== configuredOrigin) return null;
+    if (!url.searchParams.get("challenge_id")?.trim()) return null;
+
+    url.searchParams.set("return_to", returnPath);
+    return absoluteInput ? url.toString() : `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
 }
 
 export function safeSameOriginReturnPath(value: string | null): string | null {

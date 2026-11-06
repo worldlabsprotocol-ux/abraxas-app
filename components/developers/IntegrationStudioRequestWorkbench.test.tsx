@@ -75,7 +75,7 @@ describe("beginner sandbox test access", () => {
     operational.signedIn = true;
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "/partner/trust-execution?challenge_id=challenge-1&defer_execution=1", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "http://localhost/partner/trust-execution?challenge_id=challenge-1&defer_execution=1", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "authorized_pending_execution", challenge_id: "challenge-1", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-1", holder_url: "", receipt_id: "receipt-1", decision_result: "approved", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "yes" } } }) });
     vi.stubGlobal("fetch", fetch);
@@ -83,6 +83,7 @@ describe("beginner sandbox test access", () => {
     const authorizeLink = await screen.findByRole("link", { name: "Authorize with wallet" });
     expect(authorizeLink).not.toHaveAttribute("target", "_blank");
     expect(authorizeLink).toHaveAttribute("href", expect.stringContaining("return_to="));
+    expect(authorizeLink).toHaveAttribute("href", expect.stringContaining("challenge_id=challenge-1"));
     fireEvent.click(screen.getByRole("button", { name: "Check authorization" }));
     await waitFor(() => expect(screen.getByText("My test app")).toBeInTheDocument());
     expect(screen.getByText("Sandbox test passed")).toBeInTheDocument();
@@ -113,9 +114,37 @@ describe("beginner sandbox test access", () => {
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" applicationName="Returned app" beginnerSurface />);
     const continueButton = await screen.findByRole("button", { name: "Check authorization" });
     fireEvent.click(continueButton);
+    fireEvent.click(continueButton);
     await waitFor(() => expect(screen.getByText("Sandbox test passed")).toBeInTheDocument());
     expect(String(fetch.mock.calls[0]?.[0])).toContain("challenge-returned");
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+  it("does not execute an expired returned challenge", async () => {
+    operational.signedIn = true;
+    window.history.replaceState({}, "", "/?trust_execution_challenge=challenge-expired");
+    const fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ journey: { phase: "expired", challenge_id: "challenge-expired", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
+    fireEvent.click(await screen.findByRole("button", { name: "Check authorization" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("authorization expired"));
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it.each(["wallet_mismatch", "application_mismatch"])("does not execute when the server rejects %s", async (code) => {
+    operational.signedIn = true;
+    window.history.replaceState({}, "", "/?trust_execution_challenge=challenge-mismatch");
+    const fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => ({ code }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
+    fireEvent.click(await screen.findByRole("button", { name: "Check authorization" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(code));
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
   it("fails closed when independent verification rejects the portable receipt", async () => {
     operational.signedIn = true;

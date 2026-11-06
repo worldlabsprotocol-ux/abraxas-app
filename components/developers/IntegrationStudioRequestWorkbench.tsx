@@ -17,6 +17,7 @@ import { buildLaunchpadTestScenarioRequestBody } from "@/lib/partner/launchpad/t
 import type { LaunchpadTestRunResult } from "@/lib/partner/launchpad/runTestScenario";
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import {
   presentIntegrationTestFailure,
   type IntegrationTestFailurePresentation,
@@ -89,6 +90,12 @@ export function IntegrationStudioRequestWorkbench({
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [pendingReceipt, setPendingReceipt] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [trustJourney, setTrustJourney] = useState<UnifiedTrustExecutionJourney | null>(null);
+  const continueInFlight = useRef(false);
+  const [browserOrigin, setBrowserOrigin] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBrowserOrigin(getPublicAppOrigin());
+  }, []);
 
   useEffect(() => {
     const challengeId = new URLSearchParams(window.location.search).get("trust_execution_challenge")?.trim();
@@ -151,7 +158,10 @@ export function IntegrationStudioRequestWorkbench({
   }
 
   async function continueUnifiedTrustExecution() {
-    if (!applicationId || !trustJourney?.challenge_id) return;
+    if (!applicationId || !trustJourney?.challenge_id || continueInFlight.current) return;
+    continueInFlight.current = true;
+    setBusy(true);
+    try {
     const statusRes = await fetch(
       `/api/launchpad/applications/${applicationId}/sovereign-trust-execution?challenge_id=${encodeURIComponent(trustJourney.challenge_id)}`,
       { credentials: "include", cache: "no-store" },
@@ -229,6 +239,10 @@ export function IntegrationStudioRequestWorkbench({
       nextActionLabel: "Connect my application",
       receiptId: executed.journey.receipt_id,
     });
+    } finally {
+      continueInFlight.current = false;
+      setBusy(false);
+    }
   }
 
   async function verifyHarnessReceipt(receiptId: string): Promise<"confirmed" | "invalid" | "unavailable"> {
@@ -400,13 +414,18 @@ export function IntegrationStudioRequestWorkbench({
   const showConnectJourney =
     Boolean(applicationId && signedIn && packId && policyId && outcome?.tone === "success");
 
-  const trustAuthorizationAction = trustJourney?.phase === "awaiting_holder_authorization" ? (
+  const holderAuthorizationUrl = trustJourney?.phase === "awaiting_holder_authorization" && browserOrigin
+    ? appendSafeReturnPath(
+        trustJourney.holder_url,
+        buildIntegrationStudioResumeUrl(window.location.href, trustJourney.challenge_id),
+        browserOrigin,
+      )
+    : null;
+
+  const trustAuthorizationAction = trustJourney?.phase === "awaiting_holder_authorization" && holderAuthorizationUrl ? (
     <div className="abx-builder-journey-actions">
       <Btn
-        href={typeof window === "undefined" ? trustJourney.holder_url : appendSafeReturnPath(
-          trustJourney.holder_url,
-          buildIntegrationStudioResumeUrl(window.location.href, trustJourney.challenge_id),
-        )}
+        href={holderAuthorizationUrl}
         size="sm"
       >
         Authorize with wallet
@@ -415,7 +434,9 @@ export function IntegrationStudioRequestWorkbench({
         Check authorization
       </Btn>
     </div>
-  ) : trustJourney && trustJourney.phase !== "executed" ? (
+  ) : trustJourney?.phase === "awaiting_holder_authorization" && browserOrigin ? (
+    <p role="alert">Abraxas could not open a safe same-origin wallet authorization link.</p>
+  ) : trustJourney?.phase === "awaiting_holder_authorization" ? null : trustJourney && trustJourney.phase !== "executed" ? (
     <Btn size="sm" disabled={busy} loading={busy} onClick={() => void continueUnifiedTrustExecution()}>
       Check authorization
     </Btn>

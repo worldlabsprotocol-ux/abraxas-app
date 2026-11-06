@@ -56,8 +56,40 @@ describe("Integration Studio unified trust execution", () => {
       "challenge-1",
     );
     expect(resume).toBe("/build?integration=1&trust_execution_challenge=challenge-1");
-    expect(appendSafeReturnPath("/partner/trust-execution?challenge_id=challenge-1", resume))
+    expect(appendSafeReturnPath("/partner/trust-execution?challenge_id=challenge-1", resume, "https://abraxasworld.xyz"))
       .toContain(`return_to=${encodeURIComponent(resume)}`);
+    expect(appendSafeReturnPath(
+      "https://abraxasworld.xyz/partner/trust-execution?challenge_id=challenge-1&defer_execution=1",
+      resume,
+      "https://abraxasworld.xyz",
+    )).toBe(
+      `https://abraxasworld.xyz/partner/trust-execution?challenge_id=challenge-1&defer_execution=1&return_to=${encodeURIComponent(resume)}`,
+    );
+    expect(appendSafeReturnPath(
+      "https://attacker.example/partner/trust-execution?challenge_id=challenge-1",
+      resume,
+      "https://abraxasworld.xyz",
+    )).toBeNull();
+    expect(appendSafeReturnPath(
+      "//attacker.example/partner/trust-execution?challenge_id=challenge-1",
+      resume,
+      "https://abraxasworld.xyz",
+    )).toBeNull();
+    expect(appendSafeReturnPath(
+      "javascript:alert(1)",
+      resume,
+      "https://abraxasworld.xyz",
+    )).toBeNull();
+    expect(appendSafeReturnPath(
+      "/partner/trust-execution?challenge_id=challenge-1",
+      "https://attacker.example/return",
+      "https://abraxasworld.xyz",
+    )).toBeNull();
+    expect(appendSafeReturnPath(
+      "/partner/trust-execution",
+      resume,
+      "https://abraxasworld.xyz",
+    )).toBeNull();
     expect(safeSameOriginReturnPath(resume)).toBe(resume);
     expect(safeSameOriginReturnPath("https://attacker.example/return")).toBeNull();
     expect(safeSameOriginReturnPath("//attacker.example/return")).toBeNull();
