@@ -474,7 +474,7 @@ export function IntegrationStudioRequestWorkbench({
         state={busy ? "pending" : failed ? "failure" : "ready"}
         status={busy ? "Running against your sandbox app" : failure?.headline ?? (failed ? outcome?.headline : undefined)}
         error={failure?.detail ?? error}
-        action={trustAuthorizationAction ?? (applicationId && signedIn ? (
+        action={trustAuthorizationAction ?? (applicationId && signedIn && (!failure || failure.actionLabel) ? (
           <Btn
             size="sm"
             disabled={busy}

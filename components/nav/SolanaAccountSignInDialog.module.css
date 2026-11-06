@@ -9,15 +9,27 @@
   justify-content: center;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.72);
+  overflow: hidden;
 }
 
 .panel {
   width: min(440px, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: var(--surface-raised);
   padding: 1.35rem 1.45rem 1.45rem;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-height: 760px) {
+  .panel { padding: 0.85rem 1rem 1rem; }
+  .hero { margin-bottom: 0.35rem; }
+  .heroEmblem { display: none; }
+  .steps { margin-bottom: 0.65rem; padding: 0.4rem 0.45rem 0.5rem; }
+  .walletConnectedChip { margin-bottom: 0.65rem; }
 }
 
 .hero {

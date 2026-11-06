@@ -5,7 +5,6 @@
 // does (verification, credential issuance, manual transaction review,
 // identity verification, third-party Swap integration).
 
-import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
@@ -27,7 +26,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function TermsPage() {
   return (
-    <RedesignPage accent="legal" maxWidth={680}>
+    <div style={{ maxWidth: 680, margin: "0 auto" }}>
       <PageHeader title="Terms of Service" />
       <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
                    marginBottom:"2rem" }}>
@@ -147,6 +146,6 @@ export default function TermsPage() {
           <p>Questions about these Terms can be sent through the contact form on our
           website.</p>
         </Section>
-    </RedesignPage>
+    </div>
   );
 }

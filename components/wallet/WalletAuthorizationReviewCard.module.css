@@ -161,3 +161,11 @@
   line-height: 1.55;
   color: var(--text-muted);
 }
+
+@media (max-height: 760px), (max-width: 480px) {
+  .card { padding: 0.65rem 0.75rem; margin-bottom: 0.65rem; }
+  .head { margin-bottom: 0.45rem; }
+  .summary, .facts dd, .assurances li, .consequence { line-height: 1.35; }
+  .facts { gap: 0.25rem; margin-bottom: 0.5rem; }
+  .assurances, .assurancesMuted { gap: 0.25rem; margin-bottom: 0.45rem; }
+}

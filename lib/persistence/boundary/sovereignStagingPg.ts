@@ -25,10 +25,11 @@ export function resolveSovereignStagingDatabaseUrl(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
   const envClass = parseSovereignEnvClass(env);
-  if (envClass !== "staging" && envClass !== "disposable") return null;
+  if (envClass !== "staging" && envClass !== "disposable" && envClass !== "institutional") return null;
   return (
     env[SOVEREIGN_STAGING_PG_URL_ENV]?.trim()
     ?? env.ABRAXAS_DATABASE_URL?.trim()
+    ?? env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
     ?? env.ABRAXAS_DISPOSABLE_PG_TEST_URL?.trim()
     ?? null
   );
