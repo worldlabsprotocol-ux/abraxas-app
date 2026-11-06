@@ -99,7 +99,7 @@ describe("beginner sandbox test access", () => {
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface autoRunOnReady />);
     await screen.findByRole("button", { name: "Check authorization" });
     fireEvent.click(screen.getByRole("button", { name: "Check authorization" }));
-    await waitFor(() => expect(screen.getByText("This test did not authorize access.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("This test did not authorize access"));
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try test again" })).toBeEnabled();
   });

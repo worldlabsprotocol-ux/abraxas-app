@@ -204,6 +204,7 @@ export function IntegrationStudioRequestWorkbench({
     setTrustJourney(executed.journey);
     setError("");
     if (classification === "deny") {
+      setError("This test did not authorize access. The current signed receipt was independently verified and denied this action.");
       setOutcome({
         headline: "This test did not authorize access.",
         summary: "Abraxas independently verified a current signed receipt whose policy decision denied this action.",
