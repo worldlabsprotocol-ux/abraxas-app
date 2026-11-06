@@ -7,13 +7,14 @@ use abraxas_eligibility_gate::canonical::CONSUMER_AUTH_SEED;
 use abraxas_eligibility_gate::cpi;
 use abraxas_eligibility_gate::cpi::accounts::Consume;
 use abraxas_eligibility_gate::program::AbraxasEligibilityGate;
-use abraxas_eligibility_gate::{Authorization, GateConfig};
+use abraxas_eligibility_gate::{Authorization, GateConfig, SIGNER_ACTIVE, SIGNER_RETIRING};
 use anchor_lang::prelude::*;
 
 declare_id!("3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j");
 
 pub const PROTOCOL_CONFIG_SEED: &[u8] = b"protocol_access_config";
 pub const ENTITLEMENT_SEED: &[u8] = b"protocol_access";
+pub const LEGACY_PROTOCOL_CONFIG_ACCOUNT_SIZE: usize = 169;
 
 #[program]
 pub mod abraxas_protocol_access {
@@ -54,6 +55,77 @@ pub mod abraxas_protocol_access {
         protocol.expected_action_hash = expected_action_hash;
         protocol.expected_environment = expected_environment;
         protocol.bump = ctx.bumps.protocol;
+        protocol.config_version = ctx.accounts.config.version;
+        Ok(())
+    }
+
+    pub fn migrate_legacy_protocol_config(ctx: Context<MigrateLegacyProtocolConfig>) -> Result<()> {
+        let protocol_info = ctx.accounts.protocol.to_account_info();
+        require!(
+            protocol_info.data_len() == LEGACY_PROTOCOL_CONFIG_ACCOUNT_SIZE,
+            ProtocolAccessError::InvalidMigrationState
+        );
+        let legacy = {
+            let data = protocol_info.try_borrow_data()?;
+            require!(
+                data[..8] == ProtocolAccessConfig::DISCRIMINATOR,
+                ProtocolAccessError::InvalidMigrationState
+            );
+            let mut legacy_data: &[u8] = &data[8..];
+            LegacyProtocolAccessConfig::deserialize(&mut legacy_data)?
+        };
+        require_keys_eq!(
+            ctx.accounts.config.admin,
+            ctx.accounts.admin.key(),
+            ProtocolAccessError::Unauthorized
+        );
+        require_keys_eq!(
+            legacy.gate_config,
+            ctx.accounts.config.key(),
+            ProtocolAccessError::WrongGateConfig
+        );
+
+        let required_lamports = Rent::get()?.minimum_balance(8 + ProtocolAccessConfig::INIT_SPACE);
+        let shortfall = required_lamports.saturating_sub(protocol_info.lamports());
+        if shortfall > 0 {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.admin.to_account_info(),
+                        to: protocol_info.clone(),
+                    },
+                ),
+                shortfall,
+            )?;
+        }
+        protocol_info.realloc(8 + ProtocolAccessConfig::INIT_SPACE, true)?;
+        let migrated = ProtocolAccessConfig {
+            gate_config: legacy.gate_config,
+            expected_partner_hash: legacy.expected_partner_hash,
+            expected_policy_hash: legacy.expected_policy_hash,
+            expected_action_hash: legacy.expected_action_hash,
+            expected_environment: legacy.expected_environment,
+            bump: legacy.bump,
+            config_version: ctx.accounts.config.version,
+        };
+        let mut data = protocol_info.try_borrow_mut_data()?;
+        migrated.try_serialize(&mut &mut data[..])?;
+        Ok(())
+    }
+
+    pub fn update_protocol_access(ctx: Context<UpdateProtocolAccess>) -> Result<()> {
+        require_keys_eq!(
+            ctx.accounts.config.admin,
+            ctx.accounts.admin.key(),
+            ProtocolAccessError::Unauthorized
+        );
+        let protocol = &mut ctx.accounts.protocol;
+        protocol.expected_partner_hash = ctx.accounts.config.partner_hash;
+        protocol.expected_policy_hash = ctx.accounts.config.policy_hash;
+        protocol.expected_action_hash = ctx.accounts.config.action_hash;
+        protocol.expected_environment = ctx.accounts.config.environment;
+        protocol.config_version = ctx.accounts.config.version;
         Ok(())
     }
 
@@ -73,6 +145,10 @@ pub mod abraxas_protocol_access {
             config.key(),
             protocol.gate_config,
             ProtocolAccessError::WrongGateConfig
+        );
+        require!(
+            protocol.config_version == config.version,
+            ProtocolAccessError::StaleConfiguration
         );
         require!(
             config.partner_hash == protocol.expected_partner_hash,
@@ -190,6 +266,10 @@ pub mod abraxas_protocol_access {
             ProtocolAccessError::WrongGateConfig
         );
         require!(!authorization.revoked, ProtocolAccessError::Revoked);
+        require!(
+            signer_key_current(config, authorization.signer_key_id),
+            ProtocolAccessError::UnknownSigner
+        );
         require!(authorization.consumed, ProtocolAccessError::NotConsumed);
         require!(
             authorization.config_version == config.version,
@@ -197,6 +277,10 @@ pub mod abraxas_protocol_access {
         );
         require!(
             ctx.accounts.entitlement.config_version == config.version,
+            ProtocolAccessError::StaleConfiguration
+        );
+        require!(
+            protocol.config_version == config.version,
             ProtocolAccessError::StaleConfiguration
         );
         require!(
@@ -240,6 +324,23 @@ pub mod abraxas_protocol_access {
     }
 }
 
+fn signer_key_current(config: &GateConfig, key_id: [u8; 32]) -> bool {
+    config.signers.iter().any(|slot| {
+        (slot.status == SIGNER_ACTIVE || slot.status == SIGNER_RETIRING) && slot.key_id == key_id
+    })
+}
+
+/// Exact protocol configuration layout deployed before config version binding.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct LegacyProtocolAccessConfig {
+    pub gate_config: Pubkey,
+    pub expected_partner_hash: [u8; 32],
+    pub expected_policy_hash: [u8; 32],
+    pub expected_action_hash: [u8; 32],
+    pub expected_environment: [u8; 32],
+    pub bump: u8,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct ProtocolAccessConfig {
@@ -249,6 +350,7 @@ pub struct ProtocolAccessConfig {
     pub expected_action_hash: [u8; 32],
     pub expected_environment: [u8; 32],
     pub bump: u8,
+    pub config_version: u64,
 }
 
 #[account]
@@ -279,6 +381,35 @@ pub struct InitializeProtocolAccess<'info> {
     )]
     pub protocol: Account<'info, ProtocolAccessConfig>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MigrateLegacyProtocolConfig<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    pub config: Account<'info, GateConfig>,
+    /// CHECK: the legacy layout cannot be deserialized as ProtocolAccessConfig before realloc.
+    #[account(
+        mut,
+        owner = crate::ID,
+        seeds = [PROTOCOL_CONFIG_SEED, config.key().as_ref()],
+        bump
+    )]
+    pub protocol: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateProtocolAccess<'info> {
+    pub admin: Signer<'info>,
+    pub config: Account<'info, GateConfig>,
+    #[account(
+        mut,
+        seeds = [PROTOCOL_CONFIG_SEED, config.key().as_ref()],
+        bump = protocol.bump,
+        constraint = protocol.gate_config == config.key() @ ProtocolAccessError::WrongGateConfig
+    )]
+    pub protocol: Account<'info, ProtocolAccessConfig>,
 }
 
 #[derive(Accounts)]
@@ -356,5 +487,11 @@ pub enum ProtocolAccessError {
     StaleConfiguration,
     #[msg("wrong_authorization")]
     WrongAuthorization,
+    #[msg("unknown_signer")]
+    UnknownSigner,
+    #[msg("unauthorized")]
+    Unauthorized,
+    #[msg("invalid_migration_state")]
+    InvalidMigrationState,
 }
 
