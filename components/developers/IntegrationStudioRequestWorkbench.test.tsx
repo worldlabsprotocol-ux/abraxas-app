@@ -73,9 +73,10 @@ describe("beginner sandbox test access", () => {
   });
   it("shows a completed test only after wallet authorization and independent portable verification", async () => {
     operational.signedIn = true;
+    const appOrigin = window.location.origin;
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "http://localhost/partner/trust-execution?challenge_id=challenge-1&defer_execution=1", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: `${appOrigin}/partner/trust-execution?challenge_id=challenge-1&defer_execution=1`, receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "authorized_pending_execution", challenge_id: "challenge-1", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-1", holder_url: "", receipt_id: "receipt-1", decision_result: "approved", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "yes" } } }) });
     vi.stubGlobal("fetch", fetch);
@@ -93,7 +94,7 @@ describe("beginner sandbox test access", () => {
     operational.signedIn = true;
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "/holder", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "/partner/trust-execution?challenge_id=challenge-1", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "authorized_pending_execution", challenge_id: "challenge-1", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-1", holder_url: "", receipt_id: "receipt-denied", decision_result: "denied", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "yes" } } }) });
     vi.stubGlobal("fetch", fetch);
@@ -150,7 +151,7 @@ describe("beginner sandbox test access", () => {
     operational.signedIn = true;
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "/holder", receipt_id: null, decision_result: null, evidence_mode: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "awaiting_holder_authorization", challenge_id: "challenge-1", holder_url: "/partner/trust-execution?challenge_id=challenge-1", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "authorized_pending_execution", challenge_id: "challenge-1", holder_url: "", receipt_id: null, decision_result: null, evidence_mode: null } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ journey: { phase: "executed", challenge_id: "challenge-1", holder_url: "", receipt_id: "receipt-1", decision_result: "approved", evidence_mode: "controlled_test_evidence" }, independent_verification: { result: { cryptographically_authentic: true, currently_acceptable: "no" } } }) });
     vi.stubGlobal("fetch", fetch);
