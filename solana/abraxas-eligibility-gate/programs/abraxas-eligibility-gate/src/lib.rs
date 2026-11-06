@@ -3,6 +3,7 @@
 // Never transfers SOL/tokens, mints, swaps, or calls arbitrary programs.
 
 use anchor_lang::prelude::*;
+use anchor_lang::Discriminator;
 use anchor_lang::solana_program::{
     ed25519_program, keccak,
     sysvar::instructions::{load_current_index_checked, load_instruction_at_checked},

@@ -9,6 +9,7 @@ use abraxas_eligibility_gate::cpi::accounts::Consume;
 use abraxas_eligibility_gate::program::AbraxasEligibilityGate;
 use abraxas_eligibility_gate::{Authorization, GateConfig, SIGNER_ACTIVE, SIGNER_RETIRING};
 use anchor_lang::prelude::*;
+use anchor_lang::Discriminator;
 
 declare_id!("3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j");
 
