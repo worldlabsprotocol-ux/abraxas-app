@@ -3,6 +3,7 @@
 // Never transfers SOL/tokens, mints, swaps, or calls arbitrary programs.
 
 use anchor_lang::prelude::*;
+use anchor_lang::Discriminator;
 use anchor_lang::solana_program::{
     ed25519_program, keccak,
     sysvar::instructions::{load_current_index_checked, load_instruction_at_checked},
@@ -20,6 +21,7 @@ pub const SIGNER_EMPTY: u8 = 0;
 pub const SIGNER_ACTIVE: u8 = 1;
 pub const SIGNER_RETIRING: u8 = 2;
 pub const SIGNER_REVOKED: u8 = 3;
+pub const LEGACY_GATE_CONFIG_ACCOUNT_SIZE: usize = 591;
 
 #[program]
 pub mod abraxas_eligibility_gate {
@@ -38,6 +40,66 @@ pub mod abraxas_eligibility_gate {
         config.apply(params.clone())?;
         config.install_initial_signer(params.signer_key_id, params.trusted_signer)?;
         config.bump = ctx.bumps.config;
+        Ok(())
+    }
+
+    pub fn migrate_legacy_config(ctx: Context<MigrateLegacyConfig>) -> Result<()> {
+        let config_info = ctx.accounts.config.to_account_info();
+        require!(
+            config_info.data_len() == LEGACY_GATE_CONFIG_ACCOUNT_SIZE,
+            GateError::InvalidMigrationState
+        );
+
+        let legacy = {
+            let data = config_info.try_borrow_data()?;
+            require!(
+                data[..8] == GateConfig::DISCRIMINATOR,
+                GateError::InvalidMigrationState
+            );
+            let mut legacy_data: &[u8] = &data[8..];
+            LegacyGateConfig::deserialize(&mut legacy_data)?
+        };
+        require_keys_eq!(
+            legacy.admin,
+            ctx.accounts.admin.key(),
+            GateError::Unauthorized
+        );
+
+        let required_lamports = Rent::get()?.minimum_balance(8 + GateConfig::INIT_SPACE);
+        let shortfall = required_lamports.saturating_sub(config_info.lamports());
+        if shortfall > 0 {
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.admin.to_account_info(),
+                        to: config_info.clone(),
+                    },
+                ),
+                shortfall,
+            )?;
+        }
+        config_info.realloc(8 + GateConfig::INIT_SPACE, true)?;
+
+        let migrated = GateConfig {
+            admin: legacy.admin,
+            partner_program: legacy.partner_program,
+            network_id: legacy.network_id,
+            partner_hash: legacy.partner_hash,
+            policy_hash: legacy.policy_hash,
+            action_hash: legacy.action_hash,
+            environment: legacy.environment,
+            require_subject: legacy.require_subject,
+            require_institutional: legacy.require_institutional,
+            expected_organization_commitment: legacy.expected_organization_commitment,
+            expected_actor_commitment: legacy.expected_actor_commitment,
+            expected_institutional_result_category: legacy.expected_institutional_result_category,
+            bump: legacy.bump,
+            signers: legacy.signers,
+            version: 1,
+        };
+        let mut data = config_info.try_borrow_mut_data()?;
+        migrated.try_serialize(&mut &mut data[..])?;
         Ok(())
     }
 
@@ -386,6 +448,25 @@ pub struct SignerSlot {
     pub status: u8,
 }
 
+/// Exact pre-version layout deployed on devnet. It is migration-only and must remain frozen.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct LegacyGateConfig {
+    pub admin: Pubkey,
+    pub partner_program: Pubkey,
+    pub network_id: [u8; 32],
+    pub partner_hash: [u8; 32],
+    pub policy_hash: [u8; 32],
+    pub action_hash: [u8; 32],
+    pub environment: [u8; 32],
+    pub require_subject: bool,
+    pub require_institutional: bool,
+    pub expected_organization_commitment: [u8; 32],
+    pub expected_actor_commitment: [u8; 32],
+    pub expected_institutional_result_category: [u8; 32],
+    pub bump: u8,
+    pub signers: [SignerSlot; MAX_SIGNERS],
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct GateConfig {
@@ -438,6 +519,21 @@ pub struct InitializeConfig<'info> {
         bump
     )]
     pub config: Account<'info, GateConfig>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MigrateLegacyConfig<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    /// CHECK: the legacy layout cannot be deserialized as GateConfig until after reallocation.
+    #[account(
+        mut,
+        owner = crate::ID,
+        seeds = [CONFIG_SEED, admin.key().as_ref()],
+        bump
+    )]
+    pub config: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -557,5 +653,9 @@ pub enum GateError {
     HolderMismatch,
     #[msg("stale_configuration")]
     StaleConfiguration,
+    #[msg("unauthorized")]
+    Unauthorized,
+    #[msg("invalid_migration_state")]
+    InvalidMigrationState,
 }
 

@@ -47,6 +47,7 @@ pub enum PortableVerificationError {
     WrongTransaction,
     StaleConfiguration,
     WrongAction,
+    UnknownSigner,
     Revoked,
     NotConsumed,
     Expired,
@@ -69,6 +70,7 @@ pub fn authorization_state_commitment(
     bytes.extend_from_slice(&authorization.attestation_ref);
     bytes.extend_from_slice(&authorization.subject_hash);
     bytes.extend_from_slice(&authorization.config_version.to_be_bytes());
+    bytes.extend_from_slice(&authorization.signer_key_id);
     bytes.extend_from_slice(&authorization.expires_at.to_be_bytes());
     bytes.push(u8::from(authorization.consumed));
     bytes.push(u8::from(authorization.revoked));
@@ -115,6 +117,12 @@ pub fn verify_portable_authorization_receipt(
     if observed.authorization.revoked {
         return Err(PortableVerificationError::Revoked);
     }
+    if !crate::signer_key_current(
+        &observed.config.signers,
+        observed.authorization.signer_key_id,
+    ) {
+        return Err(PortableVerificationError::UnknownSigner);
+    }
     if !observed.authorization.consumed {
         return Err(PortableVerificationError::NotConsumed);
     }
@@ -141,6 +149,12 @@ mod portable_tests {
     fn fixture() -> (GateConfig, Authorization, Pubkey, Pubkey) {
         let config_address = Pubkey::new_unique();
         let authorization_address = Pubkey::new_unique();
+        let mut signers = [SignerSlot::default(); MAX_SIGNERS];
+        signers[0] = SignerSlot {
+            key_id: [6; 32],
+            pubkey: [10; 32],
+            status: crate::SIGNER_ACTIVE,
+        };
         let config = GateConfig {
             admin: Pubkey::new_unique(),
             partner_program: Pubkey::new_unique(),
@@ -155,7 +169,7 @@ mod portable_tests {
             expected_actor_commitment: [0; 32],
             expected_institutional_result_category: [0; 32],
             bump: 1,
-            signers: [SignerSlot::default(); MAX_SIGNERS],
+            signers,
             version: 7,
         };
         let authorization = Authorization {
@@ -275,6 +289,44 @@ mod portable_tests {
         assert_eq!(
             verify_portable_authorization_receipt(&receipt, &revoked),
             Err(PortableVerificationError::Revoked)
+        );
+    }
+
+    #[test]
+    fn revoked_issuer_key_invalidates_an_older_portable_receipt() {
+        let (mut config, authorization, config_address, authorization_address) = fixture();
+        let receipt = PortableAuthorizationReceipt {
+            network_id: config.network_id,
+            program_id: crate::ID,
+            config: config_address,
+            authorization: authorization_address,
+            action_hash: config.action_hash,
+            config_version: config.version,
+            transaction_signature: [9; 64],
+            finalized_slot: 42,
+            state_commitment: authorization_state_commitment(
+                config_address,
+                authorization_address,
+                &config,
+                &authorization,
+            ),
+        };
+        config.signers[0].status = crate::SIGNER_REVOKED;
+        let observed = CurrentSolanaObservation {
+            network_id: config.network_id,
+            program_id: crate::ID,
+            config_address,
+            authorization_address,
+            config: &config,
+            authorization: &authorization,
+            transaction_signature: [9; 64],
+            transaction_slot: 42,
+            transaction_finalized: true,
+            unix_timestamp: 1_900_000_000,
+        };
+        assert_eq!(
+            verify_portable_authorization_receipt(&receipt, &observed),
+            Err(PortableVerificationError::UnknownSigner)
         );
     }
 }

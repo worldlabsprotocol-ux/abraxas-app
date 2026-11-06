@@ -448,6 +448,19 @@ fn update_config_ix(admin: Pubkey, config: Pubkey, params: ConfigParams) -> Inst
     }
 }
 
+fn update_protocol_ix(admin: Pubkey, config: Pubkey, protocol: Pubkey) -> Instruction {
+    Instruction {
+        program_id: PROTOCOL_ID,
+        accounts: abraxas_protocol_access::accounts::UpdateProtocolAccess {
+            admin,
+            config,
+            protocol,
+        }
+        .to_account_metas(None),
+        data: abraxas_protocol_access::instruction::UpdateProtocolAccess {}.data(),
+    }
+}
+
 async fn airdrop(ctx: &mut ProgramTestContext, user: &Keypair) {
     let from = ctx.payer.pubkey();
     let ix = solana_sdk::system_instruction::transfer(&from, &user.pubkey(), 2_000_000_000);
@@ -1072,6 +1085,54 @@ async fn individual_revocation_invalidates_an_existing_entitlement() {
 }
 
 #[tokio::test]
+async fn issuer_key_revocation_invalidates_an_existing_entitlement() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize_gate(
+        &mut ctx,
+        &admin,
+        default_params(signer.pubkey().to_bytes(), fields),
+    )
+    .await;
+    let protocol = initialize_protocol(&mut ctx, config, fields).await;
+    authorize(&mut ctx, &signer, config, fields).await;
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![activate_ix(payer, config, protocol, fields)],
+        &[],
+    )
+    .await
+    .unwrap();
+    send(&mut ctx, vec![assert_ix(config, protocol, fields)], &[])
+        .await
+        .unwrap();
+
+    send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::RevokeTrustedSigner {
+                key_id: fields.signer_key_id,
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+    refresh(&mut ctx).await;
+    let err = send(&mut ctx, vec![assert_ix(config, protocol, fields)], &[])
+        .await
+        .unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
+#[tokio::test]
 async fn policy_supersession_rejects_stale_authorization_before_consumption() {
     let mut ctx = start().await;
     let admin = Keypair::new();
@@ -1089,6 +1150,8 @@ async fn policy_supersession_rejects_stale_authorization_before_consumption() {
 
     let mut superseded = fields;
     superseded.policy_hash = h32(201);
+    superseded.attestation_id = h32(202);
+    superseded.nonce = h32(203);
     send(
         &mut ctx,
         vec![update_config_ix(
@@ -1110,6 +1173,23 @@ async fn policy_supersession_rejects_stale_authorization_before_consumption() {
     .await
     .unwrap_err();
     assert!(custom_code(&err).is_some());
+
+    send(
+        &mut ctx,
+        vec![update_protocol_ix(admin.pubkey(), config, protocol)],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+    authorize(&mut ctx, &signer, config, superseded).await;
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![activate_ix(payer, config, protocol, superseded)],
+        &[],
+    )
+    .await
+    .unwrap();
 }
 
 #[tokio::test]
