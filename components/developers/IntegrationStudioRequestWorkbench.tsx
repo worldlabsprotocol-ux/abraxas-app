@@ -26,6 +26,13 @@ import {
   persistHarnessSuccess,
   readPersistedHarnessSuccess,
 } from "@/components/developers/ApplicationConnectionAfterTestPanel";
+import {
+  independentlyAccepted,
+  resolveIntegrationStudioExecutionMode,
+  SOLANA_EXECUTION_PENDING_MESSAGE,
+  type IllustrativeIndependentVerification,
+  type UnifiedTrustExecutionJourney,
+} from "@/lib/partner/integrationStudio/unifiedTrustExecution";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -78,6 +85,114 @@ export function IntegrationStudioRequestWorkbench({
   const [failure, setFailure] = useState<IntegrationTestFailurePresentation | null>(null);
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [pendingReceipt, setPendingReceipt] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
+  const [trustJourney, setTrustJourney] = useState<UnifiedTrustExecutionJourney | null>(null);
+
+  async function startUnifiedTrustExecution() {
+    if (!applicationId) return;
+    const sessionRes = await fetch("/api/auth/wallet/session", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const session = await sessionRes.json().catch(() => ({})) as {
+      authenticated?: boolean;
+      wallet_address?: string;
+    };
+    if (!sessionRes.ok || !session.authenticated || !session.wallet_address) {
+      setFailure({
+        kind: "action_required",
+        headline: "Wallet authorization required",
+        detail: "Sign in with the wallet that will authorize this sandbox action, then run the test again.",
+        actionLabel: "Resume sign-in",
+        refreshSession: true,
+      });
+      return;
+    }
+
+    const res = await fetch(`/api/launchpad/applications/${applicationId}/sovereign-trust-execution`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        holder_wallet_address: session.wallet_address,
+        solana_network: "devnet",
+        defer_execution: true,
+      }),
+    });
+    const data = await res.json().catch(() => ({})) as {
+      code?: string;
+      error?: string;
+      journey?: UnifiedTrustExecutionJourney;
+    };
+    recordHttpTrace(
+      { method: "POST", path: `/api/launchpad/applications/${applicationId}/sovereign-trust-execution`, mode: "offchain_portable" },
+      res.ok ? data : { ok: false, status: res.status, ...data },
+    );
+    if (!res.ok || !data.journey) {
+      setFailure(presentIntegrationTestFailure(res.status, data));
+      return;
+    }
+    setTrustJourney(data.journey);
+  }
+
+  async function continueUnifiedTrustExecution() {
+    if (!applicationId || !trustJourney?.challenge_id) return;
+    const statusRes = await fetch(
+      `/api/launchpad/applications/${applicationId}/sovereign-trust-execution?challenge_id=${encodeURIComponent(trustJourney.challenge_id)}`,
+      { credentials: "include", cache: "no-store" },
+    );
+    const statusData = await statusRes.json().catch(() => ({})) as {
+      code?: string;
+      journey?: UnifiedTrustExecutionJourney;
+    };
+    if (!statusRes.ok || !statusData.journey) {
+      setError(statusData.code ?? "Abraxas could not load the authorization status.");
+      return;
+    }
+    setTrustJourney(statusData.journey);
+    if (statusData.journey.phase === "awaiting_holder_authorization") {
+      setError("The wallet authorization is still waiting for a signature.");
+      return;
+    }
+    if (statusData.journey.phase === "expired") {
+      setError("The wallet authorization expired. Start a new sandbox test.");
+      return;
+    }
+
+    const executeRes = await fetch(`/api/launchpad/applications/${applicationId}/sovereign-trust-execution`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ execute: true, challenge_id: trustJourney.challenge_id }),
+    });
+    const executed = await executeRes.json().catch(() => ({})) as {
+      code?: string;
+      journey?: UnifiedTrustExecutionJourney;
+      independent_verification?: IllustrativeIndependentVerification;
+    };
+    recordHttpTrace(
+      { method: "POST", path: `/api/launchpad/applications/${applicationId}/sovereign-trust-execution`, phase: "execute" },
+      executeRes.ok ? executed : { ok: false, status: executeRes.status, ...executed },
+    );
+    if (!executeRes.ok || !executed.journey) {
+      setError(executed.code ?? "The authorized action could not be executed.");
+      return;
+    }
+    if (!executed.journey.receipt_id || !independentlyAccepted(executed.independent_verification)) {
+      setError("A portable receipt was produced, but independent verification did not accept it. No successful test was recorded.");
+      return;
+    }
+    setTrustJourney(executed.journey);
+    setError("");
+    setOutcome({
+      headline: "Your test worked.",
+      summary: "The wallet authorized one policy-bound action. Abraxas issued a portable signed receipt and the existing independent verifier accepted its cryptographic authority and current status.",
+      tone: "success",
+      observedAccess: "allow",
+      passed: true,
+      nextActionLabel: "Connect my application",
+      receiptId: executed.journey.receipt_id,
+    });
+  }
 
   async function verifyHarnessReceipt(receiptId: string): Promise<"confirmed" | "invalid" | "unavailable"> {
     if (!applicationId || !signedIn) return "unavailable";
@@ -158,6 +273,28 @@ export function IntegrationStudioRequestWorkbench({
     setError("");
     setFailure(null);
     setOutcome(null);
+    setTrustJourney(null);
+    if (resolveIntegrationStudioExecutionMode(pathId) === "solana_finalized") {
+      setError(SOLANA_EXECUTION_PENDING_MESSAGE);
+      setBusy(false);
+      return;
+    }
+    if (scenarioId === "approved") {
+      try {
+        await startUnifiedTrustExecution();
+      } catch {
+        setFailure({
+          kind: "test_failed",
+          headline: "Trust execution did not start",
+          detail: "The request did not reach the unified trust-execution service. Check the connection and try again.",
+          actionLabel: "Try test again",
+          refreshSession: false,
+        });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     const requestBody = buildLaunchpadTestScenarioRequestBody({
       scenarioId,
       returnUrl,
@@ -226,6 +363,21 @@ export function IntegrationStudioRequestWorkbench({
   const showConnectJourney =
     Boolean(applicationId && signedIn && packId && policyId && outcome?.tone === "success");
 
+  const trustAuthorizationAction = trustJourney?.phase === "awaiting_holder_authorization" ? (
+    <div className="abx-builder-journey-actions">
+      <Btn href={trustJourney.holder_url} size="sm" newTab>
+        Authorize with wallet
+      </Btn>
+      <Btn size="sm" variant="secondary" disabled={busy} onClick={() => void continueUnifiedTrustExecution()}>
+        Check authorization
+      </Btn>
+    </div>
+  ) : trustJourney && trustJourney.phase !== "executed" ? (
+    <Btn size="sm" disabled={busy} loading={busy} onClick={() => void continueUnifiedTrustExecution()}>
+      Check authorization
+    </Btn>
+  ) : null;
+
   if (beginnerSurface && showConnectJourney) {
     return (
       <ApplicationConnectionAfterTestPanel
@@ -253,12 +405,12 @@ export function IntegrationStudioRequestWorkbench({
       <BuilderActiveTask
         taskKey="run-sandbox-test"
         testId="builder-run-test-minimal"
-        title={busy ? "Running your test" : failed ? "Your test needs attention" : "Run a sandbox test"}
-        description={failed ? "Check the result, then try again." : "See how your app receives a verified result."}
+        title={busy ? "Running your test" : failed ? "Your test needs attention" : trustJourney ? "Authorize the sandbox action" : "Run a sandbox test"}
+        description={failed ? "Check the result, then try again." : trustJourney ? "Sign the action-specific request, then verify the resulting receipt." : "See how your app receives a verified result."}
         state={busy ? "pending" : failed ? "failure" : "ready"}
         status={busy ? "Running against your sandbox app" : failure?.headline ?? (failed ? outcome?.headline : undefined)}
         error={failure?.detail ?? error}
-        action={applicationId && signedIn ? (
+        action={trustAuthorizationAction ?? (applicationId && signedIn ? (
           <Btn
             size="sm"
             disabled={busy}
@@ -267,9 +419,12 @@ export function IntegrationStudioRequestWorkbench({
           >
             {pendingReceipt ? "Recheck receipt" : failure?.actionLabel ?? (failed ? "Try test again" : "Run test")}
           </Btn>
-        ) : null}
+        ) : null)}
       >
         {!applicationId ? <p className="abx-builder-journey-support">Create your test app first.</p> : null}
+        {trustJourney?.phase === "awaiting_holder_authorization" ? (
+          <p className="abx-builder-journey-support">Review and sign the action-specific request, then return here and check authorization.</p>
+        ) : null}
       </BuilderActiveTask>
     );
   }

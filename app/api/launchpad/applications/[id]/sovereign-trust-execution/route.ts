@@ -114,6 +114,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     correlation_id?: string;
     execute?: boolean;
     challenge_id?: string;
+    defer_execution?: boolean;
   };
   try {
     body = await req.json();
@@ -188,6 +189,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       uri: `${origin}/api/launchpad/applications/${params.id}/sovereign-trust-execution`,
       solanaNetwork: String(body.solana_network ?? "devnet"),
       correlationId: body.correlation_id,
+      deferExecution: body.defer_execution === true,
     });
     if (!started.ok) {
       return launchpadJson({ ok: false, code: started.code }, started.code === "application_scope_invalid" ? 403 : 400);

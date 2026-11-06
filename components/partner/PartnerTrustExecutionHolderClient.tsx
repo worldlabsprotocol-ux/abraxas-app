@@ -10,6 +10,7 @@ import { PassportSolanaSignInButton } from "@/components/passport/PassportSolana
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 import { encodePassportSolanaMessage } from "@/lib/auth/passportSolanaAuth/message";
 import bs58 from "bs58";
+import { shouldContinueAfterHolderAuthorization } from "@/lib/partner/integrationStudio/unifiedTrustExecution";
 
 type ChallengeView = {
   challenge_id: string;
@@ -25,6 +26,7 @@ type ChallengeView = {
 export function PartnerTrustExecutionHolderClient() {
   const params = useSearchParams();
   const challengeId = params.get("challenge_id")?.trim() ?? "";
+  const continueEvaluation = shouldContinueAfterHolderAuthorization(params.get("defer_execution"));
   const { publicKey, signMessage, connected } = useWallet();
   const [challenge, setChallenge] = useState<ChallengeView | null>(null);
   const [walletSessionOk, setWalletSessionOk] = useState(false);
@@ -94,6 +96,7 @@ export function PartnerTrustExecutionHolderClient() {
           challenge_id: challenge.challenge_id,
           signature,
           solana_network: "devnet",
+          continue_evaluation: continueEvaluation,
         }),
       });
       const body = await res.json() as {
@@ -126,7 +129,7 @@ export function PartnerTrustExecutionHolderClient() {
     } finally {
       setBusy(false);
     }
-  }, [challenge, signMessage, walletAddress, loadChallenge]);
+  }, [challenge, signMessage, walletAddress, loadChallenge, continueEvaluation]);
 
   if (!challengeId) {
     return (
