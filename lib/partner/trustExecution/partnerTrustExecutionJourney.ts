@@ -14,6 +14,7 @@ import { executeTrustExecutionDecision } from "./executeTrustExecutionDecision";
 import { resolveTrustExecutionEvidenceMode } from "./controlledTestEvidenceGate";
 import type { TrustExecutionVerificationMaterial } from "./trustExecutionTypes";
 import { PARTNER_TRUST_EXECUTION_ACTION } from "./constants";
+import { buildHolderTrustExecutionUrl } from "./holderUrl";
 
 export type PartnerTrustExecutionJourneyPhase =
   | "awaiting_holder_authorization"
@@ -42,9 +43,12 @@ export type PartnerTrustExecutionJourneyView = {
   independent_verification_material: TrustExecutionVerificationMaterial | null;
 };
 
-function holderUrlForChallenge(challengeId: string): string {
-  const origin = getPublicAppOrigin();
-  return `${origin}/partner/trust-execution?challenge_id=${encodeURIComponent(challengeId)}`;
+function holderUrlForChallenge(challengeId: string, deferExecution = false): string {
+  return buildHolderTrustExecutionUrl({
+    origin: getPublicAppOrigin(),
+    challengeId,
+    deferExecution,
+  });
 }
 
 export async function startPartnerTrustExecutionJourney(input: {
@@ -55,6 +59,7 @@ export async function startPartnerTrustExecutionJourney(input: {
   uri: string;
   solanaNetwork: string;
   correlationId?: string;
+  deferExecution?: boolean;
 }): Promise<
   | { ok: true; journey: PartnerTrustExecutionJourneyView }
   | { ok: false; code: string }
@@ -82,7 +87,15 @@ export async function startPartnerTrustExecutionJourney(input: {
     challengeId: issued.challenge_id,
   });
   if (!journey.ok) return { ok: false, code: journey.code };
-  return { ok: true, journey: journey.journey };
+  return {
+    ok: true,
+    journey: input.deferExecution
+      ? {
+          ...journey.journey,
+          holder_url: holderUrlForChallenge(issued.challenge_id, true),
+        }
+      : journey.journey,
+  };
 }
 
 function challengeApplicationMatches(

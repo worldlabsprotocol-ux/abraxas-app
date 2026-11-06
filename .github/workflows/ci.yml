@@ -92,7 +92,7 @@ jobs:
         run: npm run check:homepage
 
       - name: Sandbox result continuity tests
-        run: npx vitest run components/developers/IntegrationStudioRequestWorkbench.test.tsx components/developers/IntegrationStudioBeginnerFlow.test.tsx lib/partner/launchpad/formatHarnessResultForBuilder.test.ts lib/partner/launchpad/verifyStoredHarnessReceipt.test.ts lib/partner/launchpad/runTestScenario.sovereignOnly.test.ts
+        run: npx vitest run components/developers/IntegrationStudioRequestWorkbench.test.tsx components/developers/IntegrationStudioBeginnerFlow.test.tsx lib/partner/integrationStudio/unifiedTrustExecution.test.ts lib/partner/trustExecution/holderUrl.test.ts lib/partner/launchpad/formatHarnessResultForBuilder.test.ts lib/partner/launchpad/verifyStoredHarnessReceipt.test.ts lib/partner/launchpad/runTestScenario.sovereignOnly.test.ts
 
       - name: Sovereign cutover preflight requires explicit target
         run: |

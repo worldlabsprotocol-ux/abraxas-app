@@ -10,6 +10,10 @@ import { PassportSolanaSignInButton } from "@/components/passport/PassportSolana
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 import { encodePassportSolanaMessage } from "@/lib/auth/passportSolanaAuth/message";
 import bs58 from "bs58";
+import {
+  safeSameOriginReturnPath,
+  shouldContinueAfterHolderAuthorization,
+} from "@/lib/partner/integrationStudio/unifiedTrustExecution";
 
 type ChallengeView = {
   challenge_id: string;
@@ -25,6 +29,8 @@ type ChallengeView = {
 export function PartnerTrustExecutionHolderClient() {
   const params = useSearchParams();
   const challengeId = params.get("challenge_id")?.trim() ?? "";
+  const continueEvaluation = shouldContinueAfterHolderAuthorization(params.get("defer_execution"));
+  const returnTo = safeSameOriginReturnPath(params.get("return_to"));
   const { publicKey, signMessage, connected } = useWallet();
   const [challenge, setChallenge] = useState<ChallengeView | null>(null);
   const [walletSessionOk, setWalletSessionOk] = useState(false);
@@ -94,6 +100,7 @@ export function PartnerTrustExecutionHolderClient() {
           challenge_id: challenge.challenge_id,
           signature,
           solana_network: "devnet",
+          continue_evaluation: continueEvaluation,
         }),
       });
       const body = await res.json() as {
@@ -126,7 +133,7 @@ export function PartnerTrustExecutionHolderClient() {
     } finally {
       setBusy(false);
     }
-  }, [challenge, signMessage, walletAddress, loadChallenge]);
+  }, [challenge, signMessage, walletAddress, loadChallenge, continueEvaluation]);
 
   if (!challengeId) {
     return (
@@ -193,7 +200,12 @@ export function PartnerTrustExecutionHolderClient() {
           </p>
           {executionReceiptId ? (
             <p style={{ margin: 0 }}>
-              Durable outcome: {decisionResult ?? "approved"} · receipt {executionReceiptId.slice(0, 16)}…
+              Durable outcome: {decisionResult ?? "unknown"} · receipt {executionReceiptId.slice(0, 16)}…
+            </p>
+          ) : null}
+          {returnTo ? (
+            <p style={{ margin: "0.75rem 0 0" }}>
+              <a href={returnTo}>Return to Integration Studio</a>
             </p>
           ) : null}
         </div>
@@ -224,3 +236,4 @@ export function PartnerTrustExecutionHolderClient() {
     </ContentCard>
   );
 }
+
