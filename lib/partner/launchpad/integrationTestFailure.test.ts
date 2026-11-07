@@ -56,6 +56,23 @@ describe("integration test failure presentation", () => {
     });
   });
 
+  it("explains an unbound or drifted sandbox authority without offering a retry", () => {
+    expect(presentIntegrationTestFailure(409, {
+      code: "institutional_authority_missing",
+    })).toMatchObject({
+      kind: "action_required",
+      headline: "Sandbox app is not bound",
+      actionLabel: "",
+      refreshSession: false,
+    });
+    expect(presentIntegrationTestFailure(409, {
+      code: "institutional_authority_stale",
+    }).detail).toContain("changed after its trust-execution binding");
+    expect(presentIntegrationTestFailure(409, {
+      code: "institutional_authority_conflict",
+    }).actionLabel).toBe("");
+  });
+
   it("labels an unknown execution error as a failed test without exposing raw codes", () => {
     const presented = presentIntegrationTestFailure(500, { code: "internal_database_detail" });
     expect(presented.kind).toBe("test_failed");

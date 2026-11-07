@@ -25,9 +25,10 @@ export type PartnerApplicationScope = {
   policyId: string;
   policyVersion: number;
   status: string;
+  sourceRevision: string | null;
 };
 
-export async function resolvePartnerApplicationScope(input: {
+export async function loadPartnerApplicationAuthority(input: {
   partnerId: string;
   applicationId: string;
 }): Promise<PartnerApplicationScope | null> {
@@ -37,8 +38,10 @@ export async function resolvePartnerApplicationScope(input: {
     policy_id: string;
     policy_version: number;
     status: string;
+    authority_source_revision: string | null;
   }>(
-    `select id, partner_id, policy_id, policy_version, status
+    `select id, partner_id, policy_id, policy_version, status,
+            authority_source_revision::text as authority_source_revision
      from public.partner_launchpad_applications
      where id = $1::uuid and partner_id = $2
      limit 1`,
@@ -46,14 +49,24 @@ export async function resolvePartnerApplicationScope(input: {
   );
   if ("error" in result) throw new ScopedChallengeStoreUnavailableError(result.error);
   const row = result.rows[0];
-  if (!row || row.status !== "active") return null;
+  if (!row) return null;
   return {
     applicationId: row.id,
     partnerId: row.partner_id,
     policyId: row.policy_id,
     policyVersion: row.policy_version,
     status: row.status,
+    sourceRevision: row.authority_source_revision,
   };
+}
+
+export async function resolvePartnerApplicationScope(input: {
+  partnerId: string;
+  applicationId: string;
+}): Promise<PartnerApplicationScope | null> {
+  const scope = await loadPartnerApplicationAuthority(input);
+  if (!scope || scope.status !== "active") return null;
+  return scope;
 }
 
 export async function issuePartnerTrustExecutionChallenge(input: {

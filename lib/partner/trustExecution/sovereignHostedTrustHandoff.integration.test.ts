@@ -35,6 +35,27 @@ vi.mock("@/lib/auth/ephemeralWallet/walletSession", () => ({
   requireEphemeralWalletScope: vi.fn(),
 }));
 
+vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication.server", () => ({
+  getLaunchpadApplicationForPartner: vi.fn(async (applicationId: string, partnerId: string) => ({
+    id: applicationId,
+    partner_id: partnerId,
+    environment: "sandbox",
+    status: "active",
+    policy_id: "policy-handoff856",
+    policy_version: 1,
+    updated_at: "2026-11-07T20:00:00.000Z",
+  })),
+  getLaunchpadApplicationById: vi.fn(async (applicationId: string) => ({
+    id: applicationId,
+    partner_id: "partner-handoff856",
+    environment: "sandbox",
+    status: "active",
+    policy_id: "policy-handoff856",
+    policy_version: 1,
+    updated_at: "2026-11-07T20:00:00.000Z",
+  })),
+}));
+
 describeProof("Sovereign hosted handoff and evaluate continuation", () => {
   let pool: pg.Pool;
   let kp: Keypair;
@@ -70,6 +91,7 @@ describeProof("Sovereign hosted handoff and evaluate continuation", () => {
       process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL?.trim()
       ?? `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = url;
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = url;
     process.env.ABRAXAS_DATABASE_URL = url;
     pool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(pool);
@@ -87,9 +109,13 @@ describeProof("Sovereign hosted handoff and evaluate continuation", () => {
     );
     for (const appId of [APP_A, APP_B]) {
       await pool.query(
-        `insert into public.partner_launchpad_applications (id, partner_id, status, policy_id, policy_version)
-         values ($1::uuid,$2,'active',$3,1) on conflict (id) do update set partner_id = excluded.partner_id`,
-        [appId, PARTNER, POLICY],
+        `insert into public.partner_launchpad_applications
+           (id, partner_id, status, policy_id, policy_version, authority_source_revision)
+         values ($1::uuid,$2,'active',$3,1,$4::timestamptz)
+         on conflict (id) do update
+           set partner_id = excluded.partner_id,
+               authority_source_revision = excluded.authority_source_revision`,
+        [appId, PARTNER, POLICY, "2026-11-07T20:00:00.000Z"],
       );
     }
     kp = Keypair.generate();

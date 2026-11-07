@@ -15,6 +15,13 @@ import { resolveTrustExecutionEvidenceMode } from "./controlledTestEvidenceGate"
 import type { TrustExecutionVerificationMaterial } from "./trustExecutionTypes";
 import { PARTNER_TRUST_EXECUTION_ACTION } from "./constants";
 import { buildHolderTrustExecutionUrl } from "./holderUrl";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
+import {
+  challengeAgreesWithAuthority,
+  institutionalAuthorityFromLaunchpad,
+  type InstitutionalAuthorityRecord,
+} from "./institutionalAuthorityBinding";
+import { requireBoundInstitutionalAuthority } from "./institutionalAuthorityGate";
 
 export type PartnerTrustExecutionJourneyPhase =
   | "awaiting_holder_authorization"
@@ -182,6 +189,7 @@ export async function executePartnerTrustExecutionJourney(input: {
   applicationId: string;
   challengeId: string;
   env?: Record<string, string | undefined>;
+  sourceAuthority?: InstitutionalAuthorityRecord | null;
 }): Promise<
   | { ok: true; journey: PartnerTrustExecutionJourneyView }
   | { ok: false; code: string; decision_result?: string }
@@ -197,6 +205,23 @@ export async function executePartnerTrustExecutionJourney(input: {
   }
   if (!loaded.journey.authorization_ref) {
     return { ok: false, code: "awaiting_holder_authorization" };
+  }
+  if (input.sourceAuthority !== undefined) {
+    const bound = await requireBoundInstitutionalAuthority({
+      authorizedApplicationId: input.applicationId,
+      source: input.sourceAuthority,
+    });
+    if (!bound.ok) return { ok: false, code: bound.code };
+    const challenge = challengeAgreesWithAuthority({
+      authority: bound.binding,
+      challenge: {
+        partnerId: loaded.journey.partner_id,
+        applicationId: loaded.journey.application_id,
+        policyId: loaded.journey.policy_id,
+        policyVersion: loaded.journey.policy_version,
+      },
+    });
+    if (!challenge.ok) return { ok: false, code: challenge.code };
   }
   if (loaded.journey.phase === "executed" && loaded.journey.receipt_id) {
     return { ok: true, journey: loaded.journey };
@@ -256,6 +281,30 @@ export async function authorizePartnerTrustExecutionAndContinue(input: {
     }
   | { ok: false; code: string; phase: "authorize" | "execution" }
 > {
+  const pending = await loadScopedTrustChallenge(input.challengeId);
+  if (!pending) return { ok: false, code: "not_found", phase: "authorize" };
+  if (!pending.applicationId) {
+    return { ok: false, code: "application_missing", phase: "execution" };
+  }
+  const source = institutionalAuthorityFromLaunchpad(
+    await getLaunchpadApplicationForPartner(pending.applicationId, pending.partnerId),
+  );
+  const bound = await requireBoundInstitutionalAuthority({
+    authorizedApplicationId: pending.applicationId,
+    source,
+  });
+  if (!bound.ok) return { ok: false, code: bound.code, phase: "execution" };
+  const challenge = challengeAgreesWithAuthority({
+    authority: bound.binding,
+    challenge: {
+      partnerId: pending.partnerId,
+      applicationId: pending.applicationId,
+      policyId: pending.policyId,
+      policyVersion: pending.policyVersion,
+    },
+  });
+  if (!challenge.ok) return { ok: false, code: challenge.code, phase: "execution" };
+
   const authorized = await authorizePartnerTrustExecution({
     challengeId: input.challengeId,
     walletAddress: input.walletAddress,
@@ -287,6 +336,7 @@ export async function authorizePartnerTrustExecutionAndContinue(input: {
     applicationId,
     challengeId: input.challengeId,
     env: input.env,
+    sourceAuthority: source,
   });
 
   return {

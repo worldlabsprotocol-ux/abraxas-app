@@ -14,10 +14,40 @@ type PublicFailureBody = {
   retry_after_sec?: number;
 };
 
+const AUTHORITY_FAILURES: Record<string, { headline: string; detail: string }> = {
+  institutional_authority_missing: {
+    headline: "Sandbox app is not bound",
+    detail: "This sandbox app is not bound to the trust-execution store, so the test was not run. An operator must bind this one application before it can continue.",
+  },
+  institutional_authority_conflict: {
+    headline: "Sandbox authority conflicts",
+    detail: "The trust-execution store names a different partner or policy than this sandbox app, so the test was not run.",
+  },
+  institutional_authority_stale: {
+    headline: "Sandbox authority is stale",
+    detail: "This sandbox app changed after its trust-execution binding, so the test was not run.",
+  },
+  institutional_authority_mismatch: {
+    headline: "Sandbox authority does not match",
+    detail: "This sandbox app's status or identity does not match its trust-execution binding, so the test was not run.",
+  },
+};
+
 export function presentIntegrationTestFailure(
   status: number,
   body: PublicFailureBody,
 ): IntegrationTestFailurePresentation {
+  const authority = body.code ? AUTHORITY_FAILURES[body.code] : undefined;
+  if (authority) {
+    return {
+      kind: "action_required",
+      headline: authority.headline,
+      detail: authority.detail,
+      actionLabel: "",
+      refreshSession: false,
+    };
+  }
+
   if (status === 401 || status === 403) {
     return {
       kind: "action_required",

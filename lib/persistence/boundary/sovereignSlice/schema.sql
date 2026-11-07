@@ -99,8 +99,12 @@ create table if not exists public.partner_launchpad_applications (
   partner_id text not null references public.partners(partner_id),
   status text not null default 'active' check (status in ('active', 'suspended', 'pending')),
   policy_id text not null,
-  policy_version int not null default 1
+  policy_version int not null default 1,
+  authority_source_revision timestamptz
 );
+
+alter table public.partner_launchpad_applications
+  add column if not exists authority_source_revision timestamptz;
 
 create table if not exists public.partner_launchpad_signed_receipts (
   receipt_id text primary key references public.decision_receipts(id),
