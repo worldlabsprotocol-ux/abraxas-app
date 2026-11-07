@@ -179,6 +179,17 @@ describe("beginner sandbox test access", () => {
     expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
+  it("explains the missing authorization store without a pointless retry", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
+      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({ code: "scoped_challenge_store_unavailable" }) });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
+    fireEvent.click(screen.getByRole("button", { name: "Run test" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("authorized operator must restore"));
+    expect(screen.queryByRole("button", { name: /try|check again/i })).not.toBeInTheDocument();
+  });
   it("offers session recovery instead of blindly rerunning an unauthorized test", async () => {
     operational.signedIn = true;
     const fetch = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({ authenticated: false }) });

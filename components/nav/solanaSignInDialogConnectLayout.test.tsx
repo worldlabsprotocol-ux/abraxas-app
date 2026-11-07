@@ -49,6 +49,19 @@ describe("SolanaAccountSignInDialog connect layout", () => {
 
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({ auth_mode: "ephemeral_wallet" })));
+    vi.stubGlobal("scrollTo", vi.fn());
+  });
+
+  it("locks and restores the background scroll position", () => {
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 640 });
+    const { unmount } = render(
+      <SolanaAccountSignInDialog open onClose={vi.fn()} onSuccess={vi.fn()} busy={false} setBusy={vi.fn()} setError={vi.fn()} />,
+    );
+    expect(document.body.style.position).toBe("fixed");
+    expect(document.body.style.top).toBe("-640px");
+    unmount();
+    expect(document.body.style.position).toBe("");
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 640);
   });
 
   it("shows heading, Phantom primary, disclaimer, and Solflare secondary without Connect-with copy", () => {

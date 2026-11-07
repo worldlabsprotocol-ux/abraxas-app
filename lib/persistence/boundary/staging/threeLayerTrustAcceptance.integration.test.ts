@@ -75,6 +75,7 @@ describeProof("Build #820 three-layer acceptance (CI contract)", () => {
         ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
         ABRAXAS_SOVEREIGN_STAGING_FIXTURE_WRITES: "true",
         ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true",
+        ABRAXAS_DISPOSABLE_PG_TEST_URL: resolvePrimaryUrl(),
         ABRAXAS_DATABASE_URL: resolvePrimaryUrl(),
         ABRAXAS_SOVEREIGN_STAGING_PG_URL: resolvePrimaryUrl(),
         ABRAXAS_SOVEREIGN_RESTORE_PG_URL: resolveRestoreUrl(),

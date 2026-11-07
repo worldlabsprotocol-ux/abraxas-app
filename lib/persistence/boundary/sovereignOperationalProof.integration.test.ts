@@ -149,6 +149,7 @@ describeProof("sovereign operational proof (Build #815)", () => {
       ABRAXAS_SOVEREIGN_STAGING_FIXTURE_WRITES: "true",
       ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true",
       ABRAXAS_DISPOSABLE_PG_TEST_DATABASE_ID: "abraxas_sovereign_disposable",
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: dbUrl(PRIMARY_DB),
       ABRAXAS_DATABASE_URL: dbUrl(PRIMARY_DB),
       ABRAXAS_SOVEREIGN_STAGING_PG_URL: dbUrl(PRIMARY_DB),
       ABRAXAS_SOVEREIGN_RESTORE_PG_URL: dbUrl(RESTORE_DB),
@@ -271,7 +272,7 @@ describeProof("sovereign operational proof (Build #815)", () => {
     const mismatches = assertReconciliationEqual(primaryReconBefore, restoredRecon);
     expect(mismatches).toEqual([]);
 
-    const restoreEnv = { ...testEnv, ABRAXAS_DATABASE_URL: dbUrl(RESTORE_DB), ABRAXAS_SOVEREIGN_STAGING_PG_URL: dbUrl(RESTORE_DB) };
+    const restoreEnv = { ...testEnv, ABRAXAS_DISPOSABLE_PG_TEST_URL: dbUrl(RESTORE_DB), ABRAXAS_DATABASE_URL: dbUrl(RESTORE_DB), ABRAXAS_SOVEREIGN_STAGING_PG_URL: dbUrl(RESTORE_DB) };
     resetSovereignStagingPgPoolForTests();
     const restoredProvenance = await loadReceiptProvenanceFromSovereignPg(record.id, restoreEnv);
     expect(restoredProvenance?.signature).toBe(record.signature);
@@ -317,7 +318,7 @@ describeProof("sovereign operational proof (Build #815)", () => {
     await revokeIssuerSigningKeyOnSovereignPg(restorePool, TEST_KEY.signingKeyId);
     expect(await readIssuerSigningKeyStatus(restorePool, TEST_KEY.signingKeyId)).toBe("revoked");
 
-    const restoreEnv = { ...testEnv, ABRAXAS_DATABASE_URL: dbUrl(RESTORE_DB), ABRAXAS_SOVEREIGN_STAGING_PG_URL: dbUrl(RESTORE_DB) };
+    const restoreEnv = { ...testEnv, ABRAXAS_DISPOSABLE_PG_TEST_URL: dbUrl(RESTORE_DB), ABRAXAS_DATABASE_URL: dbUrl(RESTORE_DB), ABRAXAS_SOVEREIGN_STAGING_PG_URL: dbUrl(RESTORE_DB) };
     resetSovereignStagingPgPoolForTests();
     const freshness = await evaluateReceiptFreshnessFromSovereignPg({
       record,
@@ -344,6 +345,7 @@ describeProof("sovereign operational proof (Build #815)", () => {
     resetSovereignStagingPgPoolForTests();
     const badEnv = {
       ...testEnv,
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: "postgresql://postgres:postgres@127.0.0.1:59999/missing",
       ABRAXAS_SOVEREIGN_STAGING_PG_URL: "postgresql://postgres:postgres@127.0.0.1:59999/missing",
       ABRAXAS_DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:59999/missing",
     };

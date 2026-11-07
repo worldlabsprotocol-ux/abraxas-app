@@ -28,6 +28,16 @@ export function presentIntegrationTestFailure(
     };
   }
 
+  if (body.code === "scoped_challenge_store_unavailable") {
+    return {
+      kind: "action_required",
+      headline: "Authorization service is not configured",
+      detail: "Abraxas could not store and consume this one-time authorization safely, so the test was not executed. An authorized operator must restore the Production trust-execution store before this action can continue.",
+      actionLabel: "",
+      refreshSession: false,
+    };
+  }
+
   if (body.code === "launchpad_signing_unavailable") {
     return {
       kind: "action_required",

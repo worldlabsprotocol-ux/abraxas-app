@@ -10,6 +10,7 @@ import { assertNotProductionSupabaseProject } from "./isolationGuard";
 import { SOVEREIGN_STAGING_PG_URL_ENV } from "./config";
 
 let stagingPool: Pool | null = null;
+let stagingPoolDatabaseUrl: string | null = null;
 
 function buildPoolConfig(databaseUrl: string, env: Record<string, string | undefined>): PoolConfig {
   const max = Number.parseInt(env.ABRAXAS_PG_POOL_MAX ?? "4", 10) || 4;
@@ -25,18 +26,27 @@ export function resolveSovereignStagingDatabaseUrl(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
   const envClass = parseSovereignEnvClass(env);
-  if (envClass !== "staging" && envClass !== "disposable") return null;
-  return (
-    env[SOVEREIGN_STAGING_PG_URL_ENV]?.trim()
-    ?? env.ABRAXAS_DATABASE_URL?.trim()
-    ?? env.ABRAXAS_DISPOSABLE_PG_TEST_URL?.trim()
-    ?? null
-  );
+  if (envClass === "institutional") {
+    return env.ABRAXAS_DATABASE_URL?.trim() || null;
+  }
+  if (envClass === "staging") {
+    return (
+      env[SOVEREIGN_STAGING_PG_URL_ENV]?.trim()
+      ?? env.ABRAXAS_DATABASE_URL?.trim()
+      ?? env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
+      ?? null
+    );
+  }
+  if (envClass === "disposable") {
+    return env.ABRAXAS_DISPOSABLE_PG_TEST_URL?.trim() || null;
+  }
+  return null;
 }
 
 export function resetSovereignStagingPgPoolForTests(): void {
   if (stagingPool) void stagingPool.end().catch(() => undefined);
   stagingPool = null;
+  stagingPoolDatabaseUrl = null;
 }
 
 export function getSovereignStagingPgPool(
@@ -46,8 +56,14 @@ export function getSovereignStagingPgPool(
   if (!url) return null;
   const blocked = assertNotProductionSupabaseProject(url);
   if (blocked) return null;
+  if (stagingPool && stagingPoolDatabaseUrl !== url) {
+    void stagingPool.end().catch(() => undefined);
+    stagingPool = null;
+    stagingPoolDatabaseUrl = null;
+  }
   if (!stagingPool) {
     stagingPool = new pg.Pool(buildPoolConfig(url, env));
+    stagingPoolDatabaseUrl = url;
   }
   return stagingPool;
 }
