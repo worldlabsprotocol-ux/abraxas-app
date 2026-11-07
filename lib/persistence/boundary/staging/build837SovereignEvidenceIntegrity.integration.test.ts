@@ -64,6 +64,7 @@ describeProof("Build #837 sovereign evidence integrity", () => {
         ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
         ABRAXAS_SOVEREIGN_STAGING_FIXTURE_WRITES: "true",
         ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true",
+        ABRAXAS_DISPOSABLE_PG_TEST_URL: url,
         ABRAXAS_DATABASE_URL: url,
         ABRAXAS_SOVEREIGN_STAGING_PG_URL: url,
       },
