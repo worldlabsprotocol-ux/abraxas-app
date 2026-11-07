@@ -29,6 +29,13 @@ describe("launchpad public error messages", () => {
     expect(body.error).not.toContain("launchpad_rate_limited");
   });
 
+  it("names the unavailable trust-execution store without echoing the code", () => {
+    const body = launchpadPublicErrorBody("scoped_challenge_store_unavailable");
+    expect(body.code).toBe("scoped_challenge_store_unavailable");
+    expect(body.error).toMatch(/one-time authorization/i);
+    expect(body.error).not.toContain("scoped_challenge_store_unavailable");
+  });
+
   it("prefers server-provided safe error over raw code in client helper", () => {
     const message = launchpadErrorFromResponse({
       code: "launchpad_rate_limited",

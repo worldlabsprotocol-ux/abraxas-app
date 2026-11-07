@@ -183,7 +183,15 @@ describe("beginner sandbox test access", () => {
     operational.signedIn = true;
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
-      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({ code: "scoped_challenge_store_unavailable" }) });
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({
+          ok: false,
+          code: "launchpad_not_configured",
+          error: "scoped_challenge_store_unavailable",
+        }),
+      });
     vi.stubGlobal("fetch", fetch);
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
     fireEvent.click(screen.getByRole("button", { name: "Run test" }));
