@@ -70,7 +70,9 @@ describeProof("Build #855 unified partner trust execution journey", () => {
       process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL?.trim()
       ?? `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = url;
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = url;
     process.env.ABRAXAS_DATABASE_URL = url;
+    resetSovereignStagingPgPoolForTests();
     pool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(pool);
     for (const pid of [PARTNER, OTHER_PARTNER]) {

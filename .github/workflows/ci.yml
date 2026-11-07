@@ -417,6 +417,10 @@ jobs:
         run: npm ci
       - name: Independent verifier (Build #818, no app backend)
         run: npx vitest run packages/abraxas-independent-verifier/src/independentVerifier.adversarial.test.ts packages/abraxas-independent-verifier/src/signedStatus.adversarial.test.ts lib/persistence/boundary/independentVerifierHarness.test.ts examples/integration-first-relying-party/integration-first.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts
+      - name: Fresh sandbox trust-execution schema proof
+        run: npx vitest run --no-file-parallelism lib/partner/trustExecution/sandboxTrustExecutionSchema.integration.test.ts
+        env:
+          ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
       - name: Sovereign slice operational proof (no Supabase)
         run: npx vitest run --no-file-parallelism lib/persistence/boundary/sovereignOperationalProof.integration.test.ts
         env:
