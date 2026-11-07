@@ -469,6 +469,7 @@ export async function runBuild820Acceptance(input: {
     const exportCompleted = Date.now();
     await restoreEncryptedSovereignSliceBackup(input.restorePool, encrypted, {
       ...env,
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: env.ABRAXAS_SOVEREIGN_RESTORE_PG_URL ?? env.ABRAXAS_DISPOSABLE_PG_TEST_URL,
       ABRAXAS_DATABASE_URL: env.ABRAXAS_SOVEREIGN_RESTORE_PG_URL ?? env.ABRAXAS_DATABASE_URL,
       ABRAXAS_SOVEREIGN_STAGING_PG_URL: env.ABRAXAS_SOVEREIGN_RESTORE_PG_URL ?? env.ABRAXAS_SOVEREIGN_STAGING_PG_URL,
     });
