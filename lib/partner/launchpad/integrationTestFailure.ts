@@ -28,7 +28,10 @@ export function presentIntegrationTestFailure(
     };
   }
 
-  if (body.code === "scoped_challenge_store_unavailable") {
+  // Production #940 returned the reason in `error` and `launchpad_not_configured` in `code`.
+  const storeUnavailable = body.code === "scoped_challenge_store_unavailable"
+    || (body.code === "launchpad_not_configured" && body.error === "scoped_challenge_store_unavailable");
+  if (storeUnavailable) {
     return {
       kind: "action_required",
       headline: "Authorization service is not configured",

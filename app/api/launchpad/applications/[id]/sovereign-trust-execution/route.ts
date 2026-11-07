@@ -91,7 +91,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     return launchpadJson({ ok: true, journey: sanitizeJourneyForPartner(loaded.journey) });
   } catch (error) {
     if (error instanceof ScopedChallengeStoreUnavailableError) {
-      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503, error.code);
+      return launchpadError(error.code, 503);
     }
     throw error;
   }
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return launchpadJson({ ok: true, journey: sanitizeJourneyForPartner(started.journey) });
   } catch (error) {
     if (error instanceof ScopedChallengeStoreUnavailableError) {
-      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503, error.code);
+      return launchpadError(error.code, 503);
     }
     throw error;
   }

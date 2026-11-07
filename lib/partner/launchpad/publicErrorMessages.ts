@@ -23,6 +23,8 @@ const PUBLIC_ERROR_MESSAGES: Record<string, (ctx?: LaunchpadPublicErrorContext) 
     "That callback URL is not allowed. Use HTTPS on your domain, or http://localhost for local development.",
   [LAUNCHPAD_PUBLIC_ERRORS.provision_failed]: () =>
     "Could not create your test app. Wait a moment and try again.",
+  scoped_challenge_store_unavailable: () =>
+    "Abraxas could not store and consume this one-time authorization safely, so the test was not executed. An authorized operator must restore the Production trust-execution store before this action can continue.",
 };
 
 export function formatLaunchpadPublicError(

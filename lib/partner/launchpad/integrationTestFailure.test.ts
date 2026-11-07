@@ -35,6 +35,27 @@ describe("integration test failure presentation", () => {
     }).detail).toContain("12 seconds");
   });
 
+  it("names the unavailable authorization store and does not offer a retry", () => {
+    const detail = "Abraxas could not store and consume this one-time authorization safely, so the test was not executed. An authorized operator must restore the Production trust-execution store before this action can continue.";
+    expect(presentIntegrationTestFailure(503, {
+      code: "scoped_challenge_store_unavailable",
+      error: detail,
+    })).toEqual({
+      kind: "action_required",
+      headline: "Authorization service is not configured",
+      detail,
+      actionLabel: "",
+      refreshSession: false,
+    });
+    expect(presentIntegrationTestFailure(503, {
+      code: "launchpad_not_configured",
+      error: "scoped_challenge_store_unavailable",
+    })).toMatchObject({
+      headline: "Authorization service is not configured",
+      actionLabel: "",
+    });
+  });
+
   it("labels an unknown execution error as a failed test without exposing raw codes", () => {
     const presented = presentIntegrationTestFailure(500, { code: "internal_database_detail" });
     expect(presented.kind).toBe("test_failed");
