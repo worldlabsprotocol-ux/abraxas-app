@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSovereignStagingPoolConfig,
+  explainSovereignStagingPoolRefusal,
   getSovereignStagingPgPool,
   resetSovereignStagingPgPoolForTests,
   resolveSovereignStagingDatabaseUrl,
@@ -38,10 +40,12 @@ describe("sovereign trust execution PostgreSQL binding", () => {
   it("does not reuse a pool after the approved binding changes", () => {
     const first = getSovereignStagingPgPool({
       ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+      ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sandbox_trust",
       ABRAXAS_DATABASE_URL: "postgresql://127.0.0.1:5432/abraxas_one",
     });
     const second = getSovereignStagingPgPool({
       ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+      ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sandbox_trust",
       ABRAXAS_DATABASE_URL: "postgresql://127.0.0.1:5432/abraxas_two",
     });
 
@@ -49,5 +53,56 @@ describe("sovereign trust execution PostgreSQL binding", () => {
     expect(second).not.toBeNull();
     expect(second).not.toBe(first);
     resetSovereignStagingPgPoolForTests();
+  });
+
+  it("refuses an institutional pool without identity or verified TLS", () => {
+    const remote = "postgresql://abraxas@db.example:5432/abraxas_sandbox_trust";
+    expect(explainSovereignStagingPoolRefusal(remote, {
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+      ABRAXAS_DATABASE_URL: remote,
+    })?.code).toBe("missing_database_identity");
+    expect(explainSovereignStagingPoolRefusal(remote, {
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+      ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sandbox_trust",
+      ABRAXAS_DATABASE_URL: remote,
+    })?.code).toBe("tls_required");
+    expect(explainSovereignStagingPoolRefusal(remote, {
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+      ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sandbox_trust",
+      ABRAXAS_DATABASE_URL: remote,
+      ABRAXAS_PG_SSL: "require",
+      ABRAXAS_PG_SSL_REJECT_UNAUTHORIZED: "0",
+    })?.code).toBe("tls_verify_disabled");
+    expect(getSovereignStagingPgPool({
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+      ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sovereign_disposable",
+      ABRAXAS_DATABASE_URL: remote,
+      ABRAXAS_PG_SSL: "require",
+    })).toBeNull();
+    resetSovereignStagingPgPoolForTests();
+  });
+
+  it("verifies TLS for a non-local institutional connection and rejects known Supabase projects", () => {
+    const remote = "postgresql://abraxas@db.example:5432/abraxas_sandbox_trust";
+    const config = buildSovereignStagingPoolConfig(remote, { ABRAXAS_PG_SSL: "require" });
+    expect(config.ssl).toEqual({ rejectUnauthorized: true });
+    expect(explainSovereignStagingPoolRefusal(
+      "postgresql://abraxas@db.ocntwbxarpjeixdnzide.supabase.co:5432/postgres",
+      {
+        ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+        ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sandbox_trust",
+        ABRAXAS_DATABASE_URL: "postgresql://abraxas@db.ocntwbxarpjeixdnzide.supabase.co:5432/postgres",
+        ABRAXAS_PG_SSL: "require",
+      },
+    )?.code).toBe("shared_demo_database_denied");
+    expect(explainSovereignStagingPoolRefusal(
+      "postgresql://abraxas@db.bztwutzprwsdrtqdpymf.supabase.co:5432/postgres",
+      {
+        ABRAXAS_SOVEREIGN_ENV_CLASS: "institutional",
+        ABRAXAS_SOVEREIGN_DATABASE_ID: "abraxas_sandbox_trust",
+        ABRAXAS_DATABASE_URL: "postgresql://abraxas@db.bztwutzprwsdrtqdpymf.supabase.co:5432/postgres",
+        ABRAXAS_PG_SSL: "require",
+      },
+    )?.code).toBe("production_supabase_ref_forbidden");
   });
 });

@@ -9,6 +9,8 @@ import {
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { issuePartnerTrustExecutionChallenge } from "@/lib/partner/trustExecution/partnerTrustExecutionService";
 import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthorization/errors";
+import { institutionalAuthorityFromLaunchpad } from "@/lib/partner/trustExecution/institutionalAuthorityBinding";
+import { requireBoundInstitutionalAuthority } from "@/lib/partner/trustExecution/institutionalAuthorityGate";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,13 @@ export async function POST(req: NextRequest) {
 
   const origin = getPublicAppOriginFromRequest(req);
   try {
+    const bound = await requireBoundInstitutionalAuthority({
+      authorizedApplicationId: applicationId,
+      source: institutionalAuthorityFromLaunchpad(app),
+    });
+    if (!bound.ok) {
+      return NextResponse.json({ ok: false, code: bound.code }, { status: 409 });
+    }
     const issued = await issuePartnerTrustExecutionChallenge({
       partnerId: auth.ctx.partnerId,
       applicationId,

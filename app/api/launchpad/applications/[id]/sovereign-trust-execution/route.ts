@@ -17,6 +17,8 @@ import {
   startPartnerTrustExecutionJourney,
 } from "@/lib/partner/trustExecution/partnerTrustExecutionJourney";
 import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthorization/errors";
+import { institutionalAuthorityFromLaunchpad } from "@/lib/partner/trustExecution/institutionalAuthorityBinding";
+import { requireBoundInstitutionalAuthority } from "@/lib/partner/trustExecution/institutionalAuthorityGate";
 import { verifyTrustExecutionMaterial, buildDemoTrustAnchorFromEnv } from "@/lib/partner/trustExecution/verifyTrustExecutionMaterial";
 import type { PartnerTrustExecutionJourneyView } from "@/lib/partner/trustExecution/partnerTrustExecutionJourney";
 
@@ -136,10 +138,19 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       if (!challengeId) {
         return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "challenge_id_required");
       }
+      const sourceAuthority = institutionalAuthorityFromLaunchpad(app);
+      const bound = await requireBoundInstitutionalAuthority({
+        authorizedApplicationId: params.id,
+        source: sourceAuthority,
+      });
+      if (!bound.ok) {
+        return launchpadJson({ ok: false, code: bound.code }, 409);
+      }
       const executed = await executePartnerTrustExecutionJourney({
         partnerId: auth.session.partnerId,
         applicationId: params.id,
         challengeId,
+        sourceAuthority,
       });
       if (!executed.ok) {
         const status =
@@ -179,6 +190,15 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const wallet = String(body.holder_wallet_address ?? "").trim();
     if (!wallet) {
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+    }
+
+    const sourceAuthority = institutionalAuthorityFromLaunchpad(app);
+    const bound = await requireBoundInstitutionalAuthority({
+      authorizedApplicationId: params.id,
+      source: sourceAuthority,
+    });
+    if (!bound.ok) {
+      return launchpadJson({ ok: false, code: bound.code }, 409);
     }
 
     const started = await startPartnerTrustExecutionJourney({

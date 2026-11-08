@@ -8,6 +8,8 @@ import {
 } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { executeTrustExecutionDecision } from "@/lib/partner/trustExecution/executeTrustExecutionDecision";
 import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthorization/errors";
+import { institutionalAuthorityFromLaunchpad } from "@/lib/partner/trustExecution/institutionalAuthorityBinding";
+import { requireBoundInstitutionalAuthority } from "@/lib/partner/trustExecution/institutionalAuthorityGate";
 import { resolveTrustExecutionEvidenceMode } from "@/lib/partner/trustExecution/controlledTestEvidenceGate";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +56,13 @@ export async function POST(req: NextRequest) {
   const controlledTestEvidence = evidenceMode === "controlled_test_evidence";
 
   try {
+    const bound = await requireBoundInstitutionalAuthority({
+      authorizedApplicationId: applicationId,
+      source: institutionalAuthorityFromLaunchpad(app),
+    });
+    if (!bound.ok) {
+      return NextResponse.json({ ok: false, code: bound.code }, { status: 409 });
+    }
     const executed = await executeTrustExecutionDecision({
       partnerId: auth.ctx.partnerId,
       authorizationRef,

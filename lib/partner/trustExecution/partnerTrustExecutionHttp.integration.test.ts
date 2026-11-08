@@ -47,6 +47,9 @@ vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication.server", () => ({
     partner_id: PARTNER,
     environment: "sandbox",
     status: "active",
+    policy_id: POLICY,
+    policy_version: 1,
+    updated_at: "2026-11-07T20:00:00.000Z",
   })),
 }));
 
@@ -96,6 +99,7 @@ describeProof("Build #854 partner trust execution HTTP", () => {
       process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL?.trim()
       ?? `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = url;
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = url;
     process.env.ABRAXAS_DATABASE_URL = url;
     pool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(pool);
@@ -114,9 +118,13 @@ describeProof("Build #854 partner trust execution HTTP", () => {
       [receiptKey.signingKeyId],
     );
     await pool.query(
-      `insert into public.partner_launchpad_applications (id, partner_id, status, policy_id, policy_version)
-       values ($1::uuid,$2,'active',$3,1) on conflict (id) do update set partner_id = excluded.partner_id`,
-      [APP_ID, PARTNER, POLICY],
+      `insert into public.partner_launchpad_applications
+         (id, partner_id, status, policy_id, policy_version, authority_source_revision)
+       values ($1::uuid,$2,'active',$3,1,$4::timestamptz)
+       on conflict (id) do update
+         set partner_id = excluded.partner_id,
+             authority_source_revision = excluded.authority_source_revision`,
+      [APP_ID, PARTNER, POLICY, "2026-11-07T20:00:00.000Z"],
     );
     kp = Keypair.generate();
     wallet = kp.publicKey.toBase58();

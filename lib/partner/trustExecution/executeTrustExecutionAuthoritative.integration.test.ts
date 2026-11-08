@@ -68,7 +68,9 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
 
     const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = url;
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = url;
     process.env.ABRAXAS_DATABASE_URL = url;
+    resetSovereignStagingPgPoolForTests();
     pool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(pool);
 
