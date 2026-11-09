@@ -451,6 +451,42 @@ export function restoreCheckRecovery(
   }
 }
 
+export function restorePrivateFiles(
+  outputDir: string,
+  env: NodeJS.ProcessEnv = process.env,
+  argv: readonly string[] = process.argv,
+  repositoryRoot = process.cwd(),
+  options?: { disposableAllowed?: boolean },
+): PublicAuthoritySummary {
+  const dir = assertCustodyDirectory(outputDir, repositoryRoot, options);
+  const anchorPath = join(dir, PRIVATE_ANCHOR_FILE);
+  const statusPath = join(dir, PRIVATE_STATUS_FILE);
+  if (existsSync(anchorPath) && existsSync(statusPath)) {
+    fail("private_files_present", "Private files are still present. Run restore-check instead of replacing them.");
+  }
+  const passphrase = requirePassphrase(env, argv);
+  const decrypted = decryptRecovery(readFileSync(join(dir, RECOVERY_FILE)), passphrase);
+  try {
+    const payload = JSON.parse(decrypted.toString("utf8")) as {
+      anchor_private_jwk: PrivateJwk;
+      status_private_jwk: PrivateJwk;
+    };
+    const anchorPublic = readJson(join(dir, PUBLIC_ANCHOR_FILE)) as PublicJwk;
+    const statusPublic = readJson(join(dir, PUBLIC_STATUS_FILE)) as PublicJwk;
+    assertSeedMatchesPublic(payload.anchor_private_jwk, anchorPublic);
+    assertSeedMatchesPublic(payload.status_private_jwk, statusPublic);
+    if (!existsSync(anchorPath)) {
+      writeExclusive(anchorPath, `${JSON.stringify(payload.anchor_private_jwk)}\n`, 0o600);
+    }
+    if (!existsSync(statusPath)) {
+      writeExclusive(statusPath, `${JSON.stringify(payload.status_private_jwk)}\n`, 0o600);
+    }
+  } finally {
+    decrypted.fill(0);
+  }
+  return verifyProductionAuthorities(outputDir, repositoryRoot, options);
+}
+
 export function formatPublicSummary(summary: PublicAuthoritySummary): string {
   return [
     "institutional_approval: not_approved",
@@ -463,7 +499,7 @@ export function formatPublicSummary(summary: PublicAuthoritySummary): string {
     `receipt_key_document_digest: ${summary.receipt_key_document_digest}`,
     `registry_version_initial: ${summary.registry_version_initial}`,
     `registry_rotation: ${summary.registry_rotation}`,
-    "private files were retained. Do not delete them until an encrypted backup restores successfully and a second encrypted copy exists.",
+    "private files were retained. Keep them until restore-check passes and a second encrypted copy exists.",
     `output_dir: ${summary.output_dir}`,
   ].join("\n");
 }

@@ -8,6 +8,7 @@ import {
   installProductionSecrets,
   ProductionSigningAuthorityError,
   restoreCheckRecovery,
+  restorePrivateFiles,
   verifyProductionAuthorities,
   verifyVercelScopes,
   writeEncryptedRecovery,
@@ -59,6 +60,11 @@ function main(): number {
       console.log("restore_check: ok");
       return 0;
     }
+    if (command === "restore") {
+      console.log(formatPublicSummary(restorePrivateFiles(outputDir(argv), process.env, process.argv)));
+      console.log("restore: private files recreated from the encrypted backup");
+      return 0;
+    }
     if (command === "install") {
       const saved = installProductionSecrets(outputDir(argv), runCommand);
       console.log(saved.map((name) => `production_secret_saved: ${name}`).join("\n"));
@@ -70,7 +76,7 @@ function main(): number {
       console.log("vercel_scope: production_only");
       return 0;
     }
-    console.error("Usage: generate | verify | backup | restore-check | install | verify-vercel --output <absolute directory outside the repo>");
+    console.error("Usage: generate | verify | backup | restore-check | restore | install | verify-vercel --output <absolute directory outside the repo>");
     return 2;
   } catch (error) {
     const message = error instanceof ProductionSigningAuthorityError

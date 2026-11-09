@@ -1,4 +1,5 @@
-import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdtempSync, readFileSync, rmSync, statSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -14,6 +15,7 @@ import {
   PUBLIC_PIN_FILE,
   RECEIPT_KEY_FINGERPRINT,
   restoreCheckRecovery,
+  restorePrivateFiles,
   STATUS_SIGNER_KEY_ID,
   verifyProductionAuthorities,
   verifyVercelScopes,
@@ -65,6 +67,14 @@ describe("production signing authority ceremony", () => {
     expect(readFileSync(join(dir, PRIVATE_ANCHOR_FILE), "utf8")).toContain(privateSeed);
     expect(() => restoreCheckRecovery(dir, { ABRAXAS_SIGNING_RECOVERY_PASSPHRASE: "wrong-passphrase-value" }, [], REPO, disposable))
       .toThrow(/could not be decrypted/);
+
+    const privateHash = createHash("sha256").update(readFileSync(join(dir, PRIVATE_ANCHOR_FILE))).digest("hex");
+    unlinkSync(join(dir, PRIVATE_ANCHOR_FILE));
+    unlinkSync(join(dir, "status.private.jwk"));
+    const restoredFiles = restorePrivateFiles(dir, env, ["restore"], REPO, disposable);
+    expect(restoredFiles.anchor_fingerprint).toBe(generated.anchor_fingerprint);
+    expect(createHash("sha256").update(readFileSync(join(dir, PRIVATE_ANCHOR_FILE))).digest("hex")).toBe(privateHash);
+    expect(() => restorePrivateFiles(dir, env, ["restore"], REPO, disposable)).toThrow(/still present/);
   });
 
   it("accepts production-only secret names and rejects a preview leak", () => {
