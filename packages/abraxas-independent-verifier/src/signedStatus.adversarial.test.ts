@@ -126,6 +126,7 @@ function signedStatus(
     receipt_status?: "active" | "revoked" | "expired";
     partner_id?: string;
     issuedAt?: Date;
+    superseded?: boolean;
   },
 ) {
   const issued = input.issuedAt ?? new Date();
@@ -144,7 +145,7 @@ function signedStatus(
       status_version: input.version,
       supersedes_status_version: input.version > 1 ? input.version - 1 : null,
       receipt_status: input.receipt_status ?? "active",
-      superseded: false,
+      superseded: input.superseded ?? false,
       partner_operational: true,
       policy_active: true,
       claims_current: true,
@@ -306,6 +307,26 @@ describe("signed status evidence (#819)", () => {
     });
     expect(freshResult.status_evidence_authentic).toBe(true);
     expect(freshResult.currently_acceptable).toBe("no");
+  });
+
+  it("rejects a superseded receipt presented as current", () => {
+    const issuer = signIssuerAuthorityPayloadForTests({
+      payload: issuerPayload(receiptKey, statusSigner),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const rec = receipt(receiptKey);
+    const status = signedStatus(rec, statusSigner, { version: 1, superseded: true });
+    const result = verifyAbraxasReceiptIndependently({
+      record: rec,
+      pinnedTrustAnchor: bundle(anchor),
+      signedIssuerAuthority: issuer,
+      relyingParty: { partner_id: "partner-819", policy_id: "policy-819", environment: "production" },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: status,
+    });
+    expect(result.status_evidence_authentic).toBe(true);
+    expect(result.currently_acceptable).toBe("no");
+    expect(result.failure_codes).toContain("not_currently_acceptable");
   });
 
   it("rejects cross-tenant status reuse", () => {

@@ -110,8 +110,8 @@ export function PartnerSovereignTrustExecutionPanel({ applicationId }: { applica
   return (
     <ContentCard title="Sovereign trust execution (sandbox)">
       <p style={{ marginTop: 0, color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "0.875rem" }}>
-        One connected journey: partner request → hosted holder authorization → automatic evaluation on the same scoped challenge → durable receipt.
-        Holder signing continues evaluation (authorization is not eligibility). Partner execute remains an idempotent retry.
+        One connected journey: partner request, hosted holder authorization, then one evaluation on that same challenge.
+        If a signature is recorded but verification does not finalize it, execute again. The first record stays for audit, and a separate receipt finalizes only after the new signature verifies.
       </p>
 
       <label style={{ display: "grid", gap: "0.35rem", marginBottom: "0.75rem", fontSize: "0.875rem" }}>

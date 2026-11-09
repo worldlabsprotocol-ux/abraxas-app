@@ -15,7 +15,9 @@ import {
 import type { ConsumedTrustAuthorization } from "./trustExecutionTypes";
 import {
   commitFinalizedTrustExecutionOutcome,
+  planTrustExecutionReceiptIdentity,
   stagePendingTrustExecutionReceipt,
+  trustExecutionBaseReceiptId,
 } from "./finalizeTrustExecutionOutcome";
 import { buildAuthoritativeVerificationMaterial } from "./buildTrustExecutionVerificationMaterial";
 import { loadTrustExecutionOutcomeReceipt } from "./loadTrustExecutionOutcomeReceipt";
@@ -189,7 +191,57 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     };
   }
 
-  const receiptId = `dr_trust_exec_${input.auth.challenge_id.slice(-16)}`;
+  const identity = await planTrustExecutionReceiptIdentity({
+    challengeId: input.auth.challenge_id,
+    authorizationRef: input.auth.wallet_binding_ref,
+    partnerId: input.partnerId,
+    applicationId: input.auth.application_id,
+    policyId: input.auth.policy_id,
+    policyVersion: input.auth.policy_version,
+    subjectPseudonymId: input.auth.subject_pseudonym_id,
+    walletBindingRef: input.auth.wallet_binding_ref,
+    env: input.env,
+  });
+  if (!identity.ok) {
+    return { ok: false, code: identity.code, decision_result: "indeterminate" };
+  }
+  if (identity.alreadyFinalized) {
+    const finalized = await loadTrustExecutionOutcomeReceipt({
+      authorizationRef: input.auth.wallet_binding_ref,
+      partnerId: input.partnerId,
+      applicationId: input.auth.application_id,
+      challengeId: input.auth.challenge_id,
+      policyId: input.auth.policy_id,
+      policyVersion: input.auth.policy_version,
+      subjectPseudonymId: input.auth.subject_pseudonym_id,
+    });
+    if (!finalized || isReceiptPendingEvidenceFinalization(finalized)) {
+      return { ok: false, code: "committed_receipt_missing", decision_result: "indeterminate" };
+    }
+    const replayed = await buildAuthoritativeVerificationMaterial({
+      record: finalized,
+      applicationId: input.auth.application_id,
+      env: input.env,
+      anchorPublicJwk: anchor.anchorPublicJwk,
+      anchorPrivateJwk: anchor.anchorPrivateJwk,
+      anchorKeyId: anchor.anchorKeyId,
+      registryVersion: 854,
+    });
+    if (!replayed.ok) {
+      return { ok: false, code: replayed.code, decision_result: "indeterminate" };
+    }
+    return {
+      ok: true,
+      receipt: finalized,
+      verification_material: replayed.material,
+      outcome_created: false,
+    };
+  }
+
+  const receiptId = identity.receiptId;
+  if (receiptId !== trustExecutionBaseReceiptId(input.auth.challenge_id) && !identity.supersedesReceiptId) {
+    return { ok: false, code: "receipt_not_pending", decision_result: "indeterminate" };
+  }
   const decisionId = randomUUID();
   const evaluatedAt = normalizeDecisionReceiptTimestamp(new Date().toISOString());
   const evaluatedClaimRefs = evidenceGraph.evaluated_claim_refs.map((ref) => ({
@@ -221,7 +273,9 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     signature: "",
     signing_key_id: signingKey.key_id,
     anchor_reference: null,
-    idempotency_key: input.auth.correlation_id,
+    idempotency_key: identity.supersedesReceiptId
+      ? `${input.auth.correlation_id}:recovery:${receiptId}`
+      : input.auth.correlation_id,
     created_at: evaluatedAt,
   };
 
@@ -325,6 +379,7 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     commit: () => commitFinalizedTrustExecutionOutcome({
       ...outcomeWrite,
       record,
+      supersedesReceiptId: identity.supersedesReceiptId,
     }),
   });
   if (!settled.ok) return settled;
