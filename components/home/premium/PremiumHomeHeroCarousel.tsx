@@ -211,7 +211,7 @@ export function PremiumHomeHeroCarousel() {
                 aria-roledescription="slide"
                 aria-label={`${chapter.label}. ${chapter.description}`}
                 aria-hidden={hidden}
-                inert={hidden ? "" : undefined}
+                inert={hidden}
               >
                 {chapter.id === "opening" ? (
                   <PremiumHomeHero emblemActive={selected || stacked} variant="carousel" />
