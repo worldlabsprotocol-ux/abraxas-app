@@ -1,6 +1,7 @@
 // FILE: lib/partner/trustExecution/finalizeTrustExecutionOutcome.ts
 
 import type { PoolClient } from "pg";
+import { randomUUID } from "node:crypto";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { getSovereignStagingPgPool } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthorization/errors";
@@ -17,6 +18,8 @@ type TrustExecutionOutcomeWrite = {
   challengeId: string;
   correlationId: string;
   record: DecisionReceiptRecord;
+  /** Pending receipt this signed payload replaces. The original row is not rewritten. */
+  supersedesReceiptId?: string | null;
   env?: Record<string, string | undefined>;
 };
 
@@ -71,7 +74,7 @@ function receiptInsertValues(
     input.record.payload_hash,
     input.record.signature,
     input.record.signing_key_id,
-    input.correlationId,
+    input.record.idempotency_key ?? input.correlationId,
     input.record.created_at,
   ];
 }
@@ -93,13 +96,20 @@ async function resolveInsertedReceiptId(
   insertedId: string | undefined,
 ): Promise<{ ok: true; receiptId: string } | { ok: false; code: string }> {
   if (insertedId) return { ok: true, receiptId: insertedId };
-  const byIdempotency = await client.query(
+  const idempotencyKey = input.record.idempotency_key ?? input.correlationId;
+  const byIdempotency = await client.query<{ id: string }>(
     `select id from public.decision_receipts where idempotency_key = $1 limit 1`,
-    [input.correlationId],
+    [idempotencyKey],
   );
-  const receiptId = byIdempotency.rows[0]?.id;
+  const byKey = byIdempotency.rows[0]?.id;
+  if (byKey && byKey !== input.record.id) return { ok: false, code: "idempotency_receipt_mismatch" };
+  if (byKey) return { ok: true, receiptId: byKey };
+  const byId = await client.query<{ id: string }>(
+    `select id from public.decision_receipts where id = $1`,
+    [input.record.id],
+  );
+  const receiptId = byId.rows[0]?.id;
   if (!receiptId) return { ok: false, code: "receipt_persist_failed" };
-  if (receiptId !== input.record.id) return { ok: false, code: "idempotency_receipt_mismatch" };
   return { ok: true, receiptId };
 }
 
@@ -132,25 +142,103 @@ function rethrowOutcomeWrite(err: unknown): never {
   throw new ScopedChallengeStoreUnavailableError(err instanceof Error ? err.message : String(err));
 }
 
-async function waitForFinalizedOutcome(
+const IN_FLIGHT_RECEIPT_MS = 15_000;
+const COMPETING_OUTCOME_WAIT_MS = 5_000;
+
+async function waitForCompetingFinalizedOutcome(
   pool: NonNullable<ReturnType<typeof getSovereignStagingPgPool>>,
   authorizationRef: string,
-): Promise<
-  | { ok: true; receipt_id: string; staged: "finalized" }
-  | { ok: false; code: string }
-> {
-  const deadline = Date.now() + 5_000;
-  while (Date.now() < deadline) {
+): Promise<string | null> {
+  const deadline = Date.now() + COMPETING_OUTCOME_WAIT_MS;
+  for (;;) {
     const found = await pool.query<{ receipt_id: string | null }>(
       `select receipt_id from public.wallet_scoped_trust_execution_outcomes
-        where authorization_ref = $1`,
+        where authorization_ref = $1 and receipt_id is not null`,
       [authorizationRef],
     );
     const receiptId = found.rows[0]?.receipt_id;
-    if (receiptId) return { ok: true, receipt_id: receiptId, staged: "finalized" };
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    if (receiptId) return receiptId;
+    if (Date.now() >= deadline) return null;
+    await new Promise((resolve) => setTimeout(resolve, 40));
   }
-  return { ok: false, code: "receipt_finalization_in_progress" };
+}
+
+export function trustExecutionBaseReceiptId(challengeId: string): string {
+  return `dr_trust_exec_${challengeId.slice(-16)}`;
+}
+
+type OpenReceiptRow = {
+  id: string;
+  status: string;
+  payload_hash: string;
+  partner_id: string;
+  policy_id: string;
+  policy_version: number;
+  subject_pseudonym_id: string;
+  wallet_binding_ref: string | null;
+};
+
+export async function planTrustExecutionReceiptIdentity(input: {
+  challengeId: string;
+  authorizationRef: string;
+  partnerId: string;
+  applicationId: string;
+  policyId: string;
+  policyVersion: number;
+  subjectPseudonymId: string;
+  walletBindingRef: string;
+  env?: Record<string, string | undefined>;
+}): Promise<
+  | { ok: true; receiptId: string; supersedesReceiptId: string | null; alreadyFinalized: boolean }
+  | { ok: false; code: string }
+> {
+  const pool = getSovereignStagingPgPool(input.env ?? process.env);
+  if (!pool) return { ok: false, code: "sovereign_staging_pg_unavailable" };
+  const baseId = trustExecutionBaseReceiptId(input.challengeId);
+  const outcome = await pool.query<{ receipt_id: string | null }>(
+    `select receipt_id from public.wallet_scoped_trust_execution_outcomes where authorization_ref = $1`,
+    [input.authorizationRef],
+  );
+  const finalizedId = outcome.rows[0]?.receipt_id;
+  if (finalizedId) {
+    return { ok: true, receiptId: finalizedId, supersedesReceiptId: null, alreadyFinalized: true };
+  }
+
+  const existing = await pool.query<OpenReceiptRow>(
+    `select id, status, payload_hash, partner_id, policy_id, policy_version,
+            subject_pseudonym_id, wallet_binding_ref
+       from public.decision_receipts where id = $1`,
+    [baseId],
+  );
+  const row = existing.rows[0];
+  if (!row) {
+    return { ok: true, receiptId: baseId, supersedesReceiptId: null, alreadyFinalized: false };
+  }
+  if (row.status !== "pending_finalization") {
+    return { ok: false, code: "receipt_not_pending" };
+  }
+  const scopeMatches = row.partner_id === input.partnerId
+    && row.policy_id === input.policyId
+    && Number(row.policy_version) === input.policyVersion
+    && row.subject_pseudonym_id === input.subjectPseudonymId
+    && row.wallet_binding_ref === input.walletBindingRef;
+  if (!scopeMatches) return { ok: false, code: "receipt_scope_mismatch" };
+  const link = await pool.query<{ application_id: string }>(
+    `select application_id::text as application_id
+       from public.partner_launchpad_signed_receipts where receipt_id = $1`,
+    [baseId],
+  );
+  const linkedApp = link.rows[0]?.application_id;
+  if (linkedApp && linkedApp !== input.applicationId) {
+    return { ok: false, code: "receipt_scope_mismatch" };
+  }
+  const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
+  return {
+    ok: true,
+    receiptId: `${baseId}_${suffix}`,
+    supersedesReceiptId: baseId,
+    alreadyFinalized: false,
+  };
 }
 
 export async function finalizeTrustExecutionOutcome(
@@ -239,7 +327,6 @@ export async function stagePendingTrustExecutionReceipt(
   const pool = getSovereignStagingPgPool(input.env ?? process.env);
   if (!pool) return { ok: false, code: "sovereign_staging_pg_unavailable" };
 
-  let waitForWinner = false;
   const client = await pool.connect();
   try {
     await client.query("begin");
@@ -264,8 +351,8 @@ export async function stagePendingTrustExecutionReceipt(
       return resolved;
     }
 
-    const stored = await client.query<{ status: string; payload_hash: string }>(
-      `select status, payload_hash from public.decision_receipts where id = $1`,
+    const stored = await client.query<{ status: string; payload_hash: string; created_at: string | Date }>(
+      `select status, payload_hash, created_at from public.decision_receipts where id = $1`,
       [resolved.receiptId],
     );
     const row = stored.rows[0];
@@ -274,13 +361,21 @@ export async function stagePendingTrustExecutionReceipt(
       return { ok: false, code: "receipt_persist_failed" };
     }
     if (row.payload_hash !== input.record.payload_hash) {
-      if (row.status === "pending_finalization") {
-        waitForWinner = true;
-        await client.query("commit");
-      } else {
-        await client.query("rollback");
-        return { ok: false, code: "receipt_hash_mismatch" };
+      const createdAt = new Date(row.created_at).getTime();
+      const competing = row.status === "pending_finalization"
+        && Number.isFinite(createdAt)
+        && Math.abs(Date.now() - createdAt) <= IN_FLIGHT_RECEIPT_MS;
+      await client.query("rollback");
+      if (competing) {
+        const joined = await waitForCompetingFinalizedOutcome(pool, input.authorizationRef);
+        if (joined) return { ok: true, receipt_id: joined, staged: "finalized" };
       }
+      return {
+        ok: false,
+        code: row.status === "pending_finalization"
+          ? "pending_receipt_requires_new_identity"
+          : "receipt_hash_mismatch",
+      };
     } else if (row.status === "pending_finalization") {
       const linked = await linkLaunchpadReceipt(client, resolved.receiptId, input);
       if (!linked.ok) {
@@ -302,9 +397,6 @@ export async function stagePendingTrustExecutionReceipt(
   } finally {
     client.release();
   }
-
-  if (waitForWinner) return waitForFinalizedOutcome(pool, input.authorizationRef);
-  return { ok: false, code: "receipt_persist_failed" };
 }
 
 export async function commitFinalizedTrustExecutionOutcome(
@@ -323,6 +415,8 @@ export async function commitFinalizedTrustExecutionOutcome(
   const client = await pool.connect();
   try {
     await client.query("begin");
+    await client.query(`select pg_advisory_xact_lock(hashtext($1))`, [input.authorizationRef]);
+
     const existing = await client.query<{ receipt_id: string | null }>(
       `select receipt_id from public.wallet_scoped_trust_execution_outcomes
        where authorization_ref = $1
@@ -332,6 +426,46 @@ export async function commitFinalizedTrustExecutionOutcome(
     if (existing.rows[0]?.receipt_id) {
       await client.query("commit");
       return { ok: true, receipt_id: existing.rows[0].receipt_id, created: false };
+    }
+
+    const superseded = await client.query<{ superseding_receipt_id: string }>(
+      `select superseding_receipt_id
+         from public.decision_receipt_supersessions
+        where superseded_receipt_id = $1`,
+      [input.record.id],
+    );
+    if (superseded.rows[0]) {
+      await client.query("rollback");
+      return { ok: false, code: "receipt_superseded" };
+    }
+
+    const predecessorId = input.supersedesReceiptId?.trim() || null;
+    if (predecessorId) {
+      if (predecessorId === input.record.id) {
+        await client.query("rollback");
+        return { ok: false, code: "receipt_scope_mismatch" };
+      }
+      const predecessor = await client.query<OpenReceiptRow>(
+        `select id, status, payload_hash, partner_id, policy_id, policy_version,
+                subject_pseudonym_id, wallet_binding_ref
+           from public.decision_receipts
+          where id = $1
+          for update`,
+        [predecessorId],
+      );
+      const prior = predecessor.rows[0];
+      const priorMatches = prior
+        && prior.status === "pending_finalization"
+        && prior.payload_hash !== input.record.payload_hash
+        && prior.partner_id === input.record.partner_id
+        && prior.policy_id === input.record.policy_id
+        && Number(prior.policy_version) === input.record.policy_version
+        && prior.subject_pseudonym_id === input.record.subject_pseudonym_id
+        && prior.wallet_binding_ref === input.record.wallet_binding_ref;
+      if (!priorMatches) {
+        await client.query("rollback");
+        return { ok: false, code: prior ? "receipt_scope_mismatch" : "receipt_not_pending" };
+      }
     }
 
     const promoted = await client.query(
@@ -365,6 +499,32 @@ export async function commitFinalizedTrustExecutionOutcome(
       return linked;
     }
 
+    if (predecessorId) {
+      await client.query(
+        `insert into public.decision_receipt_supersessions (
+           superseded_receipt_id, superseding_receipt_id, partner_id, policy_id, policy_version, scope
+         )
+         select id, $1, partner_id, policy_id, policy_version, 'explicit_reissue'
+           from public.decision_receipts
+          where wallet_binding_ref = $2
+            and partner_id = $3
+            and policy_id = $4
+            and policy_version = $5
+            and subject_pseudonym_id = $6
+            and status = 'pending_finalization'
+            and id <> $1
+         on conflict (superseded_receipt_id) do nothing`,
+        [
+          input.record.id,
+          input.record.wallet_binding_ref,
+          input.record.partner_id,
+          input.record.policy_id,
+          input.record.policy_version,
+          input.record.subject_pseudonym_id,
+        ],
+      );
+    }
+
     await client.query(
       `insert into public.wallet_scoped_trust_execution_outcomes (
          authorization_ref, challenge_id, partner_id, application_id, receipt_id, correlation_id, decision_result
@@ -390,7 +550,8 @@ export async function commitFinalizedTrustExecutionOutcome(
         [input.authorizationRef],
       );
       const rid = replay.rows[0]?.receipt_id;
-      if (rid === input.record.id) return { ok: true, receipt_id: rid, created: false };
+      if (rid) return { ok: true, receipt_id: rid, created: false };
+      return { ok: false, code: "receipt_recovery_contended" };
     }
     rethrowOutcomeWrite(err);
   } finally {

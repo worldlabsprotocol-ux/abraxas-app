@@ -20,6 +20,7 @@ import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthoriza
 import { institutionalAuthorityFromLaunchpad } from "@/lib/partner/trustExecution/institutionalAuthorityBinding";
 import { requireBoundInstitutionalAuthority } from "@/lib/partner/trustExecution/institutionalAuthorityGate";
 import { verifyTrustExecutionMaterial, buildDemoTrustAnchorFromEnv } from "@/lib/partner/trustExecution/verifyTrustExecutionMaterial";
+import { trustExecutionAttemptMessage } from "@/lib/partner/trustExecution/trustExecutionRecoveryCopy";
 import type { PartnerTrustExecutionJourneyView } from "@/lib/partner/trustExecution/partnerTrustExecutionJourney";
 
 export const dynamic = "force-dynamic";
@@ -160,7 +161,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           : executed.decision_result === "indeterminate" ? 503
           : 403;
         return launchpadJson(
-          { ok: false, code: executed.code, decision_result: executed.decision_result ?? null },
+          {
+            ok: false,
+            code: executed.code,
+            decision_result: executed.decision_result ?? null,
+            error: trustExecutionAttemptMessage(executed.code),
+          },
           status,
         );
       }
