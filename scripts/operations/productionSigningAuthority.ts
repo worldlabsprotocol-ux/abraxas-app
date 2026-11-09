@@ -17,6 +17,7 @@ import {
   lstatSync,
   openSync,
   readFileSync,
+  statSync,
   writeSync,
 } from "node:fs";
 import { userInfo } from "node:os";
@@ -140,19 +141,98 @@ function writeExclusive(path: string, content: string | Buffer, mode: number): v
   if (mode === 0o600) restrictToOwner(path);
 }
 
+const BROAD_WINDOWS_PRINCIPALS = new Set([
+  "everyone",
+  "users",
+  "authenticated users",
+  "s-1-1-0",
+  "s-1-5-11",
+  "s-1-5-32-545",
+]);
+
+function principalIsBroad(principal: string): boolean {
+  const normalized = principal.trim().toLowerCase().replace(/^\*/, "");
+  const leaf = (normalized.split("\\").at(-1) ?? normalized).replace(/^\*/, "");
+  return BROAD_WINDOWS_PRINCIPALS.has(normalized) || BROAD_WINDOWS_PRINCIPALS.has(leaf);
+}
+
+export function assertWindowsPrivateFileAcl(filePath: string, icaclsOutput: string, username: string): void {
+  const output = icaclsOutput.replaceAll("/", "\\");
+  const file = filePath.replaceAll("/", "\\");
+  const outputLower = output.toLowerCase();
+  const fileLower = file.toLowerCase();
+  if (!outputLower.includes(fileLower)) {
+    fail("acl_target_mismatch", "Windows ACL output did not describe the private-key file");
+  }
+  let remainder = "";
+  let cursor = 0;
+  while (cursor < output.length) {
+    const at = outputLower.indexOf(fileLower, cursor);
+    if (at < 0) {
+      remainder += output.slice(cursor);
+      break;
+    }
+    remainder += output.slice(cursor, at);
+    cursor = at + file.length;
+  }
+  const principals: string[] = [];
+  for (const match of remainder.matchAll(/([^\r\n:]+):\([^)\r\n]*\)/g)) {
+    const principal = match[1]?.trim();
+    if (principal) principals.push(principal);
+  }
+  const broad = principals.find(principalIsBroad);
+  if (broad) {
+    fail("acl_broad_principal", `Private-key file grants access to ${broad}`);
+  }
+  const owner = username.trim().toLowerCase();
+  const ownerPresent = principals.some((principal) => {
+    const normalized = principal.toLowerCase();
+    return normalized === owner || normalized.endsWith(`\\${owner}`);
+  });
+  if (!ownerPresent) {
+    fail("acl_owner_missing", "Private-key file ACL does not include the current Windows user");
+  }
+}
+
+export function assertPrivateFileRestricted(path: string): void {
+  if (process.platform === "win32") {
+    const listed = spawnSync("icacls", [path], { encoding: "utf8", windowsHide: true });
+    if (listed.status !== 0) {
+      fail("acl_unreadable", "Windows could not read the private-key file ACL");
+    }
+    assertWindowsPrivateFileAcl(path, `${listed.stdout ?? ""}\n${listed.stderr ?? ""}`, userInfo().username);
+    return;
+  }
+  if ((statSync(path).mode & 0o077) !== 0) {
+    fail("private_file_permissions", "Private custody file must be readable and writable only by its owner");
+  }
+}
+
 function restrictToOwner(path: string): void {
   if (process.platform === "win32") {
     const user = userInfo().username;
-    const result = spawnSync(
+    const restricted = spawnSync(
       "icacls",
       [path, "/inheritance:r", "/grant:r", `${user}:(R,W)`],
       { encoding: "utf8", windowsHide: true },
     );
-    if (result.status !== 0) {
+    if (restricted.status !== 0) {
       fail("acl_failed", "Windows could not restrict the custody file to the current user");
     }
-    return;
+    for (const principal of [
+      "Everyone",
+      "Users",
+      "Authenticated Users",
+      "BUILTIN\\Users",
+      "NT AUTHORITY\\Authenticated Users",
+      "*S-1-1-0",
+      "*S-1-5-11",
+      "*S-1-5-32-545",
+    ]) {
+      spawnSync("icacls", [path, "/remove:g", principal], { encoding: "utf8", windowsHide: true });
+    }
   }
+  assertPrivateFileRestricted(path);
 }
 
 function b64url(bytes: Uint8Array): string {
