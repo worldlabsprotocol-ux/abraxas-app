@@ -1672,13 +1672,182 @@
   font-weight: 600;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .abx-premium-hero-carousel__track {
-    transition: none;
+.abx-premium-hero-carousel__transport {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.abx-premium-hero-carousel__transport button {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.abx-premium-hero-carousel__cta-note {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.abx-premium-hero-carousel__nav-btn--active {
+  position: relative;
+}
+
+.abx-premium-hero-carousel:not(.abx-premium-hero-carousel--stacked):not(.abx-premium-hero-carousel--paused)
+  .abx-premium-hero-carousel__nav-btn--active::after {
+  content: "";
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  bottom: 0.18rem;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(76, 187, 146, 0.85);
+  transform-origin: left center;
+  animation: abx-discovery-progress var(--abx-discovery-hold, 7s) linear forwards;
+}
+
+@keyframes abx-discovery-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.abx-discovery {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.85fr) minmax(18rem, 1.15fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2rem) clamp(1rem, 4vw, 2.5rem) clamp(1rem, 2vw, 1.5rem);
+  min-height: min(68vh, 700px);
+  box-sizing: border-box;
+  align-items: center;
+}
+
+.abx-discovery h2 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.abx-discovery p {
+  margin: 0 0 0.75rem;
+  max-width: 46ch;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.abx-discovery__collage,
+.abx-discovery__examples ul {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.abx-discovery__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 8.5rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.abx-discovery__card--active {
+  border-color: rgba(76, 187, 146, 0.55);
+  background: rgba(76, 187, 146, 0.08);
+}
+
+.abx-discovery__card-index,
+.abx-discovery__examples-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.abx-discovery__card-label {
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.abx-discovery__card-summary,
+.abx-discovery__card-detail,
+.abx-discovery__disclaimer {
+  color: var(--text-secondary);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.abx-discovery--begin .abx-discovery__examples ul {
+  grid-template-columns: 1fr;
+}
+
+.abx-discovery__examples li {
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 900px) {
+  .abx-discovery,
+  .abx-discovery__collage {
+    grid-template-columns: 1fr;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .abx-premium-hero-carousel__track,
+  .abx-premium-hero-carousel__nav-btn--active::after {
+    transition: none;
+    animation: none;
+  }
+}
+
+.abx-premium-hero-carousel--stacked .abx-premium-hero-carousel__track {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  transform: none;
+}
+
+.abx-premium-hero-carousel--stacked .abx-premium-hero-carousel__slide,
+.abx-premium-hero-carousel--stacked .abx-discovery {
+  min-height: 0;
+}
+
 @media (max-width: 719px) {
+  .abx-premium-hero-carousel__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: rgba(8, 8, 8, 0.94);
+    backdrop-filter: blur(10px);
+  }
+
   .abx-premium-hero--carousel {
     min-height: auto;
     padding: clamp(0.65rem, 2.5vw, 1rem) clamp(0.85rem, 3vw, 1.25rem)
