@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
+const { nextVersion } = vi.hoisted(() => ({
+  nextVersion: vi.fn(async () => 2 as number | { error: string }),
+}));
+
 vi.mock("@abraxas/independent-verifier", () => ({
   RECEIPT_STATUS_STATEMENT_DOCUMENT: "status", RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION: "1",
   signReceiptStatusStatementForTests: ({ payload }: { payload: Record<string, unknown> }) => ({ payload }),
 }));
-vi.mock("./statusVersionCheckpoint", () => ({ nextSignedStatusVersion: async () => 2 }));
+vi.mock("./statusVersionCheckpoint", () => ({
+  nextSignedStatusVersion: (...args: unknown[]) => nextVersion(...args),
+}));
 vi.mock("@/lib/decisionReceipts/views", () => ({ resolveReceiptStatus: () => "active" }));
 
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "./publishSignedReceiptStatus";
@@ -33,5 +39,17 @@ describe("signed status after sovereign withdrawal", () => {
       signedIssuerAuthorityEnvironment: "demo", env,
     });
     expect(result).toEqual({ ok: false, reason: "authoritative_validity_indeterminate" });
+  });
+
+  it("does not sign status when the checkpoint write fails", async () => {
+    nextVersion.mockResolvedValueOnce({ error: "checkpoint_write_failed" });
+    const result = await publishSignedReceiptStatusFromSovereignEvaluation({
+      record,
+      evaluation: { ...evaluation, lifecycle_status: "active", invalidation_reasons: [] },
+      signedIssuerAuthorityEnvironment: "production",
+      env,
+    });
+    expect(result).toEqual({ ok: false, reason: "checkpoint_write_failed" });
+    expect(result).not.toHaveProperty("payload");
   });
 });

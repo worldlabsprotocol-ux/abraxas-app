@@ -5,6 +5,7 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
+import { resolveReceiptKeyRuntimeEnvironment } from "@/lib/decisionReceipts/verificationKeyLifecycle/environment";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
 import type { TrustExecutionVerificationMaterial } from "./trustExecutionTypes";
 
@@ -37,12 +38,18 @@ export async function buildAuthoritativeVerificationMaterial(input: {
     expectedApplicationId: input.applicationId,
     expectedPartnerId: input.record.partner_id,
     expectedPolicyId: input.record.policy_id,
-    expectedEnvironment: "demo",
+    expectedEnvironment: resolveReceiptKeyRuntimeEnvironment(input.env),
     env: input.env,
   });
 
   if (!evaluation.store_available) {
     return { ok: false, code: "validity_store_unavailable" };
+  }
+  if (!evaluation.currently_acceptable || evaluation.lifecycle_status !== "active") {
+    return {
+      ok: false,
+      code: evaluation.invalidation_reasons[0] ?? "authoritative_validity_not_acceptable",
+    };
   }
 
   const signedStatus = await publishSignedReceiptStatusFromSovereignEvaluation({

@@ -252,6 +252,33 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
     );
   });
 
+  it("does not finalize a receipt when issuer authority fails verification", async () => {
+    const auth = await authorizeOne();
+    const unrelatedAnchor = generateTestSigningKeyPair("unrelated-anchor");
+    const executed = await executeTrustExecutionAuthoritativeDecision({
+      auth,
+      partnerId: PARTNER,
+      env: {
+        ...process.env,
+        ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(unrelatedAnchor.publicKeyJwk),
+      },
+    });
+    expect(executed.ok).toBe(false);
+    const receiptId = `dr_trust_exec_${auth.challenge_id.slice(-16)}`;
+    const receipt = await pool.query<{ status: string; issuance_finalized_at: string | null; decision_context: string }>(
+      `select status, issuance_finalized_at, decision_context from public.decision_receipts where id = $1`,
+      [receiptId],
+    );
+    expect(receipt.rows[0]?.status).toBe("pending_finalization");
+    expect(receipt.rows[0]?.issuance_finalized_at).toBeNull();
+    expect(receipt.rows[0]?.decision_context).toBe("sandbox_only");
+    const outcome = await pool.query(
+      `select receipt_id from public.wallet_scoped_trust_execution_outcomes where authorization_ref = $1`,
+      [auth.wallet_binding_ref],
+    );
+    expect(outcome.rowCount).toBe(0);
+  });
+
   it("preserves idempotency on concurrent authoritative execute", async () => {
     await pool.query(
       `insert into public.wallet_scoped_trust_authoritative_evidence (
