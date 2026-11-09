@@ -121,9 +121,14 @@ function receipt(receiptKey: ReturnType<typeof keyPair>): DecisionReceiptRecord 
 function signedStatus(
   record: DecisionReceiptRecord,
   statusSigner: ReturnType<typeof keyPair>,
-  input: { version: number; receipt_status?: "active" | "revoked" | "expired"; partner_id?: string },
+  input: {
+    version: number;
+    receipt_status?: "active" | "revoked" | "expired";
+    partner_id?: string;
+    issuedAt?: Date;
+  },
 ) {
-  const issued = new Date();
+  const issued = input.issuedAt ?? new Date();
   const expires = new Date(issued.getTime() + 300_000);
   return signReceiptStatusStatement({
     statusSignerPrivateJwk: statusSigner.privateKeyJwk,
@@ -239,6 +244,23 @@ describe("signed status evidence (#819)", () => {
     });
     expect(v.ok).toBe(false);
     if (!v.ok) expect(v.reason).toBe("unknown_status_signer");
+  });
+
+  it("rejects an expired status statement", () => {
+    const issuer = signIssuerAuthorityPayloadForTests({
+      payload: issuerPayload(receiptKey, statusSigner),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const status = signedStatus(receipt(receiptKey), statusSigner, {
+      version: 1,
+      issuedAt: new Date(Date.now() - 600_000),
+    });
+    const v = verifySignedReceiptStatusStatement({
+      signedStatus: status,
+      signedIssuerAuthority: issuer,
+    });
+    expect(v.ok).toBe(false);
+    if (!v.ok) expect(v.reason).toBe("status_statement_expired");
   });
 
   it("rejects status version rollback", () => {

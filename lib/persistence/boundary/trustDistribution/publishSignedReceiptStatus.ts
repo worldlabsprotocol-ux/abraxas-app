@@ -44,17 +44,6 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   const privateJwk = loadStatusSignerPrivateJwk(env);
   if (!privateJwk) return { ok: false, reason: "status_signer_private_jwk_missing" };
 
-  const version = await nextSignedStatusVersion({
-    receiptId: input.record.id,
-    env,
-    operationalFallback: {
-      checkedAt: input.evaluation.checked_at,
-      lifecycleStatus: input.evaluation.lifecycle_status,
-      invalidationReasons: input.evaluation.invalidation_reasons,
-    },
-  });
-  if (typeof version !== "number") return { ok: false, reason: version.error };
-
   const stored = resolveReceiptStatus(input.record);
   if (input.evaluation.lifecycle_status === "invalidated") {
     return { ok: false, reason: "authoritative_validity_indeterminate" };
@@ -62,6 +51,12 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   if (isReceiptPendingEvidenceFinalization(input.record)) {
     return { ok: false, reason: "issuance_not_finalized" };
   }
+
+  const version = await nextSignedStatusVersion({
+    receiptId: input.record.id,
+    env,
+  });
+  if (typeof version !== "number") return { ok: false, reason: version.error };
   const issuedAt = new Date();
   const ttl = input.statementTtlSeconds ?? DEFAULT_TTL_SECONDS;
   const expiresAt = new Date(issuedAt.getTime() + ttl * 1000);

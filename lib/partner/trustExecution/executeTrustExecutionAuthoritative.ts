@@ -5,6 +5,7 @@ import { deriveEvidenceIntegrityVerdict } from "@/lib/decisionReceipts/evidenceI
 import { buildCanonicalPayload, normalizeDecisionReceiptTimestamp } from "@/lib/decisionReceipts/canonical";
 import { signReceiptPayload } from "@/lib/decisionReceipts/signing";
 import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle";
+import { isReceiptPendingEvidenceFinalization } from "@/lib/decisionReceipts/issuanceFinalization";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import {
@@ -12,9 +13,35 @@ import {
   loadSovereignEvidenceIntegrityGraphForTrustExecution,
 } from "@/lib/persistence/boundary/verticalSlice/claimEvidenceRead";
 import type { ConsumedTrustAuthorization } from "./trustExecutionTypes";
-import { finalizeTrustExecutionOutcome } from "./finalizeTrustExecutionOutcome";
+import {
+  commitFinalizedTrustExecutionOutcome,
+  stagePendingTrustExecutionReceipt,
+} from "./finalizeTrustExecutionOutcome";
 import { buildAuthoritativeVerificationMaterial } from "./buildTrustExecutionVerificationMaterial";
 import { loadTrustExecutionOutcomeReceipt } from "./loadTrustExecutionOutcomeReceipt";
+
+export async function settleVerifiedAuthoritativeReceipt<T>(input: {
+  verify: () => Promise<{ ok: true; material: T } | { ok: false; code: string }>;
+  commit: () => Promise<{ ok: true; receipt_id: string; created: boolean } | { ok: false; code: string }>;
+}): Promise<
+  | { ok: true; material: T; receipt_id: string; created: boolean }
+  | { ok: false; code: string; decision_result: "indeterminate" }
+> {
+  const verified = await input.verify();
+  if (!verified.ok) {
+    return { ok: false, code: verified.code, decision_result: "indeterminate" };
+  }
+  const committed = await input.commit();
+  if (!committed.ok) {
+    return { ok: false, code: committed.code, decision_result: "indeterminate" };
+  }
+  return {
+    ok: true,
+    material: verified.material,
+    receipt_id: committed.receipt_id,
+    created: committed.created,
+  };
+}
 
 const GRAPH_DENY = new Set([
   "tenant_mismatch",
@@ -223,29 +250,23 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     signature,
   };
 
-  const finalized = await finalizeTrustExecutionOutcome({
+  const outcomeWrite = {
     authorizationRef: input.auth.wallet_binding_ref,
     partnerId: input.partnerId,
     applicationId: input.auth.application_id,
     challengeId: input.auth.challenge_id,
     correlationId: input.auth.correlation_id,
-    record,
     env: input.env,
+  };
+  const staged = await stagePendingTrustExecutionReceipt({
+    ...outcomeWrite,
+    record,
   });
-  if (!finalized.ok) return finalized;
-
-  if (evidenceGraph.source?.source_credential_id) {
-    const dep = await ensureSovereignReceiptEvidenceDependencies({
-      receiptId: finalized.receipt_id,
-      sourceCredentialId: evidenceGraph.source.source_credential_id,
-      env: input.env,
-    });
-    if (!dep.ok) {
-      return { ok: false, code: dep.code, decision_result: "indeterminate" };
-    }
+  if (!staged.ok) {
+    return { ok: false, code: staged.code, decision_result: "indeterminate" };
   }
 
-  const committedReceipt = await loadTrustExecutionOutcomeReceipt({
+  const loadCommitted = () => loadTrustExecutionOutcomeReceipt({
     authorizationRef: input.auth.wallet_binding_ref,
     partnerId: input.partnerId,
     applicationId: input.auth.application_id,
@@ -254,27 +275,69 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
     policyVersion: input.auth.policy_version,
     subjectPseudonymId: input.auth.subject_pseudonym_id,
   });
-  if (!committedReceipt) {
-    return { ok: false, code: "committed_receipt_missing", decision_result: "indeterminate" };
+
+  if (staged.staged === "finalized") {
+    const existing = await loadCommitted();
+    if (!existing || isReceiptPendingEvidenceFinalization(existing)) {
+      return { ok: false, code: "committed_receipt_missing", decision_result: "indeterminate" };
+    }
+    const replayed = await buildAuthoritativeVerificationMaterial({
+      record: existing,
+      applicationId: input.auth.application_id,
+      env: input.env,
+      anchorPublicJwk: anchor.anchorPublicJwk,
+      anchorPrivateJwk: anchor.anchorPrivateJwk,
+      anchorKeyId: anchor.anchorKeyId,
+      registryVersion: 854,
+    });
+    if (!replayed.ok) {
+      return { ok: false, code: replayed.code, decision_result: "indeterminate" };
+    }
+    return {
+      ok: true,
+      receipt: existing,
+      verification_material: replayed.material,
+      outcome_created: false,
+    };
   }
 
-  const materialBuilt = await buildAuthoritativeVerificationMaterial({
-    record: committedReceipt,
-    applicationId: input.auth.application_id,
-    env: input.env,
-    anchorPublicJwk: anchor.anchorPublicJwk,
-    anchorPrivateJwk: anchor.anchorPrivateJwk,
-    anchorKeyId: anchor.anchorKeyId,
-    registryVersion: 854,
+  if (evidenceGraph.source?.source_credential_id) {
+    const dep = await ensureSovereignReceiptEvidenceDependencies({
+      receiptId: staged.receipt_id,
+      sourceCredentialId: evidenceGraph.source.source_credential_id,
+      env: input.env,
+    });
+    if (!dep.ok) {
+      return { ok: false, code: dep.code, decision_result: "indeterminate" };
+    }
+  }
+
+  const settled = await settleVerifiedAuthoritativeReceipt({
+    verify: () => buildAuthoritativeVerificationMaterial({
+      record,
+      applicationId: input.auth.application_id,
+      env: input.env,
+      anchorPublicJwk: anchor.anchorPublicJwk,
+      anchorPrivateJwk: anchor.anchorPrivateJwk,
+      anchorKeyId: anchor.anchorKeyId,
+      registryVersion: 854,
+    }),
+    commit: () => commitFinalizedTrustExecutionOutcome({
+      ...outcomeWrite,
+      record,
+    }),
   });
-  if (!materialBuilt.ok) {
-    return { ok: false, code: materialBuilt.code, decision_result: "indeterminate" };
+  if (!settled.ok) return settled;
+
+  const committedReceipt = await loadCommitted();
+  if (!committedReceipt || isReceiptPendingEvidenceFinalization(committedReceipt)) {
+    return { ok: false, code: "committed_receipt_missing", decision_result: "indeterminate" };
   }
 
   return {
     ok: true,
     receipt: committedReceipt,
-    verification_material: materialBuilt.material,
-    outcome_created: finalized.created,
+    verification_material: settled.material,
+    outcome_created: settled.created,
   };
 }
