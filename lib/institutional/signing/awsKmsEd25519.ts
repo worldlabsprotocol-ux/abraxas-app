@@ -1,6 +1,7 @@
 // AWS KMS Sign for ECC_NIST_EDWARDS25519.
 // ED25519_SHA_512 + MessageType RAW is standard Ed25519 over the supplied bytes.
 // ED25519_PH_SHA_512 prehashes with SHA-512 and will not verify in Abraxas.
+// GetPublicKey returns an X.509 SubjectPublicKeyInfo. Ed25519 uses OID 1.3.101.112.
 // Rates recorded from https://aws.amazon.com/kms/pricing/ (commercial regions):
 // $1 per customer-managed key per month, $0.15 per 10,000 asymmetric requests.
 // Asymmetric Sign is outside the 20,000-request free tier.
@@ -25,30 +26,16 @@ export const AWS_KMS_PUBLISHED_COST = {
   source: "https://aws.amazon.com/kms/pricing/",
 } as const;
 
-export type AwsKmsRawDigestSignInput = {
-  keyId: string;
-  message: Uint8Array;
-  signingAlgorithm: typeof AWS_KMS_ED25519.signingAlgorithm;
-  messageType: typeof AWS_KMS_ED25519.messageType;
-};
+const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
-export type RawEd25519SignClient = {
-  sign(input: AwsKmsRawDigestSignInput): Promise<Uint8Array>;
-};
+export function ed25519SpkiFromRawPublicKey(raw: Uint8Array): Uint8Array {
+  if (raw.byteLength !== 32) throw new Error("ed25519_public_key_length");
+  return Buffer.concat([ED25519_SPKI_PREFIX, Buffer.from(raw)]);
+}
 
-export function awsKmsRawDigestSignInput(input: { keyId: string; digest: Uint8Array }):
-  | { ok: true; request: AwsKmsRawDigestSignInput }
-  | { ok: false; reason: "digest_must_be_32_bytes" } {
-  if (input.digest.byteLength !== AWS_KMS_ED25519.digestBytes) {
-    return { ok: false, reason: "digest_must_be_32_bytes" };
-  }
-  return {
-    ok: true,
-    request: {
-      keyId: input.keyId,
-      message: Uint8Array.from(input.digest),
-      signingAlgorithm: AWS_KMS_ED25519.signingAlgorithm,
-      messageType: AWS_KMS_ED25519.messageType,
-    },
-  };
+export function ed25519RawPublicKeyFromSpki(der: Uint8Array): Uint8Array | null {
+  if (der.byteLength !== ED25519_SPKI_PREFIX.length + 32) return null;
+  const bytes = Buffer.from(der);
+  if (!bytes.subarray(0, ED25519_SPKI_PREFIX.length).equals(ED25519_SPKI_PREFIX)) return null;
+  return bytes.subarray(ED25519_SPKI_PREFIX.length);
 }

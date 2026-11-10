@@ -1,15 +1,13 @@
-import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { GetPublicKeyCommand, SignCommand } from "@aws-sdk/client-kms";
 import nacl from "tweetnacl";
 import {
   ISSUER_AUTHORITY_STATEMENT_DOCUMENT,
   ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION,
   RECEIPT_STATUS_STATEMENT_DOCUMENT,
   RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
-  hashIssuerAuthorityPayload,
-  hashReceiptStatusStatementPayload,
   verifyEd25519Detached,
   verifySignedIssuerAuthorityStatement,
   verifySignedReceiptStatusStatement,
@@ -17,14 +15,18 @@ import {
   type ReceiptStatusStatementPayload,
 } from "@abraxas/independent-verifier";
 import { generateTestSigningKeyPair, signReceiptPayload, verifyReceiptSignature } from "@/lib/decisionReceipts/signing";
-import { AWS_KMS_ED25519, AWS_KMS_ED25519_INCOMPATIBLE, AWS_KMS_PUBLISHED_COST, type AwsKmsRawDigestSignInput } from "./awsKmsEd25519";
-import { openInstitutionalSigner } from "./institutionalSigner";
+import { authorityStateDigest, hashAuthorityChangeAuthorization, INITIAL_ISSUER_REGISTRY_VERSION } from "./authorityChange";
+import { AWS_KMS_ED25519, AWS_KMS_ED25519_INCOMPATIBLE, AWS_KMS_PUBLISHED_COST, ed25519SpkiFromRawPublicKey } from "./awsKmsEd25519";
+import { bindAwsKmsEd25519Client, type AwsKmsCommandClient } from "./awsKmsClient";
+import type { CustodyClient } from "./contract";
+import { issuerAnchorIamPolicy, SHARED_PROCESS_CUSTODY_LIMIT, statusSignerIamPolicy } from "./iamPolicy";
+import { openInstitutionalSigner, type StatusStatementSigner } from "./institutionalSigner";
 
 function ed25519() {
   const pair = nacl.sign.keyPair();
-  const seed = pair.secretKey.slice(0, 32);
   return {
-    seed,
+    seed: pair.secretKey.slice(0, 32),
+    publicKey: pair.publicKey,
     publicJwk: { kty: "OKP", crv: "Ed25519", x: Buffer.from(pair.publicKey).toString("base64url") } as JsonWebKey,
     sign(message: Uint8Array) {
       return nacl.sign.detached(message, pair.secretKey);
@@ -32,30 +34,46 @@ function ed25519() {
   };
 }
 
-function digestOf(value: unknown): Uint8Array {
-  return createHash("sha256").update(JSON.stringify(value), "utf8").digest();
+function custody(input: {
+  key: ReturnType<typeof ed25519>;
+  identityId: string;
+  keyId: string;
+  calls: Array<{ identityId: string; op: string }>;
+  publicKey?: Uint8Array;
+  keySpec?: string;
+  signature?: Uint8Array | (() => never);
+}): CustodyClient {
+  return {
+    identityId: input.identityId,
+    keyId: input.keyId,
+    async getPublicKey() {
+      input.calls.push({ identityId: input.identityId, op: "getPublicKey" });
+      return {
+        keySpec: input.keySpec ?? "ECC_NIST_EDWARDS25519",
+        publicKey: input.publicKey ?? input.key.publicKey,
+      };
+    },
+    async signRawDigest(message) {
+      input.calls.push({ identityId: input.identityId, op: "sign" });
+      if (typeof input.signature === "function") return input.signature();
+      if (input.signature) return input.signature;
+      return input.key.sign(message);
+    },
+  };
 }
 
-function memorySigner() {
-  const issuer = ed25519();
-  const status = ed25519();
-  const opened = openInstitutionalSigner({
-    provider: "memory",
-    environment: "demo",
-    publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
-    signers: { issuer_anchor: issuer.sign, status_signer: status.sign },
-  });
-  if (!opened.ok) throw new Error(opened.reason);
-  return { issuer, status, signer: opened.signer };
-}
-
-function issuerPayload(issuer: JsonWebKey, status: JsonWebKey): IssuerAuthorityStatementPayload {
+function issuerPayload(
+  anchor: JsonWebKey,
+  status: JsonWebKey,
+  version = INITIAL_ISSUER_REGISTRY_VERSION,
+  environment: "demo" | "production" = "demo",
+): IssuerAuthorityStatementPayload {
   return {
     document: ISSUER_AUTHORITY_STATEMENT_DOCUMENT,
     schema_version: ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION,
-    registry_version: 854,
-    supersedes_registry_version: null,
-    environment: "demo",
+    registry_version: version,
+    supersedes_registry_version: version === INITIAL_ISSUER_REGISTRY_VERSION ? null : version - 1,
+    environment,
     issued_at: "2026-06-01T00:00:00.000Z",
     not_before: "2020-01-01T00:00:00.000Z",
     anchor_key_id: "demo-compatibility-anchor",
@@ -65,7 +83,7 @@ function issuerPayload(issuer: JsonWebKey, status: JsonWebKey): IssuerAuthorityS
       status: "active",
       not_before: "2020-01-01T00:00:00.000Z",
       expires_at: null,
-      public_jwk: issuer,
+      public_jwk: anchor,
       schema_versions: ["1.0.0"],
       allow_historical_verification: false,
       historical_verify_until: null,
@@ -108,229 +126,239 @@ function statusPayload(): ReceiptStatusStatementPayload {
   };
 }
 
-describe("non-exportable institutional signing", () => {
-  it("signs the exact 32-byte digest and the independent verifier accepts it", async () => {
-    const { issuer, status, signer } = memorySigner();
+async function openDemo(input?: {
+  issuer?: ReturnType<typeof ed25519>;
+  status?: ReturnType<typeof ed25519>;
+  calls?: Array<{ identityId: string; op: string }>;
+  issuerClient?: CustodyClient;
+  statusClient?: CustodyClient;
+  environment?: "demo" | "production";
+  provider?: "memory" | "aws-kms";
+}) {
+  const issuer = input?.issuer ?? ed25519();
+  const status = input?.status ?? ed25519();
+  const calls = input?.calls ?? [];
+  const opened = await openInstitutionalSigner({
+    provider: input?.provider ?? "memory",
+    environment: input?.environment ?? "demo",
+    anchorKeyId: "demo-compatibility-anchor",
+    statusSignerKeyId: "demo-status-signer",
+    publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+    issuer: input?.issuerClient ?? custody({ key: issuer, identityId: "demo-issuer-role", keyId: "key/issuer", calls }),
+    status: input?.statusClient ?? custody({ key: status, identityId: "demo-status-role", keyId: "key/status", calls }),
+  });
+  if (!opened.ok) throw new Error(opened.reason);
+  return { issuer, status, calls, opened };
+}
+
+describe("authorized institutional documents", () => {
+  it("signs the constructed issuer and status documents, and the independent verifier accepts them", async () => {
+    const { issuer, status, calls, opened } = await openDemo();
     const payload = issuerPayload(issuer.publicJwk, status.publicJwk);
-    const payloadHash = hashIssuerAuthorityPayload(payload);
-    const signed = await signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "issuer_authority_statement",
-      environment: "demo",
-      digest: Buffer.from(payloadHash, "hex"),
-    });
+    const signed = await opened.issuer.signIssuerAuthorityStatement(payload);
     expect(signed.ok).toBe(true);
     if (!signed.ok) return;
-    expect(Object.keys(signed.public_jwk).sort()).toEqual(["crv", "kty", "x"]);
-    expect(JSON.stringify(signed)).not.toContain(Buffer.from(issuer.seed).toString("base64url"));
-    const direct = issuer.sign(Buffer.from(payloadHash, "hex"));
-    expect(signed.signature_base64url).toBe(Buffer.from(direct).toString("base64url"));
-    expect(verifyEd25519Detached({
-      message: Buffer.from(payloadHash, "hex"),
-      signatureBase64Url: signed.signature_base64url,
-      publicJwk: issuer.publicJwk,
-    })).toBe(true);
     expect(verifySignedIssuerAuthorityStatement({
-      statement: {
-        payload,
-        payload_hash: payloadHash,
-        signature: signed.signature_base64url,
-        anchor_key_id: payload.anchor_key_id,
-      },
+      statement: signed.statement,
       trustAnchorPublicJwk: issuer.publicJwk,
-      acceptedRegistryVersion: 854,
-      expectedAuthorityStateDigest: undefined,
     }).ok).toBe(true);
+    expect(calls.filter((call) => call.op === "sign").map((call) => call.identityId)).toEqual(["demo-issuer-role"]);
 
-    const statusBody = statusPayload();
-    const statusHash = hashReceiptStatusStatementPayload(statusBody);
-    const statusSigned = await signer.signDigest({
-      role: "status_signer",
-      purpose: "receipt_status_statement",
-      environment: "demo",
-      digest: Buffer.from(statusHash, "hex"),
-    });
+    const statusSigned = await opened.status.signReceiptStatusStatement(statusPayload());
     expect(statusSigned.ok).toBe(true);
     if (!statusSigned.ok) return;
     expect(verifySignedReceiptStatusStatement({
-      signedStatus: {
-        payload: statusBody,
-        payload_hash: statusHash,
-        signature: statusSigned.signature_base64url,
-        status_signer_key_id: statusBody.status_signer_key_id,
-      },
-      signedIssuerAuthority: {
-        payload,
-        payload_hash: payloadHash,
-        signature: signed.signature_base64url,
-        anchor_key_id: payload.anchor_key_id,
-      },
+      signedStatus: statusSigned.statement,
+      signedIssuerAuthority: signed.statement,
       now: new Date("2026-06-02T00:00:00.000Z"),
     })).toEqual({ ok: true });
+    expect(calls.filter((call) => call.op === "sign").map((call) => call.identityId)).toEqual([
+      "demo-issuer-role",
+      "demo-status-role",
+    ]);
+    expect(JSON.stringify(signed)).not.toContain(Buffer.from(issuer.seed).toString("base64url"));
   });
 
-  it("rejects a wrong key, a modified payload, and a prehashed signature", async () => {
-    const { issuer, status, signer } = memorySigner();
+  it("rejects the other document, a forged digest, and a stale registry proposal before signing", async () => {
+    const calls: Array<{ identityId: string; op: string }> = [];
+    const { issuer, status, opened } = await openDemo({ calls });
     const payload = issuerPayload(issuer.publicJwk, status.publicJwk);
-    const payloadHash = hashIssuerAuthorityPayload(payload);
-    const signed = await signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "issuer_authority_statement",
-      environment: "demo",
-      digest: Buffer.from(payloadHash, "hex"),
-    });
-    if (!signed.ok) throw new Error(signed.reason);
-    expect(verifyEd25519Detached({
-      message: Buffer.from(payloadHash, "hex"),
-      signatureBase64Url: signed.signature_base64url,
-      publicJwk: status.publicJwk,
-    })).toBe(false);
-    const modified = { ...payload, issued_at: "2026-06-02T00:00:00.000Z" };
-    expect(verifySignedIssuerAuthorityStatement({
-      statement: {
-        payload: modified,
-        payload_hash: payloadHash,
-        signature: signed.signature_base64url,
-        anchor_key_id: modified.anchor_key_id,
-      },
-      trustAnchorPublicJwk: issuer.publicJwk,
-    })).toEqual({ ok: false, reason: "statement_payload_hash_mismatch" });
+    const signCount = () => calls.filter((call) => call.op === "sign").length;
 
-    const digest = Buffer.from(payloadHash, "hex");
-    const prehashed = createHash("sha512").update(digest).digest();
-    const prehashSignature = Buffer.from(issuer.sign(prehashed)).toString("base64url");
-    expect(verifyEd25519Detached({
-      message: digest,
-      signatureBase64Url: prehashSignature,
-      publicJwk: issuer.publicJwk,
-    })).toBe(false);
-    expect(AWS_KMS_ED25519).toMatchObject({ signingAlgorithm: "ED25519_SHA_512", messageType: "RAW", digestBytes: 32 });
-    expect(AWS_KMS_ED25519_INCOMPATIBLE).toEqual({ signingAlgorithm: "ED25519_PH_SHA_512", messageType: "DIGEST" });
-  });
+    expect(await opened.issuer.signIssuerAuthorityStatement(statusPayload() as unknown as IssuerAuthorityStatementPayload))
+      .toEqual({ ok: false, reason: "unauthorized_institutional_action" });
+    expect(await opened.status.signReceiptStatusStatement(payload as unknown as ReceiptStatusStatementPayload))
+      .toEqual({ ok: false, reason: "unauthorized_institutional_action" });
+    expect("signAuthorityChangeApproval" in opened.status).toBe(false);
+    expect("signIssuerAuthorityStatement" in opened.status).toBe(false);
+    const statusOnly: StatusStatementSigner = opened.status;
+    expect(statusOnly.role).toBe("status_signer");
 
-  it("refuses the wrong role before any signature and keeps registry approval explicit", async () => {
-    const calls: AwsKmsRawDigestSignInput[] = [];
-    const issuer = ed25519();
-    const status = ed25519();
-    const opened = openInstitutionalSigner({
-      provider: "aws-kms",
-      environment: "demo",
-      keyIds: { issuer_anchor: "arn:aws:kms:us-east-1:000:key/issuer", status_signer: "arn:aws:kms:us-east-1:000:key/status" },
-      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
-      client: {
-        async sign(input) {
-          calls.push(input);
-          const key = input.keyId.endsWith("issuer") ? issuer : status;
-          return key.sign(input.message);
-        },
-      },
+    const forged = await opened.issuer.signAuthorityChangeApproval({
+      retained: null,
+      proposed: payload,
+      assertedAuthorityStateDigest: "0".repeat(64),
     });
-    if (!opened.ok) throw new Error(opened.reason);
-    const authorization = digestOf({ document: "abraxas_issuer_authority_change", action: "authority_change" });
-    const swapped = await opened.signer.signDigest({
-      role: "status_signer",
-      purpose: "authority_change_authorization",
-      environment: "demo",
-      digest: authorization,
-    });
-    const issuerOnStatus = await opened.signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "receipt_status_statement",
-      environment: "demo",
-      digest: authorization,
-    });
-    expect(swapped).toEqual({ ok: false, reason: "unauthorized_signing_purpose" });
-    expect(issuerOnStatus).toEqual({ ok: false, reason: "unauthorized_signing_purpose" });
-    expect(await opened.signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "authority_change_authorization",
-      environment: "production",
-      digest: authorization,
-    })).toEqual({ ok: false, reason: "environment_mismatch" });
-    expect(await opened.signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "authority_change_authorization",
-      environment: "demo",
-      digest: new Uint8Array(31),
-    })).toEqual({ ok: false, reason: "digest_must_be_32_bytes" });
-    expect(calls).toHaveLength(0);
+    expect(forged).toEqual({ ok: false, reason: "authority_state_digest_mismatch" });
 
-    const approved = await opened.signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "authority_change_authorization",
-      environment: "demo",
-      digest: authorization,
+    const retainedDigest = authorityStateDigest(payload);
+    const changed: IssuerAuthorityStatementPayload = {
+      ...payload,
+      registry_version: INITIAL_ISSUER_REGISTRY_VERSION + 1,
+      supersedes_registry_version: INITIAL_ISSUER_REGISTRY_VERSION - 1,
+      keys: payload.keys.map((key) => ({ ...key, status: "retiring" })),
+    };
+    expect(await opened.issuer.signAuthorityChangeApproval({
+      retained: { registryVersion: INITIAL_ISSUER_REGISTRY_VERSION, authorityStateDigest: retainedDigest },
+      proposed: changed,
+      assertedAuthorityStateDigest: authorityStateDigest(changed),
+    })).toEqual({ ok: false, reason: "stale_authority_approval" });
+
+    const unbound = { ...changed, supersedes_registry_version: INITIAL_ISSUER_REGISTRY_VERSION, registry_version: INITIAL_ISSUER_REGISTRY_VERSION + 2 };
+    expect(await opened.issuer.signAuthorityChangeApproval({
+      retained: { registryVersion: INITIAL_ISSUER_REGISTRY_VERSION, authorityStateDigest: retainedDigest },
+      proposed: unbound,
+      assertedAuthorityStateDigest: authorityStateDigest(unbound),
+    })).toEqual({ ok: false, reason: "authority_approval_not_bound" });
+
+    const sameState = {
+      ...payload,
+      registry_version: INITIAL_ISSUER_REGISTRY_VERSION + 1,
+      supersedes_registry_version: INITIAL_ISSUER_REGISTRY_VERSION,
+    };
+    expect(await opened.issuer.signAuthorityChangeApproval({
+      retained: { registryVersion: INITIAL_ISSUER_REGISTRY_VERSION, authorityStateDigest: retainedDigest },
+      proposed: sameState,
+      assertedAuthorityStateDigest: authorityStateDigest(sameState),
+    })).toEqual({ ok: false, reason: "authority_state_unchanged" });
+    expect(signCount()).toBe(0);
+
+    const approved = await opened.issuer.signAuthorityChangeApproval({
+      retained: { registryVersion: INITIAL_ISSUER_REGISTRY_VERSION, authorityStateDigest: retainedDigest },
+      proposed: { ...changed, supersedes_registry_version: INITIAL_ISSUER_REGISTRY_VERSION },
+      assertedAuthorityStateDigest: authorityStateDigest(changed),
     });
     expect(approved.ok).toBe(true);
-    expect(calls).toHaveLength(1);
-    expect(calls[0].keyId).toBe("arn:aws:kms:us-east-1:000:key/issuer");
-    expect(calls[0].signingAlgorithm).toBe("ED25519_SHA_512");
-    expect(calls[0].messageType).toBe("RAW");
-    expect(Buffer.from(calls[0].message).equals(authorization)).toBe(true);
+    if (!approved.ok) return;
+    expect(approved.authorization.authority_state_digest).toBe(authorityStateDigest(changed));
+    expect(approved.authorization.change).toBe("authority_change");
+    expect(approved.authorization.supersedes_registry_version).toBe(INITIAL_ISSUER_REGISTRY_VERSION);
+    expect(verifyEd25519Detached({
+      message: Buffer.from(hashAuthorityChangeAuthorization(approved.authorization), "hex"),
+      signatureBase64Url: approved.signature,
+      publicJwk: issuer.publicJwk,
+    })).toBe(true);
+    expect(verifyEd25519Detached({
+      message: Buffer.from(approved.payload_hash, "hex"),
+      signatureBase64Url: approved.signature,
+      publicJwk: status.publicJwk,
+    })).toBe(false);
+    expect(calls.filter((call) => call.op === "sign").map((call) => call.identityId)).toEqual(["demo-issuer-role"]);
   });
 
-  it("fails closed on an outage and returns no private key", async () => {
+  it("rejects a substituted public key, a shared identity, and exportable production keys", async () => {
     const issuer = ed25519();
     const status = ed25519();
-    const previous = process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK;
-    process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK = JSON.stringify({ d: "not-a-signing-key" });
-    const opened = openInstitutionalSigner({
+    const calls: Array<{ identityId: string; op: string }> = [];
+    const substituted = await openInstitutionalSigner({
       provider: "aws-kms",
       environment: "production",
-      keyIds: { issuer_anchor: "arn:issuer", status_signer: "arn:status" },
-      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
-      client: { async sign() { throw new Error("kms unavailable"); } },
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: ed25519().publicJwk, status_signer: status.publicJwk },
+      issuer: custody({ key: issuer, identityId: "prod-issuer-role", keyId: "arn:issuer", calls }),
+      status: custody({ key: status, identityId: "prod-status-role", keyId: "arn:status", calls }),
     });
-    if (!opened.ok) throw new Error(opened.reason);
-    const result = await opened.signer.signDigest({
-      role: "issuer_anchor",
-      purpose: "issuer_authority_statement",
-      environment: "production",
-      digest: new Uint8Array(32),
-    });
-    if (previous === undefined) delete process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK;
-    else process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK = previous;
-    expect(result).toEqual({ ok: false, reason: "institutional_signer_unavailable" });
-    expect(JSON.stringify(result)).not.toContain("not-a-signing-key");
-    expect(JSON.stringify(issuer.seed)).not.toBe(JSON.stringify(result));
-  });
+    expect(substituted).toEqual({ ok: false, reason: "kms_public_key_mismatch" });
+    expect(calls.some((call) => call.op === "sign")).toBe(false);
 
-  it("refuses exportable private JWKs in production and refuses shared roles", () => {
-    expect(openInstitutionalSigner({ provider: "exportable-jwk", environment: "production" })).toEqual({
+    const shared = custody({ key: issuer, identityId: "one-role", keyId: "arn:issuer", calls });
+    expect(await openInstitutionalSigner({
+      provider: "aws-kms",
+      environment: "production",
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+      issuer: shared,
+      status: custody({ key: status, identityId: "one-role", keyId: "arn:status", calls }),
+    })).toEqual({ ok: false, reason: "signing_identities_must_be_separate" });
+
+    expect(await openInstitutionalSigner({ provider: "exportable-jwk", environment: "production" })).toEqual({
       ok: false,
       reason: "production_exportable_key_forbidden",
     });
-    expect(openInstitutionalSigner({ provider: "exportable-jwk", environment: "demo" })).toEqual({
-      ok: false,
-      reason: "exportable_jwk_not_a_signer",
-    });
-    const issuer = ed25519();
-    expect(openInstitutionalSigner({
+    expect(await openInstitutionalSigner({
       provider: "memory",
       environment: "production",
-      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: issuer.publicJwk },
-      signers: { issuer_anchor: issuer.sign, status_signer: issuer.sign },
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+      issuer: custody({ key: issuer, identityId: "issuer", keyId: "issuer", calls }),
+      status: custody({ key: status, identityId: "status", keyId: "status", calls }),
     })).toEqual({ ok: false, reason: "production_exportable_key_forbidden" });
-    expect(openInstitutionalSigner({
-      provider: "aws-kms",
-      environment: "production",
-      keyIds: { issuer_anchor: "arn:same", status_signer: "arn:same" },
-      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: ed25519().publicJwk },
-      client: { async sign() { return new Uint8Array(64); } },
-    })).toEqual({ ok: false, reason: "signing_roles_must_be_separate" });
-    expect(openInstitutionalSigner({
-      provider: "aws-kms",
-      environment: "production",
-      keyIds: { issuer_anchor: "arn:issuer", status_signer: "arn:status" },
-      publicKeys: {
-        issuer_anchor: { ...issuer.publicJwk, d: Buffer.from(issuer.seed).toString("base64url") },
-        status_signer: ed25519().publicJwk,
-      },
-      client: { async sign() { return new Uint8Array(64); } },
-    })).toEqual({ ok: false, reason: "public_key_must_not_carry_private_material" });
   });
 
-  it("leaves receipt signing on abraxas-primary and exposes no signing route", async () => {
+  it("fails closed on a custody outage or a malformed signature and does not read a private JWK", async () => {
+    const issuer = ed25519();
+    const status = ed25519();
+    const previous = process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK;
+    process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK = JSON.stringify({ d: "fallback-seed" });
+    const opened = await openInstitutionalSigner({
+      provider: "aws-kms",
+      environment: "production",
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+      issuer: custody({
+        key: issuer,
+        identityId: "prod-issuer-role",
+        keyId: "arn:issuer",
+        calls: [],
+        signature: () => { throw new Error("kms unavailable"); },
+      }),
+      status: custody({
+        key: status,
+        identityId: "prod-status-role",
+        keyId: "arn:status",
+        calls: [],
+        signature: new Uint8Array(63),
+      }),
+    });
+    if (!opened.ok) throw new Error(opened.reason);
+    const outage = await opened.issuer.signIssuerAuthorityStatement(
+      issuerPayload(issuer.publicJwk, status.publicJwk, INITIAL_ISSUER_REGISTRY_VERSION, "production"),
+    );
+    const malformed = await opened.status.signReceiptStatusStatement({ ...statusPayload(), environment: "production" });
+    if (previous === undefined) delete process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK;
+    else process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK = previous;
+    expect(outage).toEqual({ ok: false, reason: "institutional_signer_unavailable" });
+    expect(malformed).toEqual({ ok: false, reason: "signature_material_invalid" });
+    expect(JSON.stringify(outage)).not.toContain("fallback-seed");
+    expect(JSON.stringify(malformed)).not.toContain("fallback-seed");
+
+    await expect(openInstitutionalSigner({
+      provider: "aws-kms",
+      environment: "demo",
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+      issuer: custody({
+        key: issuer,
+        identityId: "demo-issuer-role",
+        keyId: "key/issuer",
+        calls: [],
+        signature: undefined,
+      }),
+      status: {
+        identityId: "demo-status-role",
+        keyId: "key/status",
+        async getPublicKey() { throw new Error("kms unavailable"); },
+        async signRawDigest() { return new Uint8Array(64); },
+      },
+    })).resolves.toEqual({ ok: false, reason: "institutional_signer_unavailable" });
+  });
+
+  it("keeps receipt signing on abraxas-primary and gives each role its own IAM policy", async () => {
     const receiptKey = generateTestSigningKeyPair("abraxas-primary");
     const payload = {
       receipt_id: "receipt-1",
@@ -354,12 +382,25 @@ describe("non-exportable institutional signing", () => {
     expect(receiptKey.signingKeyId).toBe("abraxas-primary");
     expect(verifyReceiptSignature(payload, signed.signature, receiptKey.publicKeyJwk)).toBe(true);
 
-    const source = ["contract.ts", "awsKmsEd25519.ts", "institutionalSigner.ts"]
-      .map((file) => readFileSync(join(__dirname, file), "utf8"))
-      .join("\n");
-    expect(source).not.toContain("ABRAXAS_SIGNING_KEY");
-    expect(source).not.toContain("process.env");
-    expect(readFileSync(join(process.cwd(), "lib/decisionReceipts/signing.ts"), "utf8")).toContain("ABRAXAS_SIGNING_KEY");
+    for (const file of [
+      "lib/decisionReceipts/signing.ts",
+      "lib/partner/trustExecution/executeTrustExecutionAuthoritative.ts",
+    ]) {
+      const source = readFileSync(join(process.cwd(), file), "utf8");
+      expect(source).not.toContain("signAuthorityChangeApproval");
+      expect(source).not.toContain("institutional/signing");
+    }
+    const implementation = [
+      "contract.ts",
+      "authorityChange.ts",
+      "iamPolicy.ts",
+      "awsKmsEd25519.ts",
+      "awsKmsClient.ts",
+      "institutionalSigner.ts",
+    ].map((file) => readFileSync(join(__dirname, file), "utf8")).join("\n");
+    expect(implementation).not.toContain("ABRAXAS_SIGNING_KEY");
+    expect(implementation).not.toContain("ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK");
+    expect(implementation).not.toContain("process.env");
 
     const hits: string[] = [];
     const walk = (dir: string) => {
@@ -373,10 +414,111 @@ describe("non-exportable institutional signing", () => {
     };
     walk(join(process.cwd(), "app"));
     expect(hits).toEqual([]);
-    expect(AWS_KMS_PUBLISHED_COST).toMatchObject({
-      usdPerCustomerManagedKeyMonth: 1,
-      usdPer10000AsymmetricRequests: 0.15,
-      asymmetricSignExcludedFromFreeTier: true,
+
+    const issuerArn = "arn:aws:kms:us-east-1:111122223333:key/issuer";
+    const statusArn = "arn:aws:kms:us-east-1:111122223333:key/status";
+    const issuerPolicy = issuerAnchorIamPolicy(issuerArn);
+    const statusPolicy = statusSignerIamPolicy(statusArn);
+    expect(JSON.stringify(issuerPolicy)).not.toContain(statusArn);
+    expect(JSON.stringify(statusPolicy)).not.toContain(issuerArn);
+    expect(JSON.stringify(issuerPolicy)).not.toContain("kms:*");
+    expect(issuerPolicy.Statement[0].Condition).toEqual({ StringEquals: { "kms:SigningAlgorithm": AWS_KMS_ED25519.signingAlgorithm } });
+    expect(statusPolicy.Statement.map((statement) => statement.Action).flat()).toEqual(["kms:Sign", "kms:GetPublicKey"]);
+    expect(() => issuerAnchorIamPolicy("arn:aws:kms:us-east-1:111122223333:key/*")).toThrow("institutional_kms_key_arn_required");
+    expect(SHARED_PROCESS_CUSTODY_LIMIT).toContain("both roles' credentials");
+    expect(AWS_KMS_ED25519_INCOMPATIBLE.signingAlgorithm).toBe("ED25519_PH_SHA_512");
+    expect(AWS_KMS_PUBLISHED_COST.asymmetricSignExcludedFromFreeTier).toBe(true);
+  });
+});
+
+describe("AWS SDK adapter request shape, not a live KMS call", () => {
+  it("sends GetPublicKey and RAW ED25519_SHA_512, then verifies the returned raw signature", async () => {
+    const issuer = ed25519();
+    const status = ed25519();
+    const seen: Array<{ name: string; input: { KeyId?: string; Message?: Uint8Array; MessageType?: string; SigningAlgorithm?: string } }> = [];
+    const fake = (key: ReturnType<typeof ed25519>, keyId: string): AwsKmsCommandClient => ({
+      async send(command) {
+        if (command instanceof GetPublicKeyCommand) {
+          seen.push({ name: "GetPublicKey", input: command.input });
+          return { KeySpec: "ECC_NIST_EDWARDS25519", PublicKey: ed25519SpkiFromRawPublicKey(key.publicKey) };
+        }
+        if (command instanceof SignCommand) {
+          seen.push({ name: "Sign", input: command.input });
+          return {
+            SigningAlgorithm: "ED25519_SHA_512",
+            Signature: key.sign(command.input.Message as Uint8Array),
+          };
+        }
+        throw new Error(`unexpected command for ${keyId}`);
+      },
     });
+    const opened = await openInstitutionalSigner({
+      provider: "aws-kms",
+      environment: "demo",
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+      issuer: bindAwsKmsEd25519Client({ identityId: "issuer-role/demo", keyId: "arn:issuer", kms: fake(issuer, "arn:issuer") }),
+      status: bindAwsKmsEd25519Client({ identityId: "status-role/demo", keyId: "arn:status", kms: fake(status, "arn:status") }),
+    });
+    if (!opened.ok) throw new Error(opened.reason);
+    const payload = issuerPayload(issuer.publicJwk, status.publicJwk);
+    const signed = await opened.issuer.signIssuerAuthorityStatement(payload);
+    expect(signed.ok).toBe(true);
+    if (!signed.ok) return;
+    expect(verifySignedIssuerAuthorityStatement({
+      statement: signed.statement,
+      trustAnchorPublicJwk: issuer.publicJwk,
+    }).ok).toBe(true);
+    const signCall = seen.find((call) => call.name === "Sign");
+    expect(signCall?.input.KeyId).toBe("arn:issuer");
+    expect(signCall?.input.MessageType).toBe("RAW");
+    expect(signCall?.input.SigningAlgorithm).toBe("ED25519_SHA_512");
+    expect(signCall?.input.Message).toHaveLength(32);
+    expect(seen.some((call) => call.name === "GetPublicKey" && call.input.KeyId === "arn:status")).toBe(true);
+    expect(seen.filter((call) => call.name === "Sign").map((call) => call.input.KeyId)).toEqual(["arn:issuer"]);
+  });
+
+  it("rejects a KMS public key that does not match the configured JWK and a prehash algorithm response", async () => {
+    const issuer = ed25519();
+    const status = ed25519();
+    const signs: string[] = [];
+    const fake = (key: ReturnType<typeof ed25519>, algorithm: string): AwsKmsCommandClient => ({
+      async send(command) {
+        if (command instanceof GetPublicKeyCommand) {
+          return { KeySpec: "ECC_NIST_EDWARDS25519", PublicKey: ed25519SpkiFromRawPublicKey(key.publicKey) };
+        }
+        signs.push(algorithm);
+        return { SigningAlgorithm: algorithm, Signature: key.sign(command.input.Message as Uint8Array) };
+      },
+    });
+    const mismatch = await openInstitutionalSigner({
+      provider: "aws-kms",
+      environment: "demo",
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: ed25519().publicJwk, status_signer: status.publicJwk },
+      issuer: bindAwsKmsEd25519Client({ identityId: "issuer-role/demo", keyId: "arn:issuer", kms: fake(issuer, "ED25519_SHA_512") }),
+      status: bindAwsKmsEd25519Client({ identityId: "status-role/demo", keyId: "arn:status", kms: fake(status, "ED25519_SHA_512") }),
+    });
+    expect(mismatch).toEqual({ ok: false, reason: "kms_public_key_mismatch" });
+    expect(signs).toEqual([]);
+
+    const opened = await openInstitutionalSigner({
+      provider: "aws-kms",
+      environment: "demo",
+      anchorKeyId: "demo-compatibility-anchor",
+      statusSignerKeyId: "demo-status-signer",
+      publicKeys: { issuer_anchor: issuer.publicJwk, status_signer: status.publicJwk },
+      issuer: bindAwsKmsEd25519Client({
+        identityId: "issuer-role/demo",
+        keyId: "arn:issuer",
+        kms: fake(issuer, "ED25519_PH_SHA_512"),
+      }),
+      status: bindAwsKmsEd25519Client({ identityId: "status-role/demo", keyId: "arn:status", kms: fake(status, "ED25519_SHA_512") }),
+    });
+    if (!opened.ok) throw new Error(opened.reason);
+    expect(await opened.issuer.signIssuerAuthorityStatement(issuerPayload(issuer.publicJwk, status.publicJwk)))
+      .toEqual({ ok: false, reason: "signature_material_invalid" });
   });
 });
