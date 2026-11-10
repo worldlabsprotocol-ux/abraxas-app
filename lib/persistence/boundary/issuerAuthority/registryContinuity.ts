@@ -1,6 +1,12 @@
 // FILE: lib/persistence/boundary/issuerAuthority/registryContinuity.ts
 // Authority-state versions. Signing another receipt does not advance the version.
-// A new version requires a signature by the pinned anchor over the exact proposal.
+// A new version requires an Ed25519 signature over that exact proposal.
+//
+// ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK is the issuer process's configured
+// verification key. It is not the relying party's independently pinned trust root.
+// Replacing it can make this process accept a different signature. It does not
+// change a relying party's pin. This is cryptographic approval of one proposal.
+// It is not multisignature governance and it is not non-exportable key custody.
 
 import nacl from "tweetnacl";
 import {
@@ -97,7 +103,11 @@ export function hashIssuerAuthorityChangeAuthorization(
   return createHash("sha256").update(canonicalizeJson(authorization), "utf8").digest("hex");
 }
 
-/** Produces a signature. It does not record authority. */
+/**
+ * Signs one proposal with an exportable private JWK.
+ * Not an application route, not receipt issuance, and not protected custody.
+ * A process that holds the private key can produce a valid signature.
+ */
 export function signIssuerAuthorityChangeAuthorization(input: {
   authorization: IssuerAuthorityChangeAuthorization;
   anchorPrivateJwk: JsonWebKey;
@@ -144,7 +154,7 @@ function postgresCode(err: unknown): string | null {
   return null;
 }
 
-function readPinnedAnchor(env: Record<string, string | undefined>):
+function readConfiguredIssuerAnchor(env: Record<string, string | undefined>):
   | { ok: true; anchorKeyId: string; anchorPublicJwk: JsonWebKey }
   | { ok: false; reason: string } {
   const anchorKeyId = env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID?.trim();
@@ -270,8 +280,9 @@ export function resolveIssuerAuthorityRegistryContinuity(input: {
 }
 
 /**
- * Records a new authority state after the pinned anchor signature matches the proposal.
- * The caller cannot substitute a verification key; the pinned public JWK comes from the environment.
+ * Records a proposal whose signature matches the configured issuer public JWK.
+ * The function does not accept a caller-supplied verification key. The key still
+ * comes from application configuration, not from a relying party's pin.
  */
 export async function applyIssuerAuthorityChangeAuthorization(input: {
   env?: Record<string, string | undefined>;
@@ -279,7 +290,7 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
   signatureBase64Url: string;
 }): Promise<ResolvedIssuerAuthorityContinuity | { ok: false; reason: string }> {
   const env = input.env ?? process.env;
-  const pinned = readPinnedAnchor(env);
+  const pinned = readConfiguredIssuerAnchor(env);
   if (!pinned.ok) return pinned;
   if (input.authorization.anchor_key_id !== pinned.anchorKeyId) {
     return { ok: false, reason: "authority_approval_anchor_mismatch" };

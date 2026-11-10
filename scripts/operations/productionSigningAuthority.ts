@@ -394,6 +394,7 @@ export function generateProductionAuthorities(
       "Those statements name abraxas-production-status-signer as the status signer.",
       "The status signer signs current-validity statements.",
       "A verifier pins this anchor out of band and rejects an anchor that arrived only inside a receipt.",
+      "ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK is issuer configuration for checking an approval signature. It is not the relying party's independently pinned trust root, and configuring it does not bootstrap version 854.",
     ],
     registry_version_initial: INITIAL_REGISTRY_VERSION,
     registry_rotation: "advances_on_approved_authority_change" as const,

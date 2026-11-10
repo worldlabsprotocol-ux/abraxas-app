@@ -1,16 +1,17 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
-import { issuerAuthorityStateDigest, publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
+import {
+  issuerAuthorityStateDigest,
+  publicEd25519JwkFingerprint,
+  verifySignedIssuerAuthorityStatement,
+} from "@abraxas/independent-verifier";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
 import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignSlice/bootstrap";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
-import {
-  RECEIPT_KEY_DOCUMENT_DIGEST,
-  RECEIPT_KEY_ID,
-} from "../../../../scripts/operations/productionSigningAuthority";
 import {
   buildIssuerAuthorityStatementFromRegistry,
   publishSignedIssuerAuthorityFromRegistry,
@@ -139,11 +140,53 @@ describe("issuer authority continuity decisions", () => {
     })).toMatchObject({ action: "insert", registryVersion: 856, supersedesRegistryVersion: 855 });
   });
 
-  it("keeps the published receipt key and trust-contract digest", () => {
-    expect(RECEIPT_KEY_ID).toBe("abraxas-primary");
-    expect(RECEIPT_KEY_DOCUMENT_DIGEST).toBe(
-      "4b4dc882928403fc622299d932b80aa985aaa990d6474cfa76a044dddfbb5489",
+  it("keeps approval signing off application routes and receipt issuance", () => {
+    const issuance = readFileSync(
+      "lib/partner/trustExecution/executeTrustExecutionAuthoritative.ts",
+      "utf8",
     );
+    expect(issuance.includes("signIssuerAuthorityChangeAuthorization")).toBe(false);
+    expect(issuance.includes("applyIssuerAuthorityChangeAuthorization")).toBe(false);
+    expect(issuance.includes("generateProductionAuthorities")).toBe(false);
+
+    const routes: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const path = join(dir, entry);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (/\.(ts|tsx)$/.test(entry)) routes.push(path);
+      }
+    };
+    walk("app");
+    const exposed = routes.filter((path) => {
+      const source = readFileSync(path, "utf8");
+      return source.includes("signIssuerAuthorityChangeAuthorization")
+        || source.includes("applyIssuerAuthorityChangeAuthorization")
+        || source.includes("generateProductionAuthorities");
+    });
+    expect(exposed).toEqual([]);
+  });
+
+  it("adds the continuity table without writing a version or changing existing tables", () => {
+    const sql = readFileSync(
+      "database/sovereign/migrations/011_issuer_authority_registry_continuity.sql",
+      "utf8",
+    ).toLowerCase().replace(/--.*$/gm, "");
+    expect(sql).toContain("create table if not exists public.issuer_authority_registry_continuity");
+    expect(sql.includes("insert ")).toBe(false);
+    expect(sql.includes("update ")).toBe(false);
+    expect(sql.includes("delete ")).toBe(false);
+    expect(sql.includes("drop ")).toBe(false);
+    expect(sql.includes("alter ")).toBe(false);
+  });
+
+  it("keeps the published receipt key and trust-contract digest", () => {
+    const ceremony = readFileSync("scripts/operations/productionSigningAuthority.ts", "utf8");
+    expect(ceremony).toContain('export const RECEIPT_KEY_ID = "abraxas-primary"');
+    expect(ceremony).toContain(
+      'export const RECEIPT_KEY_DOCUMENT_DIGEST = "4b4dc882928403fc622299d932b80aa985aaa990d6474cfa76a044dddfbb5489"',
+    );
+    expect(ceremony).toContain('institutional_approval: "not_approved"');
     const execution = readFileSync(
       "lib/partner/trustExecution/executeTrustExecutionAuthoritative.ts",
       "utf8",
@@ -427,6 +470,105 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     const approval = signedChange(env, "bootstrap", 854, null);
     const recorded = await applyIssuerAuthorityChangeAuthorization({ env, ...approval });
     expect(recorded).toEqual({ ok: false, reason: "authority_version_state_unavailable" });
+    resetSovereignStagingPgPoolForTests();
+  });
+
+  it("lets a substituted configured key update the issuer database without moving an independent pin", async () => {
+    const dbName = "abraxas_registry_pin_boundary";
+    const admin = new pg.Pool({
+      connectionString: "postgresql://postgres:postgres@127.0.0.1:5432/postgres",
+    });
+    await admin.query(`drop database if exists "${dbName}" with (force)`);
+    await admin.query(`create database "${dbName}"`);
+    await admin.end();
+    const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
+    const boundaryPool = new pg.Pool({ connectionString: url });
+    await applySovereignSliceSchema(boundaryPool);
+    const columns = await boundaryPool.query<{ column_name: string }>(
+      `select column_name from information_schema.columns
+        where table_schema = 'public' and table_name = 'issuer_authority_registry_continuity'`,
+    );
+    expect(columns.rows.map((row) => row.column_name)).not.toContain("public_jwk");
+
+    const substitute = generateTestSigningKeyPair("substituted-anchor");
+    const original = {
+      ...registryEnv([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }], url),
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
+    };
+    const substituted = {
+      ...registryEnv(
+        [{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }],
+        url,
+        { id: extra.signingKeyId, publicJwk: extra.publicKeyJwk },
+      ),
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(substitute.publicKeyJwk),
+    };
+    resetSovereignStagingPgPoolForTests();
+    const unsigned = await resolveIssuerAuthorityRegistryContinuity({
+      env: substituted,
+      anchorKeyId: anchor.signingKeyId,
+    });
+    expect(unsigned).toEqual({ ok: false, reason: "authority_bootstrap_required" });
+
+    const established = await applyIssuerAuthorityChangeAuthorization({
+      env: original,
+      ...signedChange(original, "bootstrap", 854, null),
+    });
+    expect(established.ok).toBe(true);
+
+    const described = describeConfiguredIssuerAuthority({
+      env: substituted,
+      anchorKeyId: anchor.signingKeyId,
+    });
+    expect(described.ok).toBe(true);
+    if (!described.ok) return;
+    const authorization: IssuerAuthorityChangeAuthorization = {
+      document: "abraxas_issuer_authority_change/1.0.0",
+      environment: described.environment,
+      change: "authority_change",
+      registry_version: 855,
+      supersedes_registry_version: 854,
+      authority_state_digest: described.authorityStateDigest,
+      anchor_key_id: anchor.signingKeyId,
+      anchor_fingerprint: publicEd25519JwkFingerprint(substitute.publicKeyJwk) ?? "",
+    };
+    const recorded = await applyIssuerAuthorityChangeAuthorization({
+      env: substituted,
+      authorization,
+      signatureBase64Url: signIssuerAuthorityChangeAuthorization({
+        authorization,
+        anchorPrivateJwk: substitute.privateKeyJwk,
+      }),
+    });
+    expect(recorded).toMatchObject({ ok: true, registryVersion: 855 });
+
+    const statement = publishSignedIssuerAuthorityFromRegistry({
+      registryVersion: 855,
+      supersedesRegistryVersion: 854,
+      anchorKeyId: anchor.signingKeyId,
+      anchorPrivateJwk: substitute.privateKeyJwk,
+      env: substituted,
+    });
+    expect("payload" in statement).toBe(true);
+    if (!("payload" in statement)) return;
+    const independentPin = verifySignedIssuerAuthorityStatement({
+      statement,
+      trustAnchorPublicJwk: anchor.publicKeyJwk,
+      acceptedRegistryVersion: 855,
+      expectedAuthorityStateDigest: described.authorityStateDigest,
+    });
+    expect(independentPin).toEqual({ ok: false, reason: "statement_signature_invalid" });
+    const replacedPin = verifySignedIssuerAuthorityStatement({
+      statement,
+      trustAnchorPublicJwk: substitute.publicKeyJwk,
+      acceptedRegistryVersion: 855,
+      expectedAuthorityStateDigest: described.authorityStateDigest,
+    });
+    expect(replacedPin.ok).toBe(true);
+
+    await boundaryPool.end();
     resetSovereignStagingPgPoolForTests();
   });
 });
