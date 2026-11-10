@@ -121,6 +121,9 @@ jobs:
       - name: DEMO Solana signer provisioning contract
         run: npx vitest run lib/partner/chainAttestationSignerLifecycle/demoSolanaProvision.test.ts lib/partner/chainAttestation/utf8.test.ts scripts/operations/productionSigningAuthority.test.ts
 
+      - name: Non-exportable institutional signing compatibility
+        run: npx vitest run lib/institutional/signing/institutionalSigner.test.ts
+
       - name: Vercel-parity compile (lint/type validated in eslint-validation job)
         run: npm run build:compile
         env:
