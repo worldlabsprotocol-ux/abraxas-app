@@ -15,7 +15,7 @@ import { publicEd25519JwkFingerprint } from "./fingerprint";
 import { signIssuerAuthorityPayloadForTests, verifySignedIssuerAuthorityStatement } from "./issuerAuthorityStatement";
 import { signReceiptStatusStatement } from "./signedReceiptStatusStatement";
 import { verifyAbraxasReceiptIndependently } from "./verifyIndependent";
-import { buildCanonicalPayloadFromRecord, hashCanonicalPayload, issuerAuthorityStateDigest, retainedRegistryVersion } from "./canonical";
+import { authorityCheckpointFromStatement, buildCanonicalPayloadFromRecord, hashCanonicalPayload, issuerAuthorityStateDigest, retainedRegistryVersion } from "./canonical";
 function keyPair(label: string) {
   const kp = nacl.sign.keyPair();
   const privateKeyJwk: JsonWebKey = {
@@ -169,6 +169,7 @@ describe("independent verifier (no Abraxas backend)", () => {
       statementObservedAt: new Date().toISOString(),
       signedStatusStatement: signedStatusFor(record, statusSigner),
       minimumRegistryVersion: 1,
+      ...authorityCheckpointFromStatement(statement),
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(true);
@@ -311,6 +312,25 @@ describe("independent verifier (no Abraxas backend)", () => {
     expect(result.failure_codes).toContain("payload_tampered");
   });
 
+  it("keeps a signed receipt historically authentic when no current checkpoint is retained", () => {
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 900),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record: signedReceipt(receiptKey),
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
+    });
+    expect(result.cryptographically_authentic).toBe(true);
+    expect(result.issuer_currently_authorized).toBe(false);
+    expect(result.currently_acceptable).toBe("no");
+    expect(result.failure_codes).toContain("authority_checkpoint_required");
+  });
+
   it("rejects a forged higher registry version as current authority", () => {
     const statement = signIssuerAuthorityPayloadForTests({
       payload: statementPayload(receiptKey, statusSigner, 900),
@@ -325,6 +345,7 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
       minimumRegistryVersion: 854,
       acceptedRegistryVersion: 854,
+      expectedAuthorityStateDigest: issuerAuthorityStateDigest(statementPayload(receiptKey, statusSigner, 854)),
     });
     expect(result.issuer_currently_authorized).toBe(false);
     expect(result.currently_acceptable).toBe("no");

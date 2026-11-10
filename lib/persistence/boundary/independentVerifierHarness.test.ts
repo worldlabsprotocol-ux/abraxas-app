@@ -11,6 +11,7 @@ import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verification
 import { publishSignedIssuerAuthorityFromRegistry } from "./issuerAuthority/buildFromRegistry";
 import { buildTrustAnchorBundleV1 } from "./trustDistribution/buildTrustAnchorBundle";
 import {
+  authorityCheckpointFromStatement,
   verifyAbraxasReceiptIndependently,
   signReceiptStatusStatement,
   RECEIPT_STATUS_STATEMENT_DOCUMENT,
@@ -151,6 +152,7 @@ describe("independent verifier harness (#818/#819)", () => {
       },
       statementObservedAt: new Date().toISOString(),
       signedStatusStatement: signedStatus,
+      ...authorityCheckpointFromStatement(statement),
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(true);

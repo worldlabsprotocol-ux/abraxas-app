@@ -49,6 +49,12 @@ function issuerAuthorityStateDigest(payload) {
   };
   return crypto.createHash("sha256").update(canonicalizeJson(state), "utf8").digest("hex");
 }
+function authorityCheckpointFromStatement(statement) {
+  return {
+    acceptedRegistryVersion: statement.payload.registry_version,
+    expectedAuthorityStateDigest: issuerAuthorityStateDigest(statement.payload)
+  };
+}
 function retainedRegistryVersion(input) {
   if (input.offeredByBundle != null && input.retained == null) return void 0;
   if (typeof input.retained === "number" && Number.isInteger(input.retained) && input.retained >= 1) {
@@ -671,7 +677,9 @@ function verifyAbraxasReceiptIndependently(input) {
       sigOk ? void 0 : "signature_invalid"
     );
   }
-  const authKey = resolveIssuerKeyFromSignedStatement({
+  const retainedVersion = input.acceptedRegistryVersion;
+  const retainedDigest = input.expectedAuthorityStateDigest;
+  const authKey = retainedVersion == null ? { ok: false, reason: "authority_checkpoint_required" } : retainedDigest == null || retainedDigest === "" ? { ok: false, reason: "authority_state_digest_required" } : resolveIssuerKeyFromSignedStatement({
     statement: input.signedIssuerAuthority,
     trustAnchorPublicJwk: input.pinnedTrustAnchor.public_jwk,
     keyId: input.record.signing_key_id,
@@ -680,8 +688,8 @@ function verifyAbraxasReceiptIndependently(input) {
     mode: "current_authorization",
     now,
     minimumRegistryVersion: input.minimumRegistryVersion,
-    acceptedRegistryVersion: input.acceptedRegistryVersion,
-    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest
+    acceptedRegistryVersion: retainedVersion,
+    expectedAuthorityStateDigest: retainedDigest
   });
   const issuerAuthorized = authKey.ok;
   push(
@@ -871,6 +879,7 @@ exports.TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION = TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION;
 exports.assertNoV11FieldsOnV10Record = assertNoV11FieldsOnV10Record;
 exports.assertStatementMatchesPinnedAnchor = assertStatementMatchesPinnedAnchor;
 exports.assessManifestReferencePrivacy = assessManifestReferencePrivacy;
+exports.authorityCheckpointFromStatement = authorityCheckpointFromStatement;
 exports.blindEvidenceRef = blindEvidenceRef;
 exports.buildCanonicalPayloadFromRecord = buildCanonicalPayloadFromRecord;
 exports.buildCanonicalPayloadV1_1 = buildCanonicalPayloadV1_1;

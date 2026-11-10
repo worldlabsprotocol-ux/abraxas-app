@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
-import { issuerAuthorityStateDigest } from "@abraxas/independent-verifier";
+import { issuerAuthorityStateDigest, publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
@@ -17,9 +17,12 @@ import {
 } from "./buildFromRegistry";
 import { resolveIssuerKeyFromSignedStatement } from "./resolveIssuerKey";
 import {
-  approveIssuerAuthorityStateChange,
+  applyIssuerAuthorityChangeAuthorization,
   decideIssuerAuthorityContinuity,
+  describeConfiguredIssuerAuthority,
   resolveIssuerAuthorityRegistryContinuity,
+  signIssuerAuthorityChangeAuthorization,
+  type IssuerAuthorityChangeAuthorization,
 } from "./registryContinuity";
 
 const PROOF = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
@@ -62,28 +65,50 @@ function registryEnv(
   };
 }
 
+function proposal(
+  digest: string,
+  change: IssuerAuthorityChangeAuthorization["change"],
+  version: number,
+  supersedes: number | null,
+): IssuerAuthorityChangeAuthorization {
+  return {
+    document: "abraxas_issuer_authority_change/1.0.0",
+    environment: "production",
+    change,
+    registry_version: version,
+    supersedes_registry_version: supersedes,
+    authority_state_digest: digest,
+    anchor_key_id: "anchor",
+    anchor_fingerprint: "f".repeat(64),
+  };
+}
+
 describe("issuer authority continuity decisions", () => {
-  it("reuses one version for an unchanged authority state", () => {
+  it("requires explicit bootstrap and then reuses one version", () => {
+    const digest = "a".repeat(64);
+    expect(decideIssuerAuthorityContinuity({
+      rows: [],
+      authorityStateDigest: digest,
+    })).toEqual({ action: "reject", reason: "authority_bootstrap_required" });
     const first = decideIssuerAuthorityContinuity({
       rows: [],
-      authorityStateDigest: "a".repeat(64),
-      authorityChangeApproved: false,
+      authorityStateDigest: digest,
+      authorization: proposal(digest, "bootstrap", 854, null),
     });
     expect(first).toMatchObject({ action: "insert", registryVersion: 854 });
     const current = {
       registryVersion: 854,
-      authorityStateDigest: "a".repeat(64),
+      authorityStateDigest: digest,
       supersedesRegistryVersion: null,
     };
     const repeated = decideIssuerAuthorityContinuity({
       rows: [current],
-      authorityStateDigest: current.authorityStateDigest,
-      authorityChangeApproved: false,
+      authorityStateDigest: digest,
     });
     expect(repeated).toMatchObject({ action: "reuse", registryVersion: 854 });
   });
 
-  it("rejects rollback and refuses to reuse a version for a different state", () => {
+  it("rejects rollback, a different digest, and a stale version", () => {
     const rows = [
       { registryVersion: 854, authorityStateDigest: "a".repeat(64), supersedesRegistryVersion: null },
       { registryVersion: 855, authorityStateDigest: "b".repeat(64), supersedesRegistryVersion: 854 },
@@ -91,17 +116,26 @@ describe("issuer authority continuity decisions", () => {
     expect(decideIssuerAuthorityContinuity({
       rows,
       authorityStateDigest: "a".repeat(64),
-      authorityChangeApproved: true,
+      authorization: proposal("a".repeat(64), "authority_change", 856, 855),
     })).toEqual({ action: "reject", reason: "authority_state_rollback" });
     expect(decideIssuerAuthorityContinuity({
       rows,
       authorityStateDigest: "c".repeat(64),
-      authorityChangeApproved: false,
     })).toEqual({ action: "reject", reason: "authority_state_change_unapproved" });
     expect(decideIssuerAuthorityContinuity({
       rows,
       authorityStateDigest: "c".repeat(64),
-      authorityChangeApproved: true,
+      authorization: proposal("d".repeat(64), "authority_change", 856, 855),
+    })).toEqual({ action: "reject", reason: "authority_state_change_unapproved" });
+    expect(decideIssuerAuthorityContinuity({
+      rows,
+      authorityStateDigest: "c".repeat(64),
+      authorization: proposal("c".repeat(64), "authority_change", 856, 854),
+    })).toEqual({ action: "reject", reason: "stale_authority_approval" });
+    expect(decideIssuerAuthorityContinuity({
+      rows,
+      authorityStateDigest: "c".repeat(64),
+      authorization: proposal("c".repeat(64), "authority_change", 856, 855),
     })).toMatchObject({ action: "insert", registryVersion: 856, supersedesRegistryVersion: 855 });
   });
 
@@ -149,11 +183,58 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     keys: Array<{ id: string; publicJwk: JsonWebKey; status?: KeyStatus }>,
     statusSigner?: { id: string; publicJwk: JsonWebKey },
   ) {
-    return registryEnv(keys, databaseUrl, statusSigner);
+    return {
+      ...registryEnv(keys, databaseUrl, statusSigner),
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
+    };
+  }
+
+  function signedChange(
+    env: Record<string, string>,
+    change: IssuerAuthorityChangeAuthorization["change"],
+    version: number,
+    supersedes: number | null,
+    signer: { signingKeyId: string; publicKeyJwk: JsonWebKey; privateKeyJwk: JsonWebKey } = anchor,
+  ) {
+    const described = describeConfiguredIssuerAuthority({ env, anchorKeyId: anchor.signingKeyId });
+    if (!described.ok) throw new Error(described.reason);
+    const authorization: IssuerAuthorityChangeAuthorization = {
+      document: "abraxas_issuer_authority_change/1.0.0",
+      environment: described.environment,
+      change,
+      registry_version: version,
+      supersedes_registry_version: supersedes,
+      authority_state_digest: described.authorityStateDigest,
+      anchor_key_id: anchor.signingKeyId,
+      anchor_fingerprint: publicEd25519JwkFingerprint(anchor.publicKeyJwk) ?? "",
+    };
+    return {
+      authorization,
+      signatureBase64Url: signIssuerAuthorityChangeAuthorization({
+        authorization,
+        anchorPrivateJwk: signer.privateKeyJwk,
+      }),
+    };
   }
 
   it("accepts the current version for repeated statements and rejects the listed attacks", async () => {
     const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
+    const beforeBootstrap = await resolveIssuerAuthorityRegistryContinuity({
+      env: active,
+      anchorKeyId: anchor.signingKeyId,
+    });
+    expect(beforeBootstrap).toEqual({ ok: false, reason: "authority_bootstrap_required" });
+    expect((await pool.query(`select 1 from public.issuer_authority_registry_continuity`)).rowCount).toBe(0);
+
+    const intruder = signedChange(active, "bootstrap", 854, null, extra);
+    const forgedApproval = await applyIssuerAuthorityChangeAuthorization({ env: active, ...intruder });
+    expect(forgedApproval).toEqual({ ok: false, reason: "authority_approval_signature_invalid" });
+
+    const bootstrap = signedChange(active, "bootstrap", 854, null);
+    const established = await applyIssuerAuthorityChangeAuthorization({ env: active, ...bootstrap });
+    expect(established).toMatchObject({ ok: true, registryVersion: 854, repeated: false });
+
     const versions: number[] = [];
     for (let i = 0; i < 5; i += 1) {
       const resolved = await resolveIssuerAuthorityRegistryContinuity({
@@ -163,7 +244,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       expect(resolved.ok).toBe(true);
       if (!resolved.ok) return;
       versions.push(resolved.registryVersion);
-      expect(resolved.repeated).toBe(i > 0);
+      expect(resolved.repeated).toBe(true);
     }
     expect(versions).toEqual([854, 854, 854, 854, 854]);
 
@@ -193,6 +274,9 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       anchorKeyId: anchor.signingKeyId,
     });
     expect(unauthorized).toEqual({ ok: false, reason: "authority_state_change_unapproved" });
+    const wrongDigest = signedChange(active, "authority_change", 855, 854);
+    const mismatched = await applyIssuerAuthorityChangeAuthorization({ env: added, ...wrongDigest });
+    expect(mismatched).toEqual({ ok: false, reason: "authority_approval_digest_mismatch" });
     const unchanged = await pool.query(
       `select registry_version, authority_state_digest from public.issuer_authority_registry_continuity`,
     );
@@ -203,9 +287,9 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       { id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "retiring" },
       { id: extra.signingKeyId, publicJwk: extra.publicKeyJwk },
     ]);
-    const rotated = await approveIssuerAuthorityStateChange({
+    const rotated = await applyIssuerAuthorityChangeAuthorization({
       env: replacement,
-      anchorKeyId: anchor.signingKeyId,
+      ...signedChange(replacement, "authority_change", 855, 854),
     });
     expect(rotated).toMatchObject({ ok: true, registryVersion: 855, repeated: false });
     const oldStatement = publishSignedIssuerAuthorityFromRegistry({
@@ -232,9 +316,14 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       publicJwk: receipt.publicKeyJwk,
       status: "revoked",
     }]);
-    const revoked = await approveIssuerAuthorityStateChange({
+    const staleRevocation = await applyIssuerAuthorityChangeAuthorization({
       env: revokedEnv,
-      anchorKeyId: anchor.signingKeyId,
+      ...signedChange(revokedEnv, "authority_change", 856, 854),
+    });
+    expect(staleRevocation).toEqual({ ok: false, reason: "stale_authority_approval" });
+    const revoked = await applyIssuerAuthorityChangeAuthorization({
+      env: revokedEnv,
+      ...signedChange(revokedEnv, "authority_change", 856, 855),
     });
     expect(revoked).toMatchObject({ ok: true, registryVersion: 856 });
     if (!revoked.ok) return;
@@ -260,9 +349,9 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     expect(current.ok).toBe(false);
     if (!current.ok) expect(current.reason).toBe("revoked");
 
-    const restore = await approveIssuerAuthorityStateChange({
+    const restore = await applyIssuerAuthorityChangeAuthorization({
       env: active,
-      anchorKeyId: anchor.signingKeyId,
+      ...signedChange(active, "authority_change", 857, 856),
     });
     expect(restore).toEqual({ ok: false, reason: "authority_state_rollback" });
 
@@ -283,7 +372,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     expect(Number(latest.rows[0].version)).toBe(856);
   });
 
-  it("assigns distinct versions to concurrent approved authority changes", async () => {
+  it("lets one signed approval win and rejects the concurrent approval as stale", async () => {
     const base = await pool.query(
       `select max(registry_version) as version from public.issuer_authority_registry_continuity`,
     );
@@ -296,17 +385,48 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       [{ id: extra.signingKeyId, publicJwk: extra.publicKeyJwk, status: "revoked" }],
       { id: anchor.signingKeyId, publicJwk: anchor.publicKeyJwk },
     );
+    const leftApproval = signedChange(left, "authority_change", start + 1, start);
+    const rightApproval = signedChange(right, "authority_change", start + 1, start);
     const [first, second] = await Promise.all([
-      approveIssuerAuthorityStateChange({ env: left, anchorKeyId: anchor.signingKeyId }),
-      approveIssuerAuthorityStateChange({ env: right, anchorKeyId: anchor.signingKeyId }),
+      applyIssuerAuthorityChangeAuthorization({ env: left, ...leftApproval }),
+      applyIssuerAuthorityChangeAuthorization({ env: right, ...rightApproval }),
     ]);
-    expect(first.ok && second.ok).toBe(true);
-    if (!first.ok || !second.ok) return;
-    expect(new Set([first.registryVersion, second.registryVersion]).size).toBe(2);
-    expect([first.registryVersion, second.registryVersion].sort()).toEqual([start + 1, start + 2]);
+    const outcomes = [first, second];
+    expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(1);
+    expect(outcomes.filter((outcome) => !outcome.ok && outcome.reason === "stale_authority_approval")).toHaveLength(1);
+    const latest = await pool.query(
+      `select max(registry_version) as version from public.issuer_authority_registry_continuity`,
+    );
+    expect(Number(latest.rows[0].version)).toBe(start + 1);
     const stored = await pool.query(
       `select registry_version from public.issuer_authority_registry_continuity group by registry_version having count(*) > 1`,
     );
     expect(stored.rows).toHaveLength(0);
+  });
+
+  it("fails closed when the continuity table is absent", async () => {
+    const dbName = "abraxas_registry_continuity_absent";
+    const admin = new pg.Pool({
+      connectionString: "postgresql://postgres:postgres@127.0.0.1:5432/postgres",
+    });
+    await admin.query(`drop database if exists "${dbName}" with (force)`);
+    await admin.query(`create database "${dbName}"`);
+    await admin.end();
+    const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
+    const env = {
+      ...registryEnv([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }], url),
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
+      ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
+    };
+    resetSovereignStagingPgPoolForTests();
+    const missing = await resolveIssuerAuthorityRegistryContinuity({
+      env,
+      anchorKeyId: anchor.signingKeyId,
+    });
+    expect(missing).toEqual({ ok: false, reason: "authority_version_state_unavailable" });
+    const approval = signedChange(env, "bootstrap", 854, null);
+    const recorded = await applyIssuerAuthorityChangeAuthorization({ env, ...approval });
+    expect(recorded).toEqual({ ok: false, reason: "authority_version_state_unavailable" });
+    resetSovereignStagingPgPoolForTests();
   });
 });

@@ -10,6 +10,7 @@ import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistri
 import {
   RECEIPT_STATUS_STATEMENT_DOCUMENT,
   RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+  authorityCheckpointFromStatement,
   signReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
 import {
@@ -137,6 +138,7 @@ describe("Build #823 genuine Demo sandbox receipt", () => {
       policyId: BUILD823_DEMO_POLICY_ID,
       statementObservedAt: "2026-10-24T17:00:00.000Z",
       now: new Date("2026-10-24T17:30:00.000Z"),
+      ...authorityCheckpointFromStatement(bundle.signed_issuer_authority),
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(true);
@@ -177,6 +179,7 @@ describe("Build #823 genuine Demo sandbox receipt", () => {
       policyId: BUILD823_DEMO_POLICY_ID,
       statementObservedAt: "2026-10-24T17:00:00.000Z",
       now: new Date("2026-10-24T17:30:00.000Z"),
+      ...authorityCheckpointFromStatement(bundle.signed_issuer_authority),
     });
     expect(result.currently_acceptable).toBe("yes");
     const productionPin = { ...bundle.bundled_trust_anchor, environment: "production" as const };

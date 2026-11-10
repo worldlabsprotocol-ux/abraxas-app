@@ -18,6 +18,7 @@ import {
   RECEIPT_STATUS_STATEMENT_DOCUMENT,
   RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
   signReceiptStatusStatementForTests,
+  authorityCheckpointFromStatement,
   verifyAbraxasReceiptIndependently,
   type SignedReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
@@ -165,6 +166,7 @@ export async function verifyThreeLayerPortableFixture(input: {
     },
     statementObservedAt: new Date().toISOString(),
     signedStatusStatement: signedStatus,
+    ...authorityCheckpointFromStatement(signedIssuer),
   });
 }
 
@@ -214,5 +216,6 @@ export async function verifyThreeLayer(input: {
     },
     statementObservedAt: new Date().toISOString(),
     signedStatusStatement: signedStatus,
+    ...authorityCheckpointFromStatement(signedIssuer),
   });
 }

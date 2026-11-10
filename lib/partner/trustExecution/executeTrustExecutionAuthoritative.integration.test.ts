@@ -5,6 +5,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { Keypair } from "@solana/web3.js";
 import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignSlice/bootstrap";
+import {
+  applyIssuerAuthorityChangeAuthorization,
+  describeConfiguredIssuerAuthority,
+  signIssuerAuthorityChangeAuthorization,
+} from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
+import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import {
   authorizePartnerTrustExecution,
@@ -73,6 +79,30 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
     resetSovereignStagingPgPoolForTests();
     pool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(pool);
+    const described = describeConfiguredIssuerAuthority({
+      env: process.env,
+      anchorKeyId: "build834-trust-anchor",
+    });
+    if (!described.ok) throw new Error(described.reason);
+    const authorization = {
+      document: "abraxas_issuer_authority_change/1.0.0" as const,
+      environment: described.environment,
+      change: "bootstrap" as const,
+      registry_version: 854,
+      supersedes_registry_version: null,
+      authority_state_digest: described.authorityStateDigest,
+      anchor_key_id: "build834-trust-anchor",
+      anchor_fingerprint: publicEd25519JwkFingerprint(anchorKey.publicKeyJwk) ?? "",
+    };
+    const bootstrapped = await applyIssuerAuthorityChangeAuthorization({
+      env: process.env,
+      authorization,
+      signatureBase64Url: signIssuerAuthorityChangeAuthorization({
+        authorization,
+        anchorPrivateJwk: anchorKey.privateKeyJwk,
+      }),
+    });
+    if (!bootstrapped.ok) throw new Error(bootstrapped.reason);
 
     kp = Keypair.generate();
     wallet = kp.publicKey.toBase58();

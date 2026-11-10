@@ -51,7 +51,7 @@ import { publishSignedIssuerAuthorityFromRegistry } from "./issuerAuthority/buil
 import { evaluateSovereignCurrentValidity } from "./sovereignCurrentValidity/evaluate";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "./trustDistribution/publishSignedReceiptStatus";
 import { buildTrustAnchorBundleV1 } from "./trustDistribution/buildTrustAnchorBundle";
-import { verifyAbraxasReceiptIndependently } from "@abraxas/independent-verifier";
+import { authorityCheckpointFromStatement, verifyAbraxasReceiptIndependently } from "@abraxas/independent-verifier";
 
 const ANCHOR_KEY = generateTestSigningKeyPair();
 const STATUS_SIGNER_KEY = generateTestSigningKeyPair("status-signer-integration");
@@ -441,6 +441,7 @@ describeProof("sovereign operational proof (Build #815)", () => {
       },
       statementObservedAt: new Date().toISOString(),
       signedStatusStatement: signedStatus as Exclude<typeof signedStatus, { ok: false; reason: string }>,
+      ...authorityCheckpointFromStatement(signedIssuer as Exclude<typeof signedIssuer, { ok: false; reason: string }>),
     });
     expect(verified.status_evidence_authentic).toBe(true);
     expect(verified.currently_acceptable).toBe("yes");

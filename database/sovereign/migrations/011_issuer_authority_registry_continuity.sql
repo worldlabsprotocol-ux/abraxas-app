@@ -1,6 +1,13 @@
 -- Issuer authority registry continuity.
 -- A version identifies an authorized authority state. It does not advance per receipt.
 -- Distinct from sovereign_receipt_status_checkpoints.status_version.
+--
+-- Backward compatible: adds one new table and does not alter existing tables.
+-- Apply this file before the application build that reads it. Receipt issuance
+-- fails closed while the table is absent. Do not apply it to Production from CI.
+-- After the table exists, version 854 is recorded only by a signed
+-- abraxas_issuer_authority_change/1.0.0 bootstrap authorization whose digest
+-- matches the configured authority state and whose signature matches the pinned anchor.
 
 begin;
 

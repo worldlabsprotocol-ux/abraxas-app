@@ -17,6 +17,7 @@ import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistri
 import {
   RECEIPT_STATUS_STATEMENT_DOCUMENT,
   RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+  authorityCheckpointFromStatement,
   signReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
 import {
@@ -222,6 +223,7 @@ describe("Build #822 Partner Flow portable verification", () => {
       policyId: POLICY_ID,
       statementObservedAt: "2026-09-01T00:00:00.000Z",
       now: new Date("2026-09-01T01:00:00.000Z"),
+      ...authorityCheckpointFromStatement(bundle.signed_issuer_authority),
     });
     expect(verified.cryptographically_authentic).toBe(true);
     expect(verified.issuer_currently_authorized).toBe(true);

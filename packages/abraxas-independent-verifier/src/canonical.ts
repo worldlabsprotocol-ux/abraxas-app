@@ -48,6 +48,16 @@ export function issuerAuthorityStateDigest(
  * A downloaded receipt may repeat a version the relying party already trusts.
  * It cannot lower that retained version or install a new one by presenting a larger number.
  */
+/** The caller already trusts this statement. A downloaded bundle does not become a checkpoint by being passed here. */
+export function authorityCheckpointFromStatement(
+  statement: { payload: Pick<IssuerAuthorityStatementPayload, "environment" | "anchor_key_id" | "keys" | "status_signers" | "registry_version"> },
+): { acceptedRegistryVersion: number; expectedAuthorityStateDigest: string } {
+  return {
+    acceptedRegistryVersion: statement.payload.registry_version,
+    expectedAuthorityStateDigest: issuerAuthorityStateDigest(statement.payload),
+  };
+}
+
 export function retainedRegistryVersion(input: {
   retained?: number | null;
   offeredByBundle?: number | null;

@@ -43,6 +43,12 @@ function issuerAuthorityStateDigest(payload) {
   };
   return createHash("sha256").update(canonicalizeJson(state), "utf8").digest("hex");
 }
+function authorityCheckpointFromStatement(statement) {
+  return {
+    acceptedRegistryVersion: statement.payload.registry_version,
+    expectedAuthorityStateDigest: issuerAuthorityStateDigest(statement.payload)
+  };
+}
 function retainedRegistryVersion(input) {
   if (input.offeredByBundle != null && input.retained == null) return void 0;
   if (typeof input.retained === "number" && Number.isInteger(input.retained) && input.retained >= 1) {
@@ -665,7 +671,9 @@ function verifyAbraxasReceiptIndependently(input) {
       sigOk ? void 0 : "signature_invalid"
     );
   }
-  const authKey = resolveIssuerKeyFromSignedStatement({
+  const retainedVersion = input.acceptedRegistryVersion;
+  const retainedDigest = input.expectedAuthorityStateDigest;
+  const authKey = retainedVersion == null ? { ok: false, reason: "authority_checkpoint_required" } : retainedDigest == null || retainedDigest === "" ? { ok: false, reason: "authority_state_digest_required" } : resolveIssuerKeyFromSignedStatement({
     statement: input.signedIssuerAuthority,
     trustAnchorPublicJwk: input.pinnedTrustAnchor.public_jwk,
     keyId: input.record.signing_key_id,
@@ -674,8 +682,8 @@ function verifyAbraxasReceiptIndependently(input) {
     mode: "current_authorization",
     now,
     minimumRegistryVersion: input.minimumRegistryVersion,
-    acceptedRegistryVersion: input.acceptedRegistryVersion,
-    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest
+    acceptedRegistryVersion: retainedVersion,
+    expectedAuthorityStateDigest: retainedDigest
   });
   const issuerAuthorized = authKey.ok;
   push(
@@ -847,4 +855,4 @@ function enforcementFromIndependentVerification(result) {
   return { action: "deny", failure_codes };
 }
 
-export { APPLICATION_BINDING_SCOPE_SCHEMA, DECISION_RECEIPT_SCHEMA_V1_0, DECISION_RECEIPT_SCHEMA_V1_1, EVIDENCE_COMMITMENT_DOMAIN, EVIDENCE_COMMITMENT_SCHEMA, ISSUER_AUTHORITY_STATEMENT_DOCUMENT, ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION, MANDATORY_DENY_FAILURE_CODES, MANDATORY_INDETERMINATE_FAILURE_CODES, RECEIPT_STATUS_EVIDENCE_DOCUMENT, RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION, RECEIPT_STATUS_STATEMENT_DOCUMENT, RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION, TRUST_ANCHOR_BUNDLE_DOCUMENT, TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION, assertNoV11FieldsOnV10Record, assertStatementMatchesPinnedAnchor, assessManifestReferencePrivacy, blindEvidenceRef, buildCanonicalPayloadFromRecord, buildCanonicalPayloadV1_1, buildEvidenceCommitment, canonicalizeJson, computeEvidenceCommitmentDigest, deriveApplicationBindingRef, enforcementFromIndependentVerification, evaluateApplicationBindingRequirement, evaluateEvidenceCommitmentRequirement, hashCanonicalPayload, hashCanonicalPayloadV1_1, hashIssuerAuthorityPayload, hashReceiptStatusStatementPayload, issuerAuthorityStateDigest, normalizeDecisionReceiptTimestamp, publicEd25519JwkFingerprint, rejectSchemaDowngrade, resolveIssuerKeyFromSignedStatement, retainedRegistryVersion, signIssuerAuthorityPayloadForTests, signReceiptStatusStatement, signReceiptStatusStatementForTests, statusPayloadMatchesReceiptContext, validateTrustAnchorBundle, verifyAbraxasReceiptIndependently, verifyApplicationBindingRef, verifyEd25519Detached, verifyEvidenceCommitment, verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk, verifySignedIssuerAuthorityStatement, verifySignedReceiptStatusStatement };
+export { APPLICATION_BINDING_SCOPE_SCHEMA, DECISION_RECEIPT_SCHEMA_V1_0, DECISION_RECEIPT_SCHEMA_V1_1, EVIDENCE_COMMITMENT_DOMAIN, EVIDENCE_COMMITMENT_SCHEMA, ISSUER_AUTHORITY_STATEMENT_DOCUMENT, ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION, MANDATORY_DENY_FAILURE_CODES, MANDATORY_INDETERMINATE_FAILURE_CODES, RECEIPT_STATUS_EVIDENCE_DOCUMENT, RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION, RECEIPT_STATUS_STATEMENT_DOCUMENT, RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION, TRUST_ANCHOR_BUNDLE_DOCUMENT, TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION, assertNoV11FieldsOnV10Record, assertStatementMatchesPinnedAnchor, assessManifestReferencePrivacy, authorityCheckpointFromStatement, blindEvidenceRef, buildCanonicalPayloadFromRecord, buildCanonicalPayloadV1_1, buildEvidenceCommitment, canonicalizeJson, computeEvidenceCommitmentDigest, deriveApplicationBindingRef, enforcementFromIndependentVerification, evaluateApplicationBindingRequirement, evaluateEvidenceCommitmentRequirement, hashCanonicalPayload, hashCanonicalPayloadV1_1, hashIssuerAuthorityPayload, hashReceiptStatusStatementPayload, issuerAuthorityStateDigest, normalizeDecisionReceiptTimestamp, publicEd25519JwkFingerprint, rejectSchemaDowngrade, resolveIssuerKeyFromSignedStatement, retainedRegistryVersion, signIssuerAuthorityPayloadForTests, signReceiptStatusStatement, signReceiptStatusStatementForTests, statusPayloadMatchesReceiptContext, validateTrustAnchorBundle, verifyAbraxasReceiptIndependently, verifyApplicationBindingRef, verifyEd25519Detached, verifyEvidenceCommitment, verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk, verifySignedIssuerAuthorityStatement, verifySignedReceiptStatusStatement };

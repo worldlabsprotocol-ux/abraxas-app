@@ -147,18 +147,24 @@ export function verifyAbraxasReceiptIndependently(input: {
     );
   }
 
-  const authKey = resolveIssuerKeyFromSignedStatement({
-    statement: input.signedIssuerAuthority,
-    trustAnchorPublicJwk: input.pinnedTrustAnchor.public_jwk,
-    keyId: input.record.signing_key_id,
-    schemaVersion: input.record.schema_version,
-    environment: runtimeEnv,
-    mode: "current_authorization",
-    now,
-    minimumRegistryVersion: input.minimumRegistryVersion,
-    acceptedRegistryVersion: input.acceptedRegistryVersion,
-    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
-  });
+  const retainedVersion = input.acceptedRegistryVersion;
+  const retainedDigest = input.expectedAuthorityStateDigest;
+  const authKey = retainedVersion == null
+    ? { ok: false as const, reason: "authority_checkpoint_required" }
+    : retainedDigest == null || retainedDigest === ""
+      ? { ok: false as const, reason: "authority_state_digest_required" }
+      : resolveIssuerKeyFromSignedStatement({
+          statement: input.signedIssuerAuthority,
+          trustAnchorPublicJwk: input.pinnedTrustAnchor.public_jwk,
+          keyId: input.record.signing_key_id,
+          schemaVersion: input.record.schema_version,
+          environment: runtimeEnv,
+          mode: "current_authorization",
+          now,
+          minimumRegistryVersion: input.minimumRegistryVersion,
+          acceptedRegistryVersion: retainedVersion,
+          expectedAuthorityStateDigest: retainedDigest,
+        });
   const issuerAuthorized = authKey.ok;
   push(
     "issuer_current_authorization",

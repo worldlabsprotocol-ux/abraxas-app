@@ -16,11 +16,12 @@ import {
   verifyPortableDecision,
   type PortableDecisionArtifacts,
 } from "./relyingParty";
-import type {
-  DecisionReceiptRecord,
-  SignedIssuerAuthorityStatement,
-  SignedReceiptStatusStatement,
-  TrustAnchorBundleV1,
+import {
+  authorityCheckpointFromStatement,
+  type DecisionReceiptRecord,
+  type SignedIssuerAuthorityStatement,
+  type SignedReceiptStatusStatement,
+  type TrustAnchorBundleV1,
 } from "../../packages/abraxas-independent-verifier/src/index";
 
 const FIXTURE_DIR = join(__dirname, "fixtures");
@@ -61,6 +62,7 @@ describe("Build #821 integration-first relying party", () => {
       signedStatusStatement: set.signed_status_statement,
       relyingParty: rpScope,
       statementObservedAt: FIXTURE_OBSERVED_AT,
+      ...authorityCheckpointFromStatement(set.issuer_authority_statement),
     });
     expect(result.cryptographically_authentic).toBe(true);
     expect(result.issuer_currently_authorized).toBe(true);
@@ -75,6 +77,7 @@ describe("Build #821 integration-first relying party", () => {
       ...artifacts,
       relyingParty: rpScope,
       statementObservedAt: FIXTURE_OBSERVED_AT,
+      ...authorityCheckpointFromStatement(artifacts.signedIssuerAuthority),
     });
     expect(permitScopedAction(result)).toBe(true);
   });
