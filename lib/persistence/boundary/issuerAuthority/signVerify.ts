@@ -17,6 +17,8 @@ export function verifySignedIssuerAuthorityStatement(input: {
   statement: SignedIssuerAuthorityStatement;
   trustAnchorPublicJwk: JsonWebKey;
   minimumRegistryVersion?: number;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
 }): { ok: true } | { ok: false; reason: string } {
   return verifySignedIssuerAuthorityStatementStandalone(input);
 }

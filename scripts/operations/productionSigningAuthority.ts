@@ -78,7 +78,7 @@ export type PublicAuthoritySummary = {
   receipt_key_document_digest: string;
   institutional_approval: "not_approved";
   registry_version_initial: number;
-  registry_rotation: "blocked_until_version_advances";
+  registry_rotation: "advances_on_approved_authority_change";
   output_dir: string;
   private_files_retained: string[];
 };
@@ -396,8 +396,8 @@ export function generateProductionAuthorities(
       "A verifier pins this anchor out of band and rejects an anchor that arrived only inside a receipt.",
     ],
     registry_version_initial: INITIAL_REGISTRY_VERSION,
-    registry_rotation: "blocked_until_version_advances" as const,
-    registry_note: "Trust execution currently signs issuer statements at hardcoded registry version 854. The first statement can verify. A later rotation that reuses 854 is not rejected, because verifiers are not given a stored higher minimum. Do not declare the authority operational for rotation until issuance uses a monotonic version.",
+    registry_rotation: "advances_on_approved_authority_change" as const,
+    registry_note: "Version 854 is the first recorded authority state. Further receipts reuse it until an approved authority change advances it. Rollback to an older state is rejected. These keys are not Production authority.",
   };
 
   writeExclusive(join(dir, PRIVATE_ANCHOR_FILE), `${JSON.stringify(anchor.privateJwk)}\n`, 0o600);
@@ -422,7 +422,7 @@ function summaryFromFingerprints(dir: string, anchorFingerprint: string, statusF
     receipt_key_document_digest: RECEIPT_KEY_DOCUMENT_DIGEST,
     institutional_approval: "not_approved",
     registry_version_initial: INITIAL_REGISTRY_VERSION,
-    registry_rotation: "blocked_until_version_advances",
+    registry_rotation: "advances_on_approved_authority_change",
     output_dir: dir,
     private_files_retained: [PRIVATE_ANCHOR_FILE, PRIVATE_STATUS_FILE],
   };

@@ -49,6 +49,24 @@ function toEntry(key: ReceiptVerificationKeyRecord): IssuerAuthorityKeyEntry {
   };
 }
 
+export function loadIssuerAuthorityState(env: Record<string, string | undefined>):
+  | {
+      ok: true;
+      environment: "demo" | "production";
+      keys: IssuerAuthorityKeyEntry[];
+      statusSigners: StatusSignerKeyEntry[];
+    }
+  | { ok: false; reason: string } {
+  const loaded = loadReceiptVerificationRegistry(env);
+  if (!loaded.ok) return { ok: false, reason: loaded.reason };
+  return {
+    ok: true,
+    environment: loaded.environment,
+    keys: loaded.keys.map(toEntry),
+    statusSigners: loadStatusSignerFromEnv(env),
+  };
+}
+
 export function buildIssuerAuthorityStatementFromRegistry(input: {
   registryVersion: number;
   supersedesRegistryVersion?: number | null;
@@ -59,10 +77,9 @@ export function buildIssuerAuthorityStatementFromRegistry(input: {
   | { ok: true; payload: IssuerAuthorityStatementPayload }
   | { ok: false; reason: string } {
   const env = input.env ?? process.env;
-  const loaded = loadReceiptVerificationRegistry(env);
-  if (!loaded.ok) return { ok: false, reason: loaded.reason };
+  const state = loadIssuerAuthorityState(env);
+  if (!state.ok) return state;
   const issuedAt = input.issuedAt ?? new Date().toISOString();
-  const statusSigners = loadStatusSignerFromEnv(env);
   return {
     ok: true,
     payload: {
@@ -70,12 +87,12 @@ export function buildIssuerAuthorityStatementFromRegistry(input: {
       schema_version: "1.0.0",
       registry_version: input.registryVersion,
       supersedes_registry_version: input.supersedesRegistryVersion ?? null,
-      environment: loaded.environment,
+      environment: state.environment,
       issued_at: issuedAt,
       not_before: issuedAt,
       anchor_key_id: input.anchorKeyId,
-      keys: loaded.keys.map(toEntry),
-      ...(statusSigners.length > 0 ? { status_signers: statusSigners } : {}),
+      keys: state.keys,
+      ...(state.statusSigners.length > 0 ? { status_signers: state.statusSigners } : {}),
     },
   };
 }

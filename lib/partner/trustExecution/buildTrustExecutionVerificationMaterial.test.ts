@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/persistence/boundary/issuerAuthority/buildFromRegistry", () => ({
   publishSignedIssuerAuthorityFromRegistry: vi.fn(),
 }));
+vi.mock("@/lib/persistence/boundary/issuerAuthority/registryContinuity", () => ({
+  resolveIssuerAuthorityRegistryContinuity: vi.fn(),
+}));
 vi.mock("@/lib/persistence/boundary/sovereignCurrentValidity/evaluate", () => ({
   evaluateSovereignCurrentValidity: vi.fn(),
 }));
@@ -11,12 +14,14 @@ vi.mock("@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus
 }));
 
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
+import { resolveIssuerAuthorityRegistryContinuity } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { buildAuthoritativeVerificationMaterial } from "./buildTrustExecutionVerificationMaterial";
 
 const publishIssuer = vi.mocked(publishSignedIssuerAuthorityFromRegistry);
+const resolveContinuity = vi.mocked(resolveIssuerAuthorityRegistryContinuity);
 const evaluate = vi.mocked(evaluateSovereignCurrentValidity);
 const publishStatus = vi.mocked(publishSignedReceiptStatusFromSovereignEvaluation);
 
@@ -36,8 +41,16 @@ const anchor = { kty: "OKP", crv: "Ed25519", x: "abc" } as JsonWebKey;
 describe("authoritative verification material", () => {
   beforeEach(() => {
     publishIssuer.mockReset();
+    resolveContinuity.mockReset();
     evaluate.mockReset();
     publishStatus.mockReset();
+    resolveContinuity.mockResolvedValue({
+      ok: true,
+      registryVersion: 860,
+      supersedesRegistryVersion: 859,
+      authorityStateDigest: "digest-from-store",
+      repeated: true,
+    });
     publishIssuer.mockReturnValue({
       payload: { environment: "production" },
       signature: "anchor-signature",
@@ -59,10 +72,21 @@ describe("authoritative verification material", () => {
       anchorPublicJwk: anchor,
       anchorPrivateJwk: anchor,
       anchorKeyId: "anchor",
-      registryVersion: 854,
     });
 
     expect(result).toEqual({ ok: false, code: "wrong_environment" });
+    expect(resolveContinuity.mock.calls[0]?.[0]).toEqual({
+      env: { VERCEL_ENV: "production" },
+      anchorKeyId: "anchor",
+    });
+    expect(publishIssuer).toHaveBeenCalledWith(expect.objectContaining({
+      registryVersion: 860,
+      supersedesRegistryVersion: 859,
+    }));
+    expect(evaluate).toHaveBeenCalledWith(expect.objectContaining({
+      acceptedRegistryVersion: 860,
+      expectedAuthorityStateDigest: "digest-from-store",
+    }));
     expect(evaluate).toHaveBeenCalledWith(expect.objectContaining({
       expectedEnvironment: "production",
     }));
@@ -86,7 +110,6 @@ describe("authoritative verification material", () => {
       anchorPublicJwk: anchor,
       anchorPrivateJwk: anchor,
       anchorKeyId: "anchor",
-      registryVersion: 854,
     });
 
     expect(result).toEqual({ ok: false, code: "checkpoint_write_failed" });

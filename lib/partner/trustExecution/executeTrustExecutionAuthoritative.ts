@@ -138,7 +138,6 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
       anchorPublicJwk: anchor.anchorPublicJwk,
       anchorPrivateJwk: anchor.anchorPrivateJwk,
       anchorKeyId: anchor.anchorKeyId,
-      registryVersion: 854,
     });
     if (!materialBuilt.ok) {
       return { ok: false, code: materialBuilt.code, decision_result: "indeterminate" };
@@ -225,7 +224,6 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
       anchorPublicJwk: anchor.anchorPublicJwk,
       anchorPrivateJwk: anchor.anchorPrivateJwk,
       anchorKeyId: anchor.anchorKeyId,
-      registryVersion: 854,
     });
     if (!replayed.ok) {
       return { ok: false, code: replayed.code, decision_result: "indeterminate" };
@@ -342,7 +340,6 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
       anchorPublicJwk: anchor.anchorPublicJwk,
       anchorPrivateJwk: anchor.anchorPrivateJwk,
       anchorKeyId: anchor.anchorKeyId,
-      registryVersion: 854,
     });
     if (!replayed.ok) {
       return { ok: false, code: replayed.code, decision_result: "indeterminate" };
@@ -374,7 +371,6 @@ export async function executeTrustExecutionAuthoritativeDecision(input: {
       anchorPublicJwk: anchor.anchorPublicJwk,
       anchorPrivateJwk: anchor.anchorPrivateJwk,
       anchorKeyId: anchor.anchorKeyId,
-      registryVersion: 854,
     }),
     commit: () => commitFinalizedTrustExecutionOutcome({
       ...outcomeWrite,

@@ -15,7 +15,7 @@ import { publicEd25519JwkFingerprint } from "./fingerprint";
 import { signIssuerAuthorityPayloadForTests, verifySignedIssuerAuthorityStatement } from "./issuerAuthorityStatement";
 import { signReceiptStatusStatement } from "./signedReceiptStatusStatement";
 import { verifyAbraxasReceiptIndependently } from "./verifyIndependent";
-import { buildCanonicalPayloadFromRecord, hashCanonicalPayload } from "./canonical";
+import { buildCanonicalPayloadFromRecord, hashCanonicalPayload, issuerAuthorityStateDigest, retainedRegistryVersion } from "./canonical";
 function keyPair(label: string) {
   const kp = nacl.sign.keyPair();
   const privateKeyJwk: JsonWebKey = {
@@ -309,5 +309,53 @@ describe("independent verifier (no Abraxas backend)", () => {
       signedStatusStatement: signedStatusFor(record, statusSigner),
     });
     expect(result.failure_codes).toContain("payload_tampered");
+  });
+
+  it("rejects a forged higher registry version as current authority", () => {
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: statementPayload(receiptKey, statusSigner, 900),
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record: signedReceipt(receiptKey),
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
+      minimumRegistryVersion: 854,
+      acceptedRegistryVersion: 854,
+    });
+    expect(result.issuer_currently_authorized).toBe(false);
+    expect(result.currently_acceptable).toBe("no");
+    expect(result.failure_codes).toContain("registry_version_not_current");
+  });
+
+  it("rejects a changed authority state presented at the retained version", () => {
+    const current = statementPayload(receiptKey, statusSigner, 854);
+    const changed = statementPayload(receiptKey, statusSigner, 854);
+    changed.keys = [...changed.keys, { ...changed.keys[0], key_id: "extra-key" }];
+    const statement = signIssuerAuthorityPayloadForTests({
+      payload: changed,
+      anchorPrivateJwk: anchor.privateKeyJwk,
+    });
+    const result = verifyAbraxasReceiptIndependently({
+      record: signedReceipt(receiptKey),
+      pinnedTrustAnchor: bundle,
+      signedIssuerAuthority: statement,
+      relyingParty: { partner_id: "partner-818", policy_id: "policy-818", environment: "production" },
+      statementObservedAt: new Date().toISOString(),
+      signedStatusStatement: signedStatusFor(signedReceipt(receiptKey), statusSigner),
+      acceptedRegistryVersion: 854,
+      expectedAuthorityStateDigest: issuerAuthorityStateDigest(current),
+    });
+    expect(result.failure_codes).toContain("authority_state_mismatch");
+    expect(result.currently_acceptable).toBe("no");
+  });
+
+  it("keeps a retained registry version when a bundle offers a lower or higher one", () => {
+    expect(retainedRegistryVersion({ retained: 855, offeredByBundle: 854 })).toBe(855);
+    expect(retainedRegistryVersion({ retained: 855, offeredByBundle: 900 })).toBe(855);
+    expect(retainedRegistryVersion({ offeredByBundle: 900 })).toBeUndefined();
   });
 });

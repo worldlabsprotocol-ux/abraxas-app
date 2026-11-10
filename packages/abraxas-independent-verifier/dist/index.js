@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, createHmac } from 'crypto';
 import nacl from 'tweetnacl';
 
 // src/types.ts
@@ -31,6 +31,24 @@ function canonicalizeJson(value) {
 function hashIssuerAuthorityPayload(payload) {
   const canonical = canonicalizeJson(payload);
   return createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+function issuerAuthorityStateDigest(payload) {
+  const state = {
+    environment: payload.environment,
+    anchor_key_id: payload.anchor_key_id,
+    keys: [...payload.keys].sort((left, right) => left.key_id.localeCompare(right.key_id)),
+    ...payload.status_signers && payload.status_signers.length > 0 ? {
+      status_signers: [...payload.status_signers].sort((left, right) => left.key_id.localeCompare(right.key_id))
+    } : {}
+  };
+  return createHash("sha256").update(canonicalizeJson(state), "utf8").digest("hex");
+}
+function retainedRegistryVersion(input) {
+  if (input.offeredByBundle != null && input.retained == null) return void 0;
+  if (typeof input.retained === "number" && Number.isInteger(input.retained) && input.retained >= 1) {
+    return input.retained;
+  }
+  return void 0;
 }
 function buildCanonicalPayloadFromRecord(record) {
   return {
@@ -179,6 +197,17 @@ function verifySignedIssuerAuthorityStatement(input) {
   if (min != null && statement.payload.registry_version < min) {
     return { ok: false, reason: "registry_version_rollback_rejected" };
   }
+  if (input.acceptedRegistryVersion != null) {
+    if (statement.payload.registry_version < input.acceptedRegistryVersion) {
+      return { ok: false, reason: "registry_version_rollback_rejected" };
+    }
+    if (statement.payload.registry_version > input.acceptedRegistryVersion) {
+      return { ok: false, reason: "registry_version_not_current" };
+    }
+  }
+  if (input.expectedAuthorityStateDigest && issuerAuthorityStateDigest(statement.payload) !== input.expectedAuthorityStateDigest) {
+    return { ok: false, reason: "authority_state_mismatch" };
+  }
   if (statement.payload.supersedes_registry_version != null && statement.payload.registry_version <= statement.payload.supersedes_registry_version) {
     return { ok: false, reason: "registry_version_not_advanced" };
   }
@@ -189,10 +218,13 @@ function verifySignedIssuerAuthorityStatement(input) {
   return { ok: true };
 }
 function resolveIssuerKeyFromSignedStatement(input) {
+  const currentAuthority = input.mode === "current_authorization";
   const verified = verifySignedIssuerAuthorityStatement({
     statement: input.statement,
     trustAnchorPublicJwk: input.trustAnchorPublicJwk,
     minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: currentAuthority ? input.acceptedRegistryVersion : void 0,
+    expectedAuthorityStateDigest: currentAuthority ? input.expectedAuthorityStateDigest : void 0,
     now: input.now
   });
   if (!verified.ok) return verified;
@@ -225,13 +257,51 @@ function signIssuerAuthorityPayloadForTests(input) {
   };
 }
 
+// src/v1_1_0/constants.ts
+var DECISION_RECEIPT_SCHEMA_V1_0 = "1.0.0";
+var DECISION_RECEIPT_SCHEMA_V1_1 = "1.1.0";
+var APPLICATION_BINDING_SCOPE_SCHEMA = "abraxas.application_binding_scope/v1";
+var EVIDENCE_COMMITMENT_SCHEMA = "abraxas.evidence_commitment/v1";
+var EVIDENCE_COMMITMENT_DOMAIN = "abraxas|decision_receipt|evidence_commitment|v1\0";
+var V1_1_ONLY_KEYS = ["application_binding_ref", "evidence_commitment"];
+function assertNoV11FieldsOnV10Record(record) {
+  for (const key of V1_1_ONLY_KEYS) {
+    if (key in record && record[key] !== void 0) return false;
+  }
+  return true;
+}
+function buildCanonicalPayloadV1_1(record) {
+  const base = buildCanonicalPayloadFromRecord({ ...record, schema_version: DECISION_RECEIPT_SCHEMA_V1_0 });
+  return {
+    ...base,
+    schema_version: DECISION_RECEIPT_SCHEMA_V1_1,
+    application_binding_ref: record.application_binding_ref ?? null,
+    evidence_commitment: record.evidence_commitment ?? null
+  };
+}
+function hashCanonicalPayloadV1_1(payload) {
+  const canonical = canonicalizeJson(payload);
+  return createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+function rejectSchemaDowngrade(record) {
+  if (record.schema_version === DECISION_RECEIPT_SCHEMA_V1_0) {
+    return assertNoV11FieldsOnV10Record(record);
+  }
+  return true;
+}
+
 // src/receiptVerify.ts
 function verifyReceiptPayloadIntegrity(record) {
+  if (!rejectSchemaDowngrade(record)) return false;
+  if (record.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const payload2 = buildCanonicalPayloadV1_1(record);
+    return hashCanonicalPayloadV1_1(payload2) === record.payload_hash;
+  }
   const payload = buildCanonicalPayloadFromRecord(record);
   return hashCanonicalPayload(payload) === record.payload_hash;
 }
 function verifyReceiptSignatureWithPublicJwk(record, publicJwk) {
-  buildCanonicalPayloadFromRecord(record);
+  if (!verifyReceiptPayloadIntegrity(record)) return false;
   const message = Buffer.from(record.payload_hash, "hex");
   return verifyEd25519Detached({
     message,
@@ -325,6 +395,195 @@ function statusPayloadMatchesReceiptContext(input) {
   if (p.environment !== input.environment) return { ok: false, reason: "status_environment_mismatch" };
   return { ok: true };
 }
+function deriveApplicationBindingRef(scope, scopeSecret) {
+  const body = canonicalizeJson({
+    schema: APPLICATION_BINDING_SCOPE_SCHEMA,
+    partner_id: scope.partner_id,
+    policy_id: scope.policy_id,
+    policy_version: scope.policy_version,
+    decision_context: scope.decision_context,
+    launchpad_application_id: scope.launchpad_application_id
+  });
+  return createHmac("sha256", scopeSecret).update(body, "utf8").digest("base64url");
+}
+function verifyApplicationBindingRef(input) {
+  if (!input.receiptRef) return { ok: false, reason: "application_binding_missing" };
+  if (input.receiptRef !== input.expectedRef) return { ok: false, reason: "application_binding_mismatch" };
+  return { ok: true };
+}
+function sortEntries(entries) {
+  return [...entries].sort((a, b) => {
+    const ta = a.dependency_type.localeCompare(b.dependency_type);
+    if (ta !== 0) return ta;
+    const fa = (a.fact_id ?? "").localeCompare(b.fact_id ?? "");
+    if (fa !== 0) return fa;
+    return (a.source_credential_id ?? "").localeCompare(b.source_credential_id ?? "");
+  });
+}
+function blindEvidenceRef(material, blindingKey) {
+  return createHmac("sha256", blindingKey).update(material, "utf8").digest("hex");
+}
+function computeEvidenceCommitmentDigest(entries) {
+  const normalized = sortEntries(entries).map((e) => ({
+    dependency_type: e.dependency_type,
+    fact_id: e.fact_id,
+    source_credential_id: e.source_credential_id
+  }));
+  const body = canonicalizeJson({
+    schema: EVIDENCE_COMMITMENT_SCHEMA,
+    entries: normalized
+  });
+  return createHash("sha256").update(EVIDENCE_COMMITMENT_DOMAIN, "utf8").update(body, "utf8").digest("hex");
+}
+function buildEvidenceCommitment(entries) {
+  const sorted = sortEntries(entries);
+  return {
+    schema: EVIDENCE_COMMITMENT_SCHEMA,
+    digest: computeEvidenceCommitmentDigest(sorted),
+    entry_count: sorted.length
+  };
+}
+function verifyEvidenceCommitment(input) {
+  if (!input.commitment) return { ok: false, reason: "evidence_commitment_missing" };
+  if (!input.manifest) return { ok: false, reason: "evidence_commitment_manifest_missing" };
+  if (input.commitment.schema !== EVIDENCE_COMMITMENT_SCHEMA) {
+    return { ok: false, reason: "evidence_commitment_schema_unknown" };
+  }
+  if (input.commitment.entry_count !== input.manifest.length) {
+    return { ok: false, reason: "evidence_commitment_entry_count_mismatch" };
+  }
+  const digest = computeEvidenceCommitmentDigest(input.manifest);
+  if (digest !== input.commitment.digest) {
+    return { ok: false, reason: "evidence_commitment_digest_mismatch" };
+  }
+  return { ok: true };
+}
+
+// src/v1_1_0/enforcement.ts
+function evaluateApplicationBindingRequirement(input) {
+  const required = input.policy.require_application_binding === true;
+  const expectedRef = input.policy.application_binding_ref?.trim();
+  if (input.record.schema_version === DECISION_RECEIPT_SCHEMA_V1_0) {
+    if (required) {
+      return {
+        status: "fail",
+        detail: "Legacy receipt cannot satisfy mandatory application binding.",
+        code: "legacy_receipt_insufficient_for_application_binding"
+      };
+    }
+    if (input.record.application_binding_ref != null) {
+      return {
+        status: "fail",
+        detail: "v1.1.0 application binding field on legacy schema receipt.",
+        code: "schema_downgrade_rejected"
+      };
+    }
+    return { status: "skipped", detail: "Unscoped legacy receipt; application binding not required." };
+  }
+  if (input.record.schema_version !== DECISION_RECEIPT_SCHEMA_V1_1) {
+    return {
+      status: "fail",
+      detail: "Unsupported receipt schema for application binding.",
+      code: "unsupported_schema_version"
+    };
+  }
+  if (required) {
+    if (!expectedRef) {
+      return {
+        status: "fail",
+        detail: "Mandatory application binding but relying party supplied no expected ref.",
+        code: "application_binding_expectation_missing"
+      };
+    }
+    const bind = verifyApplicationBindingRef({
+      receiptRef: input.record.application_binding_ref,
+      expectedRef
+    });
+    if (!bind.ok) {
+      return { status: "fail", detail: bind.reason, code: bind.reason };
+    }
+    return { status: "pass", detail: "Application binding ref matches relying party expectation." };
+  }
+  if (expectedRef) {
+    const bind = verifyApplicationBindingRef({
+      receiptRef: input.record.application_binding_ref,
+      expectedRef
+    });
+    if (!bind.ok) {
+      return { status: "fail", detail: bind.reason, code: bind.reason };
+    }
+    return { status: "pass", detail: "Optional application binding verified." };
+  }
+  return { status: "skipped", detail: "Unscoped workflow; application binding not required." };
+}
+function evaluateEvidenceCommitmentRequirement(input) {
+  const required = input.policy.require_evidence_commitment === true;
+  const commitment = input.record.evidence_commitment;
+  const manifest = input.policy.evidence_commitment_manifest;
+  if (input.record.schema_version === DECISION_RECEIPT_SCHEMA_V1_0) {
+    if (required) {
+      return {
+        status: "fail",
+        detail: "Legacy receipt cannot satisfy mandatory evidence commitment.",
+        code: "legacy_receipt_insufficient_for_evidence_commitment"
+      };
+    }
+    if (commitment != null) {
+      return {
+        status: "fail",
+        detail: "v1.1.0 evidence commitment on legacy schema receipt.",
+        code: "schema_downgrade_rejected"
+      };
+    }
+    return { status: "skipped", detail: "Legacy receipt without evidence commitment requirement." };
+  }
+  if (input.record.schema_version !== DECISION_RECEIPT_SCHEMA_V1_1) {
+    return {
+      status: "fail",
+      detail: "Unsupported receipt schema for evidence commitment.",
+      code: "unsupported_schema_version"
+    };
+  }
+  if (required) {
+    const ev = verifyEvidenceCommitment({ commitment, manifest });
+    if (!ev.ok) {
+      return { status: "fail", detail: ev.reason, code: ev.reason };
+    }
+    return {
+      status: "pass",
+      detail: "Evidence commitment digest matches manifest (issuance-time set only)."
+    };
+  }
+  if (commitment) {
+    const ev = verifyEvidenceCommitment({ commitment, manifest });
+    if (!ev.ok) {
+      return { status: "fail", detail: ev.reason, code: ev.reason };
+    }
+    return {
+      status: "pass",
+      detail: "Optional evidence commitment verified against supplied manifest."
+    };
+  }
+  return { status: "skipped", detail: "No evidence commitment on receipt." };
+}
+var UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+var BLINDED_HEX = /^[a-f0-9]{64}$/;
+function assessManifestReferencePrivacy(entries) {
+  for (const entry of entries) {
+    for (const ref of [entry.fact_id, entry.source_credential_id]) {
+      if (ref == null || ref === "") continue;
+      if (UUID_LIKE.test(ref) || BLINDED_HEX.test(ref)) continue;
+      if (ref.includes("@") || ref.length < 16) {
+        return {
+          status: "fail",
+          detail: "Manifest reference appears linkable or non-opaque; use UUID or blinded hex.",
+          code: "evidence_manifest_reference_not_opaque"
+        };
+      }
+    }
+  }
+  return { status: "pass", detail: "Manifest references appear opaque." };
+}
 
 // src/verifyIndependent.ts
 function statusMaxAgeSeconds(bundle) {
@@ -360,16 +619,20 @@ function verifyAbraxasReceiptIndependently(input) {
     return finish(false, false, false, false, "no", phases, failure_codes);
   }
   push("anchor_binding", "pass", "Statement anchor matches integrator-pinned anchor (no substitution).");
+  let issuerStatementFreshnessOk = false;
   if (input.statementObservedAt) {
     const observed = Date.parse(input.statementObservedAt);
     if (Number.isNaN(observed) || now.getTime() - observed > input.pinnedTrustAnchor.statement_cache_max_age_seconds * 1e3) {
       push("statement_freshness", "fail", "Signed issuer authority statement is stale.", "statement_stale");
+      issuerStatementFreshnessOk = false;
     } else {
       push("statement_freshness", "pass", "Statement within cache max-age policy.");
+      issuerStatementFreshnessOk = true;
     }
   } else {
     push("statement_freshness", "blocked", "Statement observation time not provided \u2014 freshness not established.");
     failure_codes.push("statement_freshness_unknown");
+    issuerStatementFreshnessOk = false;
   }
   const runtimeEnv = input.relyingParty.environment;
   const integrity = verifyReceiptPayloadIntegrity(input.record);
@@ -410,7 +673,9 @@ function verifyAbraxasReceiptIndependently(input) {
     environment: runtimeEnv,
     mode: "current_authorization",
     now,
-    minimumRegistryVersion: input.minimumRegistryVersion
+    minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: input.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest
   });
   const issuerAuthorized = authKey.ok;
   push(
@@ -426,6 +691,45 @@ function verifyAbraxasReceiptIndependently(input) {
     audienceMatch ? "Partner and policy binding match." : "Partner, policy, or environment mismatch.",
     audienceMatch ? void 0 : "audience_mismatch"
   );
+  let v11ScopeSatisfied = true;
+  const appBinding = evaluateApplicationBindingRequirement({
+    record: input.record,
+    policy: {
+      require_application_binding: input.relyingParty.require_application_binding,
+      application_binding_ref: input.relyingParty.application_binding_ref
+    }
+  });
+  push(
+    "application_binding",
+    appBinding.status,
+    appBinding.detail,
+    appBinding.status === "fail" ? appBinding.code : void 0
+  );
+  if (appBinding.status === "fail") v11ScopeSatisfied = false;
+  const evidenceBinding = evaluateEvidenceCommitmentRequirement({
+    record: input.record,
+    policy: {
+      require_evidence_commitment: input.relyingParty.require_evidence_commitment,
+      evidence_commitment_manifest: input.relyingParty.evidence_commitment_manifest
+    }
+  });
+  push(
+    "evidence_commitment",
+    evidenceBinding.status,
+    evidenceBinding.detail,
+    evidenceBinding.status === "fail" ? evidenceBinding.code : void 0
+  );
+  if (evidenceBinding.status === "fail") v11ScopeSatisfied = false;
+  if (input.relyingParty.evidence_commitment_manifest?.length) {
+    const privacy = assessManifestReferencePrivacy(input.relyingParty.evidence_commitment_manifest);
+    push(
+      "evidence_manifest_privacy",
+      privacy.status,
+      privacy.detail,
+      privacy.status === "fail" ? privacy.code : void 0
+    );
+    if (privacy.status === "fail") v11ScopeSatisfied = false;
+  }
   let statusEvidenceAuthentic = false;
   let currentlyAcceptable = "indeterminate";
   if (input.statusEvidence && !input.signedStatusStatement) {
@@ -473,7 +777,7 @@ function verifyAbraxasReceiptIndependently(input) {
           statusEvidenceAuthentic = true;
           push("signed_status_evidence", "pass", "Signed status statement authentic and fresh.");
           const p = signed.payload;
-          const liveOk = cryptographicallyAuthentic && issuerAuthorized && audienceMatch && p.receipt_status === "active" && !p.superseded && p.partner_operational && p.policy_active && p.claims_current && p.evidence_current && input.record.decision_result === "approved";
+          const liveOk = cryptographicallyAuthentic && issuerAuthorized && issuerStatementFreshnessOk && audienceMatch && v11ScopeSatisfied && p.receipt_status === "active" && !p.superseded && p.partner_operational && p.policy_active && p.claims_current && p.evidence_current && input.record.decision_result === "approved";
           currentlyAcceptable = liveOk ? "yes" : "no";
           push(
             "current_acceptability",
@@ -509,4 +813,38 @@ function finish(cryptographicallyAuthentic, issuerAuthorized, audienceMatch, sta
   };
 }
 
-export { ISSUER_AUTHORITY_STATEMENT_DOCUMENT, ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION, RECEIPT_STATUS_EVIDENCE_DOCUMENT, RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION, RECEIPT_STATUS_STATEMENT_DOCUMENT, RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION, TRUST_ANCHOR_BUNDLE_DOCUMENT, TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION, assertStatementMatchesPinnedAnchor, buildCanonicalPayloadFromRecord, canonicalizeJson, hashCanonicalPayload, hashIssuerAuthorityPayload, hashReceiptStatusStatementPayload, normalizeDecisionReceiptTimestamp, publicEd25519JwkFingerprint, resolveIssuerKeyFromSignedStatement, signIssuerAuthorityPayloadForTests, signReceiptStatusStatement, signReceiptStatusStatementForTests, statusPayloadMatchesReceiptContext, validateTrustAnchorBundle, verifyAbraxasReceiptIndependently, verifyEd25519Detached, verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk, verifySignedIssuerAuthorityStatement, verifySignedReceiptStatusStatement };
+// src/enforceIndependent.ts
+var MANDATORY_DENY_FAILURE_CODES = /* @__PURE__ */ new Set([
+  "statement_stale",
+  "status_statement_stale",
+  "payload_tampered",
+  "signature_invalid",
+  "not_currently_acceptable",
+  "audience_mismatch",
+  "status_partner_mismatch",
+  "status_policy_mismatch",
+  "statement_payload_hash_mismatch",
+  "cross_environment",
+  "unsigned_status_evidence_rejected"
+]);
+var MANDATORY_INDETERMINATE_FAILURE_CODES = /* @__PURE__ */ new Set([
+  "statement_freshness_unknown",
+  "signed_status_evidence_required",
+  "bundled_trust_anchor_not_authenticated",
+  "anchor_fingerprint_mismatch"
+]);
+function enforcementFromIndependentVerification(result) {
+  const failure_codes = result.failure_codes;
+  if (failure_codes.some((code) => MANDATORY_DENY_FAILURE_CODES.has(code))) {
+    return { action: "deny", failure_codes };
+  }
+  if (result.currently_acceptable === "indeterminate" || !result.cryptographically_authentic || !result.status_evidence_authentic || failure_codes.some((code) => MANDATORY_INDETERMINATE_FAILURE_CODES.has(code))) {
+    return { action: "indeterminate", failure_codes };
+  }
+  if (result.currently_acceptable === "yes") {
+    return { action: "permit", failure_codes };
+  }
+  return { action: "deny", failure_codes };
+}
+
+export { APPLICATION_BINDING_SCOPE_SCHEMA, DECISION_RECEIPT_SCHEMA_V1_0, DECISION_RECEIPT_SCHEMA_V1_1, EVIDENCE_COMMITMENT_DOMAIN, EVIDENCE_COMMITMENT_SCHEMA, ISSUER_AUTHORITY_STATEMENT_DOCUMENT, ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION, MANDATORY_DENY_FAILURE_CODES, MANDATORY_INDETERMINATE_FAILURE_CODES, RECEIPT_STATUS_EVIDENCE_DOCUMENT, RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION, RECEIPT_STATUS_STATEMENT_DOCUMENT, RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION, TRUST_ANCHOR_BUNDLE_DOCUMENT, TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION, assertNoV11FieldsOnV10Record, assertStatementMatchesPinnedAnchor, assessManifestReferencePrivacy, blindEvidenceRef, buildCanonicalPayloadFromRecord, buildCanonicalPayloadV1_1, buildEvidenceCommitment, canonicalizeJson, computeEvidenceCommitmentDigest, deriveApplicationBindingRef, enforcementFromIndependentVerification, evaluateApplicationBindingRequirement, evaluateEvidenceCommitmentRequirement, hashCanonicalPayload, hashCanonicalPayloadV1_1, hashIssuerAuthorityPayload, hashReceiptStatusStatementPayload, issuerAuthorityStateDigest, normalizeDecisionReceiptTimestamp, publicEd25519JwkFingerprint, rejectSchemaDowngrade, resolveIssuerKeyFromSignedStatement, retainedRegistryVersion, signIssuerAuthorityPayloadForTests, signReceiptStatusStatement, signReceiptStatusStatementForTests, statusPayloadMatchesReceiptContext, validateTrustAnchorBundle, verifyAbraxasReceiptIndependently, verifyApplicationBindingRef, verifyEd25519Detached, verifyEvidenceCommitment, verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk, verifySignedIssuerAuthorityStatement, verifySignedReceiptStatusStatement };

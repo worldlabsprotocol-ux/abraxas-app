@@ -27,6 +27,38 @@ export function hashIssuerAuthorityPayload(payload: IssuerAuthorityStatementPayl
   return createHash("sha256").update(canonical, "utf8").digest("hex");
 }
 
+/** Identity of who may sign and under which rules. Excludes version and issuance timestamps. */
+export function issuerAuthorityStateDigest(
+  payload: Pick<IssuerAuthorityStatementPayload, "environment" | "anchor_key_id" | "keys" | "status_signers">,
+): string {
+  const state = {
+    environment: payload.environment,
+    anchor_key_id: payload.anchor_key_id,
+    keys: [...payload.keys].sort((left, right) => left.key_id.localeCompare(right.key_id)),
+    ...(payload.status_signers && payload.status_signers.length > 0
+      ? {
+          status_signers: [...payload.status_signers].sort((left, right) => left.key_id.localeCompare(right.key_id)),
+        }
+      : {}),
+  };
+  return createHash("sha256").update(canonicalizeJson(state), "utf8").digest("hex");
+}
+
+/**
+ * A downloaded receipt may repeat a version the relying party already trusts.
+ * It cannot lower that retained version or install a new one by presenting a larger number.
+ */
+export function retainedRegistryVersion(input: {
+  retained?: number | null;
+  offeredByBundle?: number | null;
+}): number | undefined {
+  if (input.offeredByBundle != null && input.retained == null) return undefined;
+  if (typeof input.retained === "number" && Number.isInteger(input.retained) && input.retained >= 1) {
+    return input.retained;
+  }
+  return undefined;
+}
+
 export type DecisionReceiptCanonicalPayload = {
   schema_version: string;
   receipt_id: string;

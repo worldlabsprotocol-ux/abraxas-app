@@ -59,6 +59,9 @@ export function verifyAbraxasReceiptIndependently(input: {
   /** @deprecated Use signedStatusStatement */
   statusEvidence?: ReceiptStatusEvidenceV1 | null;
   minimumRegistryVersion?: number;
+  /** Version the relying party has already accepted. Not taken from the downloaded bundle. */
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
   minimumStatusVersion?: number;
   now?: Date;
 }): IndependentVerificationResult {
@@ -153,6 +156,8 @@ export function verifyAbraxasReceiptIndependently(input: {
     mode: "current_authorization",
     now,
     minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: input.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
   });
   const issuerAuthorized = authKey.ok;
   push(
