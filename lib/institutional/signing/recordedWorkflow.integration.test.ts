@@ -39,6 +39,11 @@ import {
   verifyGovernanceSuccession,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
 import {
+  buildGovernanceTrustBootstrapBundle,
+  disposableGovernanceWitnessEnv,
+  installDisposableGovernanceTrustPin,
+} from "@/lib/persistence/boundary/issuerAuthority/governanceTrustCeremony";
+import {
   distrustEstablishedGovernancePin,
   establishGovernanceTrustPin,
   readEstablishedGovernancePin,
@@ -91,6 +96,7 @@ describe("shared authority document", () => {
     expect(GOVERNANCE_PIN_CUSTODY.multisignature).toBe(false);
     expect(GOVERNANCE_PIN_CUSTODY.callerSuppliedPinAccepted).toBe(false);
     expect(GOVERNANCE_PIN_CUSTODY.issuerEnvironmentSuppliesPin).toBe(false);
+    expect(GOVERNANCE_PIN_CUSTODY.pinSource).toBe("sovereign_postgres_issuer_governance_trust_pin");
     const governance = generateTestSigningKeyPair("shared-governance");
     const successor = generateTestSigningKeyPair("shared-governance-successor");
     const approval = {
@@ -279,6 +285,7 @@ describeProof("recorded authority and status workflow", () => {
       ABRAXAS_RUNTIME_ENV: "demo",
       ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
       ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl,
+      ...disposableGovernanceWitnessEnv(),
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK: JSON.stringify({ d: "exportable-production-fallback" }),
@@ -367,30 +374,47 @@ describeProof("recorded authority and status workflow", () => {
 
     const authorityKeys = [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }];
     const statusSigners = [{ key_id: statusKey.signingKeyId, public_jwk: statusKey.publicKeyJwk }];
-    expect(establishGovernanceTrustPin({
+    const blockedBootstrap = buildGovernanceTrustBootstrapBundle({
+      environment: "demo",
+      governance: anchor,
+      changeTicket: "issuer-must-not-establish-governance",
+    });
+    expect(await establishGovernanceTrustPin({
+      env: active,
       environment: "demo",
       pin: { keyId: anchor.signingKeyId, publicJwk: anchor.publicKeyJwk },
-      changeTicket: "issuer-must-not-establish-governance",
+      bootstrap: blockedBootstrap.bootstrap,
+      bootstrapSignatureBase64Url: blockedBootstrap.bootstrapSignatureBase64Url,
+      operatorWitnessSecret: blockedBootstrap.operatorWitnessSecret,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,
       statusSigners,
     })).toEqual({ ok: false, reason: "governance_pin_not_independent" });
-    const installed = establishGovernanceTrustPin({
+    const installed = await installDisposableGovernanceTrustPin({
+      env: active,
       environment: "demo",
-      pin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
-      changeTicket: "disposable-signing-governance",
+      governance,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,
       statusSigners,
+      changeTicket: "disposable-signing-governance",
     });
     expect(installed.ok).toBe(true);
     if (!installed.ok) return;
-    expect(establishGovernanceTrustPin({
+    const secondBootstrap = buildGovernanceTrustBootstrapBundle({
+      environment: "demo",
+      governance: otherGovernance,
+      changeTicket: "caller-must-not-replace-governance",
+    });
+    expect(await establishGovernanceTrustPin({
+      env: active,
       environment: "demo",
       pin: { keyId: otherGovernance.signingKeyId, publicJwk: otherGovernance.publicKeyJwk },
-      changeTicket: "caller-must-not-replace-governance",
+      bootstrap: secondBootstrap.bootstrap,
+      bootstrapSignatureBase64Url: secondBootstrap.bootstrapSignatureBase64Url,
+      operatorWitnessSecret: secondBootstrap.operatorWitnessSecret,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,
@@ -403,7 +427,10 @@ describeProof("recorded authority and status workflow", () => {
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(otherGovernance.publicKeyJwk),
       ABRAXAS_GOVERNANCE_PUBLIC_JWK: JSON.stringify(otherGovernance.publicKeyJwk),
     };
-    expect(readEstablishedGovernancePin("demo")).toMatchObject({ ok: true, fingerprint: installed.fingerprint });
+    expect(await readEstablishedGovernancePin({ env: active, environment: "demo" })).toMatchObject({
+      ok: true,
+      fingerprint: installed.fingerprint,
+    });
     delete process.env.ABRAXAS_GOVERNANCE_PUBLIC_JWK;
 
     const issuerOnly = await issuer.signAuthorityChangeApproval({
@@ -426,7 +453,10 @@ describeProof("recorded authority and status workflow", () => {
       signatureBase64Url: issuerOnly.signature,
       ...governed(bootstrap.digest, 854, null, "bootstrap", "demo", otherGovernance),
     })).toEqual({ ok: false, reason: "authority_approval_anchor_mismatch" });
-    expect(readEstablishedGovernancePin("demo")).toMatchObject({ ok: true, fingerprint: installed.fingerprint });
+    expect(await readEstablishedGovernancePin({ env: active, environment: "demo" })).toMatchObject({
+      ok: true,
+      fingerprint: installed.fingerprint,
+    });
     expect(await applyIssuerAuthorityChangeAuthorization({
       env: active,
       authorization: issuerOnly.authorization,
@@ -797,7 +827,7 @@ describeProof("recorded authority and status workflow", () => {
   });
 
   it("rotates governance only with the current governance key and then fails closed", async () => {
-    const before = readEstablishedGovernancePin("demo");
+    const before = await readEstablishedGovernancePin({ env: envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]), environment: "demo" });
     expect(before.ok).toBe(true);
     if (!before.ok) return;
     const authorityKeys = [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }];
@@ -818,16 +848,21 @@ describeProof("recorded authority and status workflow", () => {
       authorityKeys,
       statusSigners,
     };
-    expect(rotateEstablishedGovernancePin({
+    const liveEnv = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
+    expect(await rotateEstablishedGovernancePin({
+      env: liveEnv,
       ...rotationInput,
       signatureBase64Url: signGovernanceSuccession({
         succession,
         governancePrivateJwk: anchor.privateKeyJwk,
       }),
     })).toMatchObject({ ok: false, reason: "governance_succession_signature_invalid" });
-    expect(readEstablishedGovernancePin("demo")).toMatchObject({ fingerprint: before.fingerprint });
+    expect(await readEstablishedGovernancePin({ env: liveEnv, environment: "demo" })).toMatchObject({
+      fingerprint: before.fingerprint,
+    });
 
-    const rotatedPin = rotateEstablishedGovernancePin({
+    const rotatedPin = await rotateEstablishedGovernancePin({
+      env: liveEnv,
       ...rotationInput,
       signatureBase64Url: signGovernanceSuccession({
         succession,
@@ -836,7 +871,7 @@ describeProof("recorded authority and status workflow", () => {
     });
     expect(rotatedPin.ok).toBe(true);
     if (!rotatedPin.ok) return;
-    expect(readEstablishedGovernancePin("demo")).toMatchObject({
+    expect(await readEstablishedGovernancePin({ env: liveEnv, environment: "demo" })).toMatchObject({
       fingerprint: rotatedPin.fingerprint,
       pin: { keyId: otherGovernance.signingKeyId },
     });
@@ -860,28 +895,42 @@ describeProof("recorded authority and status workflow", () => {
       ...governed(next.digest, 858, 857, "rotation"),
     })).toEqual({ ok: false, reason: "governance_approval_document_invalid" });
 
-    expect(distrustEstablishedGovernancePin({
+    expect(await distrustEstablishedGovernancePin({
+      env: liveEnv,
       environment: "demo",
       fingerprint: rotatedPin.fingerprint,
       reason: "governance custody unavailable",
     })).toEqual({ ok: true });
-    expect(readEstablishedGovernancePin("demo")).toEqual({ ok: false, reason: "governance_pin_unavailable" });
-    expect(establishGovernanceTrustPin({
+    resetSovereignStagingPgPoolForTests();
+    expect(await readEstablishedGovernancePin({ env: liveEnv, environment: "demo" })).toEqual({
+      ok: false,
+      reason: "governance_pin_unavailable",
+    });
+    const recoveryBootstrap = buildGovernanceTrustBootstrapBundle({
+      environment: "demo",
+      governance,
+      changeTicket: "issuer-recovery-attempt",
+    });
+    expect(await establishGovernanceTrustPin({
+      env: liveEnv,
       environment: "demo",
       pin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
-      changeTicket: "issuer-recovery-attempt",
+      bootstrap: recoveryBootstrap.bootstrap,
+      bootstrapSignatureBase64Url: recoveryBootstrap.bootstrapSignatureBase64Url,
+      operatorWitnessSecret: recoveryBootstrap.operatorWitnessSecret,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,
       statusSigners,
-    })).toEqual({ ok: false, reason: "governance_pin_already_established" });
+    })).toEqual({ ok: false, reason: "governance_pin_distrusted_no_reinstall" });
     expect(await applyIssuerAuthorityChangeAuthorization({
       env: next.env,
       authorization: signed.authorization,
       signatureBase64Url: signed.signature,
       ...governed(next.digest, 858, 857, "rotation", "demo", otherGovernance),
     })).toEqual({ ok: false, reason: "governance_pin_unavailable" });
-    expect(rotateEstablishedGovernancePin({
+    expect(await rotateEstablishedGovernancePin({
+      env: liveEnv,
       ...rotationInput,
       signatureBase64Url: signGovernanceSuccession({
         succession,

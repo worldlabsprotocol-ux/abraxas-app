@@ -22,7 +22,7 @@ import {
   signAuthorityGovernanceApproval,
   type AuthorityGovernanceApproval,
 } from "./governanceApproval";
-import { establishGovernanceTrustPin } from "./governanceTrustPin";
+import { installDisposableGovernanceTrustPin } from "./governanceTrustCeremony";
 import { resolveIssuerKeyFromSignedStatement } from "./resolveIssuerKey";
 import {
   applyIssuerAuthorityChangeAuthorization,
@@ -223,14 +223,15 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     resetSovereignStagingPgPoolForTests();
     pool = new pg.Pool({ connectionString: databaseUrl });
     await applySovereignSliceSchema(pool);
-    const installed = establishGovernanceTrustPin({
+    const installed = await installDisposableGovernanceTrustPin({
+      env: { ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable", ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl },
       environment: "production",
-      pin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
-      changeTicket: "disposable-continuity-governance",
+      governance,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
       statusSigners: [],
+      changeTicket: "disposable-continuity-governance",
     });
     if (!installed.ok) throw new Error(installed.reason);
   });
@@ -557,6 +558,18 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       anchorKeyId: anchor.signingKeyId,
     });
     expect(unsigned).toEqual({ ok: false, reason: "authority_bootstrap_required" });
+
+    const pinInstalled = await installDisposableGovernanceTrustPin({
+      env: { ...original, ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable", ABRAXAS_DISPOSABLE_PG_TEST_URL: url },
+      environment: "production",
+      governance,
+      anchorKeyId: anchor.signingKeyId,
+      anchorPublicJwk: anchor.publicKeyJwk,
+      authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
+      statusSigners: [{ key_id: extra.signingKeyId, public_jwk: extra.publicKeyJwk }],
+      changeTicket: "pin-boundary-governance",
+    });
+    if (!pinInstalled.ok) throw new Error(pinInstalled.reason);
 
     const established = await commit(original, signedChange(original, "bootstrap", 854, null));
     expect(established.ok).toBe(true);

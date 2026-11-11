@@ -20,19 +20,19 @@ export const GOVERNANCE_PIN_CUSTODY = {
   multisignature: false,
   callerSuppliedPinAccepted: false,
   issuerEnvironmentSuppliesPin: false,
-  pinSource: "established_operator_pin",
+  pinSource: "sovereign_postgres_issuer_governance_trust_pin",
+  databaseWriteRole: "abraxas_governance_operator",
+  databaseReadRole: "abraxas_runtime",
   holder:
     "The governance private key is held by the governance operator, outside the issuer signing identity. It is not placed in issuer environment variables, the receipt signer, the status signer, or the issuer KMS key. Two key ids or two IAM roles in one process are not custody separation.",
   initialPin:
-    "The governance operator installs the public key once through establishGovernanceTrustPin and records the change-ticket id. The writer then verifies every approval against that pin. The install does not read issuer configuration or a governance environment variable, and a second install cannot replace the pin. The private key is not an argument and is not stored.",
-  retention:
-    "The established public pin is held in process memory. A restart clears it and authority changes fail closed until the governance operator installs the same public key again. Issuer environment variables are not read to restore it.",
+    "The governance operator installs the public key once through establishGovernanceTrustPin. That call requires abraxas_governance_trust_bootstrap/1.0.0 signed by the governance private key plus an operator witness secret from an out-of-band ceremony (ABRAXAS_GOVERNANCE_OPERATOR_WITNESS_SHA256). A change ticket alone is not authorization. The row is written on sovereign Postgres and survives process restarts. abraxas_runtime may read the pin but must not receive insert or update grants on issuer_governance_trust_pin.",
   approvalProcedure:
     "Bootstrap, rotation, and revocation each require an abraxas_authority_governance_approval/1.0.0 signature from the governance private key over the exact environment, action, versions, and authority-state digest, plus the issuer signature over the same transition. Receipt issuance cannot create either signature.",
   rotation:
-    "The current governance private key signs abraxas_governance_succession/1.0.0. rotateEstablishedGovernancePin verifies that signature against the established pin and then replaces the public key. An issuer signature cannot rotate it.",
+    "The current governance private key signs abraxas_governance_succession/1.0.0. rotateEstablishedGovernancePin verifies that signature against the persisted pin and then replaces the public key in the same transaction. An issuer signature cannot rotate it.",
   recovery:
-    "A missing pin, an approval that does not verify, or distrust of the established fingerprint makes the writer record nothing. Distrust does not install a replacement. Loss of the governance private key has no in-application recovery and freezes authority changes. One pinned key is not multisignature.",
+    "A missing pin, an approval that does not verify, or distrust of the established fingerprint makes the writer record nothing. Distrust persists on Postgres and does not install a replacement; a distrusted pin cannot be silently reinstalled. Loss of the governance private key has no in-application recovery. One pinned key is not multisignature.",
 } as const;
 
 export type GovernanceAction = "bootstrap" | "rotation" | "revocation";

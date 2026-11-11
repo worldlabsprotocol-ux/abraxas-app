@@ -14,7 +14,7 @@ import {
   classifyGovernanceAction,
   signAuthorityGovernanceApproval,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
-import { establishGovernanceTrustPin } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustPin";
+import { installDisposableGovernanceTrustPin } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustCeremony";
 import { loadIssuerAuthorityState } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
@@ -91,14 +91,15 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
       anchorKeyId: "build834-trust-anchor",
     });
     if (!described.ok) throw new Error(described.reason);
-    const installed = establishGovernanceTrustPin({
+    const installed = await installDisposableGovernanceTrustPin({
+      env: process.env,
       environment: described.environment,
-      pin: { keyId: governanceKey.signingKeyId, publicJwk: governanceKey.publicKeyJwk },
-      changeTicket: "disposable-trust-execution-governance",
+      governance: governanceKey,
       anchorKeyId: "build834-trust-anchor",
       anchorPublicJwk: anchorKey.publicKeyJwk,
       authorityKeys: [{ key_id: receiptKey.signingKeyId, public_jwk: receiptKey.publicKeyJwk }],
       statusSigners: [{ key_id: statusSignerKey.signingKeyId, public_jwk: statusSignerKey.publicKeyJwk }],
+      changeTicket: "disposable-trust-execution-governance",
     });
     if (!installed.ok) throw new Error(installed.reason);
     const authorization = {

@@ -87,7 +87,10 @@ export async function approveRecordedAuthorityChange(input: {
   if (!input.governanceApproval || !input.governanceSignatureBase64Url) {
     return { ok: false as const, reason: "independent_governance_approval_required" };
   }
-  const trusted = readEstablishedGovernancePin(described.environment);
+  const trusted = await readEstablishedGovernancePin({
+    env: input.env,
+    environment: described.environment,
+  });
   if (!trusted.ok) return trusted;
   const anchor = readConfiguredIssuerAnchor(input.env);
   if (!anchor.ok) return anchor;

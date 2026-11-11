@@ -227,7 +227,7 @@ async function recordIssuerAuthorityContinuity(input: {
   const state = loadIssuerAuthorityState(input.env);
   if (!state.ok) return state;
   const trustedPin = input.authorization && input.governance
-    ? readEstablishedGovernancePin(described.environment)
+    ? await readEstablishedGovernancePin({ env: input.env, environment: described.environment })
     : null;
   if (trustedPin && !trustedPin.ok) return trustedPin;
   if (input.authorization && input.governance && input.anchorPublicJwk && trustedPin?.ok) {
@@ -269,7 +269,11 @@ async function recordIssuerAuthorityContinuity(input: {
     }));
     const current = rows.at(-1) ?? null;
     if (input.authorization && input.governance) {
-      const trustedNow = readEstablishedGovernancePin(described.environment);
+      const trustedNow = await readEstablishedGovernancePin({
+        env: input.env,
+        environment: described.environment,
+        client,
+      });
       if (!trustedNow.ok) return { action: "reject" as const, reason: trustedNow.reason };
       if (input.anchorPublicJwk) {
         const issuerStillValid = verifyIssuerAuthorityChangeAuthorization({
@@ -426,7 +430,10 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
   if (input.authorization.anchor_key_id !== pinned.anchorKeyId) {
     return { ok: false, reason: "authority_approval_anchor_mismatch" };
   }
-  const trusted = readEstablishedGovernancePin(input.authorization.environment);
+  const trusted = await readEstablishedGovernancePin({
+    env,
+    environment: input.authorization.environment,
+  });
   if (!trusted.ok) return trusted;
   const state = loadIssuerAuthorityState(env);
   if (!state.ok) return state;
