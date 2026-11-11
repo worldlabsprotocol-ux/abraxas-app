@@ -25,6 +25,8 @@
     "abraxas-conformance": "tsx scripts/abraxas-conformance.ts",
     "demo:solana-attestation-signer": "tsx scripts/demo-solana-attestation-signer.ts",
     "operator:production-signing-authority": "tsx scripts/operations/production-signing-authority.ts",
+    "operator:institutional-signing-worker": "tsx scripts/institutional-signing-worker.ts",
+    "operator:governance-ceremony-checklist": "tsx scripts/operations/governance-operator-ceremony-checklist.ts",
     "test:watch": "vitest",
     "biometric:verify-migrations": "tsx scripts/verify-biometric-migrations.ts",
     "biometric:health": "tsx scripts/verify-biometric-health.ts",

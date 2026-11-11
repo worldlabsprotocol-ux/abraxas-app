@@ -1,6 +1,7 @@
 // FILE: lib/partner/portableIndependentVerification/verifyWithStandaloneVerifier.ts
 
 import {
+  retainedRegistryVersion,
   verifyAbraxasReceiptIndependently,
   type IndependentVerificationResult,
   type TrustAnchorBundleV1,
@@ -18,6 +19,8 @@ export function verifyPortableBundle(input: {
   statementObservedAt?: string;
   minimumStatusVersion?: number;
   minimumRegistryVersion?: number;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
   now?: Date;
 }): IndependentVerificationResult {
   const bundled =
@@ -85,9 +88,15 @@ export function verifyPortableBundle(input: {
     },
     statementObservedAt: input.statementObservedAt ?? new Date().toISOString(),
     minimumStatusVersion: input.minimumStatusVersion,
-    minimumRegistryVersion:
-      input.minimumRegistryVersion
-      ?? (input.bundle.registry_version > 1 ? input.bundle.registry_version - 1 : undefined),
+    minimumRegistryVersion: retainedRegistryVersion({
+      retained: input.minimumRegistryVersion,
+      offeredByBundle: input.bundle.registry_version,
+    }),
+    acceptedRegistryVersion: retainedRegistryVersion({
+      retained: input.acceptedRegistryVersion ?? input.minimumRegistryVersion,
+      offeredByBundle: input.bundle.registry_version,
+    }),
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
     now: input.now,
   });
 }

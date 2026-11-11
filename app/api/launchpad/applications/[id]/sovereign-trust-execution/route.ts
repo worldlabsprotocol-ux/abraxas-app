@@ -19,6 +19,7 @@ import {
 import { ScopedChallengeStoreUnavailableError } from "@/lib/auth/walletAuthorization/errors";
 import { institutionalAuthorityFromLaunchpad } from "@/lib/partner/trustExecution/institutionalAuthorityBinding";
 import { requireBoundInstitutionalAuthority } from "@/lib/partner/trustExecution/institutionalAuthorityGate";
+import { authorityCheckpointFromStatement } from "@abraxas/independent-verifier";
 import { verifyTrustExecutionMaterial, buildDemoTrustAnchorFromEnv } from "@/lib/partner/trustExecution/verifyTrustExecutionMaterial";
 import { trustExecutionAttemptMessage } from "@/lib/partner/trustExecution/trustExecutionRecoveryCopy";
 import type { PartnerTrustExecutionJourneyView } from "@/lib/partner/trustExecution/partnerTrustExecutionJourney";
@@ -175,12 +176,16 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       const material = executed.journey.independent_verification_material;
       const anchor = buildDemoTrustAnchorFromEnv(process.env);
       if (material && anchor) {
+        const issuerStatement = material.signed_issuer_authority;
+        const checkpoint = issuerStatement ? authorityCheckpointFromStatement(issuerStatement) : null;
         independent_verification = wrapIllustrativeIndependentVerification(
           verifyTrustExecutionMaterial({
             material,
             pinnedTrustAnchor: anchor,
             partnerId: auth.session.partnerId,
             policyId: executed.journey.policy_id,
+            acceptedRegistryVersion: checkpoint?.acceptedRegistryVersion,
+            expectedAuthorityStateDigest: checkpoint?.expectedAuthorityStateDigest,
           }),
         );
       }

@@ -122,7 +122,7 @@ jobs:
         run: npx vitest run lib/partner/chainAttestationSignerLifecycle/demoSolanaProvision.test.ts lib/partner/chainAttestation/utf8.test.ts scripts/operations/productionSigningAuthority.test.ts
 
       - name: Non-exportable institutional signing compatibility
-        run: npx vitest run lib/institutional/signing/institutionalSigner.test.ts lib/institutional/signing/institutionalSigner.aws.integration.test.ts
+        run: npx vitest run lib/institutional/signing/institutionalSigner.test.ts lib/institutional/signing/institutionalSigner.aws.integration.test.ts lib/institutional/signing/sovereignInstitutionalAcceptance.test.ts lib/institutional/signing/signingDeploymentBoundary.test.ts lib/institutional/signing/worker/institutionalSigningWorker.test.ts
 
       - name: Vercel-parity compile (lint/type validated in eslint-validation job)
         run: npm run build:compile
@@ -421,7 +421,7 @@ jobs:
       - name: Independent verifier (Build #818, no app backend)
         run: npx vitest run packages/abraxas-independent-verifier/src/independentVerifier.adversarial.test.ts packages/abraxas-independent-verifier/src/signedStatus.adversarial.test.ts lib/persistence/boundary/independentVerifierHarness.test.ts examples/integration-first-relying-party/integration-first.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts
       - name: Fresh sandbox trust-execution schema proof
-        run: npx vitest run --no-file-parallelism lib/partner/trustExecution/sandboxTrustExecutionSchema.integration.test.ts lib/partner/trustExecution/pendingReceiptRecovery.integration.test.ts
+        run: npx vitest run --no-file-parallelism lib/partner/trustExecution/sandboxTrustExecutionSchema.integration.test.ts lib/partner/trustExecution/pendingReceiptRecovery.integration.test.ts lib/persistence/boundary/issuerAuthority/registryContinuity.test.ts lib/institutional/signing/recordedWorkflow.integration.test.ts
         env:
           ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
       - name: Sovereign slice operational proof (no Supabase)

@@ -6,7 +6,7 @@ import {
   type EvidenceSourceSnapshot,
 } from "@/lib/decisionReceipts/evidenceIntegrityContract";
 import type { DecisionReceiptRecord, EvaluatedClaimRef } from "@/lib/decisionReceipts/types";
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { querySovereignStagingPg } from "../sovereignStagingPg.runtime";
 
 type ClaimRow = { status: string; expires_at: string | null };
 type EvidenceRow = { status: string; expires_at: string | null; revoked_at: string | null };

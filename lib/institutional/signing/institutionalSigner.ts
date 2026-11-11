@@ -15,6 +15,7 @@ import {
   type SignedReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
 import { AWS_KMS_ED25519 } from "./awsKmsEd25519";
+import { INSTITUTIONAL_ED25519_KEY_SPEC } from "./contract";
 import {
   buildAuthorityChangeAuthorization,
   hashAuthorityChangeAuthorization,
@@ -240,7 +241,7 @@ export async function openInstitutionalSigner(config: InstitutionalSignerConfig)
 async function bindPublicKey(client: CustodyClient, configured: JsonWebKey): Promise<{ ok: true } | SigningFailure> {
   try {
     const actual = await client.getPublicKey();
-    if (actual.keySpec !== AWS_KMS_ED25519.keySpec) return { ok: false, reason: "kms_key_spec_mismatch" };
+    if (actual.keySpec !== INSTITUTIONAL_ED25519_KEY_SPEC) return { ok: false, reason: "kms_key_spec_mismatch" };
     if (actual.publicKey.byteLength !== 32) return { ok: false, reason: "kms_public_key_mismatch" };
     if (Buffer.from(actual.publicKey).toString("base64url") !== configured.x) {
       return { ok: false, reason: "kms_public_key_mismatch" };

@@ -15,6 +15,8 @@ export function verifyTrustExecutionMaterial(input: {
   policyId: string;
   environment?: "demo" | "production";
   statementObservedAt?: string;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
 }): IndependentVerificationResult {
   if (!input.material.signed_issuer_authority || !input.material.signed_status_statement) {
     return {
@@ -47,6 +49,8 @@ export function verifyTrustExecutionMaterial(input: {
     },
     statementObservedAt: input.statementObservedAt ?? new Date().toISOString(),
     signedStatusStatement: input.material.signed_status_statement,
+    acceptedRegistryVersion: input.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
   });
 }
 

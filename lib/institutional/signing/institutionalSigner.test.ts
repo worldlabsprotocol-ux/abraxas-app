@@ -19,6 +19,7 @@ import { authorityStateDigest, hashAuthorityChangeAuthorization, INITIAL_ISSUER_
 import { AWS_KMS_ED25519, AWS_KMS_ED25519_INCOMPATIBLE, AWS_KMS_PUBLISHED_COST, ed25519SpkiFromRawPublicKey } from "./awsKmsEd25519";
 import { bindAwsKmsEd25519Client, type AwsKmsCommandClient } from "./awsKmsClient";
 import type { CustodyClient } from "./contract";
+import { LIVE_AWS_KMS_REQUIRED_ENV_VARS } from "./awsKmsLiveTestEnv";
 import { issuerAnchorIamPolicy, SHARED_PROCESS_CUSTODY_LIMIT, statusSignerIamPolicy } from "./iamPolicy";
 import { openInstitutionalSigner, type StatusStatementSigner } from "./institutionalSigner";
 
@@ -428,6 +429,14 @@ describe("authorized institutional documents", () => {
     expect(SHARED_PROCESS_CUSTODY_LIMIT).toContain("both roles' credentials");
     expect(AWS_KMS_ED25519_INCOMPATIBLE.signingAlgorithm).toBe("ED25519_PH_SHA_512");
     expect(AWS_KMS_PUBLISHED_COST.asymmetricSignExcludedFromFreeTier).toBe(true);
+  });
+});
+
+describe("live AWS KMS env contract", () => {
+  it("names isolated credential variables required before a live KMS proof", () => {
+    expect(LIVE_AWS_KMS_REQUIRED_ENV_VARS).toContain("ABRAXAS_AWS_KMS_ISSUER_ACCESS_KEY_ID");
+    expect(LIVE_AWS_KMS_REQUIRED_ENV_VARS).toContain("ABRAXAS_AWS_KMS_STATUS_SECRET_ACCESS_KEY");
+    expect(LIVE_AWS_KMS_REQUIRED_ENV_VARS).not.toContain("AWS_ACCESS_KEY_ID");
   });
 });
 

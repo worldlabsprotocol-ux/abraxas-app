@@ -20,7 +20,7 @@ export type IssuerAuthorityKeyEntry = {
 export type IssuerAuthorityStatementPayload = {
   document: typeof ISSUER_AUTHORITY_STATEMENT_DOCUMENT;
   schema_version: typeof ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION;
-  /** Monotonic registry epoch — verifiers reject rollback below cached minimum. */
+  /** Authority-state version. Repeated statements under the same state reuse it. */
   registry_version: number;
   supersedes_registry_version: number | null;
   environment: "demo" | "production";

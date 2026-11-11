@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { authorityCheckpointFromStatement } from "./canonical";
 import { verifyAbraxasReceiptIndependently } from "./verifyIndependent";
 import { enforcementFromIndependentVerification } from "./enforceIndependent";
 
@@ -52,6 +53,7 @@ describe("issuer statement freshness enforcement", () => {
         environment: "demo",
       },
       statementObservedAt: status.payload.effective_at,
+      ...authorityCheckpointFromStatement(sias),
     });
 
     const enforcement = enforcementFromIndependentVerification(verified);

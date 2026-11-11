@@ -5,11 +5,6 @@ import type { DecisionReceiptCanonicalPayload, DecisionReceiptRecord } from "@/l
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
 import { DECISION_RECEIPT_SCHEMA_V1_1 } from "@/lib/decisionReceipts/schema/v1_1_0.constants";
 import { verifyReceiptSignature } from "@/lib/decisionReceipts/signing";
-import {
-  attachV11FieldsFromSidecar,
-  buildSignedCanonicalV11,
-} from "@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server";
-import { assertV11OperationalIntegrity } from "@/lib/decisionReceipts/v1_1_0/operationalIntegrity.server";
 import { resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import {
   isReceiptIssuanceAuthorizable,
@@ -19,7 +14,7 @@ import type { SignedIssuerAuthorityStatement } from "../issuerAuthority/contract
 import { resolveIssuerKeyFromSignedStatement } from "../issuerAuthority/resolveIssuerKey";
 import { isReceiptSupersededOnSovereignPg } from "../verticalSlice/supersessionRead";
 import { evaluateClaimEvidenceOnSovereignPg } from "../verticalSlice/claimEvidenceRead";
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { querySovereignStagingPg } from "../sovereignStagingPg.runtime";
 import type { SovereignFreshnessEvaluation } from "../verticalSlice/freshnessEvaluation";
 import { deriveCurrentValidityDecision } from "@/lib/decisionReceipts/currentValidity/unifiedContract";
 import { evaluateApplicationScopeOnSovereignPg } from "../verticalSlice/applicationScopeRead";
@@ -40,6 +35,8 @@ export async function evaluateSovereignCurrentValidity(input: {
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   trustAnchorPublicJwk: JsonWebKey;
   minimumRegistryVersion?: number;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
   expectedPartnerId?: string;
   expectedPolicyId?: string;
   expectedEnvironment?: "demo" | "production";
@@ -69,6 +66,13 @@ export async function evaluateSovereignCurrentValidity(input: {
 
   let cryptographicallyValid = false;
   if (input.record.schema_version === DECISION_RECEIPT_SCHEMA_V1_1) {
+    const [
+      { attachV11FieldsFromSidecar, buildSignedCanonicalV11 },
+      { assertV11OperationalIntegrity },
+    ] = await Promise.all([
+      import("@/lib/decisionReceipts/v1_1_0/canonicalIssuance.server"),
+      import("@/lib/decisionReceipts/v1_1_0/operationalIntegrity.server"),
+    ]);
     const integrity = assertV11OperationalIntegrity(input.record);
     if (!integrity.ok) reasons.push(...integrity.reasons);
     const v11Record = attachV11FieldsFromSidecar(input.record);
@@ -123,9 +127,14 @@ export async function evaluateSovereignCurrentValidity(input: {
     mode: "current_authorization",
     now,
     minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: input.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
   });
   const issuerAuthorized = authKey.ok;
-  if (!issuerAuthorized) reasons.push("issuer_not_authorized");
+  if (!authKey.ok) {
+    reasons.push(authKey.reason);
+    reasons.push("issuer_not_authorized");
+  }
 
   const expectedPartner = input.expectedPartnerId ?? input.record.partner_id;
   const expectedPolicy = input.expectedPolicyId ?? input.record.policy_id;
