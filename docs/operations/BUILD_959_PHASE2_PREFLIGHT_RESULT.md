@@ -12,7 +12,7 @@
 | Check | Result |
 |-------|--------|
 | Founder configuration approved | **YES** |
-| Itemized cost ≤ $50 ceiling | **YES** (~$22–28/mo indicative) |
+| Itemized cost ≤ $50 ceiling | **YES** (~$27–34/mo all-in indicative; see revised table) |
 | AWS account access from agent | **NO** |
 | DNS ready for EC2 ingress | **NO** (hostname on Vercel edge, deployment not found) |
 | Live secrets available | **NO** (bound on Secrets page; values not on agent VM) |
@@ -36,21 +36,31 @@
 
 ---
 
-## Itemized monthly estimate (`us-east-1`, Option A)
+## Itemized monthly estimate (`us-east-1`, Option A) — revised (BUILD #959 activation)
 
-| Line item | Qty | Unit (approx.) | Est. USD/mo |
-|-----------|-----|----------------|-------------|
+Includes **public IPv4**, **EBS snapshots**, **monitoring**, and light traffic. Taxes are **not** estimated here (jurisdiction/account-specific; typically not included in AWS list prices).
+
+| Line item | Qty | Unit (AWS list, approx.) | Est. USD/mo |
+|-----------|-----|---------------------------|-------------|
 | EC2 `t3.small` Linux | 730 h | $0.0208/h | **~$15.18** |
-| EBS `gp3` 30 GiB | 30 GiB | $0.08/GiB | **~$2.40** |
-| KMS signing keys | 2 | $1.00/key | **~$2.00** |
-| KMS API (signing, early month) | ~10k req | $0.015/10k | **~$0.02** |
-| Elastic IP (attached) | 1 | $0 | $0 |
-| Egress (light) | ~10 GB | $0.09/GB | **~$0.90** |
-| CloudWatch logs (basic) | — | — | **~$2–5** |
+| EBS `gp3` 30 GiB (root) | 30 GiB | $0.08/GiB-mo | **~$2.40** |
+| **In-use public IPv4** (EIP or instance public IP) | 730 h | **$0.005/h** | **~$3.65** |
+| KMS asymmetric signing keys | 2 | $1.00/key-mo | **~$2.00** |
+| KMS `Sign` / `GetPublicKey` (activation month) | ~10k | $0.0015/1k (tiered) | **~$0.15** |
+| Data transfer out (light) | ~10 GB | ~$0.09/GB | **~$0.90** |
+| CloudWatch Logs (basic ingest + storage) | — | — | **~$2–5** |
+| **EBS snapshots** (e.g. 1× 30 GiB retained) | 30 GiB-mo | $0.05/GiB-mo | **~$1.50** |
 
-**Indicative total:** **~$22–26/mo** (room under **$50** ceiling).
+| Subtotal (indicative) | |
+|-----------------------|--|
+| **Low** | **~$27** |
+| **High** (heavier logs + 2 snapshots) | **~$34** |
 
-**Not included (stop if adding without approval):** RDS, ALB, NAT Gateway (~$32/mo), HSM, second VM, cross-region replication.
+**Still under founder ceiling ($50/mo)** with **~$16–23** headroom unless optional services are added.
+
+**Recurring charges that blow the budget (do not provision):** NAT Gateway (~**$32/mo** + traffic), ALB (~**$16/mo** + LCU), second public IPv4 (+**~$3.65/mo** each), RDS, idle/unattached EIPs.
+
+**Tax / billing:** AWS invoices may add sales/VAT depending on account country; model **~10% buffer** only if your account history shows tax lines.
 
 **Billing controls (operator):**
 
@@ -69,6 +79,16 @@
 | `https://np-institutional.abraxasworld.xyz` | HTTP **404**; `server: Vercel`; `x-vercel-error: DEPLOYMENT_NOT_FOUND` |
 | DNS `dig +short` | `216.150.1.65`, `216.150.16.129` (Vercel anycast — **not** an EC2 target yet) |
 | Vercel MCP domain API | **403** (agent lacks `abraxasworld.xyz` admin) |
+
+**DNS action before go-live (Production-safe):**
+
+| Record | Action |
+|--------|--------|
+| `np-institutional.abraxasworld.xyz` | **Only** this host: `A` → EC2 **Elastic IP** (or `AAAA` if using IPv6 deliberately) |
+| `abraxasworld.xyz` (apex) | **Do not change** (Production) |
+| `www`, `demo`, and other existing names | **Do not change** unless explicitly approved |
+
+If `np-institutional` currently aliases Vercel, repoint **only** that label to the EIP; Caddy on the VM terminates TLS. Confirm Production apex/`www` still resolve as before after the change (operator spot-check).
 
 **DNS action before go-live:** Create or update **`A` record** for `np-institutional` → **Elastic IP** of signing VM. Remove Vercel-only routing for this hostname if it prevents TLS termination on the VM/Caddy.
 
@@ -141,3 +161,25 @@ Re-run BUILD #959 **Phase 3–4** (live evidence):
 - Independent verifier transcript from a separate machine  
 
 Until then: **software GO**, **operational NO-GO**.
+
+---
+
+## Operational activation attempt (authorized operator path — Cursor run)
+
+**Date:** 2026-11-11 · **Spend:** $0 · **Software:** `d10bf66f`
+
+| Step | Directive | Result |
+|------|-----------|--------|
+| 1 | Confirm AWS identity | **STOP** — no `aws` CLI; no `AWS_*` on agent; cannot assume operator role from this VM |
+| 2 | Recalculate cost (IPv4, snapshots, tax note) | **DONE** — ~$27–34/mo indicative; ceiling $50 |
+| 3 | Provision resources | **Not executed** (blocked at step 1) |
+| 4 | DNS `np-institutional` only | **Not executed** — no DNS API access; Vercel lacks agent permission on zone |
+| 5 | Runtime secrets on hosts | **Not executed** — secret names bound; values not on agent |
+| 6 | Phase 3 live tests | **Not executed** |
+| 7 | Phase 4 acceptance | **Not executed** |
+
+**Exact blocker:** **Step 1 — AWS programmatic access and operator identity** from an authorized environment (founder AWS console/CLI, SSO, or CI role). **DNS step 4** is the next hard gate after EC2+EIP exist.
+
+**Unblock:** Operator provisions from approved AWS account, repoints **only** `np-institutional`, installs secrets on VM/operator hosts, then re-invoke Cursor **from that host** or supply redacted execution logs for Phase 3–4 attestation.
+
+**Operational GO:** **NO-GO** (evidence-backed).
