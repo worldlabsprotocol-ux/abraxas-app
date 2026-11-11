@@ -180,6 +180,6 @@ Until then: **software GO**, **operational NO-GO**.
 
 **Exact blocker:** **Step 1 — AWS programmatic access and operator identity** from an authorized environment (founder AWS console/CLI, SSO, or CI role). **DNS step 4** is the next hard gate after EC2+EIP exist.
 
-**Unblock:** Operator provisions from approved AWS account, repoints **only** `np-institutional`, installs secrets on VM/operator hosts, then re-invoke Cursor **from that host** or supply redacted execution logs for Phase 3–4 attestation.
+**Unblock:** Follow **`docs/operations/BUILD_959_OPERATOR_HANDOFF.md`** from an authorized AWS console session. After provisioning, supply redacted Phase 3–4 logs to Cursor for attestation (do not re-run AWS checks on the agent VM).
 
 **Operational GO:** **NO-GO** (evidence-backed).
