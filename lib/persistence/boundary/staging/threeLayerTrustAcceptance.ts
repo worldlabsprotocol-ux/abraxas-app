@@ -29,6 +29,7 @@ import {
 } from "./stagingOperationalOwnership";
 import { revokeIssuerSigningKeyOnSovereignPg } from "./issuerTrustRecovery";
 import {
+  authorityCheckpointFromStatement,
   verifyAbraxasReceiptIndependently,
   type IndependentVerificationResult,
 } from "@abraxas/independent-verifier";
@@ -221,6 +222,7 @@ async function verifyThreeLayer(input: {
     statementObservedAt: new Date().toISOString(),
     signedStatusStatement: signedStatus,
     minimumStatusVersion: input.minimumStatusVersion,
+    ...authorityCheckpointFromStatement(signedIssuer),
   });
 }
 

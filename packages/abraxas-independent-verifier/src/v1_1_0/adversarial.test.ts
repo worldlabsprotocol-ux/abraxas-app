@@ -15,7 +15,7 @@ import { publicEd25519JwkFingerprint } from "../fingerprint";
 import { signIssuerAuthorityPayloadForTests } from "../issuerAuthorityStatement";
 import { signReceiptStatusStatement } from "../signedReceiptStatusStatement";
 import { verifyAbraxasReceiptIndependently } from "../verifyIndependent";
-import { buildCanonicalPayloadFromRecord, hashCanonicalPayload } from "../canonical";
+import { authorityCheckpointFromStatement, buildCanonicalPayloadFromRecord, hashCanonicalPayload } from "../canonical";
 import { deriveApplicationBindingRef } from "./applicationBinding";
 import { buildEvidenceCommitment, type EvidenceCommitmentEntryV1 } from "./evidenceCommitment";
 import { buildCanonicalPayloadV1_1, hashCanonicalPayloadV1_1 } from "./canonical";
@@ -439,6 +439,7 @@ describe("receipt v1.1.0 cryptographic binding", () => {
       },
       statementObservedAt: new Date().toISOString(),
       signedStatusStatement: signedStatusFor(record, statusSigner),
+      ...authorityCheckpointFromStatement(statement),
     });
     expect(result.phases.find((p) => p.id === "application_binding")?.status).toBe("skipped");
     expect(result.currently_acceptable).toBe("yes");
@@ -469,6 +470,7 @@ describe("receipt v1.1.0 cryptographic binding", () => {
       },
       statementObservedAt: new Date().toISOString(),
       signedStatusStatement: signedStatusFor(record, statusSigner),
+      ...authorityCheckpointFromStatement(statement),
     });
     expect(result.failure_codes).not.toContain("application_binding_expectation_missing");
     expect(result.currently_acceptable).toBe("yes");

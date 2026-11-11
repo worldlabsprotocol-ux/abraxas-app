@@ -40,6 +40,8 @@ export async function evaluateSovereignCurrentValidity(input: {
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   trustAnchorPublicJwk: JsonWebKey;
   minimumRegistryVersion?: number;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
   expectedPartnerId?: string;
   expectedPolicyId?: string;
   expectedEnvironment?: "demo" | "production";
@@ -123,9 +125,14 @@ export async function evaluateSovereignCurrentValidity(input: {
     mode: "current_authorization",
     now,
     minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: input.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
   });
   const issuerAuthorized = authKey.ok;
-  if (!issuerAuthorized) reasons.push("issuer_not_authorized");
+  if (!authKey.ok) {
+    reasons.push(authKey.reason);
+    reasons.push("issuer_not_authorized");
+  }
 
   const expectedPartner = input.expectedPartnerId ?? input.record.partner_id;
   const expectedPolicy = input.expectedPolicyId ?? input.record.policy_id;

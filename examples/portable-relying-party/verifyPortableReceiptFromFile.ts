@@ -8,6 +8,7 @@
  */
 import { readFile } from "node:fs/promises";
 import {
+  retainedRegistryVersion,
   validateTrustAnchorBundle,
   verifyAbraxasReceiptIndependently,
   type TrustAnchorBundleV1,
@@ -79,7 +80,18 @@ async function main() {
     signedIssuerAuthority: bundle.signed_issuer_authority,
     signedStatusStatement: bundle.signed_status_statement,
     relyingParty: { partner_id: partnerId, policy_id: policyId, environment },
-    minimumRegistryVersion: bundle.registry_version > 1 ? bundle.registry_version - 1 : undefined,
+    minimumRegistryVersion: retainedRegistryVersion({
+      retained: process.env.RP_ACCEPTED_REGISTRY_VERSION
+        ? Number(process.env.RP_ACCEPTED_REGISTRY_VERSION)
+        : undefined,
+      offeredByBundle: bundle.registry_version,
+    }),
+    acceptedRegistryVersion: retainedRegistryVersion({
+      retained: process.env.RP_ACCEPTED_REGISTRY_VERSION
+        ? Number(process.env.RP_ACCEPTED_REGISTRY_VERSION)
+        : undefined,
+      offeredByBundle: bundle.registry_version,
+    }),
     statementObservedAt: new Date().toISOString(),
   });
 
