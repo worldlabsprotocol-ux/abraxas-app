@@ -4,8 +4,9 @@
 //
 // ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK is the issuer process's configured
 // verification key. It is not the relying party's independently pinned trust root.
-// The governance public key is supplied by the caller and is not read from that
-// configuration. One governance key is not multisignature custody.
+// The governance public key is the operator-established pin. Caller arguments and
+// issuer environment variables do not select it. One governance key is not
+// multisignature custody.
 
 import nacl from "tweetnacl";
 import {
@@ -22,8 +23,8 @@ import {
   governanceApprovalMatchesTransition,
   verifyAuthorityGovernanceApproval,
   type AuthorityGovernanceApproval,
-  type IndependentGovernancePin,
 } from "./governanceApproval";
+import { readEstablishedGovernancePin } from "./governanceTrustPin";
 import { withSovereignStagingPgTransaction } from "../sovereignStagingPg";
 
 export const INITIAL_ISSUER_REGISTRY_VERSION = 854;
@@ -204,7 +205,6 @@ async function recordIssuerAuthorityContinuity(input: {
   governance?: {
     approval: AuthorityGovernanceApproval;
     signatureBase64Url: string;
-    pin: IndependentGovernancePin;
   } | null;
 }): Promise<ResolvedIssuerAuthorityContinuity | { ok: false; reason: string }> {
   const described = describeConfiguredIssuerAuthority({
@@ -226,9 +226,13 @@ async function recordIssuerAuthorityContinuity(input: {
   }
   const state = loadIssuerAuthorityState(input.env);
   if (!state.ok) return state;
-  if (input.authorization && input.governance && input.anchorPublicJwk) {
+  const trustedPin = input.authorization && input.governance
+    ? readEstablishedGovernancePin(described.environment)
+    : null;
+  if (trustedPin && !trustedPin.ok) return trustedPin;
+  if (input.authorization && input.governance && input.anchorPublicJwk && trustedPin?.ok) {
     const independent = assertIndependentGovernancePin({
-      pin: input.governance.pin,
+      pin: trustedPin.pin,
       anchorKeyId: input.anchorKeyId,
       anchorPublicJwk: input.anchorPublicJwk,
       authorityKeys: state.keys,
@@ -238,7 +242,7 @@ async function recordIssuerAuthorityContinuity(input: {
     const signed = verifyAuthorityGovernanceApproval({
       approval: input.governance.approval,
       signatureBase64Url: input.governance.signatureBase64Url,
-      pin: input.governance.pin,
+      pin: trustedPin.pin,
     });
     if (!signed.ok) return signed;
   }
@@ -265,6 +269,8 @@ async function recordIssuerAuthorityContinuity(input: {
     }));
     const current = rows.at(-1) ?? null;
     if (input.authorization && input.governance) {
+      const trustedNow = readEstablishedGovernancePin(described.environment);
+      if (!trustedNow.ok) return { action: "reject" as const, reason: trustedNow.reason };
       if (input.anchorPublicJwk) {
         const issuerStillValid = verifyIssuerAuthorityChangeAuthorization({
           authorization: input.authorization,
@@ -272,11 +278,19 @@ async function recordIssuerAuthorityContinuity(input: {
           anchorPublicJwk: input.anchorPublicJwk,
         });
         if (!issuerStillValid.ok) return { action: "reject" as const, reason: issuerStillValid.reason };
+        const stillIndependent = assertIndependentGovernancePin({
+          pin: trustedNow.pin,
+          anchorKeyId: input.anchorKeyId,
+          anchorPublicJwk: input.anchorPublicJwk,
+          authorityKeys: state.keys,
+          statusSigners: state.statusSigners,
+        });
+        if (!stillIndependent.ok) return { action: "reject" as const, reason: stillIndependent.reason };
       }
       const governanceStillValid = verifyAuthorityGovernanceApproval({
         approval: input.governance.approval,
         signatureBase64Url: input.governance.signatureBase64Url,
-        pin: input.governance.pin,
+        pin: trustedNow.pin,
       });
       if (!governanceStillValid.ok) return { action: "reject" as const, reason: governanceStillValid.reason };
       const action = classifyGovernanceAction({
@@ -396,9 +410,8 @@ export function resolveIssuerAuthorityRegistryContinuity(input: {
 
 /**
  * Records one authority transition. The issuer signature and the governance signature
- * are both verified again after the registry row is locked. The governance pin is the
- * caller's out-of-band public key. This function does not read a governance key from
- * the issuer anchor configuration.
+ * are both verified again after the registry row is locked. Governance is verified
+ * against the established pin, not against a public key supplied by the caller.
  */
 export async function applyIssuerAuthorityChangeAuthorization(input: {
   env?: Record<string, string | undefined>;
@@ -406,7 +419,6 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
   signatureBase64Url: string;
   governanceApproval: AuthorityGovernanceApproval;
   governanceSignatureBase64Url: string;
-  governancePin: IndependentGovernancePin;
 }): Promise<ResolvedIssuerAuthorityContinuity | { ok: false; reason: string }> {
   const env = input.env ?? process.env;
   const pinned = readConfiguredIssuerAnchor(env);
@@ -414,10 +426,12 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
   if (input.authorization.anchor_key_id !== pinned.anchorKeyId) {
     return { ok: false, reason: "authority_approval_anchor_mismatch" };
   }
+  const trusted = readEstablishedGovernancePin(input.authorization.environment);
+  if (!trusted.ok) return trusted;
   const state = loadIssuerAuthorityState(env);
   if (!state.ok) return state;
   const independent = assertIndependentGovernancePin({
-    pin: input.governancePin,
+    pin: trusted.pin,
     anchorKeyId: pinned.anchorKeyId,
     anchorPublicJwk: pinned.anchorPublicJwk,
     authorityKeys: state.keys,
@@ -433,7 +447,7 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
   const governance = verifyAuthorityGovernanceApproval({
     approval: input.governanceApproval,
     signatureBase64Url: input.governanceSignatureBase64Url,
-    pin: input.governancePin,
+    pin: trusted.pin,
   });
   if (!governance.ok) return governance;
   return recordIssuerAuthorityContinuity({
@@ -445,7 +459,6 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
     governance: {
       approval: input.governanceApproval,
       signatureBase64Url: input.governanceSignatureBase64Url,
-      pin: input.governancePin,
     },
   });
 }

@@ -7,6 +7,13 @@ import {
 import { bindAwsKmsEd25519Client, createAwsKmsSdkClient } from "./awsKmsClient";
 import { openInstitutionalSigner } from "./institutionalSigner";
 
+// Opt-in live proof. It stays skipped unless a non-production operator supplies:
+// ABRAXAS_AWS_KMS_SIGNING_TEST=1
+// ABRAXAS_AWS_KMS_REGION
+// ABRAXAS_AWS_KMS_ISSUER_KEY_ID and ABRAXAS_AWS_KMS_STATUS_KEY_ID (distinct ECC_NIST_EDWARDS25519 keys)
+// ABRAXAS_AWS_KMS_ISSUER_IDENTITY and ABRAXAS_AWS_KMS_STATUS_IDENTITY (distinct IAM identities)
+// The signature is checked with verifySignedIssuerAuthorityStatement from the unchanged independent verifier.
+// This file does not create KMS keys.
 const live = process.env.ABRAXAS_AWS_KMS_SIGNING_TEST === "1";
 
 describe.skipIf(!live)("live non-production AWS KMS", () => {

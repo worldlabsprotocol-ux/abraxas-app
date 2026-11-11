@@ -22,6 +22,7 @@ import {
   signAuthorityGovernanceApproval,
   type AuthorityGovernanceApproval,
 } from "./governanceApproval";
+import { establishGovernanceTrustPin } from "./governanceTrustPin";
 import { resolveIssuerKeyFromSignedStatement } from "./resolveIssuerKey";
 import {
   applyIssuerAuthorityChangeAuthorization,
@@ -222,6 +223,16 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     resetSovereignStagingPgPoolForTests();
     pool = new pg.Pool({ connectionString: databaseUrl });
     await applySovereignSliceSchema(pool);
+    const installed = establishGovernanceTrustPin({
+      environment: "production",
+      pin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
+      changeTicket: "disposable-continuity-governance",
+      anchorKeyId: anchor.signingKeyId,
+      anchorPublicJwk: anchor.publicKeyJwk,
+      authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
+      statusSigners: [],
+    });
+    if (!installed.ok) throw new Error(installed.reason);
   });
 
   afterAll(async () => {
@@ -294,7 +305,6 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
         approval,
         governancePrivateJwk: signer.privateKeyJwk,
       }),
-      governancePin: { keyId: signer.signingKeyId, publicJwk: signer.publicKeyJwk },
     };
   }
 

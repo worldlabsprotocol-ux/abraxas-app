@@ -24,8 +24,8 @@ import {
   governanceApprovalMatchesTransition,
   verifyAuthorityGovernanceApproval,
   type AuthorityGovernanceApproval,
-  type IndependentGovernancePin,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
+import { readEstablishedGovernancePin } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustPin";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { querySovereignStagingPg } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { receiptStatusPayloadFromEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
@@ -37,7 +37,6 @@ export {
   GOVERNANCE_APPROVAL_DOCUMENT,
   GOVERNANCE_PIN_CUSTODY,
   type AuthorityGovernanceApproval,
-  type IndependentGovernancePin,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
 
 export async function signRecordedIssuerAuthorityStatement(input: {
@@ -73,7 +72,6 @@ export async function approveRecordedAuthorityChange(input: {
   assertedAuthorityStateDigest: string;
   governanceApproval?: AuthorityGovernanceApproval | null;
   governanceSignatureBase64Url?: string | null;
-  governancePin?: IndependentGovernancePin | null;
 }) {
   const described = describeConfiguredIssuerAuthority({
     env: input.env,
@@ -86,15 +84,17 @@ export async function approveRecordedAuthorityChange(input: {
   ) {
     return { ok: false as const, reason: "unapproved_authority_state" };
   }
-  if (!input.governanceApproval || !input.governanceSignatureBase64Url || !input.governancePin) {
+  if (!input.governanceApproval || !input.governanceSignatureBase64Url) {
     return { ok: false as const, reason: "independent_governance_approval_required" };
   }
+  const trusted = readEstablishedGovernancePin(described.environment);
+  if (!trusted.ok) return trusted;
   const anchor = readConfiguredIssuerAnchor(input.env);
   if (!anchor.ok) return anchor;
   const state = loadIssuerAuthorityState(input.env);
   if (!state.ok) return state;
   const independent = assertIndependentGovernancePin({
-    pin: input.governancePin,
+    pin: trusted.pin,
     anchorKeyId: anchor.anchorKeyId,
     anchorPublicJwk: anchor.anchorPublicJwk,
     authorityKeys: state.keys,
@@ -104,7 +104,7 @@ export async function approveRecordedAuthorityChange(input: {
   const verified = verifyAuthorityGovernanceApproval({
     approval: input.governanceApproval,
     signatureBase64Url: input.governanceSignatureBase64Url,
-    pin: input.governancePin,
+    pin: trusted.pin,
   });
   if (!verified.ok) return verified;
   const recorded = await readCurrentIssuerAuthorityRow({
@@ -144,7 +144,6 @@ export async function approveRecordedAuthorityChange(input: {
     signatureBase64Url: signed.signature,
     governanceApproval: input.governanceApproval,
     governanceSignatureBase64Url: input.governanceSignatureBase64Url,
-    governancePin: input.governancePin,
   });
 }
 

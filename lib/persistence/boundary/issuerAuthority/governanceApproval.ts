@@ -1,7 +1,6 @@
 // Independent governance approval for one authority transition.
-// The issuer anchor verifies the issuer signature. This module verifies a second signature.
-// The governance public key is an out-of-band pin supplied by the caller. This module does not
-// read it from the issuer anchor configuration and does not install a replacement pin.
+// The issuer anchor verifies the issuer signature. This module verifies a second signature
+// against the public pin installed by establishGovernanceTrustPin.
 
 import { createHash } from "node:crypto";
 import nacl from "tweetnacl";
@@ -19,12 +18,21 @@ export const GOVERNANCE_PIN_CUSTODY = {
   verificationImplemented: true,
   independentCustodyDemonstrated: false,
   multisignature: false,
+  callerSuppliedPinAccepted: false,
+  issuerEnvironmentSuppliesPin: false,
+  pinSource: "established_operator_pin",
+  holder:
+    "The governance private key is held by the governance operator, outside the issuer signing identity. It is not placed in issuer environment variables, the receipt signer, the status signer, or the issuer KMS key. Two key ids or two IAM roles in one process are not custody separation.",
   initialPin:
-    "The registry writer receives the governance public key as an out-of-band pin. It does not read that key from the issuer anchor configuration and it does not fall back to the issuer anchor.",
+    "The governance operator installs the public key once through establishGovernanceTrustPin and records the change-ticket id. The writer then verifies every approval against that pin. The install does not read issuer configuration or a governance environment variable, and a second install cannot replace the pin. The private key is not an argument and is not stored.",
+  retention:
+    "The established public pin is held in process memory. A restart clears it and authority changes fail closed until the governance operator installs the same public key again. Issuer environment variables are not read to restore it.",
+  approvalProcedure:
+    "Bootstrap, rotation, and revocation each require an abraxas_authority_governance_approval/1.0.0 signature from the governance private key over the exact environment, action, versions, and authority-state digest, plus the issuer signature over the same transition. Receipt issuance cannot create either signature.",
   rotation:
-    "The current governance key can sign a succession document naming the successor public key. The issuer anchor cannot authorize that succession. Installing the successor is an out-of-band pin change, not an issuer registry write.",
+    "The current governance private key signs abraxas_governance_succession/1.0.0. rotateEstablishedGovernancePin verifies that signature against the established pin and then replaces the public key. An issuer signature cannot rotate it.",
   recovery:
-    "Loss of the governance private key has no in-application recovery. A single pinned key is not multisignature and is not multi-party custody.",
+    "A missing pin, an approval that does not verify, or distrust of the established fingerprint makes the writer record nothing. Distrust does not install a replacement. Loss of the governance private key has no in-application recovery and freezes authority changes. One pinned key is not multisignature.",
 } as const;
 
 export type GovernanceAction = "bootstrap" | "rotation" | "revocation";
