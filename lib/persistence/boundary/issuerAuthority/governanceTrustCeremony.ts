@@ -1,10 +1,10 @@
 // Operator ceremony helpers for disposable proofs. Not used by receipt issuance.
 
-import { createHash } from "node:crypto";
 import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
+import { GOVERNANCE_OPERATOR_PG_URL_ENV } from "../governanceOperatorPg";
 import {
-  GOVERNANCE_OPERATOR_WITNESS_ENV,
   GOVERNANCE_TRUST_BOOTSTRAP_DOCUMENT,
+  sha256WitnessAuthorizationHex,
   signGovernanceTrustBootstrap,
   type GovernanceTrustBootstrapAuthorization,
 } from "./governanceTrustBootstrap";
@@ -12,12 +12,8 @@ import { establishGovernanceTrustPin } from "./governanceTrustPin";
 
 export const DISPOSABLE_GOVERNANCE_WITNESS_SECRET = "disposable-governance-operator-witness";
 
-export function disposableGovernanceWitnessEnv(): Record<string, string> {
-  return {
-    [GOVERNANCE_OPERATOR_WITNESS_ENV]: createHash("sha256")
-      .update(DISPOSABLE_GOVERNANCE_WITNESS_SECRET, "utf8")
-      .digest("hex"),
-  };
+export function disposableGovernanceWitnessSha256(): string {
+  return sha256WitnessAuthorizationHex(DISPOSABLE_GOVERNANCE_WITNESS_SECRET);
 }
 
 export function buildGovernanceTrustBootstrapBundle(input: {
@@ -29,6 +25,7 @@ export function buildGovernanceTrustBootstrapBundle(input: {
   bootstrap: GovernanceTrustBootstrapAuthorization;
   bootstrapSignatureBase64Url: string;
   operatorWitnessSecret: string;
+  authorizedWitnessSha256: string;
 } {
   const fingerprint = publicEd25519JwkFingerprint(input.governance.publicKeyJwk) ?? "";
   const bootstrap: GovernanceTrustBootstrapAuthorization = {
@@ -47,6 +44,7 @@ export function buildGovernanceTrustBootstrapBundle(input: {
       governancePrivateJwk: input.governance.privateKeyJwk,
     }),
     operatorWitnessSecret: DISPOSABLE_GOVERNANCE_WITNESS_SECRET,
+    authorizedWitnessSha256: disposableGovernanceWitnessSha256(),
   };
 }
 
@@ -65,13 +63,18 @@ export async function installDisposableGovernanceTrustPin(input: {
     governance: input.governance,
     changeTicket: input.changeTicket,
   });
+  const operatorUrl = input.env[GOVERNANCE_OPERATOR_PG_URL_ENV]?.trim();
+  if (!operatorUrl) {
+    return { ok: false as const, reason: "governance_operator_database_unavailable" };
+  }
   return establishGovernanceTrustPin({
-    env: { ...input.env, ...disposableGovernanceWitnessEnv() },
+    env: input.env,
     environment: input.environment,
     pin: { keyId: input.governance.signingKeyId, publicJwk: input.governance.publicKeyJwk },
     bootstrap: ceremony.bootstrap,
     bootstrapSignatureBase64Url: ceremony.bootstrapSignatureBase64Url,
     operatorWitnessSecret: ceremony.operatorWitnessSecret,
+    authorizedWitnessSha256: ceremony.authorizedWitnessSha256,
     anchorKeyId: input.anchorKeyId,
     anchorPublicJwk: input.anchorPublicJwk,
     authorityKeys: input.authorityKeys,

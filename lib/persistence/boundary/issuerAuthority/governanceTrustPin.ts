@@ -4,6 +4,10 @@
 
 import type { PoolClient } from "pg";
 import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
+import {
+  resolveGovernanceOperatorDatabaseUrl,
+  withGovernanceOperatorPgTransaction,
+} from "../governanceOperatorPg";
 import { withSovereignStagingPgTransaction } from "../sovereignStagingPg";
 import {
   assertIndependentGovernancePin,
@@ -30,6 +34,22 @@ type PinRow = {
 function postgresCode(err: unknown): string | null {
   if (typeof err === "object" && err && "code" in err && typeof err.code === "string") return err.code;
   return null;
+}
+
+function mapGovernanceOperatorFailure(
+  recorded: { ok: false; error: string },
+):
+  | "governance_operator_database_unavailable"
+  | "governance_operator_database_forbidden"
+  | "authority_version_state_unavailable" {
+  if (recorded.error === "governance_operator_database_unavailable") {
+    return "governance_operator_database_unavailable";
+  }
+  const lowered = recorded.error.toLowerCase();
+  if (lowered.includes("permission denied") || lowered.includes("42501")) {
+    return "governance_operator_database_forbidden";
+  }
+  return "authority_version_state_unavailable";
 }
 
 function pinFromRow(row: PinRow): {
@@ -93,6 +113,7 @@ export async function establishGovernanceTrustPin(input: {
   bootstrap: GovernanceTrustBootstrapAuthorization;
   bootstrapSignatureBase64Url: string;
   operatorWitnessSecret: string;
+  authorizedWitnessSha256: string;
   anchorKeyId: string;
   anchorPublicJwk: JsonWebKey;
   authorityKeys: AuthorityPublicKey[];
@@ -111,6 +132,8 @@ export async function establishGovernanceTrustPin(input: {
       | "governance_bootstrap_witness_required"
       | "governance_bootstrap_witness_invalid"
       | "governance_bootstrap_environment_mismatch"
+      | "governance_operator_database_unavailable"
+      | "governance_operator_database_forbidden"
       | "authority_version_state_unavailable"
       | "governance_pin_conflict";
   }> {
@@ -120,9 +143,12 @@ export async function establishGovernanceTrustPin(input: {
   if (input.bootstrap.environment !== input.environment) {
     return { ok: false, reason: "governance_bootstrap_environment_mismatch" };
   }
+  if (!resolveGovernanceOperatorDatabaseUrl(env)) {
+    return { ok: false, reason: "governance_operator_database_unavailable" };
+  }
   const witness = verifyGovernanceOperatorBootstrapWitness({
     witnessSecret: input.operatorWitnessSecret,
-    env,
+    authorizedWitnessSha256: input.authorizedWitnessSha256,
   });
   if (!witness.ok) return witness;
   const fingerprint = publicEd25519JwkFingerprint(input.pin.publicJwk);
@@ -144,7 +170,7 @@ export async function establishGovernanceTrustPin(input: {
   });
   if (!bootstrap.ok) return bootstrap;
 
-  const recorded = await withSovereignStagingPgTransaction(async (client) => {
+  const recorded = await withGovernanceOperatorPgTransaction(async (client) => {
     await client.query("select pg_advisory_xact_lock(hashtext($1)::bigint)", [
       `issuer_governance_trust:${input.environment}`,
     ]);
@@ -182,7 +208,7 @@ export async function establishGovernanceTrustPin(input: {
     }
     return { action: "insert" as const, fingerprint };
   }, env);
-  if (!recorded.ok) return { ok: false, reason: "authority_version_state_unavailable" };
+  if (!recorded.ok) return { ok: false, reason: mapGovernanceOperatorFailure(recorded) };
   if (recorded.value.action === "reject") return { ok: false, reason: recorded.value.reason };
   return { ok: true, fingerprint: recorded.value.fingerprint };
 }
@@ -198,7 +224,7 @@ export async function rotateEstablishedGovernancePin(input: {
   statusSigners: AuthorityPublicKey[];
 }): Promise<{ ok: true; fingerprint: string } | { ok: false; reason: string }> {
   const env = input.env ?? process.env;
-  const recorded = await withSovereignStagingPgTransaction(async (client) => {
+  const recorded = await withGovernanceOperatorPgTransaction(async (client) => {
     await client.query("select pg_advisory_xact_lock(hashtext($1)::bigint)", [
       `issuer_governance_trust:${input.environment}`,
     ]);
@@ -256,7 +282,7 @@ export async function rotateEstablishedGovernancePin(input: {
     );
     return { action: "rotate" as const, fingerprint };
   }, env);
-  if (!recorded.ok) return { ok: false, reason: "authority_version_state_unavailable" };
+  if (!recorded.ok) return { ok: false, reason: mapGovernanceOperatorFailure(recorded) };
   if (recorded.value.action === "reject") return { ok: false, reason: recorded.value.reason };
   return { ok: true, fingerprint: recorded.value.fingerprint };
 }
@@ -275,13 +301,15 @@ export async function distrustEstablishedGovernancePin(input: {
           | "governance_pin_not_established"
           | "governance_pin_fingerprint_mismatch"
           | "governance_pin_unavailable"
+          | "governance_operator_database_unavailable"
+          | "governance_operator_database_forbidden"
           | "authority_version_state_unavailable";
       }
   > {
   const env = input.env ?? process.env;
   const trimmed = input.reason.trim();
   if (!trimmed) return { ok: false, reason: "governance_pin_fingerprint_mismatch" };
-  const recorded = await withSovereignStagingPgTransaction(async (client) => {
+  const recorded = await withGovernanceOperatorPgTransaction(async (client) => {
     await client.query("select pg_advisory_xact_lock(hashtext($1)::bigint)", [
       `issuer_governance_trust:${input.environment}`,
     ]);
@@ -307,7 +335,7 @@ export async function distrustEstablishedGovernancePin(input: {
     );
     return { action: "distrust" as const };
   }, env);
-  if (!recorded.ok) return { ok: false, reason: "authority_version_state_unavailable" };
+  if (!recorded.ok) return { ok: false, reason: mapGovernanceOperatorFailure(recorded) };
   if (recorded.value.action === "reject") return { ok: false, reason: recorded.value.reason };
   return { ok: true };
 }
@@ -321,9 +349,13 @@ export async function clearGovernanceTrustPinForTests(input: {
     throw new Error("governance_test_clear_forbidden");
   }
   const env = input.env ?? process.env;
-  const cleared = await withSovereignStagingPgTransaction(async (client) => {
-    await client.query(`delete from public.issuer_governance_trust_events where environment = $1`, [input.environment]);
-    await client.query(`delete from public.issuer_governance_trust_pin where environment = $1`, [input.environment]);
-  }, env);
-  if (!cleared.ok) throw new Error(cleared.error);
+  const adminUrl = env.ABRAXAS_DISPOSABLE_PG_ADMIN_URL?.trim() ?? env.ABRAXAS_DISPOSABLE_PG_TEST_URL?.trim();
+  if (!adminUrl) throw new Error("disposable_pg_admin_unavailable");
+  const admin = new (await import("pg")).Pool({ connectionString: adminUrl });
+  try {
+    await admin.query(`delete from public.issuer_governance_trust_events where environment = $1`, [input.environment]);
+    await admin.query(`delete from public.issuer_governance_trust_pin where environment = $1`, [input.environment]);
+  } finally {
+    await admin.end();
+  }
 }

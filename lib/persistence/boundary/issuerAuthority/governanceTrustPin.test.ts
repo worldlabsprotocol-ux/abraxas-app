@@ -1,12 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { GOVERNANCE_OPERATOR_PG_URL_ENV } from "@/lib/persistence/boundary/governanceOperatorPg";
+import { resetGovernanceOperatorPgPoolForTests } from "@/lib/persistence/boundary/governanceOperatorPg";
 import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignSlice/bootstrap";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import { signGovernanceSuccession } from "./governanceApproval";
+import { provisionDisposableSovereignRoleUrls } from "./disposableSovereignRoles";
 import {
   buildGovernanceTrustBootstrapBundle,
-  disposableGovernanceWitnessEnv,
   installDisposableGovernanceTrustPin,
 } from "./governanceTrustCeremony";
 import {
@@ -18,41 +20,46 @@ import {
 } from "./governanceTrustPin";
 
 const PROOF = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
-const describeProof = PROOF ? describe : describe.skip;
+const describeProof = PROOF ? describe.sequential : describe.skip;
 
 describeProof("durable governance trust pin", () => {
+  const dbName = "abraxas_governance_trust_pin";
   const anchor = generateTestSigningKeyPair("governance-trust-anchor");
   const governance = generateTestSigningKeyPair("governance-trust-primary");
   const otherGovernance = generateTestSigningKeyPair("governance-trust-other");
   const receipt = generateTestSigningKeyPair("governance-trust-receipt");
-  let databaseUrl = "";
+  let urls: Awaited<ReturnType<typeof provisionDisposableSovereignRoleUrls>>;
   let pool: pg.Pool;
 
   const baseEnv = () => ({
     ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
-    ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl,
-    ...disposableGovernanceWitnessEnv(),
+    ABRAXAS_DISPOSABLE_PG_TEST_URL: urls.runtimeUrl,
+    ABRAXAS_DISPOSABLE_PG_ADMIN_URL: urls.adminUrl,
+    [GOVERNANCE_OPERATOR_PG_URL_ENV]: urls.operatorUrl,
   });
 
   beforeAll(async () => {
-    const dbName = "abraxas_governance_trust_pin";
     const admin = new pg.Pool({ connectionString: "postgresql://postgres:postgres@127.0.0.1:5432/postgres" });
     await admin.query(`drop database if exists "${dbName}" with (force)`);
     await admin.query(`create database "${dbName}"`);
     await admin.end();
-    databaseUrl = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     resetSovereignStagingPgPoolForTests();
-    pool = new pg.Pool({ connectionString: databaseUrl });
+    resetGovernanceOperatorPgPoolForTests();
+    pool = new pg.Pool({ connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}` });
     await applySovereignSliceSchema(pool);
+    urls = await provisionDisposableSovereignRoleUrls({ databaseName: dbName, adminPool: pool });
   });
 
   afterAll(async () => {
     await pool?.end();
     resetSovereignStagingPgPoolForTests();
+    resetGovernanceOperatorPgPoolForTests();
   });
 
   async function install() {
     await clearGovernanceTrustPinForTests({ env: baseEnv(), environment: "demo" });
+    resetGovernanceOperatorPgPoolForTests();
+    resetSovereignStagingPgPoolForTests();
     return installDisposableGovernanceTrustPin({
       env: baseEnv(),
       environment: "demo",
@@ -72,29 +79,27 @@ describeProof("durable governance trust pin", () => {
     resetSovereignStagingPgPoolForTests();
     const afterRestart = await readEstablishedGovernancePin({ env: baseEnv(), environment: "demo" });
     expect(afterRestart).toMatchObject({ ok: true, fingerprint: installed.fingerprint });
-    const secondPool = new pg.Pool({ connectionString: databaseUrl });
-    const secondRead = await readEstablishedGovernancePin({
-      env: { ...baseEnv(), ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl },
-      environment: "demo",
-    });
+    const secondRead = await readEstablishedGovernancePin({ env: baseEnv(), environment: "demo" });
     expect(secondRead).toMatchObject({ fingerprint: installed.fingerprint });
-    await secondPool.end();
   });
 
   it("rejects unauthorized bootstrap, second install, issuer rotation, and silent reinstall", async () => {
     await clearGovernanceTrustPinForTests({ env: baseEnv(), environment: "demo" });
+    resetGovernanceOperatorPgPoolForTests();
+    resetSovereignStagingPgPoolForTests();
     const ceremony = buildGovernanceTrustBootstrapBundle({
       environment: "demo",
       governance,
       changeTicket: "no-witness",
     });
     expect(await establishGovernanceTrustPin({
-      env: { ...baseEnv() },
+      env: baseEnv(),
       environment: "demo",
       pin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
       bootstrap: ceremony.bootstrap,
       bootstrapSignatureBase64Url: ceremony.bootstrapSignatureBase64Url,
       operatorWitnessSecret: "wrong-witness",
+      authorizedWitnessSha256: ceremony.authorizedWitnessSha256,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
@@ -116,6 +121,7 @@ describeProof("durable governance trust pin", () => {
       bootstrap: ceremony2.bootstrap,
       bootstrapSignatureBase64Url: ceremony2.bootstrapSignatureBase64Url,
       operatorWitnessSecret: ceremony2.operatorWitnessSecret,
+      authorizedWitnessSha256: ceremony2.authorizedWitnessSha256,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
@@ -178,6 +184,7 @@ describeProof("durable governance trust pin", () => {
       bootstrap: reinstall.bootstrap,
       bootstrapSignatureBase64Url: reinstall.bootstrapSignatureBase64Url,
       operatorWitnessSecret: reinstall.operatorWitnessSecret,
+      authorizedWitnessSha256: reinstall.authorizedWitnessSha256,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],

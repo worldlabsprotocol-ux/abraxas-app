@@ -22,7 +22,10 @@ import {
   signAuthorityGovernanceApproval,
   type AuthorityGovernanceApproval,
 } from "./governanceApproval";
+import { GOVERNANCE_OPERATOR_PG_URL_ENV } from "../governanceOperatorPg";
+import { resetGovernanceOperatorPgPoolForTests } from "../governanceOperatorPg";
 import { installDisposableGovernanceTrustPin } from "./governanceTrustCeremony";
+import { provisionDisposableSovereignRoleUrls } from "./disposableSovereignRoles";
 import { resolveIssuerKeyFromSignedStatement } from "./resolveIssuerKey";
 import {
   applyIssuerAuthorityChangeAuthorization,
@@ -209,6 +212,8 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
   const extra = generateTestSigningKeyPair("continuity-extra");
   const other = generateTestSigningKeyPair("continuity-other");
   let databaseUrl = "";
+  let governanceOperatorUrl = "";
+  let adminUrl = "";
   let pool: pg.Pool;
 
   beforeAll(async () => {
@@ -219,12 +224,21 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     await admin.query(`drop database if exists "${dbName}" with (force)`);
     await admin.query(`create database "${dbName}"`);
     await admin.end();
-    databaseUrl = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     resetSovereignStagingPgPoolForTests();
-    pool = new pg.Pool({ connectionString: databaseUrl });
+    resetGovernanceOperatorPgPoolForTests();
+    pool = new pg.Pool({ connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}` });
     await applySovereignSliceSchema(pool);
+    const urls = await provisionDisposableSovereignRoleUrls({ databaseName: dbName, adminPool: pool });
+    databaseUrl = urls.runtimeUrl;
+    governanceOperatorUrl = urls.operatorUrl;
+    adminUrl = urls.adminUrl;
     const installed = await installDisposableGovernanceTrustPin({
-      env: { ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable", ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl },
+      env: {
+        ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+        ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl,
+        ABRAXAS_DISPOSABLE_PG_ADMIN_URL: adminUrl,
+        [GOVERNANCE_OPERATOR_PG_URL_ENV]: governanceOperatorUrl,
+      },
       environment: "production",
       governance,
       anchorKeyId: anchor.signingKeyId,
@@ -239,6 +253,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
   afterAll(async () => {
     await pool?.end();
     resetSovereignStagingPgPoolForTests();
+    resetGovernanceOperatorPgPoolForTests();
   });
 
   function envFor(
@@ -531,6 +546,10 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     const boundaryPool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(boundaryPool);
+    const boundaryRoles = await provisionDisposableSovereignRoleUrls({
+      databaseName: dbName,
+      adminPool: boundaryPool,
+    });
     const columns = await boundaryPool.query<{ column_name: string }>(
       `select column_name from information_schema.columns
         where table_schema = 'public' and table_name = 'issuer_authority_registry_continuity'`,
@@ -539,16 +558,24 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
 
     const substitute = generateTestSigningKeyPair("substituted-anchor");
     const original = {
-      ...registryEnv([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }], url),
+      ...registryEnv([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }], boundaryRoles.runtimeUrl),
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: boundaryRoles.runtimeUrl,
+      ABRAXAS_DISPOSABLE_PG_ADMIN_URL: boundaryRoles.adminUrl,
+      [GOVERNANCE_OPERATOR_PG_URL_ENV]: boundaryRoles.operatorUrl,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
     };
     const substituted = {
       ...registryEnv(
         [{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }],
-        url,
+        boundaryRoles.runtimeUrl,
         { id: extra.signingKeyId, publicJwk: extra.publicKeyJwk },
       ),
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: boundaryRoles.runtimeUrl,
+      ABRAXAS_DISPOSABLE_PG_ADMIN_URL: boundaryRoles.adminUrl,
+      [GOVERNANCE_OPERATOR_PG_URL_ENV]: boundaryRoles.operatorUrl,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(substitute.publicKeyJwk),
     };
@@ -560,7 +587,13 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     expect(unsigned).toEqual({ ok: false, reason: "authority_bootstrap_required" });
 
     const pinInstalled = await installDisposableGovernanceTrustPin({
-      env: { ...original, ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable", ABRAXAS_DISPOSABLE_PG_TEST_URL: url },
+      env: {
+        ...original,
+        ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+        ABRAXAS_DISPOSABLE_PG_TEST_URL: boundaryRoles.runtimeUrl,
+        ABRAXAS_DISPOSABLE_PG_ADMIN_URL: boundaryRoles.adminUrl,
+        [GOVERNANCE_OPERATOR_PG_URL_ENV]: boundaryRoles.operatorUrl,
+      },
       environment: "production",
       governance,
       anchorKeyId: anchor.signingKeyId,

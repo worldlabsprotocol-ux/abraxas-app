@@ -38,11 +38,13 @@ import {
   verifyAuthorityGovernanceApproval,
   verifyGovernanceSuccession,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
+import { GOVERNANCE_OPERATOR_PG_URL_ENV } from "@/lib/persistence/boundary/governanceOperatorPg";
+import { resetGovernanceOperatorPgPoolForTests } from "@/lib/persistence/boundary/governanceOperatorPg";
 import {
   buildGovernanceTrustBootstrapBundle,
-  disposableGovernanceWitnessEnv,
   installDisposableGovernanceTrustPin,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustCeremony";
+import { provisionDisposableSovereignRoleUrls } from "@/lib/persistence/boundary/issuerAuthority/disposableSovereignRoles";
 import {
   distrustEstablishedGovernancePin,
   establishGovernanceTrustPin,
@@ -243,6 +245,8 @@ describeProof("recorded authority and status workflow", () => {
   const statusKey = generateTestSigningKeyPair("integration-status");
   const calls: string[] = [];
   let databaseUrl = "";
+  let adminUrl = "";
+  let operatorUrl = "";
   let pool: pg.Pool;
   let issuer: Awaited<ReturnType<typeof openInstitutionalSigner>> extends infer T
     ? T extends { ok: true; issuer: infer I } ? I : never
@@ -257,10 +261,14 @@ describeProof("recorded authority and status workflow", () => {
     await admin.query(`drop database if exists "${dbName}" with (force)`);
     await admin.query(`create database "${dbName}"`);
     await admin.end();
-    databaseUrl = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     resetSovereignStagingPgPoolForTests();
-    pool = new pg.Pool({ connectionString: databaseUrl });
+    resetGovernanceOperatorPgPoolForTests();
+    pool = new pg.Pool({ connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}` });
     await applySovereignSliceSchema(pool);
+    const urls = await provisionDisposableSovereignRoleUrls({ databaseName: dbName, adminPool: pool });
+    databaseUrl = urls.runtimeUrl;
+    adminUrl = urls.adminUrl;
+    operatorUrl = urls.operatorUrl;
     const opened = await openInstitutionalSigner({
       provider: "memory",
       environment: "demo",
@@ -285,7 +293,8 @@ describeProof("recorded authority and status workflow", () => {
       ABRAXAS_RUNTIME_ENV: "demo",
       ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
       ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl,
-      ...disposableGovernanceWitnessEnv(),
+      ABRAXAS_DISPOSABLE_PG_ADMIN_URL: adminUrl,
+      [GOVERNANCE_OPERATOR_PG_URL_ENV]: operatorUrl,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK: JSON.stringify({ d: "exportable-production-fallback" }),
@@ -386,6 +395,7 @@ describeProof("recorded authority and status workflow", () => {
       bootstrap: blockedBootstrap.bootstrap,
       bootstrapSignatureBase64Url: blockedBootstrap.bootstrapSignatureBase64Url,
       operatorWitnessSecret: blockedBootstrap.operatorWitnessSecret,
+      authorizedWitnessSha256: blockedBootstrap.authorizedWitnessSha256,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,
@@ -415,6 +425,7 @@ describeProof("recorded authority and status workflow", () => {
       bootstrap: secondBootstrap.bootstrap,
       bootstrapSignatureBase64Url: secondBootstrap.bootstrapSignatureBase64Url,
       operatorWitnessSecret: secondBootstrap.operatorWitnessSecret,
+      authorizedWitnessSha256: secondBootstrap.authorizedWitnessSha256,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,
@@ -918,6 +929,7 @@ describeProof("recorded authority and status workflow", () => {
       bootstrap: recoveryBootstrap.bootstrap,
       bootstrapSignatureBase64Url: recoveryBootstrap.bootstrapSignatureBase64Url,
       operatorWitnessSecret: recoveryBootstrap.operatorWitnessSecret,
+      authorizedWitnessSha256: recoveryBootstrap.authorizedWitnessSha256,
       anchorKeyId: anchor.signingKeyId,
       anchorPublicJwk: anchor.publicKeyJwk,
       authorityKeys,

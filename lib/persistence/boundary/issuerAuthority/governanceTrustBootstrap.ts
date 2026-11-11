@@ -8,6 +8,7 @@ import { canonicalizeJson, verifyEd25519Detached } from "@abraxas/independent-ve
 export const GOVERNANCE_TRUST_BOOTSTRAP_DOCUMENT = "abraxas_governance_trust_bootstrap/1.0.0" as const;
 export const GOVERNANCE_TRUST_BOOTSTRAP_SCHEMA_VERSION = "1.0.0" as const;
 
+/** Legacy env name documented for operators. Establish does not read it from the issuer runtime. */
 export const GOVERNANCE_OPERATOR_WITNESS_ENV = "ABRAXAS_GOVERNANCE_OPERATOR_WITNESS_SHA256" as const;
 
 export type GovernanceTrustBootstrapAuthorization = {
@@ -61,16 +62,22 @@ export function verifyGovernanceTrustBootstrap(input: {
   return ok ? { ok: true } : { ok: false, reason: "governance_bootstrap_signature_invalid" };
 }
 
-/** Witness secret is supplied only during an operator ceremony, not by receipt issuance. */
+export function sha256WitnessAuthorizationHex(secret: string): string {
+  return createHash("sha256").update(secret.trim(), "utf8").digest("hex");
+}
+
+/**
+ * Witness hash is passed in at ceremony time. Issuer runtime configuration is not a trust source.
+ */
 export function verifyGovernanceOperatorBootstrapWitness(input: {
   witnessSecret: string;
-  env?: Record<string, string | undefined>;
+  authorizedWitnessSha256: string;
 }): { ok: true } | { ok: false; reason: "governance_bootstrap_witness_required" | "governance_bootstrap_witness_invalid" } {
-  const configured = (input.env ?? process.env)[GOVERNANCE_OPERATOR_WITNESS_ENV]?.trim().toLowerCase();
+  const configured = input.authorizedWitnessSha256.trim().toLowerCase();
   if (!configured || !/^[0-9a-f]{64}$/.test(configured)) {
     return { ok: false, reason: "governance_bootstrap_witness_required" };
   }
-  const actual = createHash("sha256").update(input.witnessSecret.trim(), "utf8").digest("hex");
+  const actual = sha256WitnessAuthorizationHex(input.witnessSecret);
   try {
     if (!timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(configured, "hex"))) {
       return { ok: false, reason: "governance_bootstrap_witness_invalid" };

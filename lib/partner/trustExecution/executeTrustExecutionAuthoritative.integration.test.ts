@@ -14,7 +14,12 @@ import {
   classifyGovernanceAction,
   signAuthorityGovernanceApproval,
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
+import {
+  GOVERNANCE_OPERATOR_PG_URL_ENV,
+  resetGovernanceOperatorPgPoolForTests,
+} from "@/lib/persistence/boundary/governanceOperatorPg";
 import { installDisposableGovernanceTrustPin } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustCeremony";
+import { provisionDisposableSovereignRoleUrls } from "@/lib/persistence/boundary/issuerAuthority/disposableSovereignRoles";
 import { loadIssuerAuthorityState } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
@@ -79,13 +84,16 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
     await admin.query(`create database "${dbName}"`);
     await admin.end();
 
-    const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
-    process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = url;
-    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = url;
-    process.env.ABRAXAS_DATABASE_URL = url;
     resetSovereignStagingPgPoolForTests();
-    pool = new pg.Pool({ connectionString: url });
+    resetGovernanceOperatorPgPoolForTests();
+    pool = new pg.Pool({ connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}` });
     await applySovereignSliceSchema(pool);
+    const urls = await provisionDisposableSovereignRoleUrls({ databaseName: dbName, adminPool: pool });
+    process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = urls.runtimeUrl;
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = urls.runtimeUrl;
+    process.env.ABRAXAS_DISPOSABLE_PG_ADMIN_URL = urls.adminUrl;
+    process.env[GOVERNANCE_OPERATOR_PG_URL_ENV] = urls.operatorUrl;
+    process.env.ABRAXAS_DATABASE_URL = urls.runtimeUrl;
     const described = describeConfiguredIssuerAuthority({
       env: process.env,
       anchorKeyId: "build834-trust-anchor",
