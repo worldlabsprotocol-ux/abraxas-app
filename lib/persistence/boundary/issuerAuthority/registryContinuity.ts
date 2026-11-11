@@ -25,21 +25,20 @@ import {
   type AuthorityGovernanceApproval,
 } from "./governanceApproval";
 import { readEstablishedGovernancePin } from "./governanceTrustPin";
-import { withSovereignStagingPgTransaction } from "../sovereignStagingPg";
+import { withSovereignStagingPgTransaction } from "../sovereignStagingPg.runtime";
+import {
+  hashIssuerAuthorityChangeAuthorization,
+  INITIAL_ISSUER_REGISTRY_VERSION,
+  ISSUER_AUTHORITY_CHANGE_DOCUMENT,
+  type IssuerAuthorityChangeAuthorization,
+} from "./issuerAuthorityChangeDocument";
 
-export const INITIAL_ISSUER_REGISTRY_VERSION = 854;
-export const ISSUER_AUTHORITY_CHANGE_DOCUMENT = "abraxas_issuer_authority_change/1.0.0" as const;
-
-export type IssuerAuthorityChangeAuthorization = {
-  document: typeof ISSUER_AUTHORITY_CHANGE_DOCUMENT;
-  environment: "demo" | "production";
-  change: "bootstrap" | "authority_change";
-  registry_version: number;
-  supersedes_registry_version: number | null;
-  authority_state_digest: string;
-  anchor_key_id: string;
-  anchor_fingerprint: string;
-};
+export {
+  INITIAL_ISSUER_REGISTRY_VERSION,
+  ISSUER_AUTHORITY_CHANGE_DOCUMENT,
+  hashIssuerAuthorityChangeAuthorization,
+  type IssuerAuthorityChangeAuthorization,
+} from "./issuerAuthorityChangeDocument";
 
 export type IssuerRegistryContinuityRow = {
   registryVersion: number;
@@ -103,12 +102,6 @@ export function decideIssuerAuthorityContinuity(input: {
     registryVersion: authorization.registry_version,
     supersedesRegistryVersion: current.registryVersion,
   };
-}
-
-export function hashIssuerAuthorityChangeAuthorization(
-  authorization: IssuerAuthorityChangeAuthorization,
-): string {
-  return createHash("sha256").update(canonicalizeJson(authorization), "utf8").digest("hex");
 }
 
 /**

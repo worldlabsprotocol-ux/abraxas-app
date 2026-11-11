@@ -14,7 +14,7 @@ import {
   INITIAL_ISSUER_REGISTRY_VERSION,
   ISSUER_AUTHORITY_CHANGE_DOCUMENT,
   type IssuerAuthorityChangeAuthorization,
-} from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
+} from "@/lib/persistence/boundary/issuerAuthority/issuerAuthorityChangeDocument";
 import type { InstitutionalSigningFailureReason } from "./contract";
 import { publicKeyMaterialCarriesPrivateSeed } from "./contract";
 

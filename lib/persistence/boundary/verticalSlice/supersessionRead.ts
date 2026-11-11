@@ -1,6 +1,6 @@
 // FILE: lib/persistence/boundary/verticalSlice/supersessionRead.ts
 
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { querySovereignStagingPg } from "../sovereignStagingPg.runtime";
 
 type SupersessionRow = {
   superseded_receipt_id: string;

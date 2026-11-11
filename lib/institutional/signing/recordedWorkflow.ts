@@ -27,7 +27,7 @@ import {
 } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
 import { readEstablishedGovernancePin } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustPin";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
-import { querySovereignStagingPg } from "@/lib/persistence/boundary/sovereignStagingPg";
+import { querySovereignStagingPg } from "@/lib/persistence/boundary/sovereignStagingPg.runtime";
 import { receiptStatusPayloadFromEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
 import { nextSignedStatusVersion } from "@/lib/persistence/boundary/trustDistribution/statusVersionCheckpoint";
 import type { IssuerAnchorSigner, StatusStatementSigner } from "./institutionalSigner";

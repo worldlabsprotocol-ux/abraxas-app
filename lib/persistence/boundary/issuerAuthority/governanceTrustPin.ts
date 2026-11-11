@@ -7,8 +7,8 @@ import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import {
   resolveGovernanceOperatorDatabaseUrl,
   withGovernanceOperatorPgTransaction,
-} from "../governanceOperatorPg";
-import { withSovereignStagingPgTransaction } from "../sovereignStagingPg";
+} from "../governanceOperatorPg.runtime";
+import { withSovereignStagingPgTransaction } from "../sovereignStagingPg.runtime";
 import {
   assertIndependentGovernancePin,
   verifyGovernanceSuccession,
