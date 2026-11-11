@@ -267,6 +267,50 @@ async function recordIssuerAuthorityContinuity(input: {
   };
 }
 
+/** The current row in the continuity table. Callers do not supply this snapshot. */
+export async function readCurrentIssuerAuthorityRow(input: {
+  env?: Record<string, string | undefined>;
+  environment: "demo" | "production";
+}): Promise<
+  | {
+      ok: true;
+      row: {
+        registryVersion: number;
+        authorityStateDigest: string;
+        supersedesRegistryVersion: number | null;
+      } | null;
+    }
+  | { ok: false; reason: "authority_version_state_unavailable" }
+> {
+  const env = input.env ?? process.env;
+  const recorded = await withSovereignStagingPgTransaction(async (client) => {
+    await client.query("select pg_advisory_xact_lock(hashtext($1)::bigint)", [
+      `issuer_authority_registry:${input.environment}`,
+    ]);
+    const existing = await client.query<{
+      registry_version: number;
+      authority_state_digest: string;
+      supersedes_registry_version: number | null;
+    }>(
+      `select registry_version, authority_state_digest, supersedes_registry_version
+         from public.issuer_authority_registry_continuity
+        where environment = $1
+        order by registry_version asc`,
+      [input.environment],
+    );
+    const current = existing.rows.at(-1);
+    return current
+      ? {
+          registryVersion: current.registry_version,
+          authorityStateDigest: current.authority_state_digest,
+          supersedesRegistryVersion: current.supersedes_registry_version,
+        }
+      : null;
+  }, env);
+  if (!recorded.ok) return { ok: false, reason: "authority_version_state_unavailable" };
+  return { ok: true, row: recorded.value };
+}
+
 /** Receipt issuance. Reuses a recorded authority version and cannot create one. */
 export function resolveIssuerAuthorityRegistryContinuity(input: {
   env?: Record<string, string | undefined>;

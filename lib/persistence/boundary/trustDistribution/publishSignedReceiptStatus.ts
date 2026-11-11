@@ -30,6 +30,54 @@ function statusSignerKeyId(env: Record<string, string | undefined>): string {
   return env.ABRAXAS_STATUS_SIGNER_KEY_ID?.trim() ?? "abraxas-status-signer";
 }
 
+export function receiptStatusPayloadFromEvaluation(input: {
+  record: DecisionReceiptRecord;
+  evaluation: Pick<
+    SovereignCurrentValidityResult,
+    | "lifecycle_status"
+    | "superseded"
+    | "invalidation_reasons"
+    | "claims_current"
+    | "evidence_current"
+    | "checked_at"
+  >;
+  signedIssuerAuthorityEnvironment: "demo" | "production";
+  statusVersion: number;
+  statusSignerKeyId: string;
+  issuedAt: Date;
+  statementTtlSeconds?: number;
+}): ReceiptStatusStatementPayload {
+  const stored = resolveReceiptStatus(input.record);
+  const ttl = input.statementTtlSeconds ?? DEFAULT_TTL_SECONDS;
+  const expiresAt = new Date(input.issuedAt.getTime() + ttl * 1000);
+  return {
+    document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
+    schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
+    receipt_id: input.record.id,
+    status_reference: input.record.id,
+    partner_id: input.record.partner_id,
+    policy_id: input.record.policy_id,
+    policy_version: input.record.policy_version,
+    environment: input.signedIssuerAuthorityEnvironment,
+    status_version: input.statusVersion,
+    supersedes_status_version: input.statusVersion > 1 ? input.statusVersion - 1 : null,
+    receipt_status: input.evaluation.lifecycle_status === "revoked" || stored === "revoked"
+      ? "revoked"
+      : input.evaluation.lifecycle_status === "expired" || stored === "expired"
+        ? "expired"
+        : "active",
+    superseded: input.evaluation.superseded,
+    partner_operational: !input.evaluation.invalidation_reasons.includes("partner_inactive"),
+    policy_active: !input.evaluation.invalidation_reasons.includes("policy_no_longer_valid"),
+    claims_current: input.evaluation.claims_current,
+    evidence_current: input.evaluation.evidence_current,
+    effective_at: input.evaluation.checked_at,
+    issued_at: input.issuedAt.toISOString(),
+    statement_expires_at: expiresAt.toISOString(),
+    status_signer_key_id: input.statusSignerKeyId,
+  };
+}
+
 export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   record: DecisionReceiptRecord;
   evaluation: SovereignCurrentValidityResult;
@@ -44,7 +92,6 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
   const privateJwk = loadStatusSignerPrivateJwk(env);
   if (!privateJwk) return { ok: false, reason: "status_signer_private_jwk_missing" };
 
-  const stored = resolveReceiptStatus(input.record);
   if (input.evaluation.lifecycle_status === "invalidated") {
     return { ok: false, reason: "authoritative_validity_indeterminate" };
   }
@@ -57,36 +104,15 @@ export async function publishSignedReceiptStatusFromSovereignEvaluation(input: {
     env,
   });
   if (typeof version !== "number") return { ok: false, reason: version.error };
-  const issuedAt = new Date();
-  const ttl = input.statementTtlSeconds ?? DEFAULT_TTL_SECONDS;
-  const expiresAt = new Date(issuedAt.getTime() + ttl * 1000);
-  const supersedes = version > 1 ? version - 1 : null;
-
-  const payload: ReceiptStatusStatementPayload = {
-    document: RECEIPT_STATUS_STATEMENT_DOCUMENT,
-    schema_version: RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION,
-    receipt_id: input.record.id,
-    status_reference: input.record.id,
-    partner_id: input.record.partner_id,
-    policy_id: input.record.policy_id,
-    policy_version: input.record.policy_version,
-    environment: input.signedIssuerAuthorityEnvironment,
-    status_version: version,
-    supersedes_status_version: supersedes,
-    receipt_status: input.evaluation.lifecycle_status === "revoked" || stored === "revoked"
-      ? "revoked"
-      : input.evaluation.lifecycle_status === "expired" || stored === "expired"
-        ? "expired" : "active",
-    superseded: input.evaluation.superseded,
-    partner_operational: !input.evaluation.invalidation_reasons.includes("partner_inactive"),
-    policy_active: !input.evaluation.invalidation_reasons.includes("policy_no_longer_valid"),
-    claims_current: input.evaluation.claims_current,
-    evidence_current: input.evaluation.evidence_current,
-    effective_at: input.evaluation.checked_at,
-    issued_at: issuedAt.toISOString(),
-    statement_expires_at: expiresAt.toISOString(),
-    status_signer_key_id: statusSignerKeyId(env),
-  };
+  const payload = receiptStatusPayloadFromEvaluation({
+    record: input.record,
+    evaluation: input.evaluation,
+    signedIssuerAuthorityEnvironment: input.signedIssuerAuthorityEnvironment,
+    statusVersion: version,
+    statusSignerKeyId: statusSignerKeyId(env),
+    issuedAt: new Date(),
+    statementTtlSeconds: input.statementTtlSeconds,
+  });
 
   return signReceiptStatusStatementForTests({
     payload,
