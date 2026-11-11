@@ -39,6 +39,9 @@ export const GOVERNANCE_CUSTODY_MODEL = {
   publicPin: "sovereign_postgres_issuer_governance_trust_pin",
 } as const;
 
+export const INSTITUTIONAL_WORKER_ENV_FLAG = "ABRAXAS_INSTITUTIONAL_SIGNING_WORKER" as const;
+export const GOVERNANCE_OPERATOR_PG_URL_ENV_NAME = "ABRAXAS_GOVERNANCE_OPERATOR_PG_URL" as const;
+
 export const SIGNING_DEPLOYMENT_MODEL = {
   /** Public Vercel receipt runtime must not hold CustodyClient credentials. */
   publicAppHostsCustody: false,
