@@ -2,24 +2,28 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import nacl from "tweetnacl";
 import {
+  authorityCheckpointFromStatement,
   issuerAuthorityStateDigest,
+  verifyAbraxasReceiptIndependently,
   verifyEd25519Detached,
   verifySignedReceiptStatusStatement,
 } from "@abraxas/independent-verifier";
+import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
 import { DECISION_RECEIPT_SCHEMA_VERSION, type DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
+import { generateTestSigningKeyPair, signReceiptPayload } from "@/lib/decisionReceipts/signing";
 import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
 import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignSlice/bootstrap";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { buildIssuerAuthorityStatementFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import {
+  decideIssuerAuthorityContinuity,
   describeConfiguredIssuerAuthority,
   hashIssuerAuthorityChangeAuthorization,
-  resolveIssuerAuthorityRegistryContinuity,
   verifyIssuerAuthorityChangeAuthorization,
 } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
 import type { SovereignCurrentValidityResult } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { receiptStatusPayloadFromEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
+import { buildTrustAnchorBundleV1 } from "@/lib/persistence/boundary/trustDistribution/buildTrustAnchorBundle";
 import {
   authorityStateDigest,
   hashAuthorityChangeAuthorization,
@@ -28,6 +32,8 @@ import type { CustodyClient } from "./contract";
 import { openInstitutionalSigner } from "./institutionalSigner";
 import {
   approveRecordedAuthorityChange,
+  assessIndependentGovernanceApproval,
+  GOVERNANCE_APPROVAL_DOCUMENT,
   INDEPENDENT_GOVERNANCE_APPROVAL,
   publishAuthoritativeReceiptStatus,
   signRecordedIssuerAuthorityStatement,
@@ -37,8 +43,13 @@ const PROOF = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
 const describeProof = PROOF ? describe : describe.skip;
 
 type ApprovalInput = Parameters<typeof approveRecordedAuthorityChange>[0];
+type StatusInput = Parameters<typeof publishAuthoritativeReceiptStatus>[0];
 type RetainedIsAbsent = "retained" extends keyof ApprovalInput ? never : true;
+type EvaluationIsAbsent = "evaluation" extends keyof StatusInput ? never : true;
+type CallerRecordIsAbsent = "record" extends keyof StatusInput ? never : true;
 const retainedIsAbsent: RetainedIsAbsent = true;
+const evaluationIsAbsent: EvaluationIsAbsent = true;
+const callerRecordIsAbsent: CallerRecordIsAbsent = true;
 
 function custody(key: ReturnType<typeof generateTestSigningKeyPair>, identityId: string, calls: string[]): CustodyClient {
   const pair = nacl.sign.keyPair.fromSeed(Buffer.from(key.privateKeyJwk.d!, "base64url"));
@@ -58,7 +69,46 @@ function custody(key: ReturnType<typeof generateTestSigningKeyPair>, identityId:
 describe("shared authority document", () => {
   it("uses PR #948's digest and verifies the same change document", async () => {
     expect(retainedIsAbsent).toBe(true);
+    expect(evaluationIsAbsent).toBe(true);
+    expect(callerRecordIsAbsent).toBe(true);
     expect(INDEPENDENT_GOVERNANCE_APPROVAL.implemented).toBe(false);
+    expect(assessIndependentGovernanceApproval({
+      environment: "demo",
+      action: "bootstrap",
+      authorityStateDigest: "ab".repeat(32),
+      registryVersion: 854,
+      recordedVersion: null,
+    }).reason).toBe("independent_governance_approval_required");
+    expect(assessIndependentGovernanceApproval({
+      approval: {
+        document: GOVERNANCE_APPROVAL_DOCUMENT,
+        environment: "demo",
+        action: "authority_change",
+        authority_state_digest: "ab".repeat(32),
+        registry_version: 855,
+        supersedes_registry_version: 853,
+      },
+      environment: "demo",
+      action: "authority_change",
+      authorityStateDigest: "ab".repeat(32),
+      registryVersion: 855,
+      recordedVersion: 854,
+    }).reason).toBe("stale_governance_approval");
+    expect(assessIndependentGovernanceApproval({
+      approval: {
+        document: GOVERNANCE_APPROVAL_DOCUMENT,
+        environment: "demo",
+        action: "bootstrap",
+        authority_state_digest: "ab".repeat(32),
+        registry_version: 854,
+        supersedes_registry_version: null,
+      },
+      environment: "demo",
+      action: "bootstrap",
+      authorityStateDigest: "ab".repeat(32),
+      registryVersion: 854,
+      recordedVersion: null,
+    }).reason).toBe("independent_governance_approval_unavailable");
     const anchor = generateTestSigningKeyPair("shared-anchor");
     const receipt = generateTestSigningKeyPair("shared-receipt");
     const payload = {
@@ -234,23 +284,84 @@ describeProof("recorded authority and status workflow", () => {
     return { env, payload: built.payload, digest: described.authorityStateDigest };
   }
 
-  it("bootstraps, reuses, rotates, revokes, and rejects a fabricated snapshot or unapproved keys", async () => {
+  async function versions() {
+    const stored = await pool.query<{ registry_version: number }>(
+      `select registry_version from public.issuer_authority_registry_continuity order by registry_version`,
+    );
+    return stored.rows.map((row) => row.registry_version);
+  }
+
+  it("refuses issuer self-approval and a stale governance binding before signing", async () => {
     const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
     const bootstrap = await propose(active, 854, null);
-    const established = await approveRecordedAuthorityChange({
+    const signsBefore = calls.filter((call) => call === "issuer").length;
+    expect(await approveRecordedAuthorityChange({
       env: active,
       issuer,
       proposed: bootstrap.payload,
       assertedAuthorityStateDigest: bootstrap.digest,
-    });
-    expect(established).toMatchObject({ ok: true, registryVersion: 854, repeated: false });
-    expect(JSON.stringify(established)).not.toContain("exportable-production-fallback");
+    })).toEqual({ ok: false, reason: "independent_governance_approval_required" });
 
-    const repeated = await resolveIssuerAuthorityRegistryContinuity({
-      env: active,
-      anchorKeyId: anchor.signingKeyId,
+    const signed = await issuer.signAuthorityChangeApproval({
+      retained: null,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
     });
-    expect(repeated).toMatchObject({ ok: true, registryVersion: 854, repeated: true });
+    expect(signed.ok).toBe(true);
+    if (!signed.ok) return;
+    expect(decideIssuerAuthorityContinuity({
+      rows: [],
+      authorityStateDigest: bootstrap.digest,
+      authorization: signed.authorization,
+    })).toMatchObject({ action: "insert", registryVersion: 854 });
+    expect(decideIssuerAuthorityContinuity({
+      rows: [{ registryVersion: 854, authorityStateDigest: bootstrap.digest, supersedesRegistryVersion: null }],
+      authorityStateDigest: "cd".repeat(32),
+      authorization: { ...signed.authorization, change: "authority_change", registry_version: 855, supersedes_registry_version: 853, authority_state_digest: "cd".repeat(32) },
+    })).toEqual({ action: "reject", reason: "stale_authority_approval" });
+    expect(await approveRecordedAuthorityChange({
+      env: active,
+      issuer,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
+      governanceApproval: {
+        document: GOVERNANCE_APPROVAL_DOCUMENT,
+        environment: "demo",
+        action: "authority_change",
+        authority_state_digest: bootstrap.digest,
+        registry_version: 855,
+        supersedes_registry_version: 854,
+      },
+    })).toEqual({ ok: false, reason: "stale_governance_approval" });
+    expect(await approveRecordedAuthorityChange({
+      env: active,
+      issuer,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
+      governanceApproval: {
+        document: GOVERNANCE_APPROVAL_DOCUMENT,
+        environment: "demo",
+        action: "bootstrap",
+        authority_state_digest: bootstrap.digest,
+        registry_version: 854,
+        supersedes_registry_version: null,
+      },
+    })).toEqual({ ok: false, reason: "independent_governance_approval_unavailable" });
+    expect(calls.filter((call) => call === "issuer").length).toBe(signsBefore + 1);
+    expect(await versions()).toEqual([]);
+    expect(JSON.stringify(signed.authorization)).not.toContain("exportable-production-fallback");
+  });
+
+  it("signs the recorded issuer statement and refuses an unapproved registry or ungoverned rotation", async () => {
+    const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
+    const described = describeConfiguredIssuerAuthority({ env: active, anchorKeyId: anchor.signingKeyId });
+    if (!described.ok) throw new Error(described.reason);
+    await pool.query(
+      `insert into public.issuer_authority_registry_continuity
+         (environment, registry_version, authority_state_digest, anchor_key_id, supersedes_registry_version)
+       values ('demo', 854, $1, $2, null)`,
+      [described.authorityStateDigest, anchor.signingKeyId],
+    );
     const recorded = await signRecordedIssuerAuthorityStatement({
       env: active,
       issuer,
@@ -274,208 +385,246 @@ describeProof("recorded authority and status workflow", () => {
 
     const retiring = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "retiring" }]);
     const rotation = await propose(retiring, 855, 854);
-    const rotatedRow = await approveRecordedAuthorityChange({
+    const signsBeforeRotation = calls.filter((call) => call === "issuer").length;
+    expect(await approveRecordedAuthorityChange({
       env: retiring,
       issuer,
       proposed: rotation.payload,
       assertedAuthorityStateDigest: rotation.digest,
-    });
-    expect(rotatedRow).toMatchObject({ ok: true, registryVersion: 855 });
+      governanceApproval: {
+        document: GOVERNANCE_APPROVAL_DOCUMENT,
+        environment: "demo",
+        action: "authority_change",
+        authority_state_digest: rotation.digest,
+        registry_version: 855,
+        supersedes_registry_version: 854,
+      },
+    })).toEqual({ ok: false, reason: "independent_governance_approval_unavailable" });
+    expect(calls.filter((call) => call === "issuer").length).toBe(signsBeforeRotation);
+    expect(await versions()).toEqual([854]);
+  });
 
-    const revokedEnv = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "revoked" }]);
-    const revocation = await propose(revokedEnv, 856, 855);
-    const revokedRow = await approveRecordedAuthorityChange({
-      env: revokedEnv,
-      issuer,
-      proposed: revocation.payload,
-      assertedAuthorityStateDigest: revocation.digest,
-    });
-    expect(revokedRow).toMatchObject({ ok: true, registryVersion: 856 });
-    const revokedStatement = await signRecordedIssuerAuthorityStatement({
-      env: revokedEnv,
+  it("signs the stored evaluation and refuses revoked, expired, or fabricated-positive evidence", async () => {
+    const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
+    const issuerStatement = await signRecordedIssuerAuthorityStatement({
+      env: active,
       issuer,
       anchorKeyId: anchor.signingKeyId,
       issuedAt: "2026-06-01T00:00:00.000Z",
     });
-    expect(revokedStatement.ok).toBe(true);
-    if (!revokedStatement.ok) return;
-    expect(revokedStatement.statement.payload.keys[0]?.status).toBe("revoked");
-
-    const signsBeforeStale = calls.filter((call) => call === "issuer").length;
-    const staleProposal = await propose(intruder, 855, 854);
-    expect(await approveRecordedAuthorityChange({
-      env: intruder,
-      issuer,
-      proposed: staleProposal.payload,
-      assertedAuthorityStateDigest: staleProposal.digest,
-    })).toEqual({ ok: false, reason: "stale_authority_approval" });
-    expect(calls.filter((call) => call === "issuer").length).toBe(signsBeforeStale);
-
-    const fabricated = await issuer.signAuthorityChangeApproval({
-      retained: { registryVersion: 1, authorityStateDigest: "ab".repeat(32) },
-      proposed: {
-        ...staleProposal.payload,
-        registry_version: 2,
-        supersedes_registry_version: 1,
-      },
-      assertedAuthorityStateDigest: issuerAuthorityStateDigest(staleProposal.payload),
-    });
-    expect(fabricated.ok).toBe(true);
-    if (!fabricated.ok) return;
-    const { applyIssuerAuthorityChangeAuthorization } = await import("@/lib/persistence/boundary/issuerAuthority/registryContinuity");
-    const stored = await applyIssuerAuthorityChangeAuthorization({
-      env: intruder,
-      authorization: fabricated.authorization,
-      signatureBase64Url: fabricated.signature,
-    });
-    expect(stored).toEqual({ ok: false, reason: "stale_authority_approval" });
-    const versions = await pool.query<{ registry_version: number }>(
-      `select registry_version from public.issuer_authority_registry_continuity order by registry_version`,
-    );
-    expect(versions.rows.map((row) => row.registry_version)).toEqual([854, 855, 856]);
-  });
-
-  it("records one concurrent change and leaves the other stale", async () => {
-    const left = envFor([{ id: rotated.signingKeyId, publicJwk: rotated.publicKeyJwk }]);
-    const right = envFor([{ id: statusKey.signingKeyId, publicJwk: statusKey.publicKeyJwk }]);
-    const [leftProposal, rightProposal] = await Promise.all([
-      propose(left, 857, 856),
-      propose(right, 857, 856),
-    ]);
-    const outcomes = await Promise.all([
-      approveRecordedAuthorityChange({
-        env: left,
-        issuer,
-        proposed: leftProposal.payload,
-        assertedAuthorityStateDigest: leftProposal.digest,
-      }),
-      approveRecordedAuthorityChange({
-        env: right,
-        issuer,
-        proposed: rightProposal.payload,
-        assertedAuthorityStateDigest: rightProposal.digest,
-      }),
-    ]);
-    expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(1);
-    expect(outcomes.filter((outcome) => !outcome.ok && outcome.reason === "stale_authority_approval")).toHaveLength(1);
-  });
-
-  it("publishes the evaluation's status and refuses an exportable status key", async () => {
+    expect(issuerStatement.ok).toBe(true);
+    if (!issuerStatement.ok) return;
     await pool.query(`insert into public.partners (partner_id, status) values ('partner-demo', 'active')`);
     await pool.query(
       `insert into public.partner_policies (id, partner_id, version, name) values ('policy-demo', 'partner-demo', 1, 'demo')`,
     );
-    await pool.query(`insert into public.issuer_signing_keys (signing_key_id) values ('integration-receipt')`);
-    await pool.query(
-      `insert into public.decision_receipts (
-         id, verification_decision_id, partner_id, policy_id, policy_version, subject_pseudonym_id,
-         decision_result, decision_context, evaluated_at, status, issuance_finalized_at,
-         schema_version, payload_hash, signature, signing_key_id
-       ) values (
-         'receipt-demo', '00000000-0000-4000-8000-000000000949', 'partner-demo', 'policy-demo', 1, 'subject-demo',
-         'approved', 'production', '2026-06-01T00:00:00.000Z', 'active', '2026-06-01T00:00:00.000Z',
-         '1.0.0', 'abc', 'sig', 'integration-receipt'
-       )`,
-    );
-    const record = {
-      id: "receipt-demo",
-      verification_decision_id: "00000000-0000-4000-8000-000000000949",
-      consent_receipt_id: null,
-      partner_id: "partner-demo",
-      policy_id: "policy-demo",
-      policy_version: 1,
-      subject_pseudonym_id: "subject-demo",
-      wallet_binding_ref: null,
-      decision_result: "approved",
-      reason_codes: [],
-      evaluated_claim_refs: [],
-      issuer_refs: [],
-      decision_context: "production",
-      evaluated_at: "2026-06-01T00:00:00.000Z",
-      expires_at: null,
-      revoked_at: null,
-      status: "active",
-      issuance_finalized_at: "2026-06-01T00:00:00.000Z",
-      schema_version: "1.0.0",
-      payload_hash: "abc",
-      signature: "sig",
-      signing_key_id: "integration-receipt",
-      anchor_reference: null,
-      idempotency_key: null,
-      created_at: "2026-06-01T00:00:00.000Z",
-    } as DecisionReceiptRecord;
-    const evaluation = {
-      signature_authentic: true,
-      issuer_authorized: true,
-      policy_and_audience_match: true,
-      currently_acceptable: false,
-      invalidation_reasons: ["evidence_stale"],
-      store_available: true,
-      checked_at: "2026-06-02T00:00:00.000Z",
-      cryptographically_valid: true,
-      superseded: false,
-      claims_current: false,
-      evidence_current: false,
-      lifecycle_status: "active",
-    } satisfies SovereignCurrentValidityResult;
-    const candidates = [
-      envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "revoked" }]),
-      envFor([{ id: rotated.signingKeyId, publicJwk: rotated.publicKeyJwk }]),
-      envFor([{ id: statusKey.signingKeyId, publicJwk: statusKey.publicKeyJwk }]),
-    ];
-    let env = candidates[0];
-    let issuerStatement: Awaited<ReturnType<typeof signRecordedIssuerAuthorityStatement>> | null = null;
-    for (const candidate of candidates) {
-      const signed = await signRecordedIssuerAuthorityStatement({
-        env: candidate,
-        issuer,
-        anchorKeyId: anchor.signingKeyId,
-        issuedAt: "2026-06-01T00:00:00.000Z",
+    await pool.query(`insert into public.issuer_signing_keys (signing_key_id) values ($1)`, [receipt.signingKeyId]);
+
+    async function insertSignedReceipt(input: {
+      id: string;
+      decisionId: string;
+      status: "active" | "expired" | "revoked";
+      expiresAt: string | null;
+      revokedAt: string | null;
+      claimRefs?: DecisionReceiptRecord["evaluated_claim_refs"];
+    }) {
+      const canonical = buildCanonicalPayload({
+        receipt_id: input.id,
+        decision_id: input.decisionId,
+        policy_id: "policy-demo",
+        policy_version: 1,
+        partner_id: "partner-demo",
+        subject_pseudonym_id: "subject-demo",
+        wallet_binding_ref: null,
+        consent_receipt_id: null,
+        decision_result: "approved",
+        reason_codes: [],
+        evaluated_claim_refs: input.claimRefs ?? [],
+        issuer_refs: [],
+        decision_context: "sandbox_only",
+        evaluated_at: "2026-06-01T00:00:00.000Z",
+        expires_at: input.expiresAt,
       });
-      if (signed.ok) {
-        env = candidate;
-        issuerStatement = signed;
-        break;
-      }
+      const signedReceipt = signReceiptPayload(canonical, receipt.privateKeyJwk);
+      await pool.query(
+        `insert into public.decision_receipts (
+           id, verification_decision_id, partner_id, policy_id, policy_version, subject_pseudonym_id,
+           decision_result, decision_context, evaluated_at, expires_at, revoked_at, status, issuance_finalized_at,
+           schema_version, payload_hash, signature, signing_key_id, reason_codes, evaluated_claim_refs, issuer_refs
+         ) values (
+           $1, $2, 'partner-demo', 'policy-demo', 1, 'subject-demo',
+           'approved', 'sandbox_only', $3, $4, $5, $6, $3,
+           '1.0.0', $7, $8, $9, '{}', $10::jsonb, '{}'
+         )`,
+        [
+          input.id,
+          input.decisionId,
+          canonical.evaluated_at,
+          input.expiresAt,
+          input.revokedAt,
+          input.status,
+          signedReceipt.payloadHash,
+          signedReceipt.signature,
+          receipt.signingKeyId,
+          JSON.stringify(input.claimRefs ?? []),
+        ],
+      );
+      return { canonical, signedReceipt };
     }
-    const first = await publishAuthoritativeReceiptStatus({
-      env,
+
+    const current = await insertSignedReceipt({
+      id: "receipt-current",
+      decisionId: "00000000-0000-4000-8000-000000000950",
+      status: "active",
+      expiresAt: null,
+      revokedAt: null,
+    });
+    const statusSignsBefore = calls.filter((call) => call === "status").length;
+    const genuine = await publishAuthoritativeReceiptStatus({
+      env: active,
       status,
       statusSignerKeyId: statusKey.signingKeyId,
-      record,
-      evaluation,
-      issuedAt: new Date("2026-06-02T00:00:00.000Z"),
+      receiptId: current.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
     });
-    expect(first.ok).toBe(true);
-    if (!first.ok) return;
-    expect(first.statement.payload.evidence_current).toBe(false);
-    expect(first.statement.payload.claims_current).toBe(false);
-    expect(first.statement.payload.status_version).toBe(1);
-    expect(JSON.stringify(first)).not.toContain("exportable-status-fallback");
+    expect(genuine.ok).toBe(true);
+    if (!genuine.ok) return;
+    expect(genuine.statement.payload.evidence_current).toBe(true);
+    expect(genuine.statement.payload.claims_current).toBe(true);
+    expect(genuine.statement.payload.receipt_status).toBe("active");
+    expect(genuine.statement.payload.partner_id).toBe("partner-demo");
+    expect(genuine.statement.payload.policy_id).toBe("policy-demo");
+    expect(genuine.statement.payload.environment).toBe("demo");
+    expect(genuine.statement.payload.status_version).toBe(1);
+    expect(JSON.stringify(genuine)).not.toContain("exportable-status-fallback");
     expect(verifyEd25519Detached({
-      message: Buffer.from(first.statement.payload_hash, "hex"),
-      signatureBase64Url: first.statement.signature,
+      message: Buffer.from(genuine.statement.payload_hash, "hex"),
+      signatureBase64Url: genuine.statement.signature,
       publicJwk: statusKey.publicKeyJwk,
     })).toBe(true);
-    expect(issuerStatement?.ok).toBe(true);
-    if (!issuerStatement?.ok) return;
     expect(verifySignedReceiptStatusStatement({
-      signedStatus: first.statement,
+      signedStatus: genuine.statement,
       signedIssuerAuthority: issuerStatement.statement,
-      now: new Date("2026-06-02T00:01:00.000Z"),
+      now: new Date(),
     }).ok).toBe(true);
-    const second = await publishAuthoritativeReceiptStatus({
-      env,
+    const loaded = await pool.query<{ payload_hash: string; signature: string; evaluated_at: Date; created_at: Date }>(
+      `select payload_hash, signature, evaluated_at, created_at from public.decision_receipts where id = $1`,
+      [current.canonical.receipt_id],
+    );
+    const row = loaded.rows[0];
+    if (!row) throw new Error("receipt missing");
+    const independent = verifyAbraxasReceiptIndependently({
+      record: {
+        id: current.canonical.receipt_id,
+        verification_decision_id: current.canonical.decision_id,
+        consent_receipt_id: null,
+        partner_id: current.canonical.partner_id,
+        policy_id: current.canonical.policy_id,
+        policy_version: current.canonical.policy_version,
+        subject_pseudonym_id: current.canonical.subject_pseudonym_id,
+        wallet_binding_ref: null,
+        decision_result: "approved",
+        reason_codes: [],
+        evaluated_claim_refs: [],
+        issuer_refs: [],
+        decision_context: "sandbox_only",
+        evaluated_at: row.evaluated_at.toISOString(),
+        expires_at: null,
+        revoked_at: null,
+        status: "active",
+        schema_version: "1.0.0",
+        payload_hash: row.payload_hash,
+        signature: row.signature,
+        signing_key_id: receipt.signingKeyId,
+      },
+      pinnedTrustAnchor: buildTrustAnchorBundleV1({
+        anchorKeyId: anchor.signingKeyId,
+        anchorPublicJwk: anchor.publicKeyJwk,
+        environment: "demo",
+      }),
+      signedIssuerAuthority: issuerStatement.statement,
+      relyingParty: { partner_id: "partner-demo", policy_id: "policy-demo", environment: "demo" },
+      signedStatusStatement: genuine.statement,
+      statementObservedAt: new Date().toISOString(),
+      ...authorityCheckpointFromStatement(issuerStatement.statement),
+      now: new Date(),
+    });
+    expect(independent.status_evidence_authentic).toBe(true);
+    expect(independent.currently_acceptable).toBe("yes");
+
+    await pool.query(
+      `update public.decision_receipts set status = 'revoked', revoked_at = now() where id = $1`,
+      [current.canonical.receipt_id],
+    );
+    const revoked = await publishAuthoritativeReceiptStatus({
+      env: active,
       status,
       statusSignerKeyId: statusKey.signingKeyId,
-      record,
-      evaluation,
-      issuedAt: new Date("2026-06-02T00:02:00.000Z"),
+      receiptId: current.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
     });
-    expect(second.ok).toBe(true);
-    if (!second.ok) return;
-    expect(second.statement.payload.status_version).toBe(2);
-    expect(second.statement.payload.supersedes_status_version).toBe(1);
+    expect(revoked.ok).toBe(true);
+    if (!revoked.ok) return;
+    expect(revoked.statement.payload.receipt_status).toBe("revoked");
+    expect(revoked.statement.payload.status_version).toBe(2);
+
+    const expired = await insertSignedReceipt({
+      id: "receipt-expired",
+      decisionId: "00000000-0000-4000-8000-000000000951",
+      status: "active",
+      expiresAt: "2020-01-01T00:00:00.000Z",
+      revokedAt: null,
+    });
+    const expiredStatus = await publishAuthoritativeReceiptStatus({
+      env: active,
+      status,
+      statusSignerKeyId: statusKey.signingKeyId,
+      receiptId: expired.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
+    });
+    expect(expiredStatus.ok).toBe(true);
+    if (!expiredStatus.ok) return;
+    expect(expiredStatus.statement.payload.receipt_status).toBe("expired");
+
+    const claimId = "claim-revoked-integration";
+    await pool.query(
+      `insert into public.sovereign_claim_status (claim_id, status) values ($1, 'revoked')`,
+      [claimId],
+    );
+    await pool.query(
+      `insert into public.sovereign_evidence_sources (source_credential_id, status) values ('source-integration', 'active')`,
+    );
+    const revokedClaim = await insertSignedReceipt({
+      id: "receipt-revoked-claim",
+      decisionId: "00000000-0000-4000-8000-000000000952",
+      status: "active",
+      expiresAt: null,
+      revokedAt: null,
+      claimRefs: [{
+        claim_id: claimId,
+        claim_type: "age21",
+        issuer_id: "issuer:abraxas",
+        status: "active",
+        issued_at: "2026-06-01T00:00:00.000Z",
+        expires_at: null,
+      }],
+    });
+    await pool.query(
+      `insert into public.sovereign_receipt_evidence_dependencies (receipt_id, source_credential_id)
+       values ($1, 'source-integration')`,
+      [revokedClaim.canonical.receipt_id],
+    );
+    const signsBeforeClaim = calls.filter((call) => call === "status").length;
+    const blocked = await publishAuthoritativeReceiptStatus({
+      env: active,
+      status,
+      statusSignerKeyId: statusKey.signingKeyId,
+      receiptId: revokedClaim.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
+    });
+    expect(blocked).toEqual({ ok: false, reason: "authoritative_validity_indeterminate" });
+    expect(calls.filter((call) => call === "status").length).toBe(signsBeforeClaim);
+    expect(statusSignsBefore).toBeLessThan(calls.filter((call) => call === "status").length);
     expect("signAuthorityChangeApproval" in status).toBe(false);
   });
 });

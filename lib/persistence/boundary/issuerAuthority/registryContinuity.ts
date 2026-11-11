@@ -154,7 +154,7 @@ function postgresCode(err: unknown): string | null {
   return null;
 }
 
-function readConfiguredIssuerAnchor(env: Record<string, string | undefined>):
+export function readConfiguredIssuerAnchor(env: Record<string, string | undefined>):
   | { ok: true; anchorKeyId: string; anchorPublicJwk: JsonWebKey }
   | { ok: false; reason: string } {
   const anchorKeyId = env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID?.trim();
