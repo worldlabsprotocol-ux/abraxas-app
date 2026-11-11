@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { INSTITUTIONAL_WORKER_ENV_FLAG } from "../custodyImplementation";
 import {
   assertInstitutionalWorkerProcessEnv,
   assertReceiptRuntimeMustNotHoldInstitutionalCustody,
-  INSTITUTIONAL_WORKER_ENV_FLAG,
 } from "./runtimeGuards";
 import { bootstrapInstitutionalSigningWorker } from "./workerBootstrap";
 import { createInstitutionalSigningHttpServer, getServerAddress } from "./httpServer";
@@ -14,6 +14,7 @@ describe("institutional signing worker isolation", () => {
       assertInstitutionalWorkerProcessEnv({
         [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
         VERCEL: "1",
+        VERCEL_ENV: undefined,
       }),
     ).toEqual({ ok: false, reason: "vercel_worker_forbidden" });
   });
@@ -23,6 +24,8 @@ describe("institutional signing worker isolation", () => {
       assertInstitutionalWorkerProcessEnv({
         [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
         ABRAXAS_GOVERNANCE_OPERATOR_PG_URL: "postgres://operator",
+        VERCEL: undefined,
+        VERCEL_ENV: undefined,
       }),
     ).toEqual({ ok: false, reason: "governance_operator_url_forbidden_on_worker" });
   });
@@ -53,11 +56,14 @@ describe("institutional signing worker HTTP boundary", () => {
     ]) {
       previousEnv[key] = process.env[key];
     }
+    delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
     process.env[INSTITUTIONAL_WORKER_ENV_FLAG] = "1";
     process.env.ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT = "demo";
     process.env.ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY = "1";
     process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID = "worker-test-anchor";
     process.env.ABRAXAS_STATUS_SIGNER_KEY_ID = "worker-test-status";
+    delete process.env.ABRAXAS_GOVERNANCE_OPERATOR_PG_URL;
 
     const boot = await bootstrapInstitutionalSigningWorker(process.env);
     expect(boot.ok).toBe(true);

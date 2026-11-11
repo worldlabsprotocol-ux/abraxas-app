@@ -2,6 +2,8 @@ import {
   GOVERNANCE_OPERATOR_PG_URL_ENV_NAME,
   INSTITUTIONAL_WORKER_ENV_FLAG,
 } from "../custodyImplementation";
+
+export { INSTITUTIONAL_WORKER_ENV_FLAG } from "../custodyImplementation";
 import { LIVE_AWS_KMS_REQUIRED_ENV_VARS } from "../awsKmsLiveTestEnv";
 
 const CUSTODY_CREDENTIAL_PREFIXES = [
