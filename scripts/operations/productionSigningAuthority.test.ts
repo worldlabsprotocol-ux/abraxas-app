@@ -62,7 +62,14 @@ describe("production signing authority ceremony", () => {
     const report = formatPublicSummary(generated);
     const privateSeed = JSON.parse(readFileSync(join(dir, PRIVATE_ANCHOR_FILE), "utf8")).d as string;
 
+    expect(generated.institutional_approval).toBe("not_approved");
     expect(generated.anchor_key_id).toBe(ANCHOR_KEY_ID);
+    const pin = JSON.parse(readFileSync(join(dir, PUBLIC_PIN_FILE), "utf8")) as {
+      institutional_approval: string;
+      relationships: string[];
+    };
+    expect(pin.institutional_approval).toBe("not_approved");
+    expect(pin.relationships.join(" ")).toContain("does not bootstrap version 854");
     expect(generated.status_signer_key_id).toBe(STATUS_SIGNER_KEY_ID);
     expect(generated.anchor_fingerprint).not.toBe(generated.status_signer_fingerprint);
     expect(generated.anchor_fingerprint).not.toBe(RECEIPT_KEY_FINGERPRINT);

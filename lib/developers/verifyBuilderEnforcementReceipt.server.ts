@@ -5,7 +5,7 @@ import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentV
 import { getReceiptById } from "@/lib/decisionReceipts/service";
 import { buildPortableVerificationBundle } from "@/lib/partner/portableIndependentVerification";
 import { verifyTrustExecutionMaterial } from "@/lib/partner/trustExecution/verifyTrustExecutionMaterial";
-import { enforcementFromIndependentVerification } from "@abraxas/independent-verifier";
+import { authorityCheckpointFromStatement, enforcementFromIndependentVerification } from "@abraxas/independent-verifier";
 
 export type BuilderReceiptPlatformVerification = {
   receipt_id: string;
@@ -61,6 +61,7 @@ export async function verifyBuilderEnforcementReceipt(input: {
   }
 
   const bundle = built.bundle;
+  const checkpoint = authorityCheckpointFromStatement(bundle.signed_issuer_authority);
   const verified = verifyTrustExecutionMaterial({
     material: {
       portable_receipt: toIndependentVerifierRecord(bundle.decision_receipt),
@@ -71,6 +72,8 @@ export async function verifyBuilderEnforcementReceipt(input: {
     partnerId: input.partnerId,
     policyId: input.policyId,
     environment: record.decision_context === "production" ? "production" : "demo",
+    acceptedRegistryVersion: checkpoint.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: checkpoint.expectedAuthorityStateDigest,
   });
 
   const { action } = enforcementFromIndependentVerification(verified);

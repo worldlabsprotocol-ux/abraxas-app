@@ -31,6 +31,7 @@ describe("sandbox trust-execution schema contract", () => {
     expect(schemaBody).toMatch(/authorization_ref\s+text\s+primary\s+key/);
     expect(schemaBody).toMatch(/correlation_id\s+text\s+not\s+null\s+unique/);
     expect(schemaBody).toContain("create table if not exists public.sovereign_receipt_status_checkpoints");
+    expect(schemaBody).toContain("create table if not exists public.issuer_authority_registry_continuity");
     expect(schemaBody).toContain("create table if not exists public.wallet_scoped_trust_authoritative_evidence");
     expect(schemaBody).toContain("authority_source_revision timestamptz");
     expect(schemaBody).toContain("add column if not exists authority_source_revision");

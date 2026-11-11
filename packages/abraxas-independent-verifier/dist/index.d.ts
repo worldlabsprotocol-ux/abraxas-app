@@ -1,3 +1,35 @@
+declare const DECISION_RECEIPT_SCHEMA_V1_0: "1.0.0";
+declare const DECISION_RECEIPT_SCHEMA_V1_1: "1.1.0";
+declare const APPLICATION_BINDING_SCOPE_SCHEMA: "abraxas.application_binding_scope/v1";
+declare const EVIDENCE_COMMITMENT_SCHEMA: "abraxas.evidence_commitment/v1";
+/** Domain separation prefix for evidence commitment digests (UTF-8). */
+declare const EVIDENCE_COMMITMENT_DOMAIN = "abraxas|decision_receipt|evidence_commitment|v1\0";
+
+type EvidenceDependencyType = "reusable_fact" | "source_receipt" | "derived_from";
+type EvidenceCommitmentEntryV1 = {
+    dependency_type: EvidenceDependencyType;
+    fact_id: string | null;
+    source_credential_id: string | null;
+};
+type EvidenceCommitmentV1 = {
+    schema: typeof EVIDENCE_COMMITMENT_SCHEMA;
+    digest: string;
+    entry_count: number;
+};
+/** Blinded ref for low-entropy identifiers at issuance (optional). Verifier receives manifest with blinded refs only. */
+declare function blindEvidenceRef(material: string, blindingKey: Buffer | string): string;
+declare function computeEvidenceCommitmentDigest(entries: EvidenceCommitmentEntryV1[]): string;
+declare function buildEvidenceCommitment(entries: EvidenceCommitmentEntryV1[]): EvidenceCommitmentV1;
+declare function verifyEvidenceCommitment(input: {
+    commitment: EvidenceCommitmentV1 | null | undefined;
+    manifest: EvidenceCommitmentEntryV1[] | null | undefined;
+}): {
+    ok: true;
+} | {
+    ok: false;
+    reason: string;
+};
+
 declare const TRUST_ANCHOR_BUNDLE_DOCUMENT: "abraxas_trust_anchor_bundle";
 declare const TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION: "1.0.0";
 declare const ISSUER_AUTHORITY_STATEMENT_DOCUMENT: "abraxas_issuer_authority_statement";
@@ -121,6 +153,8 @@ type DecisionReceiptRecord = {
     payload_hash: string;
     signature: string;
     signing_key_id: string;
+    application_binding_ref?: string | null;
+    evidence_commitment?: EvidenceCommitmentV1 | null;
 };
 type ReceiptStatusEvidenceV1 = {
     document: typeof RECEIPT_STATUS_EVIDENCE_DOCUMENT;
@@ -138,11 +172,36 @@ type RelyingPartyExpectations = {
     partner_id: string;
     policy_id: string;
     environment: "demo" | "production";
+    /** When true, verification fails closed unless expected + signed application_binding_ref match (v1.1.0). */
+    require_application_binding?: boolean;
+    /** Expected opaque ref from authoritative onboarding — never read from the receipt. */
+    application_binding_ref?: string;
+    /** When true, verification fails closed unless receipt commitment matches manifest (v1.1.0). */
+    require_evidence_commitment?: boolean;
+    /** Manifest used to recompute evidence_commitment.digest (not proof of current validity). */
+    evidence_commitment_manifest?: EvidenceCommitmentEntryV1[];
 };
 
 declare function normalizeDecisionReceiptTimestamp(value: string): string;
 declare function canonicalizeJson(value: unknown): string;
 declare function hashIssuerAuthorityPayload(payload: IssuerAuthorityStatementPayload): string;
+/** Identity of who may sign and under which rules. Excludes version and issuance timestamps. */
+declare function issuerAuthorityStateDigest(payload: Pick<IssuerAuthorityStatementPayload, "environment" | "anchor_key_id" | "keys" | "status_signers">): string;
+/**
+ * A downloaded receipt may repeat a version the relying party already trusts.
+ * It cannot lower that retained version or install a new one by presenting a larger number.
+ */
+/** The caller already trusts this statement. A downloaded bundle does not become a checkpoint by being passed here. */
+declare function authorityCheckpointFromStatement(statement: {
+    payload: Pick<IssuerAuthorityStatementPayload, "environment" | "anchor_key_id" | "keys" | "status_signers" | "registry_version">;
+}): {
+    acceptedRegistryVersion: number;
+    expectedAuthorityStateDigest: string;
+};
+declare function retainedRegistryVersion(input: {
+    retained?: number | null;
+    offeredByBundle?: number | null;
+}): number | undefined;
 type DecisionReceiptCanonicalPayload = {
     schema_version: string;
     receipt_id: string;
@@ -196,6 +255,10 @@ declare function verifySignedIssuerAuthorityStatement(input: {
     statement: SignedIssuerAuthorityStatement;
     trustAnchorPublicJwk: JsonWebKey;
     minimumRegistryVersion?: number;
+    /** Retained current authority version. A larger number in a statement is not a new trust root. */
+    acceptedRegistryVersion?: number;
+    /** Digest of the authority state the relying party already accepted for that version. */
+    expectedAuthorityStateDigest?: string;
     now?: Date;
 }): {
     ok: true;
@@ -212,6 +275,8 @@ declare function resolveIssuerKeyFromSignedStatement(input: {
     mode: IssuerResolveMode;
     now?: Date;
     minimumRegistryVersion?: number;
+    acceptedRegistryVersion?: number;
+    expectedAuthorityStateDigest?: string;
 }): {
     ok: true;
     key: IssuerAuthorityKeyEntry;
@@ -256,9 +321,22 @@ declare function verifyAbraxasReceiptIndependently(input: {
     /** @deprecated Use signedStatusStatement */
     statusEvidence?: ReceiptStatusEvidenceV1 | null;
     minimumRegistryVersion?: number;
+    /** Version the relying party has already accepted. Not taken from the downloaded bundle. */
+    acceptedRegistryVersion?: number;
+    expectedAuthorityStateDigest?: string;
     minimumStatusVersion?: number;
     now?: Date;
 }): IndependentVerificationResult;
+
+type IndependentEnforcementAction = "permit" | "deny" | "indeterminate";
+/** Mandatory failures — must never yield permit. */
+declare const MANDATORY_DENY_FAILURE_CODES: Set<string>;
+/** Trust not established — permit is forbidden; action is indeterminate. */
+declare const MANDATORY_INDETERMINATE_FAILURE_CODES: Set<string>;
+declare function enforcementFromIndependentVerification(result: IndependentVerificationResult): {
+    action: IndependentEnforcementAction;
+    failure_codes: string[];
+};
 
 declare function hashReceiptStatusStatementPayload(payload: ReceiptStatusStatementPayload): string;
 declare function verifySignedReceiptStatusStatement(input: {
@@ -298,4 +376,71 @@ declare function verifyEd25519Detached(input: {
     publicJwk: JsonWebKey;
 }): boolean;
 
-export { type DecisionReceiptCanonicalPayload, type DecisionReceiptRecord, type EvaluatedClaimRef, ISSUER_AUTHORITY_STATEMENT_DOCUMENT, ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION, type IndependentVerificationPhase, type IndependentVerificationResult, type IssuerAuthorityKeyEntry, type IssuerAuthorityStatementPayload, type IssuerResolveMode, RECEIPT_STATUS_EVIDENCE_DOCUMENT, RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION, RECEIPT_STATUS_STATEMENT_DOCUMENT, RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION, type ReceiptStatusEvidenceV1, type ReceiptStatusStatementPayload, type RelyingPartyExpectations, type SignedIssuerAuthorityStatement, type SignedReceiptStatusStatement, type StatusSignerKeyEntry, TRUST_ANCHOR_BUNDLE_DOCUMENT, TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION, type TrustAnchorBundleV1, assertStatementMatchesPinnedAnchor, buildCanonicalPayloadFromRecord, canonicalizeJson, hashCanonicalPayload, hashIssuerAuthorityPayload, hashReceiptStatusStatementPayload, normalizeDecisionReceiptTimestamp, publicEd25519JwkFingerprint, resolveIssuerKeyFromSignedStatement, signIssuerAuthorityPayloadForTests, signReceiptStatusStatement, signReceiptStatusStatementForTests, statusPayloadMatchesReceiptContext, validateTrustAnchorBundle, verifyAbraxasReceiptIndependently, verifyEd25519Detached, verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk, verifySignedIssuerAuthorityStatement, verifySignedReceiptStatusStatement };
+type ApplicationBindingScopeInput = {
+    partner_id: string;
+    policy_id: string;
+    policy_version: number;
+    decision_context: "production" | "sandbox_only";
+    /** Authoritative Launchpad application id at issuance (never caller-supplied at verify time). */
+    launchpad_application_id: string;
+};
+/** Issuer-side derivation. Scope secret is environment-scoped issuance material, not placed on receipts. */
+declare function deriveApplicationBindingRef(scope: ApplicationBindingScopeInput, scopeSecret: Buffer | string): string;
+declare function verifyApplicationBindingRef(input: {
+    receiptRef: string | null | undefined;
+    expectedRef: string;
+}): {
+    ok: true;
+} | {
+    ok: false;
+    reason: string;
+};
+
+type DecisionReceiptCanonicalPayloadV1_1 = DecisionReceiptCanonicalPayload & {
+    schema_version: typeof DECISION_RECEIPT_SCHEMA_V1_1;
+    application_binding_ref: string | null;
+    evidence_commitment: EvidenceCommitmentV1 | null;
+};
+declare function assertNoV11FieldsOnV10Record(record: Record<string, unknown>): boolean;
+type DecisionReceiptRecordV1_1 = DecisionReceiptRecord & {
+    application_binding_ref?: string | null;
+    evidence_commitment?: EvidenceCommitmentV1 | null;
+};
+declare function buildCanonicalPayloadV1_1(record: DecisionReceiptRecordV1_1): DecisionReceiptCanonicalPayloadV1_1;
+declare function hashCanonicalPayloadV1_1(payload: DecisionReceiptCanonicalPayloadV1_1): string;
+/** Reject downgrade: v1.0.0 canonical must not include v1.1 fields on the wire record. */
+declare function rejectSchemaDowngrade(record: Record<string, unknown>): boolean;
+
+type VerificationRequirementResult = {
+    status: "pass";
+    detail: string;
+} | {
+    status: "fail";
+    detail: string;
+    code: string;
+} | {
+    status: "skipped";
+    detail: string;
+};
+type ApplicationBindingPolicy = {
+    require_application_binding?: boolean;
+    application_binding_ref?: string;
+};
+type EvidenceCommitmentPolicy = {
+    require_evidence_commitment?: boolean;
+    evidence_commitment_manifest?: EvidenceCommitmentEntryV1[];
+};
+/** Relying party expected ref is never inferred from the receipt. */
+declare function evaluateApplicationBindingRequirement(input: {
+    record: DecisionReceiptRecord;
+    policy: ApplicationBindingPolicy;
+}): VerificationRequirementResult;
+declare function evaluateEvidenceCommitmentRequirement(input: {
+    record: DecisionReceiptRecord & {
+        evidence_commitment?: EvidenceCommitmentV1 | null;
+    };
+    policy: EvidenceCommitmentPolicy;
+}): VerificationRequirementResult;
+declare function assessManifestReferencePrivacy(entries: EvidenceCommitmentEntryV1[]): VerificationRequirementResult;
+
+export { APPLICATION_BINDING_SCOPE_SCHEMA, type ApplicationBindingPolicy, type ApplicationBindingScopeInput, DECISION_RECEIPT_SCHEMA_V1_0, DECISION_RECEIPT_SCHEMA_V1_1, type DecisionReceiptCanonicalPayload, type DecisionReceiptCanonicalPayloadV1_1, type DecisionReceiptRecord, type DecisionReceiptRecordV1_1, EVIDENCE_COMMITMENT_DOMAIN, EVIDENCE_COMMITMENT_SCHEMA, type EvaluatedClaimRef, type EvidenceCommitmentEntryV1, type EvidenceCommitmentPolicy, type EvidenceCommitmentV1, type EvidenceDependencyType, ISSUER_AUTHORITY_STATEMENT_DOCUMENT, ISSUER_AUTHORITY_STATEMENT_SCHEMA_VERSION, type IndependentEnforcementAction, type IndependentVerificationPhase, type IndependentVerificationResult, type IssuerAuthorityKeyEntry, type IssuerAuthorityStatementPayload, type IssuerResolveMode, MANDATORY_DENY_FAILURE_CODES, MANDATORY_INDETERMINATE_FAILURE_CODES, RECEIPT_STATUS_EVIDENCE_DOCUMENT, RECEIPT_STATUS_EVIDENCE_SCHEMA_VERSION, RECEIPT_STATUS_STATEMENT_DOCUMENT, RECEIPT_STATUS_STATEMENT_SCHEMA_VERSION, type ReceiptStatusEvidenceV1, type ReceiptStatusStatementPayload, type RelyingPartyExpectations, type SignedIssuerAuthorityStatement, type SignedReceiptStatusStatement, type StatusSignerKeyEntry, TRUST_ANCHOR_BUNDLE_DOCUMENT, TRUST_ANCHOR_BUNDLE_SCHEMA_VERSION, type TrustAnchorBundleV1, type VerificationRequirementResult, assertNoV11FieldsOnV10Record, assertStatementMatchesPinnedAnchor, assessManifestReferencePrivacy, authorityCheckpointFromStatement, blindEvidenceRef, buildCanonicalPayloadFromRecord, buildCanonicalPayloadV1_1, buildEvidenceCommitment, canonicalizeJson, computeEvidenceCommitmentDigest, deriveApplicationBindingRef, enforcementFromIndependentVerification, evaluateApplicationBindingRequirement, evaluateEvidenceCommitmentRequirement, hashCanonicalPayload, hashCanonicalPayloadV1_1, hashIssuerAuthorityPayload, hashReceiptStatusStatementPayload, issuerAuthorityStateDigest, normalizeDecisionReceiptTimestamp, publicEd25519JwkFingerprint, rejectSchemaDowngrade, resolveIssuerKeyFromSignedStatement, retainedRegistryVersion, signIssuerAuthorityPayloadForTests, signReceiptStatusStatement, signReceiptStatusStatementForTests, statusPayloadMatchesReceiptContext, validateTrustAnchorBundle, verifyAbraxasReceiptIndependently, verifyApplicationBindingRef, verifyEd25519Detached, verifyEvidenceCommitment, verifyReceiptPayloadIntegrity, verifyReceiptSignatureWithPublicJwk, verifySignedIssuerAuthorityStatement, verifySignedReceiptStatusStatement };

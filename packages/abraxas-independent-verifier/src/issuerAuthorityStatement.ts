@@ -4,7 +4,7 @@ import type {
   IssuerAuthorityStatementPayload,
   SignedIssuerAuthorityStatement,
 } from "./types";
-import { hashIssuerAuthorityPayload } from "./canonical";
+import { hashIssuerAuthorityPayload, issuerAuthorityStateDigest } from "./canonical";
 import { base64UrlDecode, ed25519PublicFromJwk, verifyEd25519Detached } from "./crypto";
 
 export type IssuerResolveMode = "current_authorization" | "signature_verification";
@@ -48,6 +48,10 @@ export function verifySignedIssuerAuthorityStatement(input: {
   statement: SignedIssuerAuthorityStatement;
   trustAnchorPublicJwk: JsonWebKey;
   minimumRegistryVersion?: number;
+  /** Retained current authority version. A larger number in a statement is not a new trust root. */
+  acceptedRegistryVersion?: number;
+  /** Digest of the authority state the relying party already accepted for that version. */
+  expectedAuthorityStateDigest?: string;
   now?: Date;
 }): { ok: true } | { ok: false; reason: string } {
   const { statement, trustAnchorPublicJwk } = input;
@@ -74,6 +78,20 @@ export function verifySignedIssuerAuthorityStatement(input: {
   if (min != null && statement.payload.registry_version < min) {
     return { ok: false, reason: "registry_version_rollback_rejected" };
   }
+  if (input.acceptedRegistryVersion != null) {
+    if (statement.payload.registry_version < input.acceptedRegistryVersion) {
+      return { ok: false, reason: "registry_version_rollback_rejected" };
+    }
+    if (statement.payload.registry_version > input.acceptedRegistryVersion) {
+      return { ok: false, reason: "registry_version_not_current" };
+    }
+  }
+  if (
+    input.expectedAuthorityStateDigest
+    && issuerAuthorityStateDigest(statement.payload) !== input.expectedAuthorityStateDigest
+  ) {
+    return { ok: false, reason: "authority_state_mismatch" };
+  }
   if (
     statement.payload.supersedes_registry_version != null
     && statement.payload.registry_version <= statement.payload.supersedes_registry_version
@@ -96,13 +114,18 @@ export function resolveIssuerKeyFromSignedStatement(input: {
   mode: IssuerResolveMode;
   now?: Date;
   minimumRegistryVersion?: number;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
 }):
   | { ok: true; key: IssuerAuthorityKeyEntry; registry_version: number }
   | { ok: false; reason: string } {
+  const currentAuthority = input.mode === "current_authorization";
   const verified = verifySignedIssuerAuthorityStatement({
     statement: input.statement,
     trustAnchorPublicJwk: input.trustAnchorPublicJwk,
     minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: currentAuthority ? input.acceptedRegistryVersion : undefined,
+    expectedAuthorityStateDigest: currentAuthority ? input.expectedAuthorityStateDigest : undefined,
     now: input.now,
   });
   if (!verified.ok) return verified;

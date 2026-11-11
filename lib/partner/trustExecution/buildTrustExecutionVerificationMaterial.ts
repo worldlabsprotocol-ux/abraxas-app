@@ -4,6 +4,7 @@
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
+import { resolveIssuerAuthorityRegistryContinuity } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { resolveReceiptKeyRuntimeEnvironment } from "@/lib/decisionReceipts/verificationKeyLifecycle/environment";
 import { publishSignedReceiptStatusFromSovereignEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
@@ -16,13 +17,19 @@ export async function buildAuthoritativeVerificationMaterial(input: {
   anchorPublicJwk: JsonWebKey;
   anchorPrivateJwk: JsonWebKey;
   anchorKeyId: string;
-  registryVersion: number;
 }): Promise<
   | { ok: true; material: TrustExecutionVerificationMaterial }
   | { ok: false; code: string }
 > {
+  const continuity = await resolveIssuerAuthorityRegistryContinuity({
+    env: input.env,
+    anchorKeyId: input.anchorKeyId,
+  });
+  if (!continuity.ok) return { ok: false, code: continuity.reason };
+
   const signedIssuer = publishSignedIssuerAuthorityFromRegistry({
-    registryVersion: input.registryVersion,
+    registryVersion: continuity.registryVersion,
+    supersedesRegistryVersion: continuity.supersedesRegistryVersion,
     anchorKeyId: input.anchorKeyId,
     anchorPrivateJwk: input.anchorPrivateJwk,
     env: input.env,
@@ -39,6 +46,9 @@ export async function buildAuthoritativeVerificationMaterial(input: {
     expectedPartnerId: input.record.partner_id,
     expectedPolicyId: input.record.policy_id,
     expectedEnvironment: resolveReceiptKeyRuntimeEnvironment(input.env),
+    minimumRegistryVersion: continuity.registryVersion,
+    acceptedRegistryVersion: continuity.registryVersion,
+    expectedAuthorityStateDigest: continuity.authorityStateDigest,
     env: input.env,
   });
 

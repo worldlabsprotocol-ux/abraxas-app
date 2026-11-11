@@ -31,6 +31,8 @@ export type VerifyPortableDecisionInput = PortableDecisionArtifacts & {
   /** Anti-rollback checkpoint when the RP has seen a newer status version. */
   minimumStatusVersion?: number;
   minimumRegistryVersion?: number;
+  acceptedRegistryVersion?: number;
+  expectedAuthorityStateDigest?: string;
 };
 
 export function verifyPortableDecision(input: VerifyPortableDecisionInput): IndependentVerificationResult {
@@ -43,6 +45,8 @@ export function verifyPortableDecision(input: VerifyPortableDecisionInput): Inde
     signedStatusStatement: input.signedStatusStatement,
     minimumStatusVersion: input.minimumStatusVersion,
     minimumRegistryVersion: input.minimumRegistryVersion,
+    acceptedRegistryVersion: input.acceptedRegistryVersion,
+    expectedAuthorityStateDigest: input.expectedAuthorityStateDigest,
   });
 }
 

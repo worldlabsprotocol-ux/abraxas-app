@@ -4,7 +4,7 @@
 import "server-only";
 
 import pg from "pg";
-import type { Pool, PoolConfig, QueryResultRow } from "pg";
+import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
 import {
   assertTlsReadyForInstitutional,
   parseSovereignEnvClass,
@@ -111,6 +111,26 @@ export function getSovereignStagingPgPool(
     stagingPoolDatabaseUrl = url;
   }
   return stagingPool;
+}
+
+export async function withSovereignStagingPgTransaction<T>(
+  run: (client: PoolClient) => Promise<T>,
+  env: Record<string, string | undefined> = process.env,
+): Promise<{ ok: true; value: T } | { ok: false; error: string }> {
+  const pool = getSovereignStagingPgPool(env);
+  if (!pool) return { ok: false, error: "sovereign_staging_pg_unavailable" };
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const value = await run(client);
+    await client.query("commit");
+    return { ok: true, value };
+  } catch (err) {
+    await client.query("rollback").catch(() => undefined);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  } finally {
+    client.release();
+  }
 }
 
 export async function querySovereignStagingPg<T extends QueryResultRow = QueryResultRow>(

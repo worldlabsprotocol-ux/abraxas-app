@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { verifyAbraxasReceiptIndependently } from "../../packages/abraxas-independent-verifier/src/index";
+import { authorityCheckpointFromStatement, verifyAbraxasReceiptIndependently } from "../../packages/abraxas-independent-verifier/src/index";
 import { assertBundledAnchorMatchesPin } from "./pinTrustAnchor";
 import { enforcementFromVerification } from "./enforceDecision";
 
@@ -28,6 +28,7 @@ describe("portable relying party example (fixtures)", () => {
         environment: "demo",
       },
       statementObservedAt: status.payload.effective_at,
+      ...authorityCheckpointFromStatement(sias),
     });
 
     const enforcement = enforcementFromVerification(verified);

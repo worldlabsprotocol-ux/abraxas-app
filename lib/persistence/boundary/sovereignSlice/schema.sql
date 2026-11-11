@@ -86,6 +86,19 @@ create table if not exists public.sovereign_receipt_status_checkpoints (
   status_version int not null default 0 check (status_version >= 0)
 );
 
+-- Issuer authority-state versions. Distinct from per-receipt status_version above.
+create table if not exists public.issuer_authority_registry_continuity (
+  environment text not null check (environment in ('demo', 'production')),
+  registry_version integer not null check (registry_version >= 854),
+  authority_state_digest text not null check (char_length(authority_state_digest) = 64),
+  anchor_key_id text not null,
+  supersedes_registry_version integer,
+  recorded_at timestamptz not null default now(),
+  primary key (environment, registry_version),
+  unique (environment, authority_state_digest),
+  check (supersedes_registry_version is null or supersedes_registry_version < registry_version)
+);
+
 create table if not exists public.sovereign_receipt_evidence_dependencies (
   receipt_id text not null references public.decision_receipts(id),
   source_credential_id text not null references public.sovereign_evidence_sources(source_credential_id),
