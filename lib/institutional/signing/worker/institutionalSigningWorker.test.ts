@@ -8,6 +8,7 @@ import { bootstrapInstitutionalSigningWorker } from "./workerBootstrap";
 import { createInstitutionalSigningHttpServer, getServerAddress } from "./httpServer";
 import { loadWorkerCredentialRegistry } from "./workerCredentialRegistry";
 import { validateInstitutionalWorkerStartup } from "./workerStartup";
+import { assertWorkerListenHostAllowed } from "./transportValidation";
 import type { Server } from "node:http";
 
 const CALLER_SECRETS = {
@@ -64,6 +65,55 @@ describe("institutional signing worker isolation", () => {
         workerEnvironment: "demo",
       }).ok,
     ).toBe(false);
+  });
+
+  it("rejects non-loopback bind in demo even when TLS paths are set", () => {
+    expect(
+      assertWorkerListenHostAllowed("0.0.0.0", {
+        ABRAXAS_INSTITUTIONAL_WORKER_TLS_KEY_PATH: "/tmp/key.pem",
+        ABRAXAS_INSTITUTIONAL_WORKER_TLS_CERT_PATH: "/tmp/cert.pem",
+      }, "demo"),
+    ).toEqual({ ok: false, reason: "worker_loopback_bind_required" });
+    expect(
+      validateInstitutionalWorkerStartup({
+        env: {
+          [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
+          ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT: "demo",
+          ABRAXAS_WORKER_CALLER_STATUS_SECRET: CALLER_SECRETS.status,
+          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: CALLER_SECRETS.issuer,
+          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: CALLER_SECRETS.authority,
+          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: CALLER_SECRETS.health,
+          ABRAXAS_INSTITUTIONAL_WORKER_TLS_KEY_PATH: "/tmp/key.pem",
+          ABRAXAS_INSTITUTIONAL_WORKER_TLS_CERT_PATH: "/tmp/cert.pem",
+        },
+        listenHost: "0.0.0.0",
+      }),
+    ).toEqual({ ok: false, reason: "worker_loopback_bind_required" });
+  });
+
+  it("rejects non-loopback bind in production", () => {
+    expect(
+      assertWorkerListenHostAllowed("192.168.0.5", {}, "production"),
+    ).toEqual({ ok: false, reason: "worker_loopback_bind_required" });
+  });
+
+  it("rejects unsafe direct HTTP server construction on public bind", () => {
+    expect(() =>
+      createInstitutionalSigningHttpServer({
+        workerEnvironment: "demo",
+        listenHost: "127.0.0.1",
+        loopbackOnly: true,
+        registry: { bySecretDigest: new Map(), principals: [] },
+        verifyBearer: () => null,
+        host: "0.0.0.0",
+        port: 0,
+        handlers: {
+          surface: "demo-memory",
+          opened: {} as never,
+          env: {},
+        },
+      }),
+    ).toThrow("worker_loopback_bind_required");
   });
 
   it("rejects production demo-memory startup", () => {
@@ -260,5 +310,19 @@ describe("institutional signing worker HTTP boundary", () => {
     expect(verifyBearer(CALLER_SECRETS.health)?.scopes).toEqual(["institutional:health:read"]);
     const res = await post("/v1/health", {}, CALLER_SECRETS.health);
     expect(res.status).toBe(200);
+  });
+
+  it("returns 400 for malformed JSON bodies", async () => {
+    const res = await fetch(`${baseUrl}/v1/health`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${CALLER_SECRETS.health}`,
+      },
+      body: "{not-json",
+    });
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json).toEqual({ ok: false, reason: "invalid_json" });
   });
 });

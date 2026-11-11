@@ -13,6 +13,7 @@ import type { SignedIssuerAuthorityStatement } from "@abraxas/independent-verifi
 import { authenticateWorkerRequest, auditWorkerAuthorization } from "./authenticateWorkerRequest";
 import type { WorkerCredentialRegistry } from "./workerCredentialRegistry";
 import type { WorkerPrincipal } from "./workerScopes";
+import { assertWorkerListenHostAllowed } from "./transportValidation";
 
 export type InstitutionalSigningHttpHandlers = {
   surface: InstitutionalSigningWorkerSurface;
@@ -32,17 +33,24 @@ export type InstitutionalSigningHttpServerConfig = {
   custodyReady?: boolean;
 };
 
-async function readJsonBody(req: IncomingMessage, limitBytes = 256_000): Promise<unknown> {
+async function readJsonBody(
+  req: IncomingMessage,
+  limitBytes = 256_000,
+): Promise<{ ok: true; value: unknown } | { ok: false; reason: "invalid_json" | "body_too_large" }> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req) {
     const buf = Buffer.from(chunk);
     size += buf.length;
-    if (size > limitBytes) throw new Error("body_too_large");
+    if (size > limitBytes) return { ok: false, reason: "body_too_large" };
     chunks.push(buf);
   }
-  if (chunks.length === 0) return null;
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  if (chunks.length === 0) return { ok: true, value: null };
+  try {
+    return { ok: true, value: JSON.parse(Buffer.concat(chunks).toString("utf8")) };
+  } catch {
+    return { ok: false, reason: "invalid_json" };
+  }
 }
 
 function sendJson(res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>) {
@@ -56,6 +64,10 @@ function sendJson(res: ServerResponse, status: number, body: unknown, headers?: 
 
 export function createInstitutionalSigningHttpServer(input: InstitutionalSigningHttpServerConfig): Server {
   const host = input.host ?? "127.0.0.1";
+  const bindGuard = assertWorkerListenHostAllowed(host, {}, input.workerEnvironment);
+  if (!bindGuard.ok) {
+    throw new Error(bindGuard.reason);
+  }
   const custodyReady = input.custodyReady ?? true;
   const server = createServer(async (req, res) => {
     const correlationId = randomUUID();
@@ -98,7 +110,12 @@ export function createInstitutionalSigningHttpServer(input: InstitutionalSigning
         correlationId,
       });
 
-      const body = await readJsonBody(req);
+      const parsed = await readJsonBody(req);
+      if (!parsed.ok) {
+        sendJson(res, 400, { ok: false, reason: parsed.reason });
+        return;
+      }
+      const body = parsed.value;
 
       if (auth.route === "/v1/health") {
         if (!custodyReady) {
@@ -176,15 +193,19 @@ export function createInstitutionalSigningHttpServer(input: InstitutionalSigning
           receiptId: record.receiptId,
           signedIssuerAuthority: record.signedIssuerAuthority,
           statementTtlSeconds: record.statementTtlSeconds,
+          workerEnvironment: input.workerEnvironment,
+          statusPublishAuthorization: {
+            kind: "worker_http_caller",
+            environment: input.workerEnvironment,
+            partnerId: auth.principal.partnerId,
+            tenantId: auth.principal.tenantId,
+          },
         });
-        if (result.ok && auth.principal.partnerId) {
-          const payloadPartner = result.statement?.payload.partner_id;
-          if (payloadPartner && payloadPartner !== auth.principal.partnerId) {
-            sendJson(res, 403, { ok: false, reason: "worker_partner_scope_forbidden" });
-            return;
-          }
-        }
-        sendJson(res, result.ok ? 200 : 400, result);
+        const statusCode = !result.ok && result.reason === "worker_partner_scope_forbidden" ? 403
+          : !result.ok && result.reason === "worker_tenant_scope_forbidden" ? 403
+            : !result.ok && result.reason === "worker_environment_mismatch" ? 403
+              : result.ok ? 200 : 400;
+        sendJson(res, statusCode, result);
         return;
       }
 

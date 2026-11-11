@@ -32,6 +32,13 @@ import { receiptStatusPayloadFromEvaluation } from "@/lib/persistence/boundary/t
 import { nextSignedStatusVersion } from "@/lib/persistence/boundary/trustDistribution/statusVersionCheckpoint";
 import type { IssuerAnchorSigner, StatusStatementSigner } from "./institutionalSigner";
 import type { IssuerAuthorityStatementPayload } from "@abraxas/independent-verifier";
+import {
+  authorizeStatusPublishCallerForRecord,
+  INTERNAL_TRUSTED_STATUS_PUBLISH,
+  type StatusPublishAuthorization,
+} from "./statusPublishAuthorization";
+
+export { INTERNAL_TRUSTED_STATUS_PUBLISH, type StatusPublishAuthorization } from "./statusPublishAuthorization";
 
 export {
   GOVERNANCE_APPROVAL_DOCUMENT,
@@ -224,6 +231,9 @@ export async function publishAuthoritativeReceiptStatus(input: {
   receiptId: string;
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   statementTtlSeconds?: number;
+  /** Worker HTTP callers must supply scoped authorization; internal tests use INTERNAL_TRUSTED_STATUS_PUBLISH. */
+  statusPublishAuthorization?: StatusPublishAuthorization;
+  workerEnvironment?: "demo" | "production";
 }) {
   const anchor = readConfiguredIssuerAnchor(input.env);
   if (!anchor.ok) return anchor;
@@ -248,6 +258,12 @@ export async function publishAuthoritativeReceiptStatus(input: {
   }
   const loaded = await loadRecordedDecisionReceipt({ env: input.env, receiptId: input.receiptId });
   if (!loaded.ok) return loaded;
+  const callerAuthorized = authorizeStatusPublishCallerForRecord({
+    record: loaded.record,
+    authorization: input.statusPublishAuthorization ?? INTERNAL_TRUSTED_STATUS_PUBLISH,
+    workerEnvironment: input.workerEnvironment ?? input.status.environment,
+  });
+  if (!callerAuthorized.ok) return callerAuthorized;
   const now = new Date();
   const evaluation = await evaluateSovereignCurrentValidity({
     record: loaded.record,

@@ -15,24 +15,14 @@ function isLoopbackAddress(socket: Socket): boolean {
 
 export function assertWorkerListenHostAllowed(
   host: string,
-  env: Record<string, string | undefined>,
-  workerEnvironment: "demo" | "production",
+  _env: Record<string, string | undefined> = {},
+  _workerEnvironment: "demo" | "production" = "demo",
 ):
-  | { ok: true; loopbackOnly: boolean }
-  | { ok: false; reason: string } {
+  | { ok: true; loopbackOnly: true }
+  | { ok: false; reason: "worker_loopback_bind_required" } {
   const trimmed = host.trim();
-  if (workerEnvironment === "production" && !isLoopbackHost(trimmed)) {
-    return { ok: false, reason: "worker_production_requires_loopback_bind" };
-  }
-  if (trimmed === "0.0.0.0" || (!isLoopbackHost(trimmed) && trimmed.length > 0)) {
-    const tlsConfigured = Boolean(
-      env.ABRAXAS_INSTITUTIONAL_WORKER_TLS_KEY_PATH?.trim()
-        && env.ABRAXAS_INSTITUTIONAL_WORKER_TLS_CERT_PATH?.trim(),
-    );
-    if (!tlsConfigured) {
-      return { ok: false, reason: "worker_remote_bind_requires_tls" };
-    }
-    return { ok: true, loopbackOnly: false };
+  if (!isLoopbackHost(trimmed)) {
+    return { ok: false, reason: "worker_loopback_bind_required" };
   }
   return { ok: true, loopbackOnly: true };
 }
@@ -44,19 +34,11 @@ export function validateRequestTransport(input: {
 }):
   | { ok: true }
   | { ok: false; status: 503; reason: "worker_insecure_transport" | "worker_untrusted_remote_address" } {
-  const encrypted = Boolean((input.req.socket as Socket & { encrypted?: boolean }).encrypted);
-  if (input.loopbackOnly) {
-    if (!isLoopbackAddress(input.req.socket)) {
-      return { ok: false, status: 503, reason: "worker_untrusted_remote_address" };
-    }
-    return { ok: true };
-  }
-  if (!encrypted) {
+  if (!input.loopbackOnly) {
     return { ok: false, status: 503, reason: "worker_insecure_transport" };
   }
-  const roleHeader = input.req.headers["x-role"] ?? input.req.headers["x-scope"] ?? input.req.headers["x-authenticated-identity"];
-  if (roleHeader) {
-    // Headers are ignored for authorization; presence alone does not grant access.
+  if (!isLoopbackAddress(input.req.socket)) {
+    return { ok: false, status: 503, reason: "worker_untrusted_remote_address" };
   }
   return { ok: true };
 }

@@ -632,12 +632,43 @@ describeProof("recorded authority and status workflow", () => {
       revokedAt: null,
     });
     const statusSignsBefore = calls.filter((call) => call === "status").length;
+    const checkpointBefore = await pool.query<{ status_version: number }>(
+      `select status_version from public.sovereign_receipt_status_checkpoints where receipt_id = $1`,
+      [current.canonical.receipt_id],
+    );
+    const blockedPartner = await publishAuthoritativeReceiptStatus({
+      env: active,
+      status,
+      statusSignerKeyId: statusKey.signingKeyId,
+      receiptId: current.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
+      workerEnvironment: "demo",
+      statusPublishAuthorization: {
+        kind: "worker_http_caller",
+        environment: "demo",
+        partnerId: "partner-a",
+      },
+    });
+    expect(blockedPartner).toEqual({ ok: false, reason: "worker_partner_scope_forbidden" });
+    expect(calls.filter((call) => call === "status").length).toBe(statusSignsBefore);
+    const checkpointAfterBlock = await pool.query<{ status_version: number }>(
+      `select status_version from public.sovereign_receipt_status_checkpoints where receipt_id = $1`,
+      [current.canonical.receipt_id],
+    );
+    expect(checkpointAfterBlock.rowCount).toBe(checkpointBefore.rowCount);
+
     const genuine = await publishAuthoritativeReceiptStatus({
       env: active,
       status,
       statusSignerKeyId: statusKey.signingKeyId,
       receiptId: current.canonical.receipt_id,
       signedIssuerAuthority: issuerStatement.statement,
+      workerEnvironment: "demo",
+      statusPublishAuthorization: {
+        kind: "worker_http_caller",
+        environment: "demo",
+        partnerId: "partner-demo",
+      },
     });
     expect(genuine.ok).toBe(true);
     if (!genuine.ok) return;
