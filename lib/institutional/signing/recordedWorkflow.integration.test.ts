@@ -54,6 +54,7 @@ import {
 import {
   approveRecordedAuthorityChange,
   GOVERNANCE_APPROVAL_DOCUMENT,
+  createServerRuntimeStatusPublishAuthorization,
   publishAuthoritativeReceiptStatus,
   signRecordedIssuerAuthorityStatement,
 } from "./recordedWorkflow";
@@ -636,6 +637,15 @@ describeProof("recorded authority and status workflow", () => {
       `select status_version from public.sovereign_receipt_status_checkpoints where receipt_id = $1`,
       [current.canonical.receipt_id],
     );
+    expect(await publishAuthoritativeReceiptStatus({
+      env: active,
+      status,
+      statusSignerKeyId: statusKey.signingKeyId,
+      receiptId: current.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
+      statusPublishAuthorization: { kind: "internal_trusted" } as never,
+    })).toEqual({ ok: false, reason: "status_publish_authorization_forbidden" });
+
     const blockedPartner = await publishAuthoritativeReceiptStatus({
       env: active,
       status,
@@ -656,6 +666,22 @@ describeProof("recorded authority and status workflow", () => {
       [current.canonical.receipt_id],
     );
     expect(checkpointAfterBlock.rowCount).toBe(checkpointBefore.rowCount);
+
+    const blockedTenant = await publishAuthoritativeReceiptStatus({
+      env: active,
+      status,
+      statusSignerKeyId: statusKey.signingKeyId,
+      receiptId: current.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
+      workerEnvironment: "demo",
+      statusPublishAuthorization: {
+        kind: "worker_http_caller",
+        environment: "demo",
+        tenantId: "wrong-tenant",
+      },
+    });
+    expect(blockedTenant).toEqual({ ok: false, reason: "worker_tenant_scope_forbidden" });
+    expect(calls.filter((call) => call === "status").length).toBe(statusSignsBefore);
 
     const genuine = await publishAuthoritativeReceiptStatus({
       env: active,
@@ -745,6 +771,7 @@ describeProof("recorded authority and status workflow", () => {
       statusSignerKeyId: statusKey.signingKeyId,
       receiptId: current.canonical.receipt_id,
       signedIssuerAuthority: issuerStatement.statement,
+      statusPublishAuthorization: createServerRuntimeStatusPublishAuthorization(),
     });
     expect(revoked.ok).toBe(true);
     if (!revoked.ok) return;
@@ -764,6 +791,7 @@ describeProof("recorded authority and status workflow", () => {
       statusSignerKeyId: statusKey.signingKeyId,
       receiptId: expired.canonical.receipt_id,
       signedIssuerAuthority: issuerStatement.statement,
+      statusPublishAuthorization: createServerRuntimeStatusPublishAuthorization(),
     });
     expect(expiredStatus.ok).toBe(true);
     if (!expiredStatus.ok) return;
@@ -804,6 +832,7 @@ describeProof("recorded authority and status workflow", () => {
       statusSignerKeyId: statusKey.signingKeyId,
       receiptId: revokedClaim.canonical.receipt_id,
       signedIssuerAuthority: issuerStatement.statement,
+      statusPublishAuthorization: createServerRuntimeStatusPublishAuthorization(),
     });
     expect(blocked).toEqual({ ok: false, reason: "authoritative_validity_indeterminate" });
     expect(calls.filter((call) => call === "status").length).toBe(signsBeforeClaim);

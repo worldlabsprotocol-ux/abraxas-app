@@ -34,11 +34,13 @@ import type { IssuerAnchorSigner, StatusStatementSigner } from "./institutionalS
 import type { IssuerAuthorityStatementPayload } from "@abraxas/independent-verifier";
 import {
   authorizeStatusPublishCallerForRecord,
-  INTERNAL_TRUSTED_STATUS_PUBLISH,
   type StatusPublishAuthorization,
 } from "./statusPublishAuthorization";
 
-export { INTERNAL_TRUSTED_STATUS_PUBLISH, type StatusPublishAuthorization } from "./statusPublishAuthorization";
+export {
+  createServerRuntimeStatusPublishAuthorization,
+  type StatusPublishAuthorization,
+} from "./statusPublishAuthorization";
 
 export {
   GOVERNANCE_APPROVAL_DOCUMENT,
@@ -231,8 +233,7 @@ export async function publishAuthoritativeReceiptStatus(input: {
   receiptId: string;
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
   statementTtlSeconds?: number;
-  /** Worker HTTP callers must supply scoped authorization; internal tests use INTERNAL_TRUSTED_STATUS_PUBLISH. */
-  statusPublishAuthorization?: StatusPublishAuthorization;
+  statusPublishAuthorization: StatusPublishAuthorization;
   workerEnvironment?: "demo" | "production";
 }) {
   const anchor = readConfiguredIssuerAnchor(input.env);
@@ -260,7 +261,7 @@ export async function publishAuthoritativeReceiptStatus(input: {
   if (!loaded.ok) return loaded;
   const callerAuthorized = authorizeStatusPublishCallerForRecord({
     record: loaded.record,
-    authorization: input.statusPublishAuthorization ?? INTERNAL_TRUSTED_STATUS_PUBLISH,
+    authorization: input.statusPublishAuthorization,
     workerEnvironment: input.workerEnvironment ?? input.status.environment,
   });
   if (!callerAuthorized.ok) return callerAuthorized;

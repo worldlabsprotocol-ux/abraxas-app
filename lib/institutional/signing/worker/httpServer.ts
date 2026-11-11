@@ -201,10 +201,13 @@ export function createInstitutionalSigningHttpServer(input: InstitutionalSigning
             tenantId: auth.principal.tenantId,
           },
         });
-        const statusCode = !result.ok && result.reason === "worker_partner_scope_forbidden" ? 403
-          : !result.ok && result.reason === "worker_tenant_scope_forbidden" ? 403
-            : !result.ok && result.reason === "worker_environment_mismatch" ? 403
-              : result.ok ? 200 : 400;
+        const statusCode = !result.ok && (
+          result.reason === "worker_partner_scope_forbidden"
+          || result.reason === "worker_tenant_scope_forbidden"
+          || result.reason === "worker_environment_mismatch"
+          || result.reason === "status_publish_authorization_forbidden"
+        ) ? 403
+          : result.ok ? 200 : 400;
         sendJson(res, statusCode, result);
         return;
       }
