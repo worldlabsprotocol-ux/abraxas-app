@@ -1,6 +1,9 @@
 // Institutional signing identities. A purpose string is not an authorization.
 
 export const INSTITUTIONAL_SIGNING_ROLES = ["issuer_anchor", "status_signer"] as const;
+
+/** Ed25519 key spec shared by KMS and PKCS#11 custody adapters bound to CustodyClient. */
+export const INSTITUTIONAL_ED25519_KEY_SPEC = "ECC_NIST_EDWARDS25519" as const;
 export type InstitutionalSigningRole = (typeof INSTITUTIONAL_SIGNING_ROLES)[number];
 
 export type InstitutionalSigningFailureReason =

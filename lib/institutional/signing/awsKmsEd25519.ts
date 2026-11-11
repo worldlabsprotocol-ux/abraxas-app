@@ -6,8 +6,10 @@
 // $1 per customer-managed key per month, $0.15 per 10,000 asymmetric requests.
 // Asymmetric Sign is outside the 20,000-request free tier.
 
+import { INSTITUTIONAL_ED25519_KEY_SPEC } from "./contract";
+
 export const AWS_KMS_ED25519 = {
-  keySpec: "ECC_NIST_EDWARDS25519",
+  keySpec: INSTITUTIONAL_ED25519_KEY_SPEC,
   signingAlgorithm: "ED25519_SHA_512",
   messageType: "RAW",
   digestBytes: 32,
