@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { InstitutionalSigningWorkerSurface } from "../signingDeploymentBoundary";
 import {
@@ -9,11 +10,26 @@ import type { IssuerAuthorityStatementPayload } from "@abraxas/independent-verif
 import type { OpenedInstitutionalSigning } from "../institutionalSigner";
 import type { AuthorityGovernanceApproval } from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
 import type { SignedIssuerAuthorityStatement } from "@abraxas/independent-verifier";
+import { authenticateWorkerRequest, auditWorkerAuthorization } from "./authenticateWorkerRequest";
+import type { WorkerCredentialRegistry } from "./workerCredentialRegistry";
+import type { WorkerPrincipal } from "./workerScopes";
 
 export type InstitutionalSigningHttpHandlers = {
   surface: InstitutionalSigningWorkerSurface;
   opened: Extract<OpenedInstitutionalSigning, { ok: true }>;
   env: Record<string, string | undefined>;
+};
+
+export type InstitutionalSigningHttpServerConfig = {
+  handlers: InstitutionalSigningHttpHandlers;
+  workerEnvironment: "demo" | "production";
+  listenHost: string;
+  loopbackOnly: boolean;
+  registry: WorkerCredentialRegistry;
+  verifyBearer: (token: string) => WorkerPrincipal | null;
+  host?: string;
+  port?: number;
+  custodyReady?: boolean;
 };
 
 async function readJsonBody(req: IncomingMessage, limitBytes = 256_000): Promise<unknown> {
@@ -29,46 +45,76 @@ async function readJsonBody(req: IncomingMessage, limitBytes = 256_000): Promise
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function sendJson(res: ServerResponse, status: number, body: unknown) {
+function sendJson(res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json");
+  if (headers) {
+    for (const [key, value] of Object.entries(headers)) res.setHeader(key, value);
+  }
   res.end(JSON.stringify(body));
 }
 
-function authorize(req: IncomingMessage, bearerToken: string): boolean {
-  const header = req.headers.authorization?.trim() ?? "";
-  if (!header.startsWith("Bearer ")) return false;
-  const token = header.slice("Bearer ".length).trim();
-  return token.length > 0 && token === bearerToken;
-}
-
-export function createInstitutionalSigningHttpServer(input: {
-  handlers: InstitutionalSigningHttpHandlers;
-  bearerToken: string;
-  host?: string;
-  port?: number;
-}): Server {
+export function createInstitutionalSigningHttpServer(input: InstitutionalSigningHttpServerConfig): Server {
   const host = input.host ?? "127.0.0.1";
+  const custodyReady = input.custodyReady ?? true;
   const server = createServer(async (req, res) => {
+    const correlationId = randomUUID();
+    const path = req.url?.split("?")[0] ?? "";
+  const method = req.method ?? "GET";
+
     try {
-      if (req.method !== "POST") {
-        sendJson(res, 405, { ok: false, reason: "method_not_allowed" });
+      const auth = authenticateWorkerRequest({
+        req,
+        method,
+        path,
+        workerEnvironment: input.workerEnvironment,
+        listenHost: input.listenHost,
+        loopbackOnly: input.loopbackOnly,
+        verifyBearer: input.verifyBearer,
+        registry: input.registry,
+      });
+
+      if (!auth.ok) {
+        auditWorkerAuthorization({
+          principal: null,
+          route: path,
+          outcome: "denied",
+          reason: auth.reason,
+          correlationId,
+        });
+        if (auth.status === 405) {
+          sendJson(res, auth.status, { ok: false, reason: auth.reason }, { Allow: "POST" });
+          return;
+        }
+        sendJson(res, auth.status, { ok: false, reason: auth.reason });
         return;
       }
-      if (!authorize(req, input.bearerToken)) {
-        sendJson(res, 401, { ok: false, reason: "worker_unauthorized" });
-        return;
-      }
-      const path = req.url?.split("?")[0] ?? "";
-      if (path === "/v1/signRawDigest" || path.includes("signRawDigest")) {
-        sendJson(res, 403, { ok: false, reason: "institutional_rpc_forbidden" });
-        return;
-      }
+
+      auditWorkerAuthorization({
+        principal: auth.principal,
+        route: path,
+        outcome: "allowed",
+        reason: auth.requiredScope,
+        correlationId,
+      });
 
       const body = await readJsonBody(req);
 
-      if (path === "/v1/authoritative/recorded-issuer-authority-statement") {
-        const record = body as { anchorKeyId?: string; issuedAt?: string };
+      if (auth.route === "/v1/health") {
+        if (!custodyReady) {
+          sendJson(res, 503, { ok: false, status: "unavailable" });
+          return;
+        }
+        sendJson(res, 200, { ok: true, status: "ready" });
+        return;
+      }
+
+      if (auth.route === "/v1/authoritative/recorded-issuer-authority-statement") {
+        const record = body as { anchorKeyId?: string; issuedAt?: string; environment?: string };
+        if (record.environment && record.environment !== input.workerEnvironment) {
+          sendJson(res, 403, { ok: false, reason: "worker_environment_mismatch" });
+          return;
+        }
         const result = await signRecordedIssuerAuthorityStatement({
           env: input.handlers.env,
           issuer: input.handlers.opened.issuer,
@@ -79,13 +125,18 @@ export function createInstitutionalSigningHttpServer(input: {
         return;
       }
 
-      if (path === "/v1/authoritative/authority-change-approval") {
+      if (auth.route === "/v1/authoritative/authority-change-approval") {
         const record = body as {
           proposed?: IssuerAuthorityStatementPayload;
           assertedAuthorityStateDigest?: string;
           governanceApproval?: AuthorityGovernanceApproval;
           governanceSignatureBase64Url?: string;
+          environment?: string;
         };
+        if (record.environment && record.environment !== input.workerEnvironment) {
+          sendJson(res, 403, { ok: false, reason: "worker_environment_mismatch" });
+          return;
+        }
         if (!record.proposed || !record.assertedAuthorityStateDigest) {
           sendJson(res, 400, { ok: false, reason: "invalid_request" });
           return;
@@ -102,13 +153,18 @@ export function createInstitutionalSigningHttpServer(input: {
         return;
       }
 
-      if (path === "/v1/authoritative/receipt-status") {
+      if (auth.route === "/v1/authoritative/receipt-status") {
         const record = body as {
           receiptId?: string;
           signedIssuerAuthority?: SignedIssuerAuthorityStatement;
           statusSignerKeyId?: string;
           statementTtlSeconds?: number;
+          environment?: string;
         };
+        if (record.environment && record.environment !== input.workerEnvironment) {
+          sendJson(res, 403, { ok: false, reason: "worker_environment_mismatch" });
+          return;
+        }
         if (!record.receiptId || !record.signedIssuerAuthority || !record.statusSignerKeyId) {
           sendJson(res, 400, { ok: false, reason: "invalid_request" });
           return;
@@ -121,22 +177,20 @@ export function createInstitutionalSigningHttpServer(input: {
           signedIssuerAuthority: record.signedIssuerAuthority,
           statementTtlSeconds: record.statementTtlSeconds,
         });
+        if (result.ok && auth.principal.partnerId) {
+          const payloadPartner = result.statement?.payload.partner_id;
+          if (payloadPartner && payloadPartner !== auth.principal.partnerId) {
+            sendJson(res, 403, { ok: false, reason: "worker_partner_scope_forbidden" });
+            return;
+          }
+        }
         sendJson(res, result.ok ? 200 : 400, result);
-        return;
-      }
-
-      if (path === "/v1/health") {
-        sendJson(res, 200, {
-          ok: true,
-          issuerIdentity: input.handlers.surface.issuer.identityId,
-          statusIdentity: input.handlers.surface.status.identityId,
-        });
         return;
       }
 
       sendJson(res, 404, { ok: false, reason: "route_not_found" });
     } catch {
-      sendJson(res, 500, { ok: false, reason: "worker_internal_error" });
+      sendJson(res, 503, { ok: false, reason: "worker_internal_error" });
     }
   });
   server.listen(input.port ?? 0, host);

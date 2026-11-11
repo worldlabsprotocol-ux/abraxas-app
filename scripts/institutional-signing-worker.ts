@@ -3,28 +3,42 @@
  * Isolated institutional signing process. Not for Vercel receipt runtime.
  *
  * Required: ABRAXAS_INSTITUTIONAL_SIGNING_WORKER=1
- * Optional demo: ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY=1 (demo env only)
- * HTTP: ABRAXAS_INSTITUTIONAL_WORKER_BEARER_TOKEN, ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_HOST,
- *       ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_PORT
+ * Caller secrets (one per scope): ABRAXAS_WORKER_CALLER_{STATUS,ISSUER,AUTHORITY,HEALTH}_SECRET
+ * Listen: ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_HOST (default 127.0.0.1), PORT (default 3848)
  */
 import { bootstrapInstitutionalSigningWorker } from "../lib/institutional/signing/worker/workerBootstrap";
 import { createInstitutionalSigningHttpServer, getServerAddress } from "../lib/institutional/signing/worker/httpServer";
+import { DEFAULT_WORKER_LOOPBACK_PORT } from "../lib/institutional/signing/worker/transportValidation";
+import { loadWorkerCredentialRegistry } from "../lib/institutional/signing/worker/workerCredentialRegistry";
+import { validateInstitutionalWorkerStartup } from "../lib/institutional/signing/worker/workerStartup";
 
 async function main() {
+  const host = process.env.ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_HOST?.trim() || "127.0.0.1";
+  const startup = validateInstitutionalWorkerStartup({ env: process.env, listenHost: host });
+  if (!startup.ok) {
+    console.error(JSON.stringify({ ok: false, reason: startup.reason }));
+    process.exit(1);
+  }
+  const credentials = loadWorkerCredentialRegistry({
+    env: process.env,
+    workerEnvironment: startup.workerEnvironment,
+  });
+  if (!credentials.ok) {
+    console.error(JSON.stringify({ ok: false, reason: credentials.reason }));
+    process.exit(1);
+  }
   const boot = await bootstrapInstitutionalSigningWorker(process.env);
   if (!boot.ok) {
     console.error(JSON.stringify({ ok: false, reason: boot.reason }));
     process.exit(1);
   }
-  const bearer = process.env.ABRAXAS_INSTITUTIONAL_WORKER_BEARER_TOKEN?.trim();
-  if (!bearer) {
-    console.error(JSON.stringify({ ok: false, reason: "worker_bearer_token_required" }));
-    process.exit(1);
-  }
-  const host = process.env.ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_HOST?.trim() || "127.0.0.1";
-  const port = Number(process.env.ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_PORT ?? "9471");
+  const port = Number(process.env.ABRAXAS_INSTITUTIONAL_WORKER_LISTEN_PORT ?? String(DEFAULT_WORKER_LOOPBACK_PORT));
   const server = createInstitutionalSigningHttpServer({
-    bearerToken: bearer,
+    workerEnvironment: startup.workerEnvironment,
+    listenHost: host,
+    loopbackOnly: startup.loopbackOnly,
+    registry: credentials.registry,
+    verifyBearer: credentials.verifyBearer,
     host,
     port,
     handlers: {
@@ -32,6 +46,7 @@ async function main() {
       opened: boot.opened,
       env: boot.env,
     },
+    custodyReady: true,
   });
   const address = await getServerAddress(server);
   console.error(

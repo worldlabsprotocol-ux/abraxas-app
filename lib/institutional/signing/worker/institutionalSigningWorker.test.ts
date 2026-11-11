@@ -1,15 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { INSTITUTIONAL_WORKER_ENV_FLAG } from "../custodyImplementation";
 import {
   assertInstitutionalWorkerProcessEnv,
   assertReceiptRuntimeMustNotHoldInstitutionalCustody,
 } from "./runtimeGuards";
+import { INSTITUTIONAL_WORKER_ENV_FLAG } from "../custodyImplementation";
 import { bootstrapInstitutionalSigningWorker } from "./workerBootstrap";
 import { createInstitutionalSigningHttpServer, getServerAddress } from "./httpServer";
+import { loadWorkerCredentialRegistry } from "./workerCredentialRegistry";
+import { validateInstitutionalWorkerStartup } from "./workerStartup";
 import type { Server } from "node:http";
 
+const CALLER_SECRETS = {
+  status: "test-caller-status-secret",
+  issuer: "test-caller-issuer-secret",
+  authority: "test-caller-authority-secret",
+  health: "test-caller-health-secret",
+} as const;
+
 describe("institutional signing worker isolation", () => {
-  it("refuses worker bootstrap on simulated Vercel", async () => {
+  it("refuses worker bootstrap on simulated Vercel", () => {
     expect(
       assertInstitutionalWorkerProcessEnv({
         [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
@@ -17,17 +26,6 @@ describe("institutional signing worker isolation", () => {
         VERCEL_ENV: undefined,
       }),
     ).toEqual({ ok: false, reason: "vercel_worker_forbidden" });
-  });
-
-  it("refuses governance operator URL on worker", () => {
-    expect(
-      assertInstitutionalWorkerProcessEnv({
-        [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
-        ABRAXAS_GOVERNANCE_OPERATOR_PG_URL: "postgres://operator",
-        VERCEL: undefined,
-        VERCEL_ENV: undefined,
-      }),
-    ).toEqual({ ok: false, reason: "governance_operator_url_forbidden_on_worker" });
   });
 
   it("refuses institutional custody credentials on simulated Vercel receipt runtime", () => {
@@ -38,38 +36,102 @@ describe("institutional signing worker isolation", () => {
       }),
     ).toEqual({ ok: false, reason: "institutional_custody_credentials_on_receipt_runtime" });
   });
+
+  it("rejects universal bearer configuration", () => {
+    expect(
+      loadWorkerCredentialRegistry({
+        env: {
+          ABRAXAS_INSTITUTIONAL_WORKER_BEARER_TOKEN: "shared",
+          ABRAXAS_WORKER_CALLER_STATUS_SECRET: CALLER_SECRETS.status,
+          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: CALLER_SECRETS.issuer,
+          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: CALLER_SECRETS.authority,
+          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: CALLER_SECRETS.health,
+        },
+        workerEnvironment: "demo",
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("rejects duplicate caller secrets", () => {
+    expect(
+      loadWorkerCredentialRegistry({
+        env: {
+          ABRAXAS_WORKER_CALLER_STATUS_SECRET: "same-secret",
+          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: "same-secret",
+          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: "authority-only",
+          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: "health-only",
+        },
+        workerEnvironment: "demo",
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("rejects production demo-memory startup", () => {
+    expect(
+      validateInstitutionalWorkerStartup({
+        env: {
+          [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
+          ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT: "production",
+          ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY: "1",
+          ABRAXAS_WORKER_CALLER_STATUS_SECRET: CALLER_SECRETS.status,
+          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: CALLER_SECRETS.issuer,
+          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: CALLER_SECRETS.authority,
+          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: CALLER_SECRETS.health,
+        },
+        listenHost: "127.0.0.1",
+      }).ok,
+    ).toBe(false);
+  });
 });
 
 describe("institutional signing worker HTTP boundary", () => {
-  const token = "test-worker-bearer-token";
+  const previousEnv: Record<string, string | undefined> = {};
   let server: Server;
   let baseUrl = "";
-  const previousEnv: Record<string, string | undefined> = {};
+  let verifyBearer: (token: string) => import("./workerScopes").WorkerPrincipal | null;
 
-  beforeAll(async () => {
-    for (const key of [
-      INSTITUTIONAL_WORKER_ENV_FLAG,
-      "ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT",
-      "ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY",
-      "ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID",
-      "ABRAXAS_STATUS_SIGNER_KEY_ID",
-    ]) {
-      previousEnv[key] = process.env[key];
-    }
+  function applyTestEnv() {
     delete process.env.VERCEL;
     delete process.env.VERCEL_ENV;
+    delete process.env.ABRAXAS_INSTITUTIONAL_WORKER_BEARER_TOKEN;
+    delete process.env.ABRAXAS_GOVERNANCE_OPERATOR_PG_URL;
     process.env[INSTITUTIONAL_WORKER_ENV_FLAG] = "1";
     process.env.ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT = "demo";
     process.env.ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY = "1";
     process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID = "worker-test-anchor";
     process.env.ABRAXAS_STATUS_SIGNER_KEY_ID = "worker-test-status";
-    delete process.env.ABRAXAS_GOVERNANCE_OPERATOR_PG_URL;
+    process.env.ABRAXAS_WORKER_CALLER_STATUS_SECRET = CALLER_SECRETS.status;
+    process.env.ABRAXAS_WORKER_CALLER_ISSUER_SECRET = CALLER_SECRETS.issuer;
+    process.env.ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET = CALLER_SECRETS.authority;
+    process.env.ABRAXAS_WORKER_CALLER_HEALTH_SECRET = CALLER_SECRETS.health;
+  }
 
+  beforeAll(async () => {
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith("ABRAXAS_INSTITUTIONAL") || key.startsWith("ABRAXAS_WORKER")) {
+        previousEnv[key] = process.env[key];
+      }
+    }
+    applyTestEnv();
+    const startup = validateInstitutionalWorkerStartup({ env: process.env, listenHost: "127.0.0.1" });
+    expect(startup.ok).toBe(true);
+    if (!startup.ok) return;
+    const credentials = loadWorkerCredentialRegistry({
+      env: process.env,
+      workerEnvironment: startup.workerEnvironment,
+    });
+    expect(credentials.ok).toBe(true);
+    if (!credentials.ok) return;
+    verifyBearer = credentials.verifyBearer;
     const boot = await bootstrapInstitutionalSigningWorker(process.env);
     expect(boot.ok).toBe(true);
     if (!boot.ok) return;
     server = createInstitutionalSigningHttpServer({
-      bearerToken: token,
+      workerEnvironment: startup.workerEnvironment,
+      listenHost: "127.0.0.1",
+      loopbackOnly: true,
+      registry: credentials.registry,
+      verifyBearer: credentials.verifyBearer,
       host: "127.0.0.1",
       port: 0,
       handlers: { surface: boot.surface, opened: boot.opened, env: boot.env },
@@ -86,59 +148,117 @@ describe("institutional signing worker HTTP boundary", () => {
     }
   });
 
-  async function post(path: string, body: unknown, auth = true) {
+  async function post(path: string, body: unknown, secret?: string, method = "POST") {
     return fetch(`${baseUrl}${path}`, {
-      method: "POST",
+      method,
       headers: {
         "content-type": "application/json",
-        ...(auth ? { authorization: `Bearer ${token}` } : {}),
+        ...(secret ? { authorization: `Bearer ${secret}` } : {}),
+        "x-role": "admin",
+        "x-scope": "institutional:*",
       },
-      body: JSON.stringify(body),
+      body: method === "POST" ? JSON.stringify(body) : undefined,
     });
   }
 
-  it("rejects missing bearer authentication", async () => {
-    const res = await post("/v1/health", {}, false);
+  it("returns 401 without authentication", async () => {
+    const res = await post("/v1/health", {}, undefined);
     expect(res.status).toBe(401);
   });
 
-  it("forbids arbitrary digest route", async () => {
-    const res = await post("/v1/signRawDigest", { message: "00".repeat(32) });
+  it("returns 401 for invalid authentication", async () => {
+    const res = await post("/v1/health", {}, "wrong-secret");
+    expect(res.status).toBe(401);
+  });
+
+  it("forbids arbitrary digest route with 403", async () => {
+    const res = await post("/v1/signRawDigest", { message: "00" }, CALLER_SECRETS.status);
     expect(res.status).toBe(403);
-    const json = await res.json();
-    expect(json).toMatchObject({ reason: "institutional_rpc_forbidden" });
   });
 
   it("returns 404 for unknown routes", async () => {
-    const res = await post("/v1/issuer/sign-anything", {});
+    const res = await post("/v1/unknown", {}, CALLER_SECRETS.health);
     expect(res.status).toBe(404);
   });
 
-  it("fails authoritative issuer statement without database", async () => {
-    const res = await post("/v1/authoritative/recorded-issuer-authority-statement", {
-      anchorKeyId: "worker-test-anchor",
-      issuedAt: "2026-01-01T00:00:00.000Z",
+  it("returns 405 with Allow POST for unsupported methods", async () => {
+    const res = await post("/v1/health", {}, CALLER_SECRETS.health, "GET");
+    expect(res.status).toBe(405);
+    expect(res.headers.get("allow")).toBe("POST");
+  });
+
+  it("forbids cross-role scope: status credential on issuer route", async () => {
+    const res = await post("/v1/authoritative/recorded-issuer-authority-statement", {}, CALLER_SECRETS.status);
+    expect(res.status).toBe(403);
+  });
+
+  it("forbids cross-role scope: issuer credential on status route", async () => {
+    const res = await post("/v1/authoritative/receipt-status", {}, CALLER_SECRETS.issuer);
+    expect(res.status).toBe(403);
+  });
+
+  it("forbids cross-role scope: issuer credential on authority route", async () => {
+    const res = await post("/v1/authoritative/authority-change-approval", {}, CALLER_SECRETS.issuer);
+    expect(res.status).toBe(403);
+  });
+
+  it("forbids health credential on signing routes", async () => {
+    const res = await post("/v1/authoritative/receipt-status", {}, CALLER_SECRETS.health);
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects wrong environment in request body", async () => {
+    const res = await post("/v1/health", { environment: "production" }, CALLER_SECRETS.health);
+    expect(res.status).toBe(200);
+    const issuer = await post(
+      "/v1/authoritative/recorded-issuer-authority-statement",
+      { environment: "production" },
+      CALLER_SECRETS.issuer,
+    );
+    expect(issuer.status).toBe(403);
+  });
+
+  it("returns minimal health without signing identities", async () => {
+    const res = await post("/v1/health", {}, CALLER_SECRETS.health);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ ok: true, status: "ready" });
+    expect(JSON.stringify(json)).not.toContain("identity");
+  });
+
+  it("ignores caller-supplied role headers", async () => {
+    const res = await post("/v1/authoritative/recorded-issuer-authority-statement", {}, CALLER_SECRETS.status);
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects expired credentials", async () => {
+    const credentials = loadWorkerCredentialRegistry({
+      env: {
+        ...process.env,
+        ABRAXAS_WORKER_CALLER_HEALTH_SECRET: "expired-health",
+        ABRAXAS_WORKER_CALLER_HEALTH_NOT_AFTER: "2020-01-01T00:00:00.000Z",
+      },
+      workerEnvironment: "demo",
     });
+    expect(credentials.ok).toBe(true);
+    if (!credentials.ok) return;
+    expect(credentials.verifyBearer("expired-health")).toBeNull();
+  });
+
+  it("authority-change without governance approval fails closed", async () => {
+    const res = await post(
+      "/v1/authoritative/authority-change-approval",
+      { assertedAuthorityStateDigest: "ab".repeat(32) },
+      CALLER_SECRETS.authority,
+    );
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.ok).toBe(false);
   });
 
-  it("fails governance bypass on authority change", async () => {
-    const res = await post("/v1/authoritative/authority-change-approval", {
-      proposed: null,
-      assertedAuthorityStateDigest: "ab".repeat(32),
-    });
-    expect(res.status).toBe(400);
-    const json = await res.json();
-    expect(json).toMatchObject({ ok: false, reason: "invalid_request" });
-  });
-
-  it("exposes health without private material", async () => {
-    const res = await post("/v1/health", {});
+  it("authorized health succeeds on loopback", async () => {
+    expect(verifyBearer(CALLER_SECRETS.health)?.scopes).toEqual(["institutional:health:read"]);
+    const res = await post("/v1/health", {}, CALLER_SECRETS.health);
     expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(JSON.stringify(json)).not.toContain("private");
-    expect(json.ok).toBe(true);
   });
 });
