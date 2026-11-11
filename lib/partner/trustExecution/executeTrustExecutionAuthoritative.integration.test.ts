@@ -10,6 +10,11 @@ import {
   describeConfiguredIssuerAuthority,
   signIssuerAuthorityChangeAuthorization,
 } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
+import {
+  classifyGovernanceAction,
+  signAuthorityGovernanceApproval,
+} from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
+import { loadIssuerAuthorityState } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import {
@@ -53,6 +58,7 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
     const receiptKey = generateTestSigningKeyPair("build854-auth-issuer");
     const anchorKey = generateTestSigningKeyPair("build854-auth-anchor");
     const statusSignerKey = generateTestSigningKeyPair("build854-auth-status");
+    const governanceKey = generateTestSigningKeyPair("build854-auth-governance");
     Object.assign(
       process.env,
       registryEnv(receiptKey, anchorKey, process.env),
@@ -94,6 +100,21 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
       anchor_key_id: "build834-trust-anchor",
       anchor_fingerprint: publicEd25519JwkFingerprint(anchorKey.publicKeyJwk) ?? "",
     };
+    const authorityState = loadIssuerAuthorityState(process.env);
+    if (!authorityState.ok) throw new Error(authorityState.reason);
+    const governanceApproval = {
+      document: "abraxas_authority_governance_approval/1.0.0" as const,
+      schema_version: "1.0.0" as const,
+      environment: authorization.environment,
+      action: classifyGovernanceAction({
+        change: authorization.change,
+        statuses: [...authorityState.keys, ...authorityState.statusSigners].map((key) => key.status),
+      }),
+      registry_version: authorization.registry_version,
+      supersedes_registry_version: authorization.supersedes_registry_version,
+      authority_state_digest: authorization.authority_state_digest,
+      governance_key_id: governanceKey.signingKeyId,
+    };
     const bootstrapped = await applyIssuerAuthorityChangeAuthorization({
       env: process.env,
       authorization,
@@ -101,6 +122,12 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
         authorization,
         anchorPrivateJwk: anchorKey.privateKeyJwk,
       }),
+      governanceApproval,
+      governanceSignatureBase64Url: signAuthorityGovernanceApproval({
+        approval: governanceApproval,
+        governancePrivateJwk: governanceKey.privateKeyJwk,
+      }),
+      governancePin: { keyId: governanceKey.signingKeyId, publicJwk: governanceKey.publicKeyJwk },
     });
     if (!bootstrapped.ok) throw new Error(bootstrapped.reason);
 

@@ -16,7 +16,7 @@ import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignS
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { buildIssuerAuthorityStatementFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import {
-  decideIssuerAuthorityContinuity,
+  applyIssuerAuthorityChangeAuthorization,
   describeConfiguredIssuerAuthority,
   hashIssuerAuthorityChangeAuthorization,
   verifyIssuerAuthorityChangeAuthorization,
@@ -31,10 +31,16 @@ import {
 import type { CustodyClient } from "./contract";
 import { openInstitutionalSigner } from "./institutionalSigner";
 import {
+  GOVERNANCE_PIN_CUSTODY,
+  governanceApprovalMatchesTransition,
+  signAuthorityGovernanceApproval,
+  signGovernanceSuccession,
+  verifyAuthorityGovernanceApproval,
+  verifyGovernanceSuccession,
+} from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
+import {
   approveRecordedAuthorityChange,
-  assessIndependentGovernanceApproval,
   GOVERNANCE_APPROVAL_DOCUMENT,
-  INDEPENDENT_GOVERNANCE_APPROVAL,
   publishAuthoritativeReceiptStatus,
   signRecordedIssuerAuthorityStatement,
 } from "./recordedWorkflow";
@@ -71,44 +77,60 @@ describe("shared authority document", () => {
     expect(retainedIsAbsent).toBe(true);
     expect(evaluationIsAbsent).toBe(true);
     expect(callerRecordIsAbsent).toBe(true);
-    expect(INDEPENDENT_GOVERNANCE_APPROVAL.implemented).toBe(false);
-    expect(assessIndependentGovernanceApproval({
+    expect(GOVERNANCE_PIN_CUSTODY.verificationImplemented).toBe(true);
+    expect(GOVERNANCE_PIN_CUSTODY.independentCustodyDemonstrated).toBe(false);
+    expect(GOVERNANCE_PIN_CUSTODY.multisignature).toBe(false);
+    const governance = generateTestSigningKeyPair("shared-governance");
+    const successor = generateTestSigningKeyPair("shared-governance-successor");
+    const approval = {
+      document: GOVERNANCE_APPROVAL_DOCUMENT,
+      schema_version: "1.0.0" as const,
+      environment: "demo" as const,
+      action: "rotation" as const,
+      authority_state_digest: "ab".repeat(32),
+      registry_version: 855,
+      supersedes_registry_version: 853,
+      governance_key_id: governance.signingKeyId,
+    };
+    const staleTransition = governanceApprovalMatchesTransition({
+      approval,
       environment: "demo",
-      action: "bootstrap",
-      authorityStateDigest: "ab".repeat(32),
-      registryVersion: 854,
-      recordedVersion: null,
-    }).reason).toBe("independent_governance_approval_required");
-    expect(assessIndependentGovernanceApproval({
-      approval: {
-        document: GOVERNANCE_APPROVAL_DOCUMENT,
-        environment: "demo",
-        action: "authority_change",
-        authority_state_digest: "ab".repeat(32),
-        registry_version: 855,
-        supersedes_registry_version: 853,
-      },
-      environment: "demo",
-      action: "authority_change",
+      action: "rotation",
       authorityStateDigest: "ab".repeat(32),
       registryVersion: 855,
+      supersedesRegistryVersion: 854,
       recordedVersion: 854,
-    }).reason).toBe("stale_governance_approval");
-    expect(assessIndependentGovernanceApproval({
-      approval: {
-        document: GOVERNANCE_APPROVAL_DOCUMENT,
-        environment: "demo",
-        action: "bootstrap",
-        authority_state_digest: "ab".repeat(32),
-        registry_version: 854,
-        supersedes_registry_version: null,
-      },
-      environment: "demo",
-      action: "bootstrap",
-      authorityStateDigest: "ab".repeat(32),
-      registryVersion: 854,
-      recordedVersion: null,
-    }).reason).toBe("independent_governance_approval_unavailable");
+    });
+    expect(staleTransition.ok).toBe(false);
+    if (!staleTransition.ok) expect(staleTransition.reason).toBe("stale_governance_approval");
+    expect(verifyAuthorityGovernanceApproval({
+      approval: { ...approval, supersedes_registry_version: 854, registry_version: 855 },
+      signatureBase64Url: signAuthorityGovernanceApproval({
+        approval: { ...approval, supersedes_registry_version: 854, registry_version: 855 },
+        governancePrivateJwk: governance.privateKeyJwk,
+      }),
+      pin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
+    })).toEqual({ ok: true });
+    const succession = {
+      document: "abraxas_governance_succession/1.0.0" as const,
+      schema_version: "1.0.0" as const,
+      environment: "demo" as const,
+      current_governance_key_id: governance.signingKeyId,
+      successor_governance_key_id: successor.signingKeyId,
+      successor_public_jwk: successor.publicKeyJwk,
+    };
+    expect(verifyGovernanceSuccession({
+      succession,
+      signatureBase64Url: signGovernanceSuccession({
+        succession,
+        governancePrivateJwk: governance.privateKeyJwk,
+      }),
+      currentPin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
+      anchorKeyId: "shared-anchor",
+      anchorPublicJwk: generateTestSigningKeyPair("succession-anchor").publicKeyJwk,
+      authorityKeys: [],
+      statusSigners: [],
+    }).ok).toBe(true);
     const anchor = generateTestSigningKeyPair("shared-anchor");
     const receipt = generateTestSigningKeyPair("shared-receipt");
     const payload = {
@@ -197,6 +219,8 @@ describe("shared authority document", () => {
 
 describeProof("recorded authority and status workflow", () => {
   const anchor = generateTestSigningKeyPair("integration-anchor");
+  const governance = generateTestSigningKeyPair("integration-governance");
+  const otherGovernance = generateTestSigningKeyPair("integration-governance-other");
   const receipt = generateTestSigningKeyPair("integration-receipt");
   const rotated = generateTestSigningKeyPair("integration-rotated");
   const statusKey = generateTestSigningKeyPair("integration-status");
@@ -291,7 +315,35 @@ describeProof("recorded authority and status workflow", () => {
     return stored.rows.map((row) => row.registry_version);
   }
 
-  it("refuses issuer self-approval and a stale governance binding before signing", async () => {
+  function governed(
+    digest: string,
+    version: number,
+    supersedes: number | null,
+    action: "bootstrap" | "rotation" | "revocation",
+    environment: "demo" | "production" = "demo",
+    signer: { signingKeyId: string; publicKeyJwk: JsonWebKey; privateKeyJwk: JsonWebKey } = governance,
+  ) {
+    const approval = {
+      document: GOVERNANCE_APPROVAL_DOCUMENT,
+      schema_version: "1.0.0" as const,
+      environment,
+      action,
+      registry_version: version,
+      supersedes_registry_version: supersedes,
+      authority_state_digest: digest,
+      governance_key_id: signer.signingKeyId,
+    };
+    return {
+      governanceApproval: approval,
+      governanceSignatureBase64Url: signAuthorityGovernanceApproval({
+        approval,
+        governancePrivateJwk: signer.privateKeyJwk,
+      }),
+      governancePin: { keyId: governance.signingKeyId, publicJwk: governance.publicKeyJwk },
+    };
+  }
+
+  it("requires both the issuer signature and the independent governance signature", async () => {
     const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
     const bootstrap = await propose(active, 854, null);
     const signsBefore = calls.filter((call) => call === "issuer").length;
@@ -301,67 +353,77 @@ describeProof("recorded authority and status workflow", () => {
       proposed: bootstrap.payload,
       assertedAuthorityStateDigest: bootstrap.digest,
     })).toEqual({ ok: false, reason: "independent_governance_approval_required" });
+    expect(calls.filter((call) => call === "issuer").length).toBe(signsBefore);
 
-    const signed = await issuer.signAuthorityChangeApproval({
+    const issuerOnly = await issuer.signAuthorityChangeApproval({
       retained: null,
       proposed: bootstrap.payload,
       assertedAuthorityStateDigest: bootstrap.digest,
     });
-    expect(signed.ok).toBe(true);
-    if (!signed.ok) return;
-    expect(decideIssuerAuthorityContinuity({
-      rows: [],
-      authorityStateDigest: bootstrap.digest,
-      authorization: signed.authorization,
-    })).toMatchObject({ action: "insert", registryVersion: 854 });
-    expect(decideIssuerAuthorityContinuity({
-      rows: [{ registryVersion: 854, authorityStateDigest: bootstrap.digest, supersedesRegistryVersion: null }],
-      authorityStateDigest: "cd".repeat(32),
-      authorization: { ...signed.authorization, change: "authority_change", registry_version: 855, supersedes_registry_version: 853, authority_state_digest: "cd".repeat(32) },
-    })).toEqual({ action: "reject", reason: "stale_authority_approval" });
-    expect(await approveRecordedAuthorityChange({
+    expect(issuerOnly.ok).toBe(true);
+    if (!issuerOnly.ok) return;
+    const governanceOnly = governed(bootstrap.digest, 854, null, "bootstrap");
+    expect(await applyIssuerAuthorityChangeAuthorization({
       env: active,
-      issuer,
-      proposed: bootstrap.payload,
-      assertedAuthorityStateDigest: bootstrap.digest,
-      governanceApproval: {
-        document: GOVERNANCE_APPROVAL_DOCUMENT,
-        environment: "demo",
-        action: "authority_change",
-        authority_state_digest: bootstrap.digest,
-        registry_version: 855,
-        supersedes_registry_version: 854,
-      },
-    })).toEqual({ ok: false, reason: "stale_governance_approval" });
-    expect(await approveRecordedAuthorityChange({
+      authorization: issuerOnly.authorization,
+      signatureBase64Url: "not-an-issuer-signature",
+      ...governanceOnly,
+    })).toEqual({ ok: false, reason: "authority_approval_signature_invalid" });
+    expect(await applyIssuerAuthorityChangeAuthorization({
       env: active,
-      issuer,
-      proposed: bootstrap.payload,
-      assertedAuthorityStateDigest: bootstrap.digest,
-      governanceApproval: {
-        document: GOVERNANCE_APPROVAL_DOCUMENT,
-        environment: "demo",
-        action: "bootstrap",
-        authority_state_digest: bootstrap.digest,
-        registry_version: 854,
-        supersedes_registry_version: null,
-      },
-    })).toEqual({ ok: false, reason: "independent_governance_approval_unavailable" });
-    expect(calls.filter((call) => call === "issuer").length).toBe(signsBefore + 1);
+      authorization: issuerOnly.authorization,
+      signatureBase64Url: issuerOnly.signature,
+      ...governed(bootstrap.digest, 854, null, "bootstrap", "demo", anchor),
+      governancePin: { keyId: anchor.signingKeyId, publicJwk: anchor.publicKeyJwk },
+    })).toEqual({ ok: false, reason: "governance_pin_not_independent" });
+    const substituted = governed(bootstrap.digest, 854, null, "bootstrap");
+    substituted.governanceSignatureBase64Url = signAuthorityGovernanceApproval({
+      approval: substituted.governanceApproval,
+      governancePrivateJwk: otherGovernance.privateKeyJwk,
+    });
+    expect(await applyIssuerAuthorityChangeAuthorization({
+      env: active,
+      authorization: issuerOnly.authorization,
+      signatureBase64Url: issuerOnly.signature,
+      ...substituted,
+    })).toEqual({ ok: false, reason: "governance_approval_signature_invalid" });
     expect(await versions()).toEqual([]);
-    expect(JSON.stringify(signed.authorization)).not.toContain("exportable-production-fallback");
-  });
 
-  it("signs the recorded issuer statement and refuses an unapproved registry or ungoverned rotation", async () => {
-    const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
-    const described = describeConfiguredIssuerAuthority({ env: active, anchorKeyId: anchor.signingKeyId });
-    if (!described.ok) throw new Error(described.reason);
-    await pool.query(
-      `insert into public.issuer_authority_registry_continuity
-         (environment, registry_version, authority_state_digest, anchor_key_id, supersedes_registry_version)
-       values ('demo', 854, $1, $2, null)`,
-      [described.authorityStateDigest, anchor.signingKeyId],
-    );
+    const established = await approveRecordedAuthorityChange({
+      env: active,
+      issuer,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
+      ...governed(bootstrap.digest, 854, null, "bootstrap"),
+    });
+    expect(established).toMatchObject({ ok: true, registryVersion: 854, repeated: false });
+    expect(JSON.stringify(established)).not.toContain("exportable-production-fallback");
+    expect(await approveRecordedAuthorityChange({
+      env: active,
+      issuer,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
+      ...governed(bootstrap.digest, 854, null, "bootstrap"),
+    })).toEqual({ ok: false, reason: "replayed_governance_approval" });
+
+    const mismatched = governed("cd".repeat(32), 855, 854, "rotation");
+    expect(await approveRecordedAuthorityChange({
+      env: active,
+      issuer,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
+      ...mismatched,
+    })).toEqual({ ok: false, reason: "governance_digest_mismatch" });
+    const wrongEnvironment = governed(bootstrap.digest, 854, null, "bootstrap", "production");
+    expect(await approveRecordedAuthorityChange({
+      env: active,
+      issuer,
+      proposed: bootstrap.payload,
+      assertedAuthorityStateDigest: bootstrap.digest,
+      ...wrongEnvironment,
+    })).toEqual({ ok: false, reason: "governance_environment_mismatch" });
+    expect(await versions()).toEqual([854]);
+
     const recorded = await signRecordedIssuerAuthorityStatement({
       env: active,
       issuer,
@@ -371,10 +433,9 @@ describeProof("recorded authority and status workflow", () => {
     expect(recorded.ok).toBe(true);
     if (!recorded.ok) return;
     expect(recorded.statement.payload.registry_version).toBe(854);
-    expect(recorded.statement.payload.keys.map((key) => key.key_id)).toEqual([receipt.signingKeyId]);
 
-    const signsBeforeIntruder = calls.filter((call) => call === "issuer").length;
     const intruder = envFor([{ id: rotated.signingKeyId, publicJwk: rotated.publicKeyJwk }]);
+    const signsBeforeIntruder = calls.filter((call) => call === "issuer").length;
     expect(await signRecordedIssuerAuthorityStatement({
       env: intruder,
       issuer,
@@ -385,22 +446,15 @@ describeProof("recorded authority and status workflow", () => {
 
     const retiring = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "retiring" }]);
     const rotation = await propose(retiring, 855, 854);
-    const signsBeforeRotation = calls.filter((call) => call === "issuer").length;
+    const signsBeforeStale = calls.filter((call) => call === "issuer").length;
     expect(await approveRecordedAuthorityChange({
       env: retiring,
       issuer,
       proposed: rotation.payload,
       assertedAuthorityStateDigest: rotation.digest,
-      governanceApproval: {
-        document: GOVERNANCE_APPROVAL_DOCUMENT,
-        environment: "demo",
-        action: "authority_change",
-        authority_state_digest: rotation.digest,
-        registry_version: 855,
-        supersedes_registry_version: 854,
-      },
-    })).toEqual({ ok: false, reason: "independent_governance_approval_unavailable" });
-    expect(calls.filter((call) => call === "issuer").length).toBe(signsBeforeRotation);
+      ...governed(rotation.digest, 855, 853, "rotation"),
+    })).toEqual({ ok: false, reason: "stale_governance_approval" });
+    expect(calls.filter((call) => call === "issuer").length).toBe(signsBeforeStale);
     expect(await versions()).toEqual([854]);
   });
 
@@ -626,5 +680,62 @@ describeProof("recorded authority and status workflow", () => {
     expect(calls.filter((call) => call === "status").length).toBe(signsBeforeClaim);
     expect(statusSignsBefore).toBeLessThan(calls.filter((call) => call === "status").length);
     expect("signAuthorityChangeApproval" in status).toBe(false);
+  });
+
+  it("records one governed rotation and revocation and rejects the concurrent loser", async () => {
+    const retiring = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "retiring" }]);
+    const rotation = await propose(retiring, 855, 854);
+    const rotatedRow = await approveRecordedAuthorityChange({
+      env: retiring,
+      issuer,
+      proposed: rotation.payload,
+      assertedAuthorityStateDigest: rotation.digest,
+      ...governed(rotation.digest, 855, 854, "rotation"),
+    });
+    expect(rotatedRow).toMatchObject({ ok: true, registryVersion: 855 });
+    expect(await approveRecordedAuthorityChange({
+      env: retiring,
+      issuer,
+      proposed: rotation.payload,
+      assertedAuthorityStateDigest: rotation.digest,
+      ...governed(rotation.digest, 855, 854, "rotation"),
+    })).toEqual({ ok: false, reason: "replayed_governance_approval" });
+
+    const revokedEnv = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "revoked" }]);
+    const revocation = await propose(revokedEnv, 856, 855);
+    const revokedRow = await approveRecordedAuthorityChange({
+      env: revokedEnv,
+      issuer,
+      proposed: revocation.payload,
+      assertedAuthorityStateDigest: revocation.digest,
+      ...governed(revocation.digest, 856, 855, "revocation"),
+    });
+    expect(revokedRow).toMatchObject({ ok: true, registryVersion: 856 });
+
+    const left = envFor([{ id: rotated.signingKeyId, publicJwk: rotated.publicKeyJwk }]);
+    const right = envFor([{ id: statusKey.signingKeyId, publicJwk: statusKey.publicKeyJwk }]);
+    const [leftProposal, rightProposal] = await Promise.all([
+      propose(left, 857, 856),
+      propose(right, 857, 856),
+    ]);
+    const outcomes = await Promise.all([
+      approveRecordedAuthorityChange({
+        env: left,
+        issuer,
+        proposed: leftProposal.payload,
+        assertedAuthorityStateDigest: leftProposal.digest,
+        ...governed(leftProposal.digest, 857, 856, "rotation"),
+      }),
+      approveRecordedAuthorityChange({
+        env: right,
+        issuer,
+        proposed: rightProposal.payload,
+        assertedAuthorityStateDigest: rightProposal.digest,
+        ...governed(rightProposal.digest, 857, 856, "rotation"),
+      }),
+    ]);
+    expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(1);
+    expect(outcomes.filter((outcome) => !outcome.ok && outcome.reason === "stale_governance_approval")).toHaveLength(1);
+    expect(await versions()).toEqual([854, 855, 856, 857]);
   });
 });

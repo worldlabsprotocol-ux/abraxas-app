@@ -1,12 +1,11 @@
 // FILE: lib/persistence/boundary/issuerAuthority/registryContinuity.ts
 // Authority-state versions. Signing another receipt does not advance the version.
-// A new version requires an Ed25519 signature over that exact proposal.
+// A new version requires an issuer signature and a separate governance signature.
 //
 // ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK is the issuer process's configured
 // verification key. It is not the relying party's independently pinned trust root.
-// Replacing it can make this process accept a different signature. It does not
-// change a relying party's pin. This is cryptographic approval of one proposal.
-// It is not multisignature governance and it is not non-exportable key custody.
+// The governance public key is supplied by the caller and is not read from that
+// configuration. One governance key is not multisignature custody.
 
 import nacl from "tweetnacl";
 import {
@@ -17,6 +16,14 @@ import {
 } from "@abraxas/independent-verifier";
 import { createHash } from "node:crypto";
 import { loadIssuerAuthorityState } from "./buildFromRegistry";
+import {
+  assertIndependentGovernancePin,
+  classifyGovernanceAction,
+  governanceApprovalMatchesTransition,
+  verifyAuthorityGovernanceApproval,
+  type AuthorityGovernanceApproval,
+  type IndependentGovernancePin,
+} from "./governanceApproval";
 import { withSovereignStagingPgTransaction } from "../sovereignStagingPg";
 
 export const INITIAL_ISSUER_REGISTRY_VERSION = 854;
@@ -191,13 +198,23 @@ export function describeConfiguredIssuerAuthority(input: {
 async function recordIssuerAuthorityContinuity(input: {
   env: Record<string, string | undefined>;
   anchorKeyId: string;
+  anchorPublicJwk?: JsonWebKey;
   authorization: IssuerAuthorityChangeAuthorization | null;
+  issuerSignatureBase64Url?: string;
+  governance?: {
+    approval: AuthorityGovernanceApproval;
+    signatureBase64Url: string;
+    pin: IndependentGovernancePin;
+  } | null;
 }): Promise<ResolvedIssuerAuthorityContinuity | { ok: false; reason: string }> {
   const described = describeConfiguredIssuerAuthority({
     env: input.env,
     anchorKeyId: input.anchorKeyId,
   });
   if (!described.ok) return described;
+  if (input.authorization && !input.governance) {
+    return { ok: false, reason: "independent_governance_approval_required" };
+  }
   if (input.authorization && input.authorization.environment !== described.environment) {
     return { ok: false, reason: "authority_approval_environment_mismatch" };
   }
@@ -206,6 +223,24 @@ async function recordIssuerAuthorityContinuity(input: {
     && input.authorization.authority_state_digest !== described.authorityStateDigest
   ) {
     return { ok: false, reason: "authority_approval_digest_mismatch" };
+  }
+  const state = loadIssuerAuthorityState(input.env);
+  if (!state.ok) return state;
+  if (input.authorization && input.governance && input.anchorPublicJwk) {
+    const independent = assertIndependentGovernancePin({
+      pin: input.governance.pin,
+      anchorKeyId: input.anchorKeyId,
+      anchorPublicJwk: input.anchorPublicJwk,
+      authorityKeys: state.keys,
+      statusSigners: state.statusSigners,
+    });
+    if (!independent.ok) return independent;
+    const signed = verifyAuthorityGovernanceApproval({
+      approval: input.governance.approval,
+      signatureBase64Url: input.governance.signatureBase64Url,
+      pin: input.governance.pin,
+    });
+    if (!signed.ok) return signed;
   }
 
   const recorded = await withSovereignStagingPgTransaction(async (client) => {
@@ -223,15 +258,51 @@ async function recordIssuerAuthorityContinuity(input: {
         order by registry_version asc`,
       [described.environment],
     );
+    const rows = existing.rows.map((row) => ({
+      registryVersion: row.registry_version,
+      authorityStateDigest: row.authority_state_digest,
+      supersedesRegistryVersion: row.supersedes_registry_version,
+    }));
+    const current = rows.at(-1) ?? null;
+    if (input.authorization && input.governance) {
+      if (input.anchorPublicJwk) {
+        const issuerStillValid = verifyIssuerAuthorityChangeAuthorization({
+          authorization: input.authorization,
+          signatureBase64Url: input.issuerSignatureBase64Url ?? "",
+          anchorPublicJwk: input.anchorPublicJwk,
+        });
+        if (!issuerStillValid.ok) return { action: "reject" as const, reason: issuerStillValid.reason };
+      }
+      const governanceStillValid = verifyAuthorityGovernanceApproval({
+        approval: input.governance.approval,
+        signatureBase64Url: input.governance.signatureBase64Url,
+        pin: input.governance.pin,
+      });
+      if (!governanceStillValid.ok) return { action: "reject" as const, reason: governanceStillValid.reason };
+      const action = classifyGovernanceAction({
+        change: input.authorization.change,
+        statuses: [...state.keys, ...state.statusSigners].map((key) => key.status),
+      });
+      const bound = governanceApprovalMatchesTransition({
+        approval: input.governance.approval,
+        environment: described.environment,
+        action,
+        authorityStateDigest: described.authorityStateDigest,
+        registryVersion: input.authorization.registry_version,
+        supersedesRegistryVersion: input.authorization.supersedes_registry_version,
+        recordedVersion: current?.registryVersion ?? null,
+        recordedDigest: current?.authorityStateDigest ?? null,
+      });
+      if (!bound.ok) return { action: "reject" as const, reason: bound.reason };
+    }
     const decision = decideIssuerAuthorityContinuity({
-      rows: existing.rows.map((row) => ({
-        registryVersion: row.registry_version,
-        authorityStateDigest: row.authority_state_digest,
-        supersedesRegistryVersion: row.supersedes_registry_version,
-      })),
+      rows,
       authorityStateDigest: described.authorityStateDigest,
       authorization: input.authorization,
     });
+    if (decision.action === "reuse" && input.authorization) {
+      return { action: "reject" as const, reason: "replayed_governance_approval" };
+    }
     if (decision.action === "insert") {
       try {
         await client.query(
@@ -324,14 +395,18 @@ export function resolveIssuerAuthorityRegistryContinuity(input: {
 }
 
 /**
- * Records a proposal whose signature matches the configured issuer public JWK.
- * The function does not accept a caller-supplied verification key. The key still
- * comes from application configuration, not from a relying party's pin.
+ * Records one authority transition. The issuer signature and the governance signature
+ * are both verified again after the registry row is locked. The governance pin is the
+ * caller's out-of-band public key. This function does not read a governance key from
+ * the issuer anchor configuration.
  */
 export async function applyIssuerAuthorityChangeAuthorization(input: {
   env?: Record<string, string | undefined>;
   authorization: IssuerAuthorityChangeAuthorization;
   signatureBase64Url: string;
+  governanceApproval: AuthorityGovernanceApproval;
+  governanceSignatureBase64Url: string;
+  governancePin: IndependentGovernancePin;
 }): Promise<ResolvedIssuerAuthorityContinuity | { ok: false; reason: string }> {
   const env = input.env ?? process.env;
   const pinned = readConfiguredIssuerAnchor(env);
@@ -339,15 +414,38 @@ export async function applyIssuerAuthorityChangeAuthorization(input: {
   if (input.authorization.anchor_key_id !== pinned.anchorKeyId) {
     return { ok: false, reason: "authority_approval_anchor_mismatch" };
   }
+  const state = loadIssuerAuthorityState(env);
+  if (!state.ok) return state;
+  const independent = assertIndependentGovernancePin({
+    pin: input.governancePin,
+    anchorKeyId: pinned.anchorKeyId,
+    anchorPublicJwk: pinned.anchorPublicJwk,
+    authorityKeys: state.keys,
+    statusSigners: state.statusSigners,
+  });
+  if (!independent.ok) return independent;
   const verified = verifyIssuerAuthorityChangeAuthorization({
     authorization: input.authorization,
     signatureBase64Url: input.signatureBase64Url,
     anchorPublicJwk: pinned.anchorPublicJwk,
   });
   if (!verified.ok) return verified;
+  const governance = verifyAuthorityGovernanceApproval({
+    approval: input.governanceApproval,
+    signatureBase64Url: input.governanceSignatureBase64Url,
+    pin: input.governancePin,
+  });
+  if (!governance.ok) return governance;
   return recordIssuerAuthorityContinuity({
     env,
     anchorKeyId: pinned.anchorKeyId,
+    anchorPublicJwk: pinned.anchorPublicJwk,
     authorization: input.authorization,
+    issuerSignatureBase64Url: input.signatureBase64Url,
+    governance: {
+      approval: input.governanceApproval,
+      signatureBase64Url: input.governanceSignatureBase64Url,
+      pin: input.governancePin,
+    },
   });
 }

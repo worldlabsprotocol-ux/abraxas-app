@@ -1,6 +1,6 @@
 // Trusted application workflow over the existing continuity table and validity evaluation.
 // The KMS adapter does not decide authority. This module reads recorded rows and the sovereign store.
-// Independent governance approval is not implemented. See INDEPENDENT_GOVERNANCE_APPROVAL.
+// Governance verification is separate from the issuer signature. See GOVERNANCE_PIN_CUSTODY.
 
 import { issuerAuthorityStateDigest, verifySignedIssuerAuthorityStatement } from "@abraxas/independent-verifier";
 import type { SignedIssuerAuthorityStatement } from "@abraxas/independent-verifier";
@@ -8,13 +8,24 @@ import { normalizeDecisionReceiptTimestamp } from "@/lib/decisionReceipts/canoni
 import { isReceiptPendingEvidenceFinalization } from "@/lib/decisionReceipts/issuanceFinalization";
 import { mapReceiptRow } from "@/lib/decisionReceipts/mapReceiptRow";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import { buildIssuerAuthorityStatementFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import {
+  buildIssuerAuthorityStatementFromRegistry,
+  loadIssuerAuthorityState,
+} from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
+import {
+  applyIssuerAuthorityChangeAuthorization,
   describeConfiguredIssuerAuthority,
-  INITIAL_ISSUER_REGISTRY_VERSION,
   readConfiguredIssuerAnchor,
   readCurrentIssuerAuthorityRow,
 } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
+import {
+  assertIndependentGovernancePin,
+  classifyGovernanceAction,
+  governanceApprovalMatchesTransition,
+  verifyAuthorityGovernanceApproval,
+  type AuthorityGovernanceApproval,
+  type IndependentGovernancePin,
+} from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
 import { evaluateSovereignCurrentValidity } from "@/lib/persistence/boundary/sovereignCurrentValidity/evaluate";
 import { querySovereignStagingPg } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { receiptStatusPayloadFromEvaluation } from "@/lib/persistence/boundary/trustDistribution/publishSignedReceiptStatus";
@@ -22,66 +33,12 @@ import { nextSignedStatusVersion } from "@/lib/persistence/boundary/trustDistrib
 import type { IssuerAnchorSigner, StatusStatementSigner } from "./institutionalSigner";
 import type { IssuerAuthorityStatementPayload } from "@abraxas/independent-verifier";
 
-export const GOVERNANCE_APPROVAL_DOCUMENT = "abraxas_authority_governance_approval/1.0.0" as const;
-
-/**
- * A caller may present this binding. Nothing in the current system can authenticate it
- * independently of the issuer signing identity, so a matching binding is still refused.
- */
-export type AuthorityGovernanceApproval = {
-  document: typeof GOVERNANCE_APPROVAL_DOCUMENT;
-  environment: "demo" | "production";
-  action: "bootstrap" | "authority_change";
-  authority_state_digest: string;
-  registry_version: number;
-  supersedes_registry_version: number | null;
-};
-
-export const INDEPENDENT_GOVERNANCE_APPROVAL = {
-  implemented: false,
-  inspected: [
-    "Institutional mandate: action type is only collateral_release. Verification resolves the signer through the issuer authority statement, so the approver is inside the registry being changed. The controlled fixture is not a live institution.",
-    "Wallet authorization: purposes are sign-in, sandbox entry, sandbox verification, and scoped trust execution. None binds an authority-state digest or a registry transition.",
-    "Ceremony institutional_approval: the production ceremony records the string not_approved. It is not a signature over one transition.",
-    "Configured issuer anchor public JWK: this is the issuer process's own verification key.",
-  ],
-  missingControl:
-    "No existing control, separate from the issuer signing identity, authorizes one specific authority-state transition.",
-  smallestMissingMechanism:
-    "One Ed25519 approval, checked before the issuer signs, from a public key that is not the issuer anchor and not a key inside the authority state being changed. The signed document binds environment, action, previous registry version, proposed registry version, and authority-state digest. The public key has to be pinned by a party that does not control the issuer signing key. An environment variable in the issuer process is the same class of control as the configured anchor and is not that pin. No new Solana program, DAO, or governance service is required for that signature.",
-} as const;
-
-export type GovernanceRefusal =
-  | "independent_governance_approval_required"
-  | "stale_governance_approval"
-  | "independent_governance_approval_unavailable";
-
-/** Always refuses. A structurally matching approval is not an independent decision. */
-export function assessIndependentGovernanceApproval(input: {
-  approval?: AuthorityGovernanceApproval | null;
-  environment: "demo" | "production";
-  action: "bootstrap" | "authority_change";
-  authorityStateDigest: string;
-  registryVersion: number;
-  recordedVersion: number | null;
-}): { ok: false; reason: GovernanceRefusal } {
-  const approval = input.approval ?? null;
-  if (!approval) return { ok: false, reason: "independent_governance_approval_required" };
-  const previousMatches = input.recordedVersion == null
-    ? approval.supersedes_registry_version == null
-    : approval.supersedes_registry_version === input.recordedVersion;
-  if (!previousMatches) return { ok: false, reason: "stale_governance_approval" };
-  const bound = approval.document === GOVERNANCE_APPROVAL_DOCUMENT
-    && approval.environment === input.environment
-    && approval.action === input.action
-    && approval.authority_state_digest === input.authorityStateDigest
-    && approval.registry_version === input.registryVersion
-    && (input.action === "bootstrap"
-      ? input.registryVersion === INITIAL_ISSUER_REGISTRY_VERSION && input.recordedVersion == null
-      : input.recordedVersion != null && input.registryVersion === input.recordedVersion + 1);
-  if (!bound) return { ok: false, reason: "independent_governance_approval_unavailable" };
-  return { ok: false, reason: "independent_governance_approval_unavailable" };
-}
+export {
+  GOVERNANCE_APPROVAL_DOCUMENT,
+  GOVERNANCE_PIN_CUSTODY,
+  type AuthorityGovernanceApproval,
+  type IndependentGovernancePin,
+} from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
 
 export async function signRecordedIssuerAuthorityStatement(input: {
   env: Record<string, string | undefined>;
@@ -115,9 +72,9 @@ export async function approveRecordedAuthorityChange(input: {
   proposed: IssuerAuthorityStatementPayload;
   assertedAuthorityStateDigest: string;
   governanceApproval?: AuthorityGovernanceApproval | null;
+  governanceSignatureBase64Url?: string | null;
+  governancePin?: IndependentGovernancePin | null;
 }) {
-  // The issuer is required at the boundary and is not asked to sign. Its signature is not governance approval.
-  void input.issuer;
   const described = describeConfiguredIssuerAuthority({
     env: input.env,
     anchorKeyId: input.proposed.anchor_key_id,
@@ -129,21 +86,66 @@ export async function approveRecordedAuthorityChange(input: {
   ) {
     return { ok: false as const, reason: "unapproved_authority_state" };
   }
+  if (!input.governanceApproval || !input.governanceSignatureBase64Url || !input.governancePin) {
+    return { ok: false as const, reason: "independent_governance_approval_required" };
+  }
+  const anchor = readConfiguredIssuerAnchor(input.env);
+  if (!anchor.ok) return anchor;
+  const state = loadIssuerAuthorityState(input.env);
+  if (!state.ok) return state;
+  const independent = assertIndependentGovernancePin({
+    pin: input.governancePin,
+    anchorKeyId: anchor.anchorKeyId,
+    anchorPublicJwk: anchor.anchorPublicJwk,
+    authorityKeys: state.keys,
+    statusSigners: state.statusSigners,
+  });
+  if (!independent.ok) return independent;
+  const verified = verifyAuthorityGovernanceApproval({
+    approval: input.governanceApproval,
+    signatureBase64Url: input.governanceSignatureBase64Url,
+    pin: input.governancePin,
+  });
+  if (!verified.ok) return verified;
   const recorded = await readCurrentIssuerAuthorityRow({
     env: input.env,
     environment: described.environment,
   });
   if (!recorded.ok) return recorded;
-  const action = recorded.row ? "authority_change" as const : "bootstrap" as const;
-  const governance = assessIndependentGovernanceApproval({
+  const action = classifyGovernanceAction({
+    change: recorded.row ? "authority_change" : "bootstrap",
+    statuses: [...state.keys, ...state.statusSigners].map((key) => key.status),
+  });
+  const bound = governanceApprovalMatchesTransition({
     approval: input.governanceApproval,
     environment: described.environment,
     action,
     authorityStateDigest: described.authorityStateDigest,
     registryVersion: input.proposed.registry_version,
+    supersedesRegistryVersion: input.proposed.supersedes_registry_version,
     recordedVersion: recorded.row?.registryVersion ?? null,
+    recordedDigest: recorded.row?.authorityStateDigest ?? null,
   });
-  return governance;
+  if (!bound.ok) return bound;
+  const signed = await input.issuer.signAuthorityChangeApproval({
+    retained: recorded.row
+      ? {
+          registryVersion: recorded.row.registryVersion,
+          authorityStateDigest: recorded.row.authorityStateDigest,
+        }
+      : null,
+    proposed: input.proposed,
+    assertedAuthorityStateDigest: described.authorityStateDigest,
+  });
+  if (!signed.ok) return signed;
+  return applyIssuerAuthorityChangeAuthorization({
+    env: input.env,
+    authorization: signed.authorization,
+    signatureBase64Url: signed.signature,
+    governanceApproval: input.governanceApproval,
+    governanceSignatureBase64Url: input.governanceSignatureBase64Url,
+    governancePin: input.governancePin,
+  });
 }
 
 function isoTimestamp(value: Date | string | null | undefined): string | null {
