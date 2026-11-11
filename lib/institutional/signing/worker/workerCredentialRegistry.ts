@@ -1,5 +1,39 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import type { WorkerPrincipal, WorkerScope } from "./workerScopes";
+import type { StatusPublishResourceScope, WorkerPrincipal, WorkerScope } from "./workerScopes";
+
+export const WORKER_CALLER_STATUS_SCOPE_ENV = "ABRAXAS_WORKER_CALLER_STATUS_SCOPE";
+
+function configureStatusCallerScope(input: {
+  env: Record<string, string | undefined>;
+  workerEnvironment: "demo" | "production";
+  principal: WorkerPrincipal;
+}): { ok: true; principal: WorkerPrincipal } | { ok: false; reason: string } {
+  const scopeRaw = input.env[WORKER_CALLER_STATUS_SCOPE_ENV]?.trim();
+  if (input.workerEnvironment === "production" && !scopeRaw) {
+    return { ok: false, reason: "worker_status_scope_required_in_production" };
+  }
+  if (!scopeRaw) {
+    return { ok: false, reason: "worker_status_scope_required" };
+  }
+  if (scopeRaw !== "partner" && scopeRaw !== "institution_wide") {
+    return { ok: false, reason: "worker_status_scope_invalid" };
+  }
+  const scope = scopeRaw as StatusPublishResourceScope;
+  if (scope === "partner") {
+    if (!input.principal.partnerId && !input.principal.tenantId) {
+      return { ok: false, reason: "worker_status_partner_scope_unbound" };
+    }
+    if (input.principal.partnerId && input.principal.tenantId
+      && input.principal.partnerId !== input.principal.tenantId) {
+      return { ok: false, reason: "worker_status_partner_tenant_mismatch" };
+    }
+    return { ok: true, principal: { ...input.principal, statusResourceScope: "partner" } };
+  }
+  if (input.principal.partnerId || input.principal.tenantId) {
+    return { ok: false, reason: "worker_status_institution_scope_partner_forbidden" };
+  }
+  return { ok: true, principal: { ...input.principal, statusResourceScope: "institution_wide" } };
+}
 
 export type WorkerCredentialRegistry = {
   bySecretDigest: Map<string, WorkerPrincipal>;
@@ -67,8 +101,18 @@ export function loadWorkerCredentialRegistry(input: {
       return { ok: false, reason: "worker_shared_caller_credential_forbidden" };
     }
     seenDigests.add(digestKey);
-    bySecretDigest.set(digestKey, entry.principal);
-    principals.push(entry.principal);
+    let principal = entry.principal;
+    if (principal.scopes[0] === "institutional:status:publish") {
+      const scoped = configureStatusCallerScope({
+        env: input.env,
+        workerEnvironment: input.workerEnvironment,
+        principal,
+      });
+      if (!scoped.ok) return scoped;
+      principal = scoped.principal;
+    }
+    bySecretDigest.set(digestKey, principal);
+    principals.push(principal);
   }
 
   const secrets = [

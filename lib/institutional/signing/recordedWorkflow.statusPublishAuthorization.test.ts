@@ -4,10 +4,8 @@ import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import type { CustodyClient } from "./contract";
 import { openInstitutionalSigner } from "./institutionalSigner";
 import * as statusVersionCheckpoint from "@/lib/persistence/boundary/trustDistribution/statusVersionCheckpoint";
-import {
-  createServerRuntimeStatusPublishAuthorization,
-  publishAuthoritativeReceiptStatus,
-} from "./recordedWorkflow";
+import { publishAuthoritativeReceiptStatus } from "./recordedWorkflow";
+import { createServerRuntimeStatusPublishAuthorization } from "./statusPublishAuthorization.server";
 import type { SignedIssuerAuthorityStatement } from "@abraxas/independent-verifier";
 
 function memoryCustody(key: ReturnType<typeof generateTestSigningKeyPair>, identityId: string): CustodyClient {

@@ -37,10 +37,7 @@ import {
   type StatusPublishAuthorization,
 } from "./statusPublishAuthorization";
 
-export {
-  createServerRuntimeStatusPublishAuthorization,
-  type StatusPublishAuthorization,
-} from "./statusPublishAuthorization";
+export type { StatusPublishAuthorization } from "./statusPublishAuthorization";
 
 export {
   GOVERNANCE_APPROVAL_DOCUMENT,

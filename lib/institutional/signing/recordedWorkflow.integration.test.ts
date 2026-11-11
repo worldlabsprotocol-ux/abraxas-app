@@ -54,10 +54,10 @@ import {
 import {
   approveRecordedAuthorityChange,
   GOVERNANCE_APPROVAL_DOCUMENT,
-  createServerRuntimeStatusPublishAuthorization,
   publishAuthoritativeReceiptStatus,
   signRecordedIssuerAuthorityStatement,
 } from "./recordedWorkflow";
+import { createServerRuntimeStatusPublishAuthorization } from "./statusPublishAuthorization.server";
 
 const PROOF = process.env.ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF === "1";
 const describeProof = PROOF ? describe : describe.skip;
@@ -656,6 +656,7 @@ describeProof("recorded authority and status workflow", () => {
       statusPublishAuthorization: {
         kind: "worker_http_caller",
         environment: "demo",
+        resourceScope: "partner",
         partnerId: "partner-a",
       },
     });
@@ -677,11 +678,27 @@ describeProof("recorded authority and status workflow", () => {
       statusPublishAuthorization: {
         kind: "worker_http_caller",
         environment: "demo",
+        resourceScope: "partner",
         tenantId: "wrong-tenant",
       },
     });
     expect(blockedTenant).toEqual({ ok: false, reason: "worker_tenant_scope_forbidden" });
     expect(calls.filter((call) => call === "status").length).toBe(statusSignsBefore);
+
+    const institutionWide = await publishAuthoritativeReceiptStatus({
+      env: active,
+      status,
+      statusSignerKeyId: statusKey.signingKeyId,
+      receiptId: current.canonical.receipt_id,
+      signedIssuerAuthority: issuerStatement.statement,
+      workerEnvironment: "demo",
+      statusPublishAuthorization: {
+        kind: "worker_http_caller",
+        environment: "demo",
+        resourceScope: "institution_wide",
+      },
+    });
+    expect(institutionWide.ok).toBe(true);
 
     const genuine = await publishAuthoritativeReceiptStatus({
       env: active,
@@ -693,6 +710,7 @@ describeProof("recorded authority and status workflow", () => {
       statusPublishAuthorization: {
         kind: "worker_http_caller",
         environment: "demo",
+        resourceScope: "partner",
         partnerId: "partner-demo",
       },
     });
@@ -704,7 +722,7 @@ describeProof("recorded authority and status workflow", () => {
     expect(genuine.statement.payload.partner_id).toBe("partner-demo");
     expect(genuine.statement.payload.policy_id).toBe("policy-demo");
     expect(genuine.statement.payload.environment).toBe("demo");
-    expect(genuine.statement.payload.status_version).toBe(1);
+    expect(genuine.statement.payload.status_version).toBe(2);
     expect(JSON.stringify(genuine)).not.toContain("exportable-status-fallback");
     expect(verifyEd25519Detached({
       message: Buffer.from(genuine.statement.payload_hash, "hex"),
@@ -776,7 +794,7 @@ describeProof("recorded authority and status workflow", () => {
     expect(revoked.ok).toBe(true);
     if (!revoked.ok) return;
     expect(revoked.statement.payload.receipt_status).toBe("revoked");
-    expect(revoked.statement.payload.status_version).toBe(2);
+    expect(revoked.statement.payload.status_version).toBe(3);
 
     const expired = await insertSignedReceipt({
       id: "receipt-expired",

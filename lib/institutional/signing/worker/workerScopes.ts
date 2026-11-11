@@ -18,11 +18,15 @@ export type WorkerPrivilegedRoute = keyof typeof WORKER_ROUTE_SCOPES;
 
 export const WORKER_PRIVILEGED_ROUTES = Object.keys(WORKER_ROUTE_SCOPES) as WorkerPrivilegedRoute[];
 
+export type StatusPublishResourceScope = "partner" | "institution_wide";
+
 export type WorkerPrincipal = {
   identityId: string;
   environment: "demo" | "production";
   scopes: readonly [WorkerScope];
   partnerId?: string;
   tenantId?: string;
+  /** Set only for the status caller credential; never inferred from missing partner binding. */
+  statusResourceScope?: StatusPublishResourceScope;
   notAfter?: string;
 };

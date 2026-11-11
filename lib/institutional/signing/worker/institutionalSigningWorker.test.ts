@@ -6,7 +6,7 @@ import {
 import { INSTITUTIONAL_WORKER_ENV_FLAG } from "../custodyImplementation";
 import { bootstrapInstitutionalSigningWorker } from "./workerBootstrap";
 import { createInstitutionalSigningHttpServer, getServerAddress } from "./httpServer";
-import { loadWorkerCredentialRegistry } from "./workerCredentialRegistry";
+import { loadWorkerCredentialRegistry, WORKER_CALLER_STATUS_SCOPE_ENV } from "./workerCredentialRegistry";
 import { validateInstitutionalWorkerStartup } from "./workerStartup";
 import { assertWorkerListenHostAllowed } from "./transportValidation";
 import type { Server } from "node:http";
@@ -17,6 +17,17 @@ const CALLER_SECRETS = {
   authority: "test-caller-authority-secret",
   health: "test-caller-health-secret",
 } as const;
+
+function workerCallerEnv(extra: Record<string, string | undefined> = {}) {
+  return {
+    ABRAXAS_WORKER_CALLER_STATUS_SECRET: CALLER_SECRETS.status,
+    ABRAXAS_WORKER_CALLER_ISSUER_SECRET: CALLER_SECRETS.issuer,
+    ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: CALLER_SECRETS.authority,
+    ABRAXAS_WORKER_CALLER_HEALTH_SECRET: CALLER_SECRETS.health,
+    [WORKER_CALLER_STATUS_SCOPE_ENV]: "institution_wide",
+    ...extra,
+  };
+}
 
 describe("institutional signing worker isolation", () => {
   it("refuses worker bootstrap on simulated Vercel", () => {
@@ -57,14 +68,53 @@ describe("institutional signing worker isolation", () => {
     expect(
       loadWorkerCredentialRegistry({
         env: {
-          ABRAXAS_WORKER_CALLER_STATUS_SECRET: "same-secret",
-          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: "same-secret",
-          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: "authority-only",
-          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: "health-only",
+          ...workerCallerEnv({
+            ABRAXAS_WORKER_CALLER_STATUS_SECRET: "same-secret",
+            ABRAXAS_WORKER_CALLER_ISSUER_SECRET: "same-secret",
+          }),
         },
         workerEnvironment: "demo",
       }).ok,
     ).toBe(false);
+  });
+
+  it("rejects status caller without explicit resource scope", () => {
+    expect(
+      loadWorkerCredentialRegistry({
+        env: workerCallerEnv({ [WORKER_CALLER_STATUS_SCOPE_ENV]: undefined }),
+        workerEnvironment: "demo",
+      }),
+    ).toEqual({ ok: false, reason: "worker_status_scope_required" });
+  });
+
+  it("rejects production status caller without explicit resource scope", () => {
+    expect(
+      loadWorkerCredentialRegistry({
+        env: workerCallerEnv({ [WORKER_CALLER_STATUS_SCOPE_ENV]: undefined }),
+        workerEnvironment: "production",
+      }),
+    ).toEqual({ ok: false, reason: "worker_status_scope_required_in_production" });
+  });
+
+  it("rejects partner-scoped status caller without partner binding", () => {
+    expect(
+      loadWorkerCredentialRegistry({
+        env: workerCallerEnv({ [WORKER_CALLER_STATUS_SCOPE_ENV]: "partner" }),
+        workerEnvironment: "demo",
+      }),
+    ).toEqual({ ok: false, reason: "worker_status_partner_scope_unbound" });
+  });
+
+  it("rejects institution-wide status caller with partner env binding", () => {
+    expect(
+      loadWorkerCredentialRegistry({
+        env: workerCallerEnv({
+          [WORKER_CALLER_STATUS_SCOPE_ENV]: "institution_wide",
+          ABRAXAS_WORKER_CALLER_STATUS_PARTNER_ID: "partner-a",
+        }),
+        workerEnvironment: "demo",
+      }),
+    ).toEqual({ ok: false, reason: "worker_status_institution_scope_partner_forbidden" });
   });
 
   it("rejects non-loopback bind in demo even when TLS paths are set", () => {
@@ -79,10 +129,7 @@ describe("institutional signing worker isolation", () => {
         env: {
           [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
           ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT: "demo",
-          ABRAXAS_WORKER_CALLER_STATUS_SECRET: CALLER_SECRETS.status,
-          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: CALLER_SECRETS.issuer,
-          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: CALLER_SECRETS.authority,
-          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: CALLER_SECRETS.health,
+          ...workerCallerEnv(),
           ABRAXAS_INSTITUTIONAL_WORKER_TLS_KEY_PATH: "/tmp/key.pem",
           ABRAXAS_INSTITUTIONAL_WORKER_TLS_CERT_PATH: "/tmp/cert.pem",
         },
@@ -123,10 +170,7 @@ describe("institutional signing worker isolation", () => {
           [INSTITUTIONAL_WORKER_ENV_FLAG]: "1",
           ABRAXAS_INSTITUTIONAL_WORKER_ENVIRONMENT: "production",
           ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY: "1",
-          ABRAXAS_WORKER_CALLER_STATUS_SECRET: CALLER_SECRETS.status,
-          ABRAXAS_WORKER_CALLER_ISSUER_SECRET: CALLER_SECRETS.issuer,
-          ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET: CALLER_SECRETS.authority,
-          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: CALLER_SECRETS.health,
+          ...workerCallerEnv(),
         },
         listenHost: "127.0.0.1",
       }).ok,
@@ -150,10 +194,9 @@ describe("institutional signing worker HTTP boundary", () => {
     process.env.ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY = "1";
     process.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID = "worker-test-anchor";
     process.env.ABRAXAS_STATUS_SIGNER_KEY_ID = "worker-test-status";
-    process.env.ABRAXAS_WORKER_CALLER_STATUS_SECRET = CALLER_SECRETS.status;
-    process.env.ABRAXAS_WORKER_CALLER_ISSUER_SECRET = CALLER_SECRETS.issuer;
-    process.env.ABRAXAS_WORKER_CALLER_AUTHORITY_SECRET = CALLER_SECRETS.authority;
-    process.env.ABRAXAS_WORKER_CALLER_HEALTH_SECRET = CALLER_SECRETS.health;
+    for (const [key, value] of Object.entries(workerCallerEnv())) {
+      process.env[key] = value;
+    }
   }
 
   beforeAll(async () => {
@@ -285,8 +328,10 @@ describe("institutional signing worker HTTP boundary", () => {
     const credentials = loadWorkerCredentialRegistry({
       env: {
         ...process.env,
-        ABRAXAS_WORKER_CALLER_HEALTH_SECRET: "expired-health",
-        ABRAXAS_WORKER_CALLER_HEALTH_NOT_AFTER: "2020-01-01T00:00:00.000Z",
+        ...workerCallerEnv({
+          ABRAXAS_WORKER_CALLER_HEALTH_SECRET: "expired-health",
+          ABRAXAS_WORKER_CALLER_HEALTH_NOT_AFTER: "2020-01-01T00:00:00.000Z",
+        }),
       },
       workerEnvironment: "demo",
     });

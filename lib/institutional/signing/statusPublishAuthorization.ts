@@ -1,12 +1,14 @@
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import type { StatusPublishResourceScope } from "./worker/workerScopes";
 
 const SERVER_RUNTIME_STATUS_PUBLISH_SEAL = Symbol("abraxas.server_runtime_status_publish");
 
 export type StatusPublishCallerAuthorization = {
   kind: "worker_http_caller";
   environment: "demo" | "production";
+  resourceScope: StatusPublishResourceScope;
   partnerId?: string;
-  /** Optional worker isolation scope; authoritative receipt tenant is `partner_id`, not `decision_context`. */
+  /** When set, must match authoritative `decision_receipts.partner_id` (not `decision_context`). */
   tenantId?: string;
 };
 
@@ -17,7 +19,8 @@ export type ServerRuntimeStatusPublishAuthorization = {
 
 export type StatusPublishAuthorization = StatusPublishCallerAuthorization | ServerRuntimeStatusPublishAuthorization;
 
-export function createServerRuntimeStatusPublishAuthorization(): ServerRuntimeStatusPublishAuthorization {
+/** Import only from `statusPublishAuthorization.server.ts` on trusted server execution paths. */
+export function issueServerRuntimeStatusPublishAuthorization(): ServerRuntimeStatusPublishAuthorization {
   return { kind: "server_runtime", seal: SERVER_RUNTIME_STATUS_PUBLISH_SEAL };
 }
 
@@ -40,7 +43,10 @@ export function authorizeStatusPublishCallerForRecord(input: {
       | "status_publish_authorization_forbidden"
       | "worker_environment_mismatch"
       | "worker_partner_scope_forbidden"
-      | "worker_tenant_scope_forbidden";
+      | "worker_tenant_scope_forbidden"
+      | "worker_status_partner_scope_unbound"
+      | "worker_status_institution_scope_partner_forbidden"
+      | "worker_status_partner_tenant_mismatch";
   } {
   if (!input.authorization) {
     return { ok: false, reason: "status_publish_authorization_required" };
@@ -57,6 +63,19 @@ export function authorizeStatusPublishCallerForRecord(input: {
   const caller = input.authorization;
   if (caller.environment !== input.workerEnvironment) {
     return { ok: false, reason: "worker_environment_mismatch" };
+  }
+  if (caller.resourceScope === "institution_wide") {
+    if (caller.partnerId || caller.tenantId) {
+      return { ok: false, reason: "worker_status_institution_scope_partner_forbidden" };
+    }
+    return { ok: true };
+  }
+  const boundPartner = caller.partnerId ?? caller.tenantId;
+  if (!boundPartner) {
+    return { ok: false, reason: "worker_status_partner_scope_unbound" };
+  }
+  if (caller.partnerId && caller.tenantId && caller.partnerId !== caller.tenantId) {
+    return { ok: false, reason: "worker_status_partner_tenant_mismatch" };
   }
   if (caller.partnerId && caller.partnerId !== input.record.partner_id) {
     return { ok: false, reason: "worker_partner_scope_forbidden" };

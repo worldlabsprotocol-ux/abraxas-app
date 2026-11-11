@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  authorizeStatusPublishCallerForRecord,
-  createServerRuntimeStatusPublishAuthorization,
-} from "./statusPublishAuthorization";
+import { authorizeStatusPublishCallerForRecord } from "./statusPublishAuthorization";
+import { createServerRuntimeStatusPublishAuthorization } from "./statusPublishAuthorization.server";
 
 describe("status publish caller authorization", () => {
   const record = {
@@ -39,7 +37,7 @@ describe("status publish caller authorization", () => {
     ).toEqual({ ok: false, reason: "status_publish_authorization_forbidden" });
   });
 
-  it("allows unforgeable server runtime authorization", () => {
+  it("allows server runtime authorization from server-only factory", () => {
     expect(
       authorizeStatusPublishCallerForRecord({
         record,
@@ -49,6 +47,20 @@ describe("status publish caller authorization", () => {
     ).toEqual({ ok: true });
   });
 
+  it("rejects partner-scoped publisher without binding", () => {
+    expect(
+      authorizeStatusPublishCallerForRecord({
+        record,
+        authorization: {
+          kind: "worker_http_caller",
+          environment: "demo",
+          resourceScope: "partner",
+        },
+        workerEnvironment: "demo",
+      }),
+    ).toEqual({ ok: false, reason: "worker_status_partner_scope_unbound" });
+  });
+
   it("rejects partner A publishing partner B receipt", () => {
     expect(
       authorizeStatusPublishCallerForRecord({
@@ -56,6 +68,7 @@ describe("status publish caller authorization", () => {
         authorization: {
           kind: "worker_http_caller",
           environment: "demo",
+          resourceScope: "partner",
           partnerId: "partner-a",
         },
         workerEnvironment: "demo",
@@ -70,11 +83,41 @@ describe("status publish caller authorization", () => {
         authorization: {
           kind: "worker_http_caller",
           environment: "demo",
+          resourceScope: "partner",
           tenantId: "tenant-a",
         },
         workerEnvironment: "demo",
       }),
     ).toEqual({ ok: false, reason: "worker_tenant_scope_forbidden" });
+  });
+
+  it("allows institution-wide publisher across partners", () => {
+    expect(
+      authorizeStatusPublishCallerForRecord({
+        record,
+        authorization: {
+          kind: "worker_http_caller",
+          environment: "demo",
+          resourceScope: "institution_wide",
+        },
+        workerEnvironment: "demo",
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects institution-wide auth carrying partner fields", () => {
+    expect(
+      authorizeStatusPublishCallerForRecord({
+        record,
+        authorization: {
+          kind: "worker_http_caller",
+          environment: "demo",
+          resourceScope: "institution_wide",
+          partnerId: "partner-b",
+        },
+        workerEnvironment: "demo",
+      }),
+    ).toEqual({ ok: false, reason: "worker_status_institution_scope_partner_forbidden" });
   });
 
   it("rejects environment mismatch for worker caller", () => {
@@ -84,6 +127,7 @@ describe("status publish caller authorization", () => {
         authorization: {
           kind: "worker_http_caller",
           environment: "production",
+          resourceScope: "partner",
           partnerId: "partner-b",
         },
         workerEnvironment: "demo",
@@ -98,11 +142,20 @@ describe("status publish caller authorization", () => {
         authorization: {
           kind: "worker_http_caller",
           environment: "demo",
+          resourceScope: "partner",
           partnerId: "partner-b",
           tenantId: "partner-b",
         },
         workerEnvironment: "demo",
       }),
     ).toEqual({ ok: true });
+  });
+});
+
+describe("recordedWorkflow export boundary", () => {
+  it("does not export the server runtime status publish factory", async () => {
+    const recordedWorkflow = await import("./recordedWorkflow");
+    expect("createServerRuntimeStatusPublishAuthorization" in recordedWorkflow).toBe(false);
+    expect("issueServerRuntimeStatusPublishAuthorization" in recordedWorkflow).toBe(false);
   });
 });

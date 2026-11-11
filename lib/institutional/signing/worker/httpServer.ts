@@ -186,6 +186,10 @@ export function createInstitutionalSigningHttpServer(input: InstitutionalSigning
           sendJson(res, 400, { ok: false, reason: "invalid_request" });
           return;
         }
+        if (!auth.principal.statusResourceScope) {
+          sendJson(res, 503, { ok: false, reason: "worker_status_scope_unconfigured" });
+          return;
+        }
         const result = await publishAuthoritativeReceiptStatus({
           env: input.handlers.env,
           status: input.handlers.opened.status,
@@ -197,6 +201,7 @@ export function createInstitutionalSigningHttpServer(input: InstitutionalSigning
           statusPublishAuthorization: {
             kind: "worker_http_caller",
             environment: input.workerEnvironment,
+            resourceScope: auth.principal.statusResourceScope,
             partnerId: auth.principal.partnerId,
             tenantId: auth.principal.tenantId,
           },
@@ -206,6 +211,9 @@ export function createInstitutionalSigningHttpServer(input: InstitutionalSigning
           || result.reason === "worker_tenant_scope_forbidden"
           || result.reason === "worker_environment_mismatch"
           || result.reason === "status_publish_authorization_forbidden"
+          || result.reason === "worker_status_partner_scope_unbound"
+          || result.reason === "worker_status_institution_scope_partner_forbidden"
+          || result.reason === "worker_status_partner_tenant_mismatch"
         ) ? 403
           : result.ok ? 200 : 400;
         sendJson(res, statusCode, result);
