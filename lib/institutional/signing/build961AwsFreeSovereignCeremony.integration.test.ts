@@ -422,7 +422,7 @@ describeProof("BUILD #961 — AWS-free sovereign ceremony (disposable Postgres)"
       env,
       status,
       statusSignerKeyId: statusKey.signingKeyId,
-      receiptId: "dr_missing",
+      receiptId: "dr_build961",
       signedIssuerAuthority: issuerStatement.statement,
       workerEnvironment: "demo",
       statusPublishAuthorization: {
