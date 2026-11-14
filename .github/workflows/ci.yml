@@ -483,6 +483,16 @@ jobs:
           ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true"
           NEXT_PUBLIC_SUPABASE_URL: ""
           SUPABASE_SERVICE_ROLE_KEY: ""
+      - name: BUILD #961 AWS-free sovereign ceremony
+        run: npm run sovereign:build-961-aws-free-ceremony
+        env:
+          ABRAXAS_SOVEREIGN_OPERATIONAL_PROOF: "1"
+          ABRAXAS_BUILD_961_CI_CONTRACT: "1"
+          ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+          ABRAXAS_SOVEREIGN_ENV_CLASS: disposable
+          ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true"
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          SUPABASE_SERVICE_ROLE_KEY: ""
 
   ephemeral-wallet-auth:
     name: ephemeral-wallet-auth
