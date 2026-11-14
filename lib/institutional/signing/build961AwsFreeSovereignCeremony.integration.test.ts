@@ -268,18 +268,27 @@ describeProof("BUILD #961 — AWS-free sovereign ceremony (disposable Postgres)"
       authority_state_digest: described.authorityStateDigest,
       governance_key_id: governance.signingKeyId,
     };
+    const governanceSignatureBase64Url = signAuthorityGovernanceApproval({
+      approval: governanceApproval,
+      governancePrivateJwk: governance.privateKeyJwk,
+    });
     const established = await approveRecordedAuthorityChange({
       env,
       issuer,
       proposed: built.payload,
       assertedAuthorityStateDigest: described.authorityStateDigest,
       governanceApproval,
-      governanceSignatureBase64Url: signAuthorityGovernanceApproval({
-        approval: governanceApproval,
-        governancePrivateJwk: governance.privateKeyJwk,
-      }),
+      governanceSignatureBase64Url,
     });
     expect(established).toMatchObject({ ok: true, registryVersion: 854 });
+    expect(await approveRecordedAuthorityChange({
+      env,
+      issuer,
+      proposed: built.payload,
+      assertedAuthorityStateDigest: described.authorityStateDigest,
+      governanceApproval,
+      governanceSignatureBase64Url,
+    })).toMatchObject({ ok: false, reason: "replayed_governance_approval" });
 
     const issuerStatement = await signRecordedIssuerAuthorityStatement({
       env,
@@ -398,57 +407,8 @@ describeProof("BUILD #961 — AWS-free sovereign ceremony (disposable Postgres)"
     expect(JSON.stringify(independent)).not.toMatch(/"d"\s*:/);
   });
 
-  it("rejects replayed governance, tampered receipt, and unauthorized signing scope", async () => {
+  it("rejects tampered status evidence and unauthorized signing scope", async () => {
     const env = runtimeEnv();
-    await installDisposableGovernanceTrustPin({
-      env,
-      environment: "demo",
-      governance,
-      anchorKeyId: anchor.signingKeyId,
-      anchorPublicJwk: anchor.publicKeyJwk,
-      authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
-      statusSigners: [{ key_id: statusKey.signingKeyId, public_jwk: statusKey.publicKeyJwk }],
-      changeTicket: "build961-negatives",
-    });
-    const built = buildIssuerAuthorityStatementFromRegistry({
-      registryVersion: 854,
-      supersedesRegistryVersion: null,
-      anchorKeyId: anchor.signingKeyId,
-      issuedAt: "2026-06-01T00:00:00.000Z",
-      env,
-    });
-    if (!built.ok) throw new Error(built.reason);
-    const described = describeConfiguredIssuerAuthority({ env, anchorKeyId: anchor.signingKeyId });
-    if (!described.ok) throw new Error(described.reason);
-    const governanceApproval = {
-      document: GOVERNANCE_APPROVAL_DOCUMENT,
-      schema_version: "1.0.0" as const,
-      environment: "demo" as const,
-      action: "bootstrap" as const,
-      registry_version: 854,
-      supersedes_registry_version: null,
-      authority_state_digest: described.authorityStateDigest,
-      governance_key_id: governance.signingKeyId,
-    };
-    const sig = signAuthorityGovernanceApproval({ approval: governanceApproval, governancePrivateJwk: governance.privateKeyJwk });
-    const first = await approveRecordedAuthorityChange({
-      env,
-      issuer,
-      proposed: built.payload,
-      assertedAuthorityStateDigest: described.authorityStateDigest,
-      governanceApproval,
-      governanceSignatureBase64Url: sig,
-    });
-    expect(first.ok).toBe(true);
-    expect(await approveRecordedAuthorityChange({
-      env,
-      issuer,
-      proposed: built.payload,
-      assertedAuthorityStateDigest: described.authorityStateDigest,
-      governanceApproval,
-      governanceSignatureBase64Url: sig,
-    })).toMatchObject({ ok: false, reason: "replayed_governance_approval" });
-
     const issuerStatement = await signRecordedIssuerAuthorityStatement({
       env,
       issuer,
