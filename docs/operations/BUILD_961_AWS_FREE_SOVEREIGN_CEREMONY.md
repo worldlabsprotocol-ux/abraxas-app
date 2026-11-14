@@ -1,6 +1,6 @@
 # BUILD #961 — AWS-free sovereign operational ceremony
 
-**PR:** #952 · **Depends on:** BUILD #960 (`self-hosted-file` custody), commit `94c37027` (application scope test fix)
+**PR:** #953 · **Depends on:** BUILD #960 (`self-hosted-file` custody, merged via #952), commit `94c37027` (application scope test fix)
 
 ## Objective
 
