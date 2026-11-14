@@ -1,0 +1,27 @@
+# BUILD #962 — institutional signing worker (loopback, self-hosted-file).
+# Copy to /etc/systemd/system/ after adjusting User= and paths.
+#
+# EnvironmentFile MUST NOT include ABRAXAS_GOVERNANCE_OPERATOR_PG_URL.
+
+[Unit]
+Description=Abraxas institutional signing worker (AWS-free NP)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=abraxas
+Group=abraxas
+WorkingDirectory=/opt/abraxas/app
+EnvironmentFile=/etc/abraxas/institutional-worker.env
+ExecStart=/usr/bin/npx tsx /opt/abraxas/app/scripts/institutional-signing-worker.ts
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/abraxas/np
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -44,7 +44,7 @@ File: `lib/institutional/signing/build961AwsFreeSovereignCeremony.integration.te
 | Classification | Status |
 |----------------|--------|
 | **Disposable local / CI acceptance** | **GO** when `sovereign:build-961-aws-free-ceremony` passes on PR CI |
-| **Persistent hosted operational** | **NO-GO** until operator runs the same ceremony on NP infrastructure (seeds, Postgres roles, worker loopback) without AWS — not claimed from CI alone |
+| **Persistent hosted operational** | **NO-GO** until BUILD #962 operator steps complete — see `BUILD_962_PERSISTENT_AWS_FREE_ACTIVATION.md` |
 | **Production institutional hardware custody** | **NO-GO** — software self-hosted remains demo-only |
 
 ## Not in scope
