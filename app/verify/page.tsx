@@ -31,7 +31,10 @@ export default function VerifyPage({ searchParams }: PageProps) {
   return (
     <AbxPageShell accent="verify">
       <div style={{ padding: "0 clamp(1rem, 3vw, 2rem)", marginBottom: "1rem" }}>
-        <DeveloperContextBanner title="Developer Receipt Tester" />
+        <DeveloperContextBanner
+          title="Verification-first · institutions"
+          description="Prove receipts with @abraxas/independent-verifier and pinned trust material. No Abraxas account required for the default portable demo."
+        />
       </div>
       <VerifyPageIntro />
       <VerifyWorkbenchChrome />

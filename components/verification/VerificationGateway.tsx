@@ -9,6 +9,7 @@ import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCar
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { VERIFICATION_FIRST_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -34,6 +35,15 @@ export function VerificationGateway() {
 
   return (
     <>
+      <ContentCard title="Institution or developer?">
+        <p style={{ fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.75rem" }}>
+          This page is for holders completing a partner request. To verify a portable receipt without an Abraxas account, use the independent verifier workbench.
+        </p>
+        <Btn href={VERIFICATION_FIRST_DEFAULT_PATH} size="sm">
+          Verify independently →
+        </Btn>
+      </ContentCard>
+
       <div style={{ marginBottom: "1rem" }}>
         <NextActionCard
           title="What to do next"

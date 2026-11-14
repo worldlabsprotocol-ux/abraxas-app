@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PublicVerifierPanel } from "@/components/verify/PublicVerifierPanel";
 import { RelyingPartyVerifyPanel } from "@/components/verify/RelyingPartyVerifyPanel";
 import { PartnerReceiptVerifyPanel } from "@/components/verify/PartnerReceiptVerifyPanel";
+import { PortableIndependentVerifyPanel } from "@/components/verify/PortableIndependentVerifyPanel";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import {
   HOLDER_PARTNER_RECEIPT_LINK_LABEL,
@@ -15,14 +16,15 @@ import {
   PARTNER_RECEIPT_VERIFIER_PATH,
 } from "@/lib/integrate/partnerJourney";
 
-export type VerifyTab = "receipt" | "registry" | "credential";
+export type VerifyTab = "independent" | "receipt" | "registry" | "credential";
 export type VerifyAudience = "integrator" | "holder";
 
 function tabFromParams(mode: string | null, audience: VerifyAudience): VerifyTab {
   if (mode === "receipt") return audience === "integrator" ? "receipt" : "registry";
   if (mode === "credential" || mode === "policy") return "credential";
   if (mode === "registry") return "registry";
-  return audience === "integrator" ? "receipt" : "registry";
+  if (mode === "independent") return audience === "integrator" ? "independent" : "registry";
+  return audience === "integrator" ? "independent" : "registry";
 }
 
 export function VerifyClient({ audience = "integrator" }: { audience?: VerifyAudience }) {
@@ -94,7 +96,8 @@ function VerifyTabs({
       ];
     }
     return [
-      { id: "receipt" as const, label: "Partner receipt (server test)", hint: "Integrators" },
+      { id: "independent" as const, label: "Independent portable", hint: "No account" },
+      { id: "receipt" as const, label: "Partner receipt (server test)", hint: "Hosted mirror" },
       { id: "registry" as const, label: "Registry lookup", hint: "Public records" },
       { id: "credential" as const, label: "Credential JWT", hint: "Claims demo" },
     ];
@@ -117,9 +120,9 @@ function VerifyTabs({
           <>{HOLDER_VERIFY_SUBHEAD}</>
         ) : (
           <>
-            <strong style={{ color: "var(--text-primary)" }}>Partner integrators:</strong> {PARTNER_RECEIPT_SERVER_STEP}
-            {" "}<strong style={{ color: "var(--text-primary)" }}>Registry viewers:</strong> look up public registry records by ABX ID.
-            {" "}<strong style={{ color: "var(--text-primary)" }}>Credential testers:</strong> validate a JWT against documented claims.
+            <strong style={{ color: "var(--text-primary)" }}>Institutions:</strong> verify a portable bundle with pinned trust material — no Abraxas login.
+            {" "}<strong style={{ color: "var(--text-primary)" }}>Integrators:</strong> {PARTNER_RECEIPT_SERVER_STEP}
+            {" "}<strong style={{ color: "var(--text-primary)" }}>Registry & JWT:</strong> additional tester tabs.
           </>
         )}
       </p>
@@ -163,6 +166,8 @@ function VerifyTabs({
           color: "var(--text-muted)",
           margin: "0 0 1.25rem",
         }}>
+          {activeTab === "independent" &&
+            "Uses committed synthetic fixtures (Build #821). Live bundles still require authorized issuance; signed status must be refreshed per your policy."}
           {activeTab === "receipt" && "Mirror GET /api/receipts/{receipt_id}/public on your server after callback, do not grant access from this UI alone."}
           {activeTab === "registry" && (audience === "holder"
             ? "Look up public registry records by ABX ID, separate from Partner Flow session receipts."
@@ -173,6 +178,7 @@ function VerifyTabs({
         </p>
       )}
 
+      {activeTab === "independent" && audience === "integrator" && <PortableIndependentVerifyPanel />}
       {activeTab === "receipt" && audience === "integrator" && <PartnerReceiptVerifyPanel />}
       {activeTab === "registry" && (
         <Suspense fallback={null}>
