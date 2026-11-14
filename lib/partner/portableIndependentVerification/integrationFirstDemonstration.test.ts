@@ -28,5 +28,11 @@ describe("verification-first adoption demonstration (Build #821 fixtures)", () =
     if (scenario === "revoked") {
       expect(out.verification.currently_acceptable).not.toBe("yes");
     }
+    if (scenario === "tampered_signature") {
+      expect(out.verification.cryptographically_authentic).toBe(false);
+    }
+    if (scenario === "stale_status") {
+      expect(out.verification.currently_acceptable).not.toBe("yes");
+    }
   });
 });

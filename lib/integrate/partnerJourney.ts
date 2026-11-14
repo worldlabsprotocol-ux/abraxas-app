@@ -145,7 +145,8 @@ export const PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL = "Receipt verification (ser
 
 export const INDEPENDENT_VERIFY_ENTRY_COPY = {
   title: "Verify a receipt independently",
-  subline: "Paste a receipt bundle or load the demo example. No account needed.",
+  subline:
+    "Try the teaching demo or paste your own bundle. No account needed. Production verification runs offline with your own pinned trust material.",
   useDemoLabel: "Use demo receipt",
   pasteLabel: "Paste my receipt",
   footerNote: "Need server mirrors, registry lookup, or JWT demos?",

@@ -16,7 +16,13 @@ import issuerAuthorityStatement from "../../../examples/integration-first-relyin
 import signedStatusStatement from "../../../examples/integration-first-relying-party/fixtures/signed-status-statement.json";
 import signedStatusStatementRevoked from "../../../examples/integration-first-relying-party/fixtures/signed-status-statement-revoked.json";
 
-export const VERIFICATION_FIRST_DEMO_SCENARIOS = ["valid", "wrong_audience", "revoked"] as const;
+export const VERIFICATION_FIRST_DEMO_SCENARIOS = [
+  "valid",
+  "wrong_audience",
+  "revoked",
+  "stale_status",
+  "tampered_signature",
+] as const;
 export type VerificationFirstDemoScenario = (typeof VERIFICATION_FIRST_DEMO_SCENARIOS)[number];
 
 export type VerificationFirstDemoManifest = typeof manifest;
@@ -63,8 +69,18 @@ export function runVerificationFirstDemoScenario(
       ? (signedStatusStatementRevoked as SignedReceiptStatusStatement)
       : (signedStatusStatement as SignedReceiptStatusStatement);
 
+  const record: DecisionReceiptRecord =
+    scenario === "tampered_signature"
+      ? { ...RECEIPT, signature: `${RECEIPT.signature.slice(0, 8)}tampered` }
+      : RECEIPT;
+
+  let statementObservedAt: string;
+  if (scenario === "valid") statementObservedAt = OBSERVED_AT_VALID;
+  else if (scenario === "stale_status") statementObservedAt = "2035-01-01T00:00:00.000Z";
+  else statementObservedAt = new Date().toISOString();
+
   const verification = verifyAbraxasReceiptIndependently({
-    record: RECEIPT,
+    record,
     pinnedTrustAnchor: PINNED_ANCHOR,
     signedIssuerAuthority: SIAS,
     relyingParty: {
@@ -72,7 +88,7 @@ export function runVerificationFirstDemoScenario(
       policy_id: manifest.policy_id,
       environment: manifest.environment === "demo" ? "demo" : "production",
     },
-    statementObservedAt: scenario === "valid" ? OBSERVED_AT_VALID : new Date().toISOString(),
+    statementObservedAt,
     signedStatusStatement: status,
     ...(scenario === "valid" ? authorityCheckpointFromStatement(SIAS) : {}),
   });

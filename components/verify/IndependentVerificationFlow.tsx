@@ -9,27 +9,27 @@ import { StatusBanner } from "@/components/ui/StatusBanner";
 import type { IndependentVerificationResult } from "@abraxas/independent-verifier";
 import type { PortableVerificationBundle } from "@/lib/partner/portableIndependentVerification/buildPortableVerificationBundle";
 import {
-  plainAcceptabilityLine,
-  plainIssuerLine,
-  plainVerificationVerdict,
-  plainWhatItProves,
+  OFFLINE_INDEPENDENT_VERIFICATION_NOTE,
   type PlainVerificationVerdict,
 } from "@/lib/partner/portableIndependentVerification/plainVerificationSummary";
 import { INDEPENDENT_VERIFY_ENTRY_COPY } from "@/lib/integrate/partnerJourney";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
-type DemoPayload = {
-  ok: boolean;
-  manifest?: { receipt_id: string; partner_id: string; policy_id: string };
-  status_snapshot_note?: string;
+type PlainResult = {
+  verdict: PlainVerificationVerdict;
+  trustBoundary: string;
+  rows: Array<{ label: string; value: string }>;
+  next: string;
+  technicalIds: string;
 };
 
 type VerifyPayload = {
   ok: boolean;
   scenario?: string;
-  next_action: string;
+  plain: PlainResult;
   verification: IndependentVerificationResult;
+  offline_verification_note?: string;
 };
 
 function VerdictBanner({ verdict }: { verdict: PlainVerificationVerdict }) {
@@ -54,20 +54,19 @@ function PhaseList({ verification }: { verification: IndependentVerificationResu
   );
 }
 
+type Step = "choose" | "paste" | "result";
+
 export function IndependentVerificationFlow() {
-  const [demo, setDemo] = useState<DemoPayload | null>(null);
+  const [demoReady, setDemoReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [step, setStep] = useState<Step>("choose");
   const [result, setResult] = useState<{
-    verdict: PlainVerificationVerdict;
-    what: string;
-    issuer: string;
-    acceptable: string;
-    next: string;
+    plain: PlainResult;
     verification: IndependentVerificationResult;
+    offlineNote?: string;
   } | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [showPaste, setShowPaste] = useState(false);
   const [pasteRaw, setPasteRaw] = useState("");
 
   useEffect(() => {
@@ -75,9 +74,9 @@ export function IndependentVerificationFlow() {
     (async () => {
       try {
         const res = await fetch("/api/developers/verification-first/demo", { cache: "no-store" });
-        const json = (await res.json()) as DemoPayload;
+        const json = (await res.json()) as { ok: boolean };
         if (!res.ok || !json.ok) throw new Error("demo_unavailable");
-        if (!cancelled) setDemo(json);
+        if (!cancelled) setDemoReady(true);
       } catch {
         if (!cancelled) setLoadError("Demo example is not available right now.");
       }
@@ -87,20 +86,14 @@ export function IndependentVerificationFlow() {
     };
   }, []);
 
-  const applyDemoResult = useCallback((payload: VerifyPayload) => {
-    const verdict = plainVerificationVerdict(payload.verification, payload.scenario);
-    const m = demo?.manifest;
+  const applyPayload = useCallback((json: VerifyPayload) => {
     setResult({
-      verdict,
-      what: m
-        ? plainWhatItProves({ policyId: m.policy_id, partnerId: m.partner_id })
-        : "This receipt records a signed policy decision.",
-      issuer: plainIssuerLine(payload.verification),
-      acceptable: plainAcceptabilityLine(payload.verification),
-      next: payload.next_action,
-      verification: payload.verification,
+      plain: json.plain,
+      verification: json.verification,
+      offlineNote: json.offline_verification_note,
     });
-  }, [demo?.manifest]);
+    setStep("result");
+  }, []);
 
   const runDemo = useCallback(async () => {
     setRunning(true);
@@ -113,16 +106,16 @@ export function IndependentVerificationFlow() {
         body: JSON.stringify({ scenario: "valid" }),
       });
       const json = (await res.json()) as VerifyPayload & { ok: boolean };
-      if (!res.ok || !json.ok) throw new Error("verify_failed");
-      applyDemoResult(json);
+      if (!res.ok || !json.ok || !json.plain) throw new Error("verify_failed");
+      applyPayload(json);
     } catch {
       setErr("Could not run the demo check. Try again in a moment.");
     } finally {
       setRunning(false);
     }
-  }, [applyDemoResult]);
+  }, [applyPayload]);
 
-  const runExample = useCallback(async (scenario: "wrong_audience" | "revoked") => {
+  const runExample = useCallback(async (scenario: string) => {
     setRunning(true);
     setErr(null);
     try {
@@ -132,14 +125,14 @@ export function IndependentVerificationFlow() {
         body: JSON.stringify({ scenario }),
       });
       const json = (await res.json()) as VerifyPayload & { ok: boolean };
-      if (!res.ok || !json.ok) throw new Error("verify_failed");
-      applyDemoResult({ ...json, scenario });
+      if (!res.ok || !json.ok || !json.plain) throw new Error("verify_failed");
+      applyPayload(json);
     } catch {
       setErr("Example could not run.");
     } finally {
       setRunning(false);
     }
-  }, [applyDemoResult]);
+  }, [applyPayload]);
 
   const runPaste = useCallback(async () => {
     setRunning(true);
@@ -152,33 +145,30 @@ export function IndependentVerificationFlow() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bundle }),
       });
-      const json = (await res.json()) as {
-        ok: boolean;
-        verdict: PlainVerificationVerdict;
-        plain?: { what_it_proves: string; issuer: string; acceptable: string; next_action: string };
-        verification: IndependentVerificationResult;
-        error?: string;
-      };
-      if (!res.ok || !json.ok) throw new Error(json.error ?? "invalid_bundle");
-      setResult({
-        verdict: json.verdict,
-        what: json.plain?.what_it_proves ?? "",
-        issuer: json.plain?.issuer ?? "",
-        acceptable: json.plain?.acceptable ?? "",
-        next: json.plain?.next_action ?? "",
-        verification: json.verification,
-      });
+      const json = (await res.json()) as VerifyPayload & { ok: boolean; error?: string };
+      if (!res.ok || !json.ok || !json.plain) {
+        const code = json.error ?? "invalid_bundle";
+        if (code === "invalid_json" || code === "invalid_portable_bundle") {
+          setErr("That input is not a complete portable verification bundle.");
+        } else if (code === "missing_trust_anchor") {
+          setErr("The bundle is missing trust material.");
+        } else {
+          setErr("Could not verify that bundle.");
+        }
+        return;
+      }
+      applyPayload(json);
     } catch {
-      setErr("Could not verify that bundle. Check the JSON is a complete portable verification bundle.");
+      setErr("Could not read that JSON. Paste a complete portable verification bundle.");
     } finally {
       setRunning(false);
     }
-  }, [pasteRaw]);
+  }, [applyPayload, pasteRaw]);
 
   const reset = () => {
     setResult(null);
     setErr(null);
-    setShowPaste(false);
+    setStep("choose");
     setPasteRaw("");
   };
 
@@ -201,30 +191,28 @@ export function IndependentVerificationFlow() {
         </p>
       </header>
 
-      {loadError && (
+      {loadError && step === "choose" && (
         <StatusBanner tone="error" title="Demo unavailable">
           {loadError}
         </StatusBanner>
       )}
 
-      {!result && (
+      {step === "choose" && !result && (
         <div style={{ display: "grid", gap: "0.65rem" }}>
-          <Btn size="md" variant="primary" disabled={running || Boolean(loadError)} onClick={() => void runDemo()}>
-            {running && !showPaste ? "Checking…" : INDEPENDENT_VERIFY_ENTRY_COPY.useDemoLabel}
+          <Btn size="md" variant="primary" disabled={running || !demoReady} onClick={() => void runDemo()}>
+            {running ? "Checking…" : INDEPENDENT_VERIFY_ENTRY_COPY.useDemoLabel}
           </Btn>
-          <Btn
-            size="md"
-            variant="secondary"
-            disabled={running}
-            onClick={() => setShowPaste((v) => !v)}
-          >
+          <Btn size="md" variant="secondary" disabled={running} onClick={() => setStep("paste")}>
             {INDEPENDENT_VERIFY_ENTRY_COPY.pasteLabel}
           </Btn>
         </div>
       )}
 
-      {showPaste && !result && (
-        <div style={{ display: "grid", gap: "0.5rem" }}>
+      {step === "paste" && !result && (
+        <div style={{ display: "grid", gap: "0.65rem" }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
+            Paste your bundle, then run one check. Hosted paste uses the anchor inside the bundle — not independent pinning.
+          </p>
           <textarea
             value={pasteRaw}
             onChange={(e) => setPasteRaw(e.target.value)}
@@ -242,8 +230,11 @@ export function IndependentVerificationFlow() {
               color: "var(--text-primary)",
             }}
           />
-          <Btn size="sm" variant="primary" disabled={running || !pasteRaw.trim()} onClick={() => void runPaste()}>
+          <Btn size="md" variant="primary" disabled={running || !pasteRaw.trim()} onClick={() => void runPaste()}>
             {running ? "Checking…" : "Check this bundle"}
+          </Btn>
+          <Btn size="sm" variant="ghost" disabled={running} onClick={() => setStep("choose")}>
+            Back
           </Btn>
         </div>
       )}
@@ -251,60 +242,78 @@ export function IndependentVerificationFlow() {
       {err && (
         <StatusBanner tone="error" title="Something went wrong">
           {err}
+          {err.includes("Try again") ? null : (
+            <span>
+              {" "}
+              <button
+                type="button"
+                onClick={() => setErr(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  padding: 0,
+                  fontFamily: FONT,
+                  fontSize: "inherit",
+                }}
+              >
+                Dismiss
+              </button>
+            </span>
+          )}
         </StatusBanner>
       )}
 
       {result && (
         <div style={{ display: "grid", gap: "1rem" }}>
-          <VerdictBanner verdict={result.verdict} />
+          <VerdictBanner verdict={result.plain.verdict} />
+          <StatusBanner tone="info" title="How this check ran">
+            {result.plain.trustBoundary}
+          </StatusBanner>
           <section style={{ display: "grid", gap: "0.65rem" }}>
-            <ResultRow label="What it proves" value={result.what} />
-            <ResultRow label="Who issued it" value={result.issuer} />
-            <ResultRow label="Currently acceptable" value={result.acceptable} />
-            <ResultRow label="What to do next" value={result.next} />
+            {result.plain.rows.map((row) => (
+              <ResultRow key={row.label} label={row.label} value={row.value} />
+            ))}
+            <ResultRow label="What to do next" value={result.plain.next} />
           </section>
 
           <details>
             <summary style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", cursor: "pointer" }}>
               Advanced details
             </summary>
-            <div style={{ paddingTop: "0.65rem" }}>
-              {demo?.status_snapshot_note && (
-                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.65rem", lineHeight: 1.5 }}>
-                  {demo.status_snapshot_note}
-                </p>
-              )}
-              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.5rem" }}>
-                Hosted checks are for learning only. Production teams run{" "}
-                <code style={{ fontSize: "0.7rem" }}>@abraxas/independent-verifier</code> on their own systems with a trust anchor they pin out-of-band.
+            <div style={{ paddingTop: "0.65rem", display: "grid", gap: "0.65rem" }}>
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                {result.plain.technicalIds}
+              </p>
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+                {result.offlineNote ?? OFFLINE_INDEPENDENT_VERIFICATION_NOTE}
               </p>
               <PhaseList verification={result.verification} />
-              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.75rem 0 0.5rem" }}>
-                Example outcomes (demo fixtures):
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
+                More demo outcomes:
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                <Btn size="sm" variant="ghost" disabled={running} onClick={() => void runExample("wrong_audience")}>
-                  Wrong audience example
-                </Btn>
-                <Btn size="sm" variant="ghost" disabled={running} onClick={() => void runExample("revoked")}>
-                  Revoked example
-                </Btn>
+                {["wrong_audience", "revoked", "stale_status", "tampered_signature"].map((scenario) => (
+                  <Btn key={scenario} size="sm" variant="ghost" disabled={running} onClick={() => void runExample(scenario)}>
+                    {scenario.replace(/_/g, " ")}
+                  </Btn>
+                ))}
               </div>
+              <Btn href="/developers/institutional-verification" size="sm" variant="secondary">
+                See integration docs
+              </Btn>
             </div>
           </details>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn size="sm" variant="primary" onClick={reset}>
-              Try another receipt
-            </Btn>
-            <Btn href="/developers/institutional-verification" size="sm" variant="secondary">
-              See integration docs
-            </Btn>
-          </div>
+          <Btn size="md" variant="primary" onClick={reset}>
+            Try another receipt
+          </Btn>
         </div>
       )}
 
-      {!result && (
+      {step === "choose" && !result && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
           {INDEPENDENT_VERIFY_ENTRY_COPY.footerNote}{" "}
           <Link href="/verify?mode=developer" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
