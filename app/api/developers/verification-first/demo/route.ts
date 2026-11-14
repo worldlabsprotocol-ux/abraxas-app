@@ -24,6 +24,6 @@ export async function GET() {
     download_hints: verificationFirstDemoBundleDownloadHints(),
     interactive_scenarios: ["valid", "wrong_audience", "revoked"],
     verify_post_path: "/api/developers/verification-first/verify",
-    workspace_path: "/verify?mode=independent",
+    workspace_path: "/verify",
   });
 }

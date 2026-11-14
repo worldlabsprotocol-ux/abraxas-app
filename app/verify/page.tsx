@@ -1,21 +1,27 @@
 // FILE: app/verify/page.tsx
 // Redirect ?q=ABX-… to canonical /verify/[recordId] when the ID is known.
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
-import { VerifyWorkbenchChrome } from "@/components/verify/VerifyWorkbenchChrome";
-import { DeveloperContextBanner } from "@/components/redesign/DeveloperContextBanner";
+import { IndependentVerificationFlow } from "@/components/verify/IndependentVerificationFlow";
 import { VerifyPageIntroDemo } from "@/components/verify/VerifyPageIntroDemo";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
 import { VerifyClient } from "./VerifyClient";
-import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { resolveRegistryAsset } from "@/lib/data/registryAssets";
 
 interface PageProps {
   searchParams?: { q?: string; mode?: string };
+}
+
+const DEVELOPER_MODES = new Set(["developer", "receipt", "registry", "credential", "policy"]);
+
+function isDeveloperWorkbench(mode: string | undefined): boolean {
+  if (!mode) return false;
+  return DEVELOPER_MODES.has(mode.trim());
 }
 
 export default function VerifyPage({ searchParams }: PageProps) {
@@ -28,21 +34,35 @@ export default function VerifyPage({ searchParams }: PageProps) {
     }
   }
 
+  const developer = isDeveloperWorkbench(searchParams?.mode);
+
+  if (!developer) {
+    return (
+      <AbxPageShell accent="verify" maxWidth={720}>
+        <div style={{ padding: "clamp(1.25rem, 4vw, 2rem) clamp(1rem, 3vw, 1.5rem) clamp(2rem, 6vw, 3rem)" }}>
+          <IndependentVerificationFlow />
+        </div>
+      </AbxPageShell>
+    );
+  }
+
   return (
     <AbxPageShell accent="verify">
-      <div style={{ padding: "0 clamp(1rem, 3vw, 2rem)", marginBottom: "1rem" }}>
-        <DeveloperContextBanner
-          title="Verification-first · institutions"
-          description="Prove receipts with @abraxas/independent-verifier and pinned trust material. No Abraxas account required for the default portable demo."
-        />
-      </div>
       <VerifyPageIntro />
-      <VerifyWorkbenchChrome />
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem)" }}>
-        <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
-          <PassportPageTabs active="verify" />
-        </Suspense>
-        <Suspense fallback={<RedesignPageLoading label="Loading verifier…" compact />}>
+        <p style={{
+          fontFamily: "'Inter',system-ui,sans-serif",
+          fontSize: "0.78rem",
+          color: "var(--text-secondary)",
+          lineHeight: 1.55,
+          margin: "0 0 1rem",
+          maxWidth: 640,
+        }}>
+          <Link href="/verify" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+            ← Back to independent verify
+          </Link>
+        </p>
+        <Suspense fallback={<RedesignPageLoading label="Loading tester…" compact />}>
           <VerifyClient />
         </Suspense>
       </div>
@@ -56,18 +76,9 @@ export default function VerifyPage({ searchParams }: PageProps) {
             color: "var(--text-secondary)",
             cursor: "pointer",
           }}>
-            Technical reference demos (illustrative, not live verification)
+            Illustrative samples (not live verification)
           </summary>
           <div style={{ paddingTop: "0.75rem" }}>
-            <p style={{
-              fontFamily: "'Inter',system-ui,sans-serif",
-              fontSize: "0.72rem",
-              color: "var(--text-muted)",
-              lineHeight: 1.55,
-              margin: "0 0 0.75rem",
-            }}>
-              These examples explain the verification flow. Use the lookup above for current record status.
-            </p>
             <VerifyPageIntroDemo />
             <VerifyStaticSample />
           </div>
