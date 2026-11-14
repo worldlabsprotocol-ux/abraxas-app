@@ -19,6 +19,15 @@ export function validateInstitutionalWorkerStartup(input: {
     return { ok: false, reason: "worker_demo_memory_forbidden_in_production" };
   }
 
+  const custodyProvider = input.env.ABRAXAS_INSTITUTIONAL_CUSTODY_PROVIDER?.trim()
+    ?? (input.env.ABRAXAS_SELF_HOSTED_ISSUER_SEED_PATH?.trim() ? "self-hosted-file" : "aws-kms");
+  if (workerEnvironment === "production" && custodyProvider === "self-hosted-file") {
+    return { ok: false, reason: "worker_self_hosted_software_forbidden_in_production" };
+  }
+  if (workerEnvironment === "production" && custodyProvider === "demo-memory") {
+    return { ok: false, reason: "worker_demo_memory_forbidden_in_production" };
+  }
+
   if (input.env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK?.trim()
     || input.env.ABRAXAS_STATUS_SIGNER_PRIVATE_JWK?.trim()) {
     return { ok: false, reason: "worker_exportable_private_jwk_forbidden" };

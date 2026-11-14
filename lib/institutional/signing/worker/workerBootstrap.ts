@@ -4,6 +4,12 @@ import { exposeInstitutionalSigningWorkerSurface, type InstitutionalSigningWorke
 import { assertInstitutionalWorkerProcessEnv } from "./runtimeGuards";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import type { CustodyClient } from "../contract";
+import { bindSoftwareEd25519Custody } from "../softwareEd25519Custody";
+import { readEd25519SeedFile } from "../selfHostedSeedFile";
+import {
+  institutionalSignerProviderLabel,
+  resolveInstitutionalCustodyProvider,
+} from "../resolveInstitutionalCustodyProvider";
 
 export type InstitutionalWorkerBootstrapResult =
   | {
@@ -12,25 +18,17 @@ export type InstitutionalWorkerBootstrapResult =
       surface: InstitutionalSigningWorkerSurface;
       environment: "demo" | "production";
       env: Record<string, string | undefined>;
+      custodyProvider: string;
     }
   | { ok: false; reason: string };
 
 function demoMemoryCustody(key: ReturnType<typeof generateTestSigningKeyPair>, identityId: string, keyId: string): CustodyClient {
   const seed = Buffer.from(key.privateKeyJwk.d!, "base64url");
-  return {
+  return bindSoftwareEd25519Custody({
     identityId,
     keyId,
-    async getPublicKey() {
-      const { default: nacl } = await import("tweetnacl");
-      const pair = nacl.sign.keyPair.fromSeed(seed.subarray(0, 32));
-      return { keySpec: "ECC_NIST_EDWARDS25519", publicKey: pair.publicKey };
-    },
-    async signRawDigest(message) {
-      const { default: nacl } = await import("tweetnacl");
-      const pair = nacl.sign.keyPair.fromSeed(seed.subarray(0, 32));
-      return nacl.sign.detached(message, pair.secretKey);
-    },
-  };
+    seed: Uint8Array.from(seed.subarray(0, 32)),
+  });
 }
 
 export async function bootstrapInstitutionalSigningWorker(
@@ -52,20 +50,39 @@ export async function bootstrapInstitutionalSigningWorker(
     return { ok: false, reason: "worker_anchor_or_status_key_id_missing" };
   }
 
-  const demoMemory = environment === "demo" && env.ABRAXAS_INSTITUTIONAL_WORKER_DEMO_MEMORY?.trim() === "1";
+  const custodyResolution = resolveInstitutionalCustodyProvider(env);
+  if ("ok" in custodyResolution && custodyResolution.ok === false) return custodyResolution;
+  const resolved = custodyResolution as Exclude<typeof custodyResolution, { ok: false }>;
 
   let issuer: CustodyClient;
   let status: CustodyClient;
   let issuerPublicJwk: JsonWebKey;
   let statusPublicJwk: JsonWebKey;
 
-  if (demoMemory) {
+  if (resolved.provider === "demo-memory") {
     const issuerKey = generateTestSigningKeyPair("worker-demo-issuer");
     const statusKey = generateTestSigningKeyPair("worker-demo-status");
     issuer = demoMemoryCustody(issuerKey, issuerIdentity, issuerKeyId || "demo-issuer-key");
     status = demoMemoryCustody(statusKey, statusIdentity, statusKeyId || "demo-status-key");
     issuerPublicJwk = issuerKey.publicKeyJwk;
     statusPublicJwk = statusKey.publicKeyJwk;
+  } else if (resolved.provider === "self-hosted-file") {
+    const issuerSeed = readEd25519SeedFile(resolved.issuerSeedPath);
+    const statusSeed = readEd25519SeedFile(resolved.statusSeedPath);
+    issuer = bindSoftwareEd25519Custody({
+      identityId: issuerIdentity,
+      keyId: issuerKeyId || anchorKeyId,
+      seed: issuerSeed,
+    });
+    status = bindSoftwareEd25519Custody({
+      identityId: statusIdentity,
+      keyId: statusKeyId || statusSignerKeyId,
+      seed: statusSeed,
+    });
+    const issuerPub = await issuer.getPublicKey();
+    const statusPub = await status.getPublicKey();
+    issuerPublicJwk = { kty: "OKP", crv: "Ed25519", x: Buffer.from(issuerPub.publicKey).toString("base64url") };
+    statusPublicJwk = { kty: "OKP", crv: "Ed25519", x: Buffer.from(statusPub.publicKey).toString("base64url") };
   } else {
     if (!region || !issuerKeyId || !statusKeyId) {
       return { ok: false, reason: "worker_kms_configuration_incomplete" };
@@ -98,7 +115,7 @@ export async function bootstrapInstitutionalSigningWorker(
   }
 
   const opened = await openInstitutionalSigner({
-    provider: "aws-kms",
+    provider: institutionalSignerProviderLabel(resolved),
     environment,
     anchorKeyId,
     statusSignerKeyId,
@@ -113,5 +130,6 @@ export async function bootstrapInstitutionalSigningWorker(
     surface: exposeInstitutionalSigningWorkerSurface(opened),
     environment,
     env,
+    custodyProvider: resolved.provider,
   };
 }

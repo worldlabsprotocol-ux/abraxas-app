@@ -68,7 +68,7 @@ export type OpenedInstitutionalSigning =
 
 export type InstitutionalSignerConfig =
   | {
-      provider: "memory" | "aws-kms";
+      provider: "memory" | "aws-kms" | "self-hosted-software";
       environment: "demo" | "production";
       anchorKeyId: string;
       statusSignerKeyId: string;
@@ -109,7 +109,10 @@ export async function openInstitutionalSigner(config: InstitutionalSignerConfig)
       reason: config.environment === "production" ? "production_exportable_key_forbidden" : "exportable_jwk_not_a_signer",
     };
   }
-  if (config.provider === "memory" && config.environment !== "demo") {
+  if (
+    (config.provider === "memory" || config.provider === "self-hosted-software")
+    && config.environment !== "demo"
+  ) {
     return { ok: false, reason: "production_exportable_key_forbidden" };
   }
   const anchorKeyId = config.anchorKeyId.trim();

@@ -3,10 +3,9 @@
 import { AWS_KMS_ED25519 } from "./awsKmsEd25519";
 
 /**
- * Primary reference custody for Production institutional keys (issuer anchor + status signer).
- * Optional: not required for protocol verification or portable receipts.
+ * Optional managed-cloud custody (AWS KMS). Not required for protocol verification or portable receipts.
  */
-export const PRIMARY_INSTITUTIONAL_CUSTODY = {
+export const OPTIONAL_AWS_KMS_CUSTODY = {
   id: "aws_kms_ecc_nist_edwards25519",
   keySpec: AWS_KMS_ED25519.keySpec,
   signingAlgorithm: AWS_KMS_ED25519.signingAlgorithm,
@@ -14,19 +13,53 @@ export const PRIMARY_INSTITUTIONAL_CUSTODY = {
   digestBytes: AWS_KMS_ED25519.digestBytes,
   adapterModule: "awsKmsClient.ts",
   mandatoryForProtocol: false,
+  hardwareNonExportable: true,
   estimatedRecurringUsd:
     "≈USD 2/month for 2 CMKs + USD 0.15 per 10k asymmetric Sign (see AWS_KMS_PUBLISHED_COST)",
   selectionRationale:
-    "Smallest operational path with hardware-backed non-exportability and an adapter already bound to "
-    + "CustodyClient + independent verifier; replaceable without protocol changes.",
+    "One supported hardware-backed adapter; replaceable without protocol or receipt changes.",
 } as const;
 
-/** Self-hosted alternate when sovereignty outweighs managed KMS ops (requires PKCS#11 adapter + hardware). */
-export const ALTERNATE_SELF_HOSTED_CUSTODY = {
+/** @deprecated Use OPTIONAL_AWS_KMS_CUSTODY — AWS is not a protocol mandatory dependency. */
+export const PRIMARY_INSTITUTIONAL_CUSTODY = OPTIONAL_AWS_KMS_CUSTODY;
+
+/**
+ * Self-hosted software-protected keys (NP demonstration). Not equivalent to hardware non-exportability.
+ * Set ABRAXAS_INSTITUTIONAL_CUSTODY_PROVIDER=self-hosted-file and seed file paths on the worker host.
+ */
+export const SELF_HOSTED_SOFTWARE_CUSTODY = {
+  id: "self_hosted_ed25519_seed_file",
+  adapterModule: "softwareEd25519Custody.ts",
+  mandatoryForProtocol: false,
+  hardwareNonExportable: false,
+  allowedEnvironments: ["demo"] as const,
+  env: {
+    provider: "ABRAXAS_INSTITUTIONAL_CUSTODY_PROVIDER=self-hosted-file",
+    issuerSeed: "ABRAXAS_SELF_HOSTED_ISSUER_SEED_PATH",
+    statusSeed: "ABRAXAS_SELF_HOSTED_STATUS_SEED_PATH",
+  },
+  honesty:
+    "Software-only; suitable for sovereign NP demos and portable-receipt verification drills — not institutional hardware custody.",
+} as const;
+
+/** Hardware self-hosted alternate (PKCS#11). Future adapter; same CustodyClient contract. */
+export const ALTERNATE_HARDWARE_SELF_HOSTED_CUSTODY = {
   id: "pkcs11_yubihsm2_ed25519",
   status: "not_implemented",
   mandatoryForProtocol: false,
+  hardwareNonExportable: true,
   procurementNote: "YubiHSM 2 or equivalent PKCS#11 HSM with Ed25519 RAW/digest contract validation required",
+} as const;
+
+/** @deprecated Use ALTERNATE_HARDWARE_SELF_HOSTED_CUSTODY */
+export const ALTERNATE_SELF_HOSTED_CUSTODY = ALTERNATE_HARDWARE_SELF_HOSTED_CUSTODY;
+
+export const EVALUATED_VAULT_TRANSIT_CUSTODY = {
+  id: "hashicorp_vault_transit_ed25519",
+  status: "not_bound",
+  mandatoryForProtocol: false,
+  note:
+    "Vault Transit can host Ed25519 signing with a dedicated adapter; treat as software/service custody unless backed by HSM integration.",
 } as const;
 
 /**
