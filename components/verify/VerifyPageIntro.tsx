@@ -6,6 +6,8 @@ import { DecisionReceiptInspectionVisual } from "@/components/protocol-visuals";
 import {
   HOLDER_VERIFY_DEFAULT_PATH,
   VERIFY_HUB_EYEBROW,
+  VERIFY_HUB_HEADLINE,
+  VERIFY_HUB_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
@@ -28,7 +30,7 @@ export function VerifyPageIntro() {
           lineHeight: 1.15,
         }}
       >
-        Receipt verification
+        {VERIFY_HUB_HEADLINE}
       </h1>
       <p
         style={{
@@ -36,13 +38,13 @@ export function VerifyPageIntro() {
           fontSize: "0.82rem",
           color: "var(--text-muted)",
           lineHeight: 1.55,
-          maxWidth: 480,
+          maxWidth: 560,
           margin: "0 0 1rem",
         }}
       >
-        Inspect signatures, policy, and revocation.{" "}
+        {VERIFY_HUB_SUBHEAD}{" "}
         <Link href={HOLDER_VERIFY_DEFAULT_PATH} style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-          Passport
+          Passport holder tools
         </Link>
       </p>
       <details className="abx-surface-protocol-visual abx-verify-diagram-ref">

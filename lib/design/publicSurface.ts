@@ -43,7 +43,7 @@ export const PUBLIC_NAV_MENUS: readonly PublicNavMenuGroup[] = [
     label: "Developers",
     links: [
       { href: "/docs", label: "Documentation" },
-      { href: "/verification", label: "Independent verifier" },
+      { href: "/verify?mode=independent", label: "Verify independently" },
       { href: "/developers/integration-studio", label: "Integration Studio" },
     ],
   },
@@ -77,7 +77,7 @@ export const PUBLIC_NAV_DOCS_CTA = { href: "/docs", label: "Developer Docs" } as
 
 /** Compact Explore menu — secondary destinations. */
 export const PUBLIC_NAV_EXPLORE_LINKS = [
-  { href: "/verification", label: "Verification" },
+  { href: "/verify?mode=independent", label: "Independent verify" },
   { href: "/pricing", label: "Pricing" },
   { href: "/developers/launchpad", label: "Launchpad" },
   { href: "/docs/partner-flow", label: "Partner Flow" },

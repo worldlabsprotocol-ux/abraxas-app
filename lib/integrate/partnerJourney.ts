@@ -18,6 +18,8 @@ export const HOLDER_VERIFY_DEFAULT_PATH = "/passport?view=verify&mode=registry";
 
 export const HOLDER_VERIFY_CREDENTIAL_PATH = "/passport?view=verify&mode=credential";
 
+export const VERIFICATION_FIRST_DEFAULT_PATH = "/verify?mode=independent";
+
 export const PARTNER_RECEIPT_VERIFIER_PATH = "/verify?mode=receipt";
 
 export const NAV_PARTNER_VERIFY_LABEL = "Partner verify";
@@ -141,12 +143,12 @@ export const PARTNER_POST_APPLY_STEPS = [
 
 export const PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL = "Receipt verification (server)";
 
-export const VERIFY_HUB_EYEBROW = "Developer tools";
+export const VERIFY_HUB_EYEBROW = "Independent verification";
 
-export const VERIFY_HUB_HEADLINE = "Developer Receipt Tester";
+export const VERIFY_HUB_HEADLINE = "Verify without an Abraxas account";
 
 export const VERIFY_HUB_SUBHEAD =
-  "Validate signed Partner Flow receipts, registry records, and credential payloads during integration. This is not the customer verification experience.";
+  "Start with a non-production portable bundle and @abraxas/independent-verifier. Issuance and hosted receipt mirrors are optional next steps — not prerequisites to understand verification.";
 
 export const VERIFY_HUB_HOLDER_NOTE =
   "Holders can review their own proofs from Passport.";

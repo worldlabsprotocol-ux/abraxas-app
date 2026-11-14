@@ -78,6 +78,7 @@ export default function DevelopersPage() {
       <ContentCard title="API reference">
         <div style={{ display: "grid", gap: "0.45rem", fontFamily: FONT, fontSize: "0.78rem" }}>
           {[
+            { label: "Verify independently (no account)", href: "/verify?mode=independent" },
             { label: "Integration Studio", href: "/developers/integration-studio" },
             { label: "Institutional integration workspace (Build #588)", href: "/developers/institutional-integration" },
             { label: "Institutional verification SDK (Build #587 tarball)", href: "/developers/institutional-verification" },

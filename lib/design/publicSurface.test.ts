@@ -17,7 +17,7 @@ describe("public surface tokens", () => {
     const labels = PUBLIC_NAV_MENUS.flatMap((g) => g.links.map((l) => l.label));
     expect(labels).toContain("Public demo");
     expect(labels).toContain("Documentation");
-    expect(labels).toContain("Independent verifier");
+    expect(labels).toContain("Verify independently");
     expect(PUBLIC_NAV_START_BUILDING.href).toBe("/#start-sandbox");
     const hrefs = PUBLIC_NAV_LINKS.map((link) => link.href);
     expect(hrefs).toContain("/passport");
