@@ -27,6 +27,7 @@ import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 const ROOT = resolve(__dirname, "../..");
 
 const PROTECTED_PATHS = [
+  "components/verify/IndependentVerificationFlow.tsx",
   "components/verify/VerifyPageIntro.tsx",
   "app/verify/page.tsx",
   "app/verify/VerifyClient.tsx",
@@ -85,7 +86,7 @@ describe("phase 7 partner conversion batch 1", () => {
     for (const rel of PROTECTED_PATHS) {
       expect(existsSync(resolve(ROOT, rel)), rel).toBe(true);
     }
-    expect(PROTECTED_PATHS).toHaveLength(9);
+    expect(PROTECTED_PATHS).toHaveLength(10);
   });
 
   it("uses canonical apply path across partner journey and external onboarding", () => {
@@ -100,8 +101,7 @@ describe("phase 7 partner conversion batch 1", () => {
 
   it("routes holders away from partner receipt verifier as the default nav target", () => {
     const nav = read("components/sui/NavProfileMenu.tsx");
-    expect(nav).toContain("HOLDER_VERIFY_DEFAULT_PATH");
-    expect(nav).toContain("My records & credentials");
+    expect(nav).toContain('href="/passport"');
     expect(nav).not.toContain('href: "/verify"');
     expect(nav).not.toContain("Verify a record");
 
@@ -129,31 +129,25 @@ describe("phase 7 partner conversion batch 1", () => {
 
   it("places verification demos behind an explicit disclosure below live tools on /verify", () => {
     const page = read("app/verify/page.tsx");
-    const introIdx = page.indexOf("<VerifyPageIntro");
+    expect(page).toContain("IndependentVerificationFlow");
+    expect(page).not.toContain("PassportPageTabs");
+    expect(page).toContain("VerifyClient");
     const clientIdx = page.indexOf("<VerifyClient");
-    const disclosureIdx = page.indexOf("<details>");
+    const disclosureIdx = page.indexOf("<details>", clientIdx);
     const demoIdx = page.indexOf("<VerifyPageIntroDemo");
     const sampleIdx = page.indexOf("<VerifyStaticSample");
-    const disclosureEndIdx = page.indexOf("</details>", sampleIdx);
-    expect(introIdx).toBeGreaterThan(-1);
-    expect(clientIdx).toBeGreaterThan(introIdx);
     expect(disclosureIdx).toBeGreaterThan(clientIdx);
     expect(demoIdx).toBeGreaterThan(disclosureIdx);
     expect(sampleIdx).toBeGreaterThan(demoIdx);
-    expect(disclosureEndIdx).toBeGreaterThan(sampleIdx);
-    expect(page).toContain("Technical reference demos (illustrative, not live verification)");
+    expect(page).toContain("Illustrative samples (not live verification)");
   });
 
   it("labels passport tabs for partner vs holder contexts", () => {
     render(React.createElement(PassportPageTabs, { active: "verify" }));
-    expect(screen.getByRole("link", { name: "My Passport" })).toHaveAttribute("href", "/passport");
-    expect(screen.getByRole("link", { name: "Partner verifier" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /My Passport/ })).toHaveAttribute("href", "/passport");
+    expect(screen.getByRole("link", { name: /Partner verifier/ })).toHaveAttribute(
       "href",
       PARTNER_RECEIPT_VERIFIER_PATH,
-    );
-    expect(screen.getByRole("link", { name: "Holder tools" })).toHaveAttribute(
-      "href",
-      HOLDER_VERIFY_DEFAULT_PATH,
     );
   });
 

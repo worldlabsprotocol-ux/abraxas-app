@@ -18,7 +18,7 @@ export const HOLDER_VERIFY_DEFAULT_PATH = "/passport?view=verify&mode=registry";
 
 export const HOLDER_VERIFY_CREDENTIAL_PATH = "/passport?view=verify&mode=credential";
 
-export const VERIFICATION_FIRST_DEFAULT_PATH = "/verify?mode=independent";
+export const VERIFICATION_FIRST_DEFAULT_PATH = "/verify";
 
 export const PARTNER_RECEIPT_VERIFIER_PATH = "/verify?mode=receipt";
 
@@ -143,12 +143,27 @@ export const PARTNER_POST_APPLY_STEPS = [
 
 export const PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL = "Receipt verification (server)";
 
-export const VERIFY_HUB_EYEBROW = "Independent verification";
+export const INDEPENDENT_VERIFY_ENTRY_COPY = {
+  title: "Verify a receipt independently",
+  subline:
+    "Try the teaching demo or paste your own bundle. No account needed. Production verification runs offline with your own pinned trust material.",
+  useDemoLabel: "Use demo receipt",
+  pasteLabel: "Paste my receipt",
+  footerNote: "Need server mirrors, registry lookup, or JWT demos?",
+} as const;
 
-export const VERIFY_HUB_HEADLINE = "Verify without an Abraxas account";
+export const VERIFY_DEVELOPER_EYEBROW = "Developer testing";
 
-export const VERIFY_HUB_SUBHEAD =
-  "Start with a non-production portable bundle and @abraxas/independent-verifier. Issuance and hosted receipt mirrors are optional next steps — not prerequisites to understand verification.";
+export const VERIFY_DEVELOPER_HEADLINE = "Integration and mirror testers";
+
+export const VERIFY_DEVELOPER_SUBHEAD =
+  "These tools are for engineers wiring Partner Flow — not the default independent check. Start on the plain verify page unless you know you need a specific tester.";
+
+export const VERIFY_HUB_EYEBROW = VERIFY_DEVELOPER_EYEBROW;
+
+export const VERIFY_HUB_HEADLINE = VERIFY_DEVELOPER_HEADLINE;
+
+export const VERIFY_HUB_SUBHEAD = VERIFY_DEVELOPER_SUBHEAD;
 
 export const VERIFY_HUB_HOLDER_NOTE =
   "Holders can review their own proofs from Passport.";

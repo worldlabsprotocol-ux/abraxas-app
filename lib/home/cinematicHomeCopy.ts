@@ -13,7 +13,7 @@ export const CINEMATIC_HERO_SUPPORT =
 export const CINEMATIC_CTA_PRIMARY = "See reuse across two apps";
 export const CINEMATIC_CTA_PRIMARY_HREF = "/proof";
 export const CINEMATIC_CTA_SECONDARY = "Verify independently";
-export const CINEMATIC_CTA_SECONDARY_HREF = "/verify?mode=independent";
+export const CINEMATIC_CTA_SECONDARY_HREF = "/verify";
 
 export const SCROLL_STORY_EYEBROW = "THE INTERNET ASKS FOR TOO MUCH";
 export const SCROLL_STORY_RESOLVE = "AN APPLICATION ONLY NEEDED ONE ANSWER.";

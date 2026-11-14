@@ -89,7 +89,7 @@ describe("homepage clarity batch 1 static guards", () => {
     expect(surface).toContain('label: "Documentation"');
     expect(surface).toContain('label: "Verify independently"');
     expect(surface).toContain('label: "Public demo"');
-    expect(surface).toContain('href: "/verify?mode=independent"');
+    expect(surface).toContain('href: "/verify"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
   });
