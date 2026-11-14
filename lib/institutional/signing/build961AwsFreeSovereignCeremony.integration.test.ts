@@ -322,7 +322,7 @@ describeProof("BUILD #961 — AWS-free sovereign ceremony (disposable Postgres)"
        ) values (
          $1, $2, 'partner-build961', 'policy-build961', 1, 'subject-build961',
          'approved', 'sandbox_only', $3, null, null, 'active', $3,
-         '1.0.0', $4, $5, $6, '{}', '[]'::jsonb, '[]'::jsonb
+         '1.0.0', $4, $5, $6, '{}', '[]'::jsonb, '{}'
        )`,
       [
         canonical.receipt_id,
