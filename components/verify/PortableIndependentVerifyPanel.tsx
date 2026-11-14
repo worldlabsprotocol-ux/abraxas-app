@@ -125,7 +125,17 @@ export function PortableIndependentVerifyPanel() {
   }, []);
 
   if (loadError) {
-    return <StatusBanner tone="error" title="Bundle unavailable" message={loadError} />;
+    return (
+      <StatusBanner tone="error" title="Bundle unavailable">
+        {loadError} You can still verify offline with committed fixtures and{" "}
+        <code style={{ fontFamily: MONO, fontSize: "0.76rem" }}>@abraxas/independent-verifier</code>{" "}
+        (see{" "}
+        <Link href="/developers/institutional-verification" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+          SDK workspace
+        </Link>
+        ).
+      </StatusBanner>
+    );
   }
 
   if (!demo?.manifest) {
@@ -136,14 +146,13 @@ export function PortableIndependentVerifyPanel() {
 
   return (
     <div style={{ display: "grid", gap: "1.25rem" }}>
-      <StatusBanner
-        tone="info"
-        title="Non-production onboarding bundle"
-        message={
-          demo.issuance_note ??
-          "Synthetic sandbox fixtures only. Live issuance uses an authorized issuer; hosted export is optional."
-        }
-      />
+      <StatusBanner tone="info" title="Hosted demo only — not required for verification">
+        {demo.issuance_note ??
+          "Synthetic sandbox fixtures only. Live issuance uses an authorized issuer; hosted export is optional."}{" "}
+        Production relying parties verify with{" "}
+        <code style={{ fontFamily: MONO, fontSize: "0.76rem" }}>@abraxas/independent-verifier</code> and pinned
+        artifacts in their own environment. This page&apos;s API calls explain the flow; they are not a trust root.
+      </StatusBanner>
 
       <div className="abx-verify-independent-intro" style={{
         padding: "1rem 1.1rem",
@@ -181,7 +190,11 @@ export function PortableIndependentVerifyPanel() {
         </Btn>
       </div>
 
-      {err && <StatusBanner tone="error" title="Run failed" message={err} />}
+      {err && (
+        <StatusBanner tone="error" title="Run failed">
+          {err}
+        </StatusBanner>
+      )}
 
       {result?.verification && (
         <div>
@@ -209,9 +222,11 @@ export function PortableIndependentVerifyPanel() {
 
       <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
         <p style={{ margin: "0 0 0.5rem" }}>
-          Copy the same flow into your backend with{" "}
-          <code style={{ fontFamily: MONO }}>{demo.download_hints?.npm_package ?? "@abraxas/independent-verifier"}</code>{" "}
-          and fixtures under <code style={{ fontFamily: MONO }}>{demo.download_hints?.repo_relative_dir}</code>.
+          <strong style={{ color: "var(--text-primary)" }}>Standalone path (no Abraxas account):</strong> install{" "}
+          <code style={{ fontFamily: MONO }}>{demo.download_hints?.npm_package ?? "@abraxas/independent-verifier"}</code>,
+          pin trust material out-of-band, and run verification from fixtures under{" "}
+          <code style={{ fontFamily: MONO }}>{demo.download_hints?.repo_relative_dir}</code> or your own portable bundle.
+          Committed fixtures teach onboarding; fresh authoritative receipts require authorized issuance.
         </p>
         <p style={{ margin: 0 }}>
           Need hosted issuance later?{" "}
