@@ -4,7 +4,7 @@
 import {
   deriveApplicationScopeFromAuthoritativeFacts,
 } from "@/lib/decisionReceipts/currentValidity/applicationScopeContract";
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { querySovereignStagingPg } from "../sovereignStagingPg.runtime";
 
 export type SovereignApplicationScopeEvaluation = {
   scope_required: boolean;

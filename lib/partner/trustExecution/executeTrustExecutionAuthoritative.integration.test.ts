@@ -10,6 +10,17 @@ import {
   describeConfiguredIssuerAuthority,
   signIssuerAuthorityChangeAuthorization,
 } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
+import {
+  classifyGovernanceAction,
+  signAuthorityGovernanceApproval,
+} from "@/lib/persistence/boundary/issuerAuthority/governanceApproval";
+import {
+  GOVERNANCE_OPERATOR_PG_URL_ENV,
+  resetGovernanceOperatorPgPoolForTests,
+} from "@/lib/persistence/boundary/governanceOperatorPg";
+import { installDisposableGovernanceTrustPin } from "@/lib/persistence/boundary/issuerAuthority/governanceTrustCeremony";
+import { provisionDisposableSovereignRoleUrls } from "@/lib/persistence/boundary/issuerAuthority/disposableSovereignRoles";
+import { loadIssuerAuthorityState } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
 import { publicEd25519JwkFingerprint } from "@abraxas/independent-verifier";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import {
@@ -53,6 +64,7 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
     const receiptKey = generateTestSigningKeyPair("build854-auth-issuer");
     const anchorKey = generateTestSigningKeyPair("build854-auth-anchor");
     const statusSignerKey = generateTestSigningKeyPair("build854-auth-status");
+    const governanceKey = generateTestSigningKeyPair("build854-auth-governance");
     Object.assign(
       process.env,
       registryEnv(receiptKey, anchorKey, process.env),
@@ -72,18 +84,32 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
     await admin.query(`create database "${dbName}"`);
     await admin.end();
 
-    const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
-    process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = url;
-    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = url;
-    process.env.ABRAXAS_DATABASE_URL = url;
     resetSovereignStagingPgPoolForTests();
-    pool = new pg.Pool({ connectionString: url });
+    resetGovernanceOperatorPgPoolForTests();
+    pool = new pg.Pool({ connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}` });
     await applySovereignSliceSchema(pool);
+    const urls = await provisionDisposableSovereignRoleUrls({ databaseName: dbName, adminPool: pool });
+    process.env.ABRAXAS_SOVEREIGN_STAGING_PG_URL = urls.runtimeUrl;
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = urls.runtimeUrl;
+    process.env.ABRAXAS_DISPOSABLE_PG_ADMIN_URL = urls.adminUrl;
+    process.env[GOVERNANCE_OPERATOR_PG_URL_ENV] = urls.operatorUrl;
+    process.env.ABRAXAS_DATABASE_URL = urls.runtimeUrl;
     const described = describeConfiguredIssuerAuthority({
       env: process.env,
       anchorKeyId: "build834-trust-anchor",
     });
     if (!described.ok) throw new Error(described.reason);
+    const installed = await installDisposableGovernanceTrustPin({
+      env: process.env,
+      environment: described.environment,
+      governance: governanceKey,
+      anchorKeyId: "build834-trust-anchor",
+      anchorPublicJwk: anchorKey.publicKeyJwk,
+      authorityKeys: [{ key_id: receiptKey.signingKeyId, public_jwk: receiptKey.publicKeyJwk }],
+      statusSigners: [{ key_id: statusSignerKey.signingKeyId, public_jwk: statusSignerKey.publicKeyJwk }],
+      changeTicket: "disposable-trust-execution-governance",
+    });
+    if (!installed.ok) throw new Error(installed.reason);
     const authorization = {
       document: "abraxas_issuer_authority_change/1.0.0" as const,
       environment: described.environment,
@@ -94,12 +120,32 @@ describeProof("Build #854 authoritative trust execution evidence", () => {
       anchor_key_id: "build834-trust-anchor",
       anchor_fingerprint: publicEd25519JwkFingerprint(anchorKey.publicKeyJwk) ?? "",
     };
+    const authorityState = loadIssuerAuthorityState(process.env);
+    if (!authorityState.ok) throw new Error(authorityState.reason);
+    const governanceApproval = {
+      document: "abraxas_authority_governance_approval/1.0.0" as const,
+      schema_version: "1.0.0" as const,
+      environment: authorization.environment,
+      action: classifyGovernanceAction({
+        change: authorization.change,
+        statuses: [...authorityState.keys, ...authorityState.statusSigners].map((key) => key.status),
+      }),
+      registry_version: authorization.registry_version,
+      supersedes_registry_version: authorization.supersedes_registry_version,
+      authority_state_digest: authorization.authority_state_digest,
+      governance_key_id: governanceKey.signingKeyId,
+    };
     const bootstrapped = await applyIssuerAuthorityChangeAuthorization({
       env: process.env,
       authorization,
       signatureBase64Url: signIssuerAuthorityChangeAuthorization({
         authorization,
         anchorPrivateJwk: anchorKey.privateKeyJwk,
+      }),
+      governanceApproval,
+      governanceSignatureBase64Url: signAuthorityGovernanceApproval({
+        approval: governanceApproval,
+        governancePrivateJwk: governanceKey.privateKeyJwk,
       }),
     });
     if (!bootstrapped.ok) throw new Error(bootstrapped.reason);

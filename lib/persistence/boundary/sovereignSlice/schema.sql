@@ -99,6 +99,32 @@ create table if not exists public.issuer_authority_registry_continuity (
   check (supersedes_registry_version is null or supersedes_registry_version < registry_version)
 );
 
+create table if not exists public.issuer_governance_trust_pin (
+  environment text not null primary key check (environment in ('demo', 'production')),
+  governance_key_id text not null,
+  public_jwk jsonb not null,
+  public_key_fingerprint text not null check (char_length(public_key_fingerprint) = 64),
+  operator_change_ticket text not null,
+  established_at timestamptz not null default now(),
+  distrusted_at timestamptz,
+  distrust_reason text,
+  check (distrusted_at is null or distrust_reason is not null)
+);
+
+create table if not exists public.issuer_governance_trust_events (
+  id bigserial primary key,
+  environment text not null check (environment in ('demo', 'production')),
+  event_type text not null check (event_type in ('bootstrap', 'succession', 'distrust')),
+  governance_key_id text not null,
+  public_key_fingerprint text not null check (char_length(public_key_fingerprint) = 64),
+  operator_change_ticket text,
+  detail jsonb not null default '{}'::jsonb,
+  recorded_at timestamptz not null default now()
+);
+
+create index if not exists issuer_governance_trust_events_environment_idx
+  on public.issuer_governance_trust_events (environment, recorded_at);
+
 create table if not exists public.sovereign_receipt_evidence_dependencies (
   receipt_id text not null references public.decision_receipts(id),
   source_credential_id text not null references public.sovereign_evidence_sources(source_credential_id),

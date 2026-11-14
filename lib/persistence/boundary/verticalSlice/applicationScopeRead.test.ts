@@ -1,16 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { evaluateApplicationScopeOnSovereignPg } from "./applicationScopeRead";
 
-vi.mock("../sovereignStagingPg", () => ({
-  querySovereignStagingPg: vi.fn(),
+const querySovereignStagingPg = vi.hoisted(() => vi.fn());
+
+vi.mock("../sovereignStagingPg.runtime", () => ({
+  querySovereignStagingPg,
 }));
 
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { evaluateApplicationScopeOnSovereignPg } from "./applicationScopeRead";
 
-const mockQuery = vi.mocked(querySovereignStagingPg);
+const mockQuery = querySovereignStagingPg;
 
 describe("evaluateApplicationScopeOnSovereignPg", () => {
   it("skips enforcement when expectedApplicationId is omitted", async () => {
+    mockQuery.mockReset();
     const result = await evaluateApplicationScopeOnSovereignPg({
       receiptId: "dr_1",
       partnerId: "partner-a",
@@ -21,6 +23,7 @@ describe("evaluateApplicationScopeOnSovereignPg", () => {
   });
 
   it("denies unknown application with application_unbound", async () => {
+    mockQuery.mockReset();
     mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const result = await evaluateApplicationScopeOnSovereignPg({

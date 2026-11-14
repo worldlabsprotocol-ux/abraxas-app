@@ -2,12 +2,11 @@
 // Monotonic status_version for signed status statements — sovereign PG or Demo operational Postgres.
 
 import { supabaseProjectRefFromPostgresUrl } from "@/lib/supabase/projectRefs";
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+import { querySovereignStagingPg } from "../sovereignStagingPg.runtime";
 import pg from "pg";
 import type { Pool } from "pg";
 import { assertNotProductionSupabaseProject } from "../isolationGuard";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
-import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 
 const DEMO_OPERATIONAL_PROJECT_REF = "ocntwbxarpjeixdnzide";
 
@@ -74,6 +73,7 @@ export async function nextSignedStatusVersion(input: {
 
   if (persistenceUsesDirectPostgres(env)) {
     try {
+      const { queryAbraxasPg } = await import("@/lib/persistence/pgPool");
       const { rows } = await queryAbraxasPg<{ status_version: number }>(
         `insert into public.portable_export_status_checkpoints (receipt_id, status_version)
          values ($1, 1) on conflict (receipt_id) do update

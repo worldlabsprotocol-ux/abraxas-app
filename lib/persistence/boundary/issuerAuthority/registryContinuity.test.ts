@@ -14,8 +14,18 @@ import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignS
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import {
   buildIssuerAuthorityStatementFromRegistry,
+  loadIssuerAuthorityState,
   publishSignedIssuerAuthorityFromRegistry,
 } from "./buildFromRegistry";
+import {
+  classifyGovernanceAction,
+  signAuthorityGovernanceApproval,
+  type AuthorityGovernanceApproval,
+} from "./governanceApproval";
+import { GOVERNANCE_OPERATOR_PG_URL_ENV } from "../governanceOperatorPg";
+import { resetGovernanceOperatorPgPoolForTests } from "../governanceOperatorPg";
+import { installDisposableGovernanceTrustPin } from "./governanceTrustCeremony";
+import { provisionDisposableSovereignRoleUrls } from "./disposableSovereignRoles";
 import { resolveIssuerKeyFromSignedStatement } from "./resolveIssuerKey";
 import {
   applyIssuerAuthorityChangeAuthorization,
@@ -197,10 +207,13 @@ describe("issuer authority continuity decisions", () => {
 
 describeProof("issuer authority registry continuity on sovereign postgres", () => {
   const anchor = generateTestSigningKeyPair("continuity-anchor");
+  const governance = generateTestSigningKeyPair("continuity-governance");
   const receipt = generateTestSigningKeyPair("continuity-receipt");
   const extra = generateTestSigningKeyPair("continuity-extra");
   const other = generateTestSigningKeyPair("continuity-other");
   let databaseUrl = "";
+  let governanceOperatorUrl = "";
+  let adminUrl = "";
   let pool: pg.Pool;
 
   beforeAll(async () => {
@@ -211,15 +224,36 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     await admin.query(`drop database if exists "${dbName}" with (force)`);
     await admin.query(`create database "${dbName}"`);
     await admin.end();
-    databaseUrl = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     resetSovereignStagingPgPoolForTests();
-    pool = new pg.Pool({ connectionString: databaseUrl });
+    resetGovernanceOperatorPgPoolForTests();
+    pool = new pg.Pool({ connectionString: `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}` });
     await applySovereignSliceSchema(pool);
+    const urls = await provisionDisposableSovereignRoleUrls({ databaseName: dbName, adminPool: pool });
+    databaseUrl = urls.runtimeUrl;
+    governanceOperatorUrl = urls.operatorUrl;
+    adminUrl = urls.adminUrl;
+    const installed = await installDisposableGovernanceTrustPin({
+      env: {
+        ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+        ABRAXAS_DISPOSABLE_PG_TEST_URL: databaseUrl,
+        ABRAXAS_DISPOSABLE_PG_ADMIN_URL: adminUrl,
+        [GOVERNANCE_OPERATOR_PG_URL_ENV]: governanceOperatorUrl,
+      },
+      environment: "production",
+      governance,
+      anchorKeyId: anchor.signingKeyId,
+      anchorPublicJwk: anchor.publicKeyJwk,
+      authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
+      statusSigners: [],
+      changeTicket: "disposable-continuity-governance",
+    });
+    if (!installed.ok) throw new Error(installed.reason);
   });
 
   afterAll(async () => {
     await pool?.end();
     resetSovereignStagingPgPoolForTests();
+    resetGovernanceOperatorPgPoolForTests();
   });
 
   function envFor(
@@ -261,6 +295,46 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     };
   }
 
+  function governanceBundle(
+    env: Record<string, string>,
+    authorization: IssuerAuthorityChangeAuthorization,
+    signer: { signingKeyId: string; publicKeyJwk: JsonWebKey; privateKeyJwk: JsonWebKey } = governance,
+  ) {
+    const state = loadIssuerAuthorityState(env);
+    if (!state.ok) throw new Error(state.reason);
+    const approval: AuthorityGovernanceApproval = {
+      document: "abraxas_authority_governance_approval/1.0.0",
+      schema_version: "1.0.0",
+      environment: authorization.environment,
+      action: classifyGovernanceAction({
+        change: authorization.change,
+        statuses: [...state.keys, ...state.statusSigners].map((key) => key.status),
+      }),
+      registry_version: authorization.registry_version,
+      supersedes_registry_version: authorization.supersedes_registry_version,
+      authority_state_digest: authorization.authority_state_digest,
+      governance_key_id: signer.signingKeyId,
+    };
+    return {
+      governanceApproval: approval,
+      governanceSignatureBase64Url: signAuthorityGovernanceApproval({
+        approval,
+        governancePrivateJwk: signer.privateKeyJwk,
+      }),
+    };
+  }
+
+  function commit(
+    env: Record<string, string>,
+    signed: { authorization: IssuerAuthorityChangeAuthorization; signatureBase64Url: string },
+  ) {
+    return applyIssuerAuthorityChangeAuthorization({
+      env,
+      ...signed,
+      ...governanceBundle(env, signed.authorization),
+    });
+  }
+
   it("accepts the current version for repeated statements and rejects the listed attacks", async () => {
     const active = envFor([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }]);
     const beforeBootstrap = await resolveIssuerAuthorityRegistryContinuity({
@@ -271,11 +345,11 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     expect((await pool.query(`select 1 from public.issuer_authority_registry_continuity`)).rowCount).toBe(0);
 
     const intruder = signedChange(active, "bootstrap", 854, null, extra);
-    const forgedApproval = await applyIssuerAuthorityChangeAuthorization({ env: active, ...intruder });
+    const forgedApproval = await commit(active, intruder);
     expect(forgedApproval).toEqual({ ok: false, reason: "authority_approval_signature_invalid" });
 
     const bootstrap = signedChange(active, "bootstrap", 854, null);
-    const established = await applyIssuerAuthorityChangeAuthorization({ env: active, ...bootstrap });
+    const established = await commit(active, bootstrap);
     expect(established).toMatchObject({ ok: true, registryVersion: 854, repeated: false });
 
     const versions: number[] = [];
@@ -318,7 +392,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     });
     expect(unauthorized).toEqual({ ok: false, reason: "authority_state_change_unapproved" });
     const wrongDigest = signedChange(active, "authority_change", 855, 854);
-    const mismatched = await applyIssuerAuthorityChangeAuthorization({ env: added, ...wrongDigest });
+    const mismatched = await commit(added, wrongDigest);
     expect(mismatched).toEqual({ ok: false, reason: "authority_approval_digest_mismatch" });
     const unchanged = await pool.query(
       `select registry_version, authority_state_digest from public.issuer_authority_registry_continuity`,
@@ -330,10 +404,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       { id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk, status: "retiring" },
       { id: extra.signingKeyId, publicJwk: extra.publicKeyJwk },
     ]);
-    const rotated = await applyIssuerAuthorityChangeAuthorization({
-      env: replacement,
-      ...signedChange(replacement, "authority_change", 855, 854),
-    });
+    const rotated = await commit(replacement, signedChange(replacement, "authority_change", 855, 854));
     expect(rotated).toMatchObject({ ok: true, registryVersion: 855, repeated: false });
     const oldStatement = publishSignedIssuerAuthorityFromRegistry({
       registryVersion: 854,
@@ -359,15 +430,9 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       publicJwk: receipt.publicKeyJwk,
       status: "revoked",
     }]);
-    const staleRevocation = await applyIssuerAuthorityChangeAuthorization({
-      env: revokedEnv,
-      ...signedChange(revokedEnv, "authority_change", 856, 854),
-    });
-    expect(staleRevocation).toEqual({ ok: false, reason: "stale_authority_approval" });
-    const revoked = await applyIssuerAuthorityChangeAuthorization({
-      env: revokedEnv,
-      ...signedChange(revokedEnv, "authority_change", 856, 855),
-    });
+    const staleRevocation = await commit(revokedEnv, signedChange(revokedEnv, "authority_change", 856, 854));
+    expect(staleRevocation).toEqual({ ok: false, reason: "stale_governance_approval" });
+    const revoked = await commit(revokedEnv, signedChange(revokedEnv, "authority_change", 856, 855));
     expect(revoked).toMatchObject({ ok: true, registryVersion: 856 });
     if (!revoked.ok) return;
     const revokedStatement = publishSignedIssuerAuthorityFromRegistry({
@@ -392,10 +457,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     expect(current.ok).toBe(false);
     if (!current.ok) expect(current.reason).toBe("revoked");
 
-    const restore = await applyIssuerAuthorityChangeAuthorization({
-      env: active,
-      ...signedChange(active, "authority_change", 857, 856),
-    });
+    const restore = await commit(active, signedChange(active, "authority_change", 857, 856));
     expect(restore).toEqual({ ok: false, reason: "authority_state_rollback" });
 
     const unavailable = await resolveIssuerAuthorityRegistryContinuity({
@@ -431,12 +493,12 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     const leftApproval = signedChange(left, "authority_change", start + 1, start);
     const rightApproval = signedChange(right, "authority_change", start + 1, start);
     const [first, second] = await Promise.all([
-      applyIssuerAuthorityChangeAuthorization({ env: left, ...leftApproval }),
-      applyIssuerAuthorityChangeAuthorization({ env: right, ...rightApproval }),
+      commit(left, leftApproval),
+      commit(right, rightApproval),
     ]);
     const outcomes = [first, second];
     expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(1);
-    expect(outcomes.filter((outcome) => !outcome.ok && outcome.reason === "stale_authority_approval")).toHaveLength(1);
+    expect(outcomes.filter((outcome) => !outcome.ok && outcome.reason === "stale_governance_approval")).toHaveLength(1);
     const latest = await pool.query(
       `select max(registry_version) as version from public.issuer_authority_registry_continuity`,
     );
@@ -468,7 +530,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     });
     expect(missing).toEqual({ ok: false, reason: "authority_version_state_unavailable" });
     const approval = signedChange(env, "bootstrap", 854, null);
-    const recorded = await applyIssuerAuthorityChangeAuthorization({ env, ...approval });
+    const recorded = await commit(env, approval);
     expect(recorded).toEqual({ ok: false, reason: "authority_version_state_unavailable" });
     resetSovereignStagingPgPoolForTests();
   });
@@ -484,6 +546,10 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     const url = `postgresql://postgres:postgres@127.0.0.1:5432/${dbName}`;
     const boundaryPool = new pg.Pool({ connectionString: url });
     await applySovereignSliceSchema(boundaryPool);
+    const boundaryRoles = await provisionDisposableSovereignRoleUrls({
+      databaseName: dbName,
+      adminPool: boundaryPool,
+    });
     const columns = await boundaryPool.query<{ column_name: string }>(
       `select column_name from information_schema.columns
         where table_schema = 'public' and table_name = 'issuer_authority_registry_continuity'`,
@@ -492,16 +558,24 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
 
     const substitute = generateTestSigningKeyPair("substituted-anchor");
     const original = {
-      ...registryEnv([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }], url),
+      ...registryEnv([{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }], boundaryRoles.runtimeUrl),
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: boundaryRoles.runtimeUrl,
+      ABRAXAS_DISPOSABLE_PG_ADMIN_URL: boundaryRoles.adminUrl,
+      [GOVERNANCE_OPERATOR_PG_URL_ENV]: boundaryRoles.operatorUrl,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(anchor.publicKeyJwk),
     };
     const substituted = {
       ...registryEnv(
         [{ id: receipt.signingKeyId, publicJwk: receipt.publicKeyJwk }],
-        url,
+        boundaryRoles.runtimeUrl,
         { id: extra.signingKeyId, publicJwk: extra.publicKeyJwk },
       ),
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      ABRAXAS_DISPOSABLE_PG_TEST_URL: boundaryRoles.runtimeUrl,
+      ABRAXAS_DISPOSABLE_PG_ADMIN_URL: boundaryRoles.adminUrl,
+      [GOVERNANCE_OPERATOR_PG_URL_ENV]: boundaryRoles.operatorUrl,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_KEY_ID: anchor.signingKeyId,
       ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PUBLIC_JWK: JSON.stringify(substitute.publicKeyJwk),
     };
@@ -512,10 +586,25 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
     });
     expect(unsigned).toEqual({ ok: false, reason: "authority_bootstrap_required" });
 
-    const established = await applyIssuerAuthorityChangeAuthorization({
-      env: original,
-      ...signedChange(original, "bootstrap", 854, null),
+    const pinInstalled = await installDisposableGovernanceTrustPin({
+      env: {
+        ...original,
+        ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+        ABRAXAS_DISPOSABLE_PG_TEST_URL: boundaryRoles.runtimeUrl,
+        ABRAXAS_DISPOSABLE_PG_ADMIN_URL: boundaryRoles.adminUrl,
+        [GOVERNANCE_OPERATOR_PG_URL_ENV]: boundaryRoles.operatorUrl,
+      },
+      environment: "production",
+      governance,
+      anchorKeyId: anchor.signingKeyId,
+      anchorPublicJwk: anchor.publicKeyJwk,
+      authorityKeys: [{ key_id: receipt.signingKeyId, public_jwk: receipt.publicKeyJwk }],
+      statusSigners: [{ key_id: extra.signingKeyId, public_jwk: extra.publicKeyJwk }],
+      changeTicket: "pin-boundary-governance",
     });
+    if (!pinInstalled.ok) throw new Error(pinInstalled.reason);
+
+    const established = await commit(original, signedChange(original, "bootstrap", 854, null));
     expect(established.ok).toBe(true);
 
     const described = describeConfiguredIssuerAuthority({
@@ -534,8 +623,7 @@ describeProof("issuer authority registry continuity on sovereign postgres", () =
       anchor_key_id: anchor.signingKeyId,
       anchor_fingerprint: publicEd25519JwkFingerprint(substitute.publicKeyJwk) ?? "",
     };
-    const recorded = await applyIssuerAuthorityChangeAuthorization({
-      env: substituted,
+    const recorded = await commit(substituted, {
       authorization,
       signatureBase64Url: signIssuerAuthorityChangeAuthorization({
         authorization,
