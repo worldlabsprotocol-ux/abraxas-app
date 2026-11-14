@@ -71,10 +71,10 @@ describe("public home flow manifest", () => {
   it("keeps former top-level nav destinations one click away", () => {
     const menuLabels = PUBLIC_NAV_MENUS.flatMap((g) => g.links.map((l) => l.label));
     expect(menuLabels).toContain("Documentation");
-    expect(menuLabels).toContain("Independent verifier");
+    expect(menuLabels).toContain("Verify independently");
     expect(menuLabels).toContain("Public demo");
     expect(PUBLIC_NAV_EXPLORE_LINKS.map((link) => link.label)).toEqual([
-      "Verification",
+      "Independent verify",
       "Pricing",
       "Launchpad",
       "Partner Flow",

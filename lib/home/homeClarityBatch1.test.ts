@@ -87,9 +87,9 @@ describe("homepage clarity batch 1 static guards", () => {
     const surface = read("lib/design/publicSurface.ts");
     expect(nav).toContain("PUBLIC_NAV_MENUS");
     expect(surface).toContain('label: "Documentation"');
-    expect(surface).toContain('label: "Independent verifier"');
+    expect(surface).toContain('label: "Verify independently"');
     expect(surface).toContain('label: "Public demo"');
-    expect(surface).toContain('href: "/verification"');
+    expect(surface).toContain('href: "/verify?mode=independent"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
   });
@@ -156,7 +156,7 @@ describe("RedesignNav mobile discoverability", () => {
     expect(screen.getByRole("link", { name: "Public demo" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Documentation" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Independent verifier" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Verify independently" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Integration Studio" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Partner Flow" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "For businesses" })).toBeInTheDocument();
