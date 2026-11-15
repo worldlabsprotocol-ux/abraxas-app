@@ -360,6 +360,7 @@ export function IndependentVerificationFlow() {
             <SummaryBlock label="What this means" value={result.plain.whatThisMeans} />
             <SummaryBlock label="What was checked" value={result.plain.whatWasChecked} />
             <SummaryBlock label="Important limitations" value={result.plain.limitations} />
+            <SummaryBlock label="What to do next" value={result.plain.next} />
           </div>
 
           <Btn size="md" variant="primary" onClick={reset}>
@@ -381,7 +382,6 @@ export function IndependentVerificationFlow() {
               Advanced details
             </summary>
             <div style={{ paddingTop: "0.65rem", display: "grid", gap: "0.75rem" }}>
-              <SummaryBlock label="What to do next" value={result.plain.next} />
               {result.plain.detailRows.map((row) => (
                 <SummaryBlock key={row.label} label={row.label} value={row.value} />
               ))}
