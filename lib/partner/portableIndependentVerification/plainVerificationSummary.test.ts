@@ -25,7 +25,7 @@ describe("plainVerificationVerdict", () => {
 });
 
 describe("buildDefaultResultRows", () => {
-  it("keeps fixture policy and partner IDs out of default summary copy", () => {
+  it("keeps fixture IDs out of the default summary and uses compact sections", () => {
     const m = verificationFirstDemoManifest();
     const { verification } = runVerificationFirstDemoScenario("valid");
     const built = buildDefaultResultRows({
@@ -38,10 +38,42 @@ describe("buildDefaultResultRows", () => {
       isSyntheticDemo: true,
       decisionResult: "approved",
     });
-    const body = built.rows.map((r) => r.value).join("\n");
-    expect(body).not.toContain(m.policy_id);
-    expect(body).not.toContain(m.partner_id);
-    expect(built.rows[0]!.value).toContain(VERIFICATION_FIRST_DEMO_PLAIN.policySummary);
+    const surface = [built.whatThisMeans, built.whatWasChecked, built.limitations, built.next].join("\n");
+    expect(surface).not.toContain(m.policy_id);
+    expect(surface).not.toContain(m.partner_id);
+    expect(built.whatThisMeans).toContain("demonstration");
+    expect(built.whatWasChecked).toMatch(/unchanged/i);
+    expect(built.detailRows.length).toBeGreaterThan(5);
     expect(built.technicalIds).toContain(m.policy_id);
+  });
+
+  it("gives actionable next steps per verdict", () => {
+    for (const scenario of VERIFICATION_FIRST_DEMO_SCENARIOS) {
+      const { verification } = runVerificationFirstDemoScenario(scenario);
+      const built = buildDefaultResultRows({
+        verification,
+        mode: "hosted_demo_fixture",
+        scenario,
+        policy_id: "p",
+        partner_id: "partner",
+        isSyntheticDemo: true,
+      });
+      expect(built.next.length).toBeGreaterThan(20);
+      if (scenario === "revoked") expect(built.next.toLowerCase()).toContain("do not");
+    }
+  });
+
+  it("mentions teaching limitations on demo valid", () => {
+    const { verification } = runVerificationFirstDemoScenario("valid");
+    const built = buildDefaultResultRows({
+      verification,
+      mode: "hosted_demo_fixture",
+      scenario: "valid",
+      policy_id: "p",
+      partner_id: "x",
+      isSyntheticDemo: true,
+    });
+    expect(built.limitations.toLowerCase()).toContain("teaching example");
+    void VERIFICATION_FIRST_DEMO_PLAIN;
   });
 });

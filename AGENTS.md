@@ -9,5 +9,5 @@
 
 ## Cursor Cloud specific instructions
 
-- **Production apex (`https://abraxasworld.xyz`)**: A green merge to `main` does not guarantee the apex alias moves forward. Recent `main` builds may land on the `demo` custom environment (`demo.abraxasworld.xyz`) while production-target deploys can be **CANCELED** (Vercel ignored build step). After UX-critical merges, **verify the live SHA** on the apex domain matches `main` (not only preview URLs). If the old UI is still served, **re-point the `abraxasworld.xyz` alias** to the READY deployment whose `githubCommitSha` matches the merged commit — this is a deployment fix, not a redesign.
+- **Production apex (`https://abraxasworld.xyz`)**: A green merge to `main` does not guarantee the apex alias moves forward. Recent `main` builds may land on the `demo` custom environment (`demo.abraxasworld.xyz`) while production-target deploys can be **CANCELED** (Vercel ignored build step). After UX-critical merges, run `bash scripts/operations/assert-production-apex-sha.sh` and confirm founder-visible copy on the apex domain. If the old UI is still served, **re-point the `abraxasworld.xyz` alias** to the READY deployment whose `githubCommitSha` matches the merged commit — this is a deployment fix, not a redesign.
 
