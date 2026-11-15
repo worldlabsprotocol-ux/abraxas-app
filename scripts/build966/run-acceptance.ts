@@ -25,10 +25,21 @@ const steps: Array<{ name: string; cmd: string }> = [
     cmd: "npx vitest run app/api/developers/verification-first/synthetic-bundle/route.test.ts",
   },
   {
-    name: "production apex assert",
-    cmd: "bash scripts/operations/assert-production-apex-sha.sh",
+    name: "synthetic bundle download",
+    cmd: "npx tsx scripts/build966/verify-synthetic-bundle-download.ts",
+  },
+  {
+    name: "verifier external install",
+    cmd: "npm run build831:pack-verifier && bash scripts/build831/prove-external-install.sh",
   },
 ];
+
+if (process.env.BUILD966_POST_MERGE === "1") {
+  steps.push({
+    name: "production apex assert",
+    cmd: "bash scripts/operations/assert-production-apex-sha.sh",
+  });
+}
 
 function main() {
   const failures: string[] = [];

@@ -420,10 +420,6 @@ export function IndependentVerificationFlow() {
       )}
 
       {step === "choose" && !result && (
-        <VerificationFirstPartnerPathCard compact />
-      )}
-
-      {step === "choose" && !result && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
           {INDEPENDENT_VERIFY_ENTRY_COPY.footerNote}{" "}
           <Link href="/verify?mode=developer" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>

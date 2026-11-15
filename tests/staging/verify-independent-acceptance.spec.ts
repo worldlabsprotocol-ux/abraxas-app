@@ -12,14 +12,12 @@ const DEMO_SCENARIOS = [
 ] as const;
 
 test.describe("Independent verification default /verify", () => {
-  test("entry and integration path visible without account", async ({ page }) => {
+  test("entry keeps verification as the only primary actions", async ({ page }) => {
     await page.goto("/verify");
     await expect(page.getByRole("heading", { name: "Verify a receipt independently" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Use demo receipt" })).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: "Offline verification integration path" }),
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: /Download synthetic teaching bundle/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Paste my receipt" })).toBeVisible();
+    await expect(page.getByText("Next: verify offline", { exact: false })).toHaveCount(0);
   });
 
   test("valid demo shows verdict and next action on default surface", async ({ page }) => {
@@ -29,9 +27,9 @@ test.describe("Independent verification default /verify", () => {
     await expect(page.getByText("Valid", { exact: true })).toBeVisible();
     await expect(page.getByText("What to do next", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Try another receipt" })).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: "Offline verification integration path" }),
-    ).toBeVisible();
+    await page.getByText("Next: verify offline in your environment").click();
+    await expect(page.getByText(/not on public npm/i)).toBeVisible();
+    await expect(page.getByText(/build831:pack-verifier/)).toBeVisible();
   });
 
   for (const scenario of DEMO_SCENARIOS.filter((s) => s.id !== "valid")) {
