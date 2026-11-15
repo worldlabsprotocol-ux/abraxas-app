@@ -147,21 +147,86 @@ export function plainNextAction(input: {
   scenario?: string;
 }): string {
   if (input.verdict === "Valid") {
-    return "If this matches your policy, you may permit the action. For production, re-check with offline verification and fresh signed status.";
+    return "This demo passed its checks. In production, still confirm policy fit, fresh signed status, and offline verification with your pinned trust anchor before you authorize.";
   }
   if (input.verdict === "Wrong audience") {
-    return "Do not permit access. Request a receipt bound to your partner and policy.";
+    return "Do not authorize the action. Request a receipt intended for your partner and policy.";
   }
   if (input.verdict === "Revoked") {
-    return "Do not permit access. The status shows revocation even if the signature still verifies.";
+    return "Do not authorize the action. Signed status shows revocation.";
   }
   if (input.verdict === "Needs fresh status") {
-    return "Do not permit access yet. Ask the issuer for an updated signed status snapshot.";
+    return "Do not authorize yet. Obtain current signed status from the issuer.";
   }
   if (input.scenario === "tampered_signature" || input.scenario === "invalid_signature") {
-    return "Do not trust this receipt. Obtain a fresh bundle from a trusted channel.";
+    return "Do not trust this receipt. Obtain a corrected bundle from a trusted channel.";
   }
-  return "Do not permit access. Review advanced details or verify offline with your pinned trust anchor.";
+  return "Do not authorize the action. Review advanced details or verify offline with a pinned trust anchor.";
+}
+
+export type PlainResultSummary = {
+  verdict: PlainVerificationVerdict;
+  whatThisMeans: string;
+  whatWasChecked: string;
+  limitations: string;
+  next: string;
+  trustBoundary: string;
+  technicalIds: string;
+  detailRows: Array<{ label: string; value: string }>;
+};
+
+function buildWhatWasCheckedSentence(verification: IndependentVerificationResult): string {
+  const integrity = verification.cryptographically_authentic
+    ? "the receipt was unchanged"
+    : "the receipt failed integrity checks";
+  const issuer = verification.issuer_currently_authorized
+    ? "the issuer was authorized under the trust material used"
+    : "the issuer was not authorized under the trust material used";
+  const status = verification.status_evidence_authentic
+    ? "the signed status evidence met this check's freshness rules"
+    : "the signed status evidence did not meet freshness rules";
+  return `We checked that ${integrity}, ${issuer}, and ${status}.`;
+}
+
+function buildWhatThisMeans(
+  verdict: PlainVerificationVerdict,
+  input: { isSyntheticDemo: boolean; mode: HostedVerificationMode },
+): string {
+  if (verdict === "Valid" && input.isSyntheticDemo) {
+    return "The receipt passed this demonstration's verification checks.";
+  }
+  if (verdict === "Valid") {
+    return "The receipt passed the checks we could run with the supplied trust material.";
+  }
+  if (verdict === "Wrong audience") {
+    return "This receipt is not for the partner and policy you are checking.";
+  }
+  if (verdict === "Revoked") {
+    return "Signed status shows this receipt is revoked — do not treat it as currently acceptable.";
+  }
+  if (verdict === "Needs fresh status") {
+    return "The evidence is too old or incomplete to treat the receipt as currently acceptable.";
+  }
+  return "The receipt did not pass verification — do not trust it for authorization.";
+}
+
+function buildLimitationsBlock(input: {
+  verdict: PlainVerificationVerdict;
+  mode: HostedVerificationMode;
+  isSyntheticDemo: boolean;
+}): string {
+  const parts: string[] = [];
+  if (input.isSyntheticDemo) {
+    parts.push(
+      "This is a teaching example. It does not establish a real person's eligibility.",
+    );
+  }
+  parts.push(HOSTED_TRUST_BOUNDARY_COPY[input.mode]);
+  parts.push(OFFLINE_INDEPENDENT_VERIFICATION_NOTE);
+  if (input.verdict === "Valid") {
+    parts.push("A passing hosted check does not by itself authorize production access.");
+  }
+  return parts.join(" ");
 }
 
 export function technicalIdentifierBlock(input: {
@@ -186,16 +251,10 @@ export function buildDefaultResultRows(input: {
   receipt_id?: string;
   isSyntheticDemo?: boolean;
   decisionResult?: string;
-}): {
-  verdict: PlainVerificationVerdict;
-  trustBoundary: string;
-  rows: Array<{ label: string; value: string }>;
-  next: string;
-  technicalIds: string;
-} {
+}): PlainResultSummary {
   const verdict = plainVerificationVerdict(input.verification, input.scenario);
   const isDemo = input.isSyntheticDemo === true;
-  const rows: Array<{ label: string; value: string }> = [
+  const detailRows: Array<{ label: string; value: string }> = [
     {
       label: "What it proves",
       value: plainWhatItProvesHuman({
@@ -209,36 +268,32 @@ export function buildDefaultResultRows(input: {
         ? VERIFICATION_FIRST_DEMO_PLAIN.partnerSummary
         : "The partner named in your integration configuration.",
     },
+    { label: "Issuer authorized", value: plainIssuerLine(input.verification) },
+    { label: "Receipt unchanged", value: plainIntegrityLine(input.verification) },
+    { label: "Status evidence fresh enough", value: plainFreshnessLine(input.verification) },
+    { label: "Single-use (replay)", value: plainReplayLine(input.verification) },
+    { label: "Currently acceptable", value: plainAcceptabilityLine(input.verification) },
     {
-      label: "Issuer authorized",
-      value: plainIssuerLine(input.verification),
-    },
-    {
-      label: "Receipt unchanged",
-      value: plainIntegrityLine(input.verification),
-    },
-    {
-      label: "Status evidence fresh enough",
-      value: plainFreshnessLine(input.verification),
-    },
-    {
-      label: "Single-use (replay)",
-      value: plainReplayLine(input.verification),
-    },
-    {
-      label: "Currently acceptable",
-      value: plainAcceptabilityLine(input.verification),
+      label: "How this check ran",
+      value: HOSTED_TRUST_BOUNDARY_COPY[input.mode],
     },
   ];
   return {
     verdict,
-    trustBoundary: HOSTED_TRUST_BOUNDARY_COPY[input.mode],
-    rows,
+    whatThisMeans: buildWhatThisMeans(verdict, { isSyntheticDemo: isDemo, mode: input.mode }),
+    whatWasChecked: buildWhatWasCheckedSentence(input.verification),
+    limitations: buildLimitationsBlock({
+      verdict,
+      mode: input.mode,
+      isSyntheticDemo: isDemo,
+    }),
     next: plainNextAction({ verdict, mode: input.mode, scenario: input.scenario }),
+    trustBoundary: HOSTED_TRUST_BOUNDARY_COPY[input.mode],
     technicalIds: technicalIdentifierBlock({
       policy_id: input.policy_id,
       partner_id: input.partner_id,
       receipt_id: input.receipt_id,
     }),
+    detailRows,
   };
 }
