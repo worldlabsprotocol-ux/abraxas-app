@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "ignoreCommand": "bash scripts/operations/vercel-ignored-build-step.sh",
   "buildCommand": "npm run build:vercel",
   "devCommand": "npm run dev",
   "installCommand": "ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm install && node scripts/prune-ml-binaries.js",
