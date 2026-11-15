@@ -13,7 +13,11 @@ import {
   type PlainResultSummary,
   type PlainVerificationVerdict,
 } from "@/lib/partner/portableIndependentVerification/plainVerificationSummary";
-import { INDEPENDENT_VERIFY_ENTRY_COPY } from "@/lib/integrate/partnerJourney";
+import {
+  INDEPENDENT_VERIFY_ENTRY_COPY,
+  INDEPENDENT_VERIFY_PASTE_COPY,
+  VERIFICATION_FIRST_PARTNER_PATH,
+} from "@/lib/integrate/partnerJourney";
 import { VerificationFirstPartnerPathCard } from "@/components/verify/VerificationFirstPartnerPathCard";
 
 const FONT = "'Inter',system-ui,sans-serif";
@@ -146,6 +150,7 @@ export function IndependentVerificationFlow() {
     offlineNote?: string;
   } | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [pasteHint, setPasteHint] = useState<string | null>(null);
   const [pasteRaw, setPasteRaw] = useState("");
 
   useEffect(() => {
@@ -218,14 +223,44 @@ export function IndependentVerificationFlow() {
     }
   }, [applyPayload, running]);
 
+  const loadTeachingSample = useCallback(async () => {
+    if (running) return;
+    setRunning(true);
+    setErr(null);
+    setPasteHint(null);
+    try {
+      const res = await fetch(VERIFICATION_FIRST_PARTNER_PATH.syntheticBundleHref, { cache: "no-store" });
+      const json = (await res.json()) as { ok?: boolean; bundle?: PortableVerificationBundle };
+      if (!res.ok || !json.bundle) throw new Error("sample_unavailable");
+      setPasteRaw(JSON.stringify(json.bundle, null, 2));
+      setPasteHint(INDEPENDENT_VERIFY_PASTE_COPY.sampleLoadedHint);
+    } catch {
+      setErr(INDEPENDENT_VERIFY_PASTE_COPY.errors.sampleLoadFailed);
+    } finally {
+      setRunning(false);
+    }
+  }, [running]);
+
   const runPaste = useCallback(async () => {
     if (running) return;
     setRunning(true);
     setErr(null);
+    setPasteHint(null);
     setResult(null);
-    setStep("result");
     try {
-      const bundle = JSON.parse(pasteRaw) as PortableVerificationBundle;
+      const trimmed = pasteRaw.trim();
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        setErr(INDEPENDENT_VERIFY_PASTE_COPY.errors.notJson);
+        return;
+      }
+      let bundle: PortableVerificationBundle;
+      try {
+        bundle = JSON.parse(pasteRaw) as PortableVerificationBundle;
+      } catch {
+        setErr(INDEPENDENT_VERIFY_PASTE_COPY.errors.notJson);
+        return;
+      }
+      setStep("result");
       const res = await fetch("/api/developers/verification-first/verify-bundle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,18 +271,15 @@ export function IndependentVerificationFlow() {
         const code = json.error ?? "invalid_bundle";
         setStep("paste");
         if (code === "invalid_json" || code === "invalid_portable_bundle") {
-          setErr("That input is not a complete portable verification bundle.");
+          setErr(INDEPENDENT_VERIFY_PASTE_COPY.errors.incompleteBundle);
         } else if (code === "missing_trust_anchor") {
-          setErr("The bundle is missing trust material.");
+          setErr(INDEPENDENT_VERIFY_PASTE_COPY.errors.missingTrust);
         } else {
-          setErr("Could not verify that bundle.");
+          setErr(INDEPENDENT_VERIFY_PASTE_COPY.errors.verifyFailed);
         }
         return;
       }
       applyPayload(json);
-    } catch {
-      setStep("paste");
-      setErr("Could not read that JSON. Paste a complete portable verification bundle.");
     } finally {
       setRunning(false);
     }
@@ -256,8 +288,15 @@ export function IndependentVerificationFlow() {
   const reset = () => {
     setResult(null);
     setErr(null);
+    setPasteHint(null);
     setStep("choose");
     setPasteRaw("");
+  };
+
+  const openPaste = () => {
+    setErr(null);
+    setPasteHint(null);
+    setStep("paste");
   };
 
   return (
@@ -300,7 +339,7 @@ export function IndependentVerificationFlow() {
           <Btn size="md" variant="primary" disabled={!demoReady} onClick={() => void runDemo()}>
             {INDEPENDENT_VERIFY_ENTRY_COPY.useDemoLabel}
           </Btn>
-          <Btn size="md" variant="secondary" onClick={() => setStep("paste")}>
+          <Btn size="md" variant="secondary" onClick={openPaste}>
             {INDEPENDENT_VERIFY_ENTRY_COPY.pasteLabel}
           </Btn>
         </div>
@@ -309,14 +348,60 @@ export function IndependentVerificationFlow() {
       {step === "paste" && !result && (
         <div style={{ display: "grid", gap: "0.65rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
-            Paste your bundle, then run one check. Hosted paste uses the anchor inside the bundle — not independent pinning.
+            {INDEPENDENT_VERIFY_PASTE_COPY.lead}
           </p>
+          <div>
+            <p
+              style={{
+                fontFamily: FONT,
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                color: "var(--text-muted)",
+                margin: "0 0 0.35rem",
+              }}
+            >
+              {INDEPENDENT_VERIFY_PASTE_COPY.exampleCaption}
+            </p>
+            <pre
+              aria-hidden
+              style={{
+                margin: 0,
+                padding: "0.65rem 0.75rem",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                fontFamily: "ui-monospace, monospace",
+                fontSize: "0.68rem",
+                color: "var(--text-muted)",
+                lineHeight: 1.45,
+                overflowX: "auto",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {INDEPENDENT_VERIFY_PASTE_COPY.exampleJson}
+            </pre>
+          </div>
+          {err && (
+            <StatusBanner tone="error" title={INDEPENDENT_VERIFY_PASTE_COPY.errorTitle}>
+              {err}
+            </StatusBanner>
+          )}
+          {pasteHint && !err && (
+            <StatusBanner tone="info" title="Sample ready">
+              {pasteHint}
+            </StatusBanner>
+          )}
           <textarea
             value={pasteRaw}
-            onChange={(e) => setPasteRaw(e.target.value)}
-            placeholder="Paste your portable verification bundle JSON here"
+            onChange={(e) => {
+              setPasteRaw(e.target.value);
+              if (err) setErr(null);
+            }}
+            placeholder={INDEPENDENT_VERIFY_PASTE_COPY.placeholder}
             rows={7}
             disabled={running}
+            aria-invalid={err ? true : undefined}
+            aria-describedby={err ? "paste-bundle-error" : undefined}
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -324,21 +409,29 @@ export function IndependentVerificationFlow() {
               fontSize: "0.72rem",
               padding: "0.75rem",
               borderRadius: 10,
-              border: "1px solid var(--border)",
+              border: err ? "1px solid rgba(239,68,68,0.55)" : "1px solid var(--border)",
               background: "var(--surface-inset)",
               color: "var(--text-primary)",
             }}
           />
           <Btn size="md" variant="primary" disabled={running || !pasteRaw.trim()} onClick={() => void runPaste()}>
-            {running ? "Checking…" : "Check this bundle"}
+            {running ? "Checking…" : INDEPENDENT_VERIFY_PASTE_COPY.checkLabel}
           </Btn>
-          <Btn size="sm" variant="ghost" disabled={running} onClick={() => setStep("choose")}>
-            Back
-          </Btn>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            <Btn size="sm" variant="ghost" disabled={running} onClick={() => void loadTeachingSample()}>
+              {INDEPENDENT_VERIFY_PASTE_COPY.loadSampleLabel}
+            </Btn>
+            <Btn size="sm" variant="ghost" disabled={running || !demoReady} onClick={() => void runDemo()}>
+              {INDEPENDENT_VERIFY_PASTE_COPY.useDemoInsteadLabel}
+            </Btn>
+            <Btn size="sm" variant="ghost" disabled={running} onClick={() => setStep("choose")}>
+              Back
+            </Btn>
+          </div>
         </div>
       )}
 
-      {err && (
+      {err && step !== "paste" && (
         <StatusBanner
           tone="error"
           title="Something went wrong"

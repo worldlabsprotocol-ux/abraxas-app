@@ -152,6 +152,35 @@ export const INDEPENDENT_VERIFY_ENTRY_COPY = {
   footerNote: "Need server mirrors, registry lookup, or JWT demos?",
 } as const;
 
+/** Paste step — plain language, no secrets in the shape example. */
+export const INDEPENDENT_VERIFY_PASTE_COPY = {
+  lead:
+    "Paste one complete portable verification bundle (a JSON file). This field is not for shell commands, environment variables, or receipt IDs alone.",
+  placeholder: '{ "schema": "abraxas_portable_verification_bundle/1.0.0", … }',
+  checkLabel: "Check this bundle",
+  loadSampleLabel: "Load teaching sample",
+  useDemoInsteadLabel: "Use demo receipt instead",
+  exampleCaption: "Expected shape (keys only — real bundles include signed payloads):",
+  exampleJson: `{
+  "schema": "abraxas_portable_verification_bundle/1.0.0",
+  "decision_receipt": { "receipt_id": "…", "partner_id": "…", "policy_id": "…" },
+  "bundled_trust_anchor": { "anchor_key_id": "…", "public_jwk": { … } },
+  "signed_status_statement": { … },
+  "signed_issuer_authority": { … }
+}`,
+  errors: {
+    notJson:
+      "This doesn't look like a receipt bundle. Paste the complete JSON file—not commands, env vars, or a single line of text.",
+    incompleteBundle:
+      "This doesn't look like a complete portable bundle. Include schema, decision_receipt, trust anchor, and signed status evidence.",
+    missingTrust: "The bundle is missing trust anchor material.",
+    verifyFailed: "We could not verify that bundle. Fix the JSON and try again without leaving this screen.",
+    sampleLoadFailed: "Teaching sample could not load. Use the demo receipt or try again shortly.",
+  },
+  errorTitle: "Invalid bundle paste",
+  sampleLoadedHint: "Teaching sample loaded (synthetic, not production). Review it, then run Check this bundle.",
+} as const;
+
 /** Post-verify integration path — no Abraxas account required for steps 1–3. */
 export const VERIFICATION_FIRST_PARTNER_PATH = {
   syntheticBundleHref: "/api/developers/verification-first/synthetic-bundle",
