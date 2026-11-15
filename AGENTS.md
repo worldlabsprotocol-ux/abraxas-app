@@ -7,3 +7,7 @@
 - For changed visual states, capture one desktop and one mobile screenshot. Expand only to investigate a specific defect.
 - Report the cause, changed files, test results, PR link, and any blocker concisely. Stop when the requested work is ready for review.
 
+## Cursor Cloud specific instructions
+
+- **Production apex (`https://abraxasworld.xyz`)**: A green merge to `main` does not guarantee the apex alias moves forward. Recent `main` builds may land on the `demo` custom environment (`demo.abraxasworld.xyz`) while production-target deploys can be **CANCELED** (Vercel ignored build step). After UX-critical merges, **verify the live SHA** on the apex domain matches `main` (not only preview URLs). If the old UI is still served, **re-point the `abraxasworld.xyz` alias** to the READY deployment whose `githubCommitSha` matches the merged commit — this is a deployment fix, not a redesign.
+
