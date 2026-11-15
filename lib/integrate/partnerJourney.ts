@@ -152,6 +152,25 @@ export const INDEPENDENT_VERIFY_ENTRY_COPY = {
   footerNote: "Need server mirrors, registry lookup, or JWT demos?",
 } as const;
 
+/** Post-verify integration path — no Abraxas account required for steps 1–3. */
+export const VERIFICATION_FIRST_PARTNER_PATH = {
+  syntheticBundleHref: "/api/developers/verification-first/synthetic-bundle",
+  offlineWorkspaceHref: "/developers/institutional-verification",
+  quickstartHref: "/docs/VERIFY_WITH_ABRAXAS_QUICKSTART",
+  applyHref: PARTNER_APPLICATION_PATH,
+  npmPackage: "@abraxas/independent-verifier",
+  fixtureDir: "examples/integration-first-relying-party/fixtures",
+} as const;
+
+export const VERIFICATION_FIRST_OFFLINE_CTA = {
+  headline: "Run verification in your environment",
+  body:
+    "Download the labeled synthetic bundle, pin trust material out of band, and verify with @abraxas/independent-verifier — no Abraxas login or hosted API at verify time.",
+  downloadLabel: "Download synthetic teaching bundle (JSON)",
+  workspaceLabel: "Open offline verification workspace",
+  applyLabel: "Apply for production integration",
+} as const;
+
 export const VERIFY_DEVELOPER_EYEBROW = "Developer testing";
 
 export const VERIFY_DEVELOPER_HEADLINE = "Integration and mirror testers";

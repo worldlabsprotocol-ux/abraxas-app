@@ -14,6 +14,7 @@ import {
   type PlainVerificationVerdict,
 } from "@/lib/partner/portableIndependentVerification/plainVerificationSummary";
 import { INDEPENDENT_VERIFY_ENTRY_COPY } from "@/lib/integrate/partnerJourney";
+import { VerificationFirstPartnerPathCard } from "@/components/verify/VerificationFirstPartnerPathCard";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -191,7 +192,7 @@ export function IndependentVerificationFlow() {
       applyPayload(json);
     } catch {
       setStep("choose");
-      setErr("Could not run the demo check. Try again in a moment.");
+      setErr("Could not reach the verification service. Check your connection and try again.");
     } finally {
       setRunning(false);
     }
@@ -367,6 +368,8 @@ export function IndependentVerificationFlow() {
             Try another receipt
           </Btn>
 
+          <VerificationFirstPartnerPathCard />
+
           <details aria-labelledby={advancedId}>
             <summary
               id={advancedId}
@@ -411,12 +414,13 @@ export function IndependentVerificationFlow() {
                   </Btn>
                 ))}
               </div>
-              <Btn href="/developers/institutional-verification" size="sm" variant="secondary">
-                See integration docs
-              </Btn>
             </div>
           </details>
         </div>
+      )}
+
+      {step === "choose" && !result && (
+        <VerificationFirstPartnerPathCard compact />
       )}
 
       {step === "choose" && !result && (
