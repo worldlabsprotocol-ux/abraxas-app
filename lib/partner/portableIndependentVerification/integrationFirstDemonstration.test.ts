@@ -4,10 +4,18 @@ import { describe, expect, it } from "vitest";
 import {
   runVerificationFirstDemoScenario,
   verificationFirstDemoManifest,
+  verificationFirstSyntheticPortableBundle,
   VERIFICATION_FIRST_DEMO_SCENARIOS,
 } from "./integrationFirstDemonstration";
 
 describe("verification-first adoption demonstration (Build #821 fixtures)", () => {
+  it("ships synthetic portable bundle for offline verifier onboarding", () => {
+    const bundle = verificationFirstSyntheticPortableBundle();
+    expect(bundle.schema).toBe("abraxas_portable_verification_bundle/1.0.0");
+    expect(bundle.export_provenance.bundled_trust_anchor_informational_only).toBe(true);
+    expect(bundle.decision_receipt.id).toBeTruthy();
+  });
+
   it("exposes synthetic non-production manifest", () => {
     const m = verificationFirstDemoManifest();
     expect(m.not_for_production).toBe(true);

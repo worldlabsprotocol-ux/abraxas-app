@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import {
+  VERIFICATION_FIRST_DEMO_SCENARIOS,
   VERIFICATION_FIRST_JOURNEY_STEPS,
   verificationFirstDemoBundleDownloadHints,
   verificationFirstDemoManifest,
@@ -22,7 +23,8 @@ export async function GET() {
     manifest,
     journey_steps: VERIFICATION_FIRST_JOURNEY_STEPS,
     download_hints: verificationFirstDemoBundleDownloadHints(),
-    interactive_scenarios: ["valid", "wrong_audience", "revoked"],
+    interactive_scenarios: [...VERIFICATION_FIRST_DEMO_SCENARIOS],
+    synthetic_bundle_get_path: "/api/developers/verification-first/synthetic-bundle",
     verify_post_path: "/api/developers/verification-first/verify",
     workspace_path: "/verify",
   });

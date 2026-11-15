@@ -15,6 +15,8 @@ import trustAnchorBundle from "../../../examples/integration-first-relying-party
 import issuerAuthorityStatement from "../../../examples/integration-first-relying-party/fixtures/issuer-authority-statement.json";
 import signedStatusStatement from "../../../examples/integration-first-relying-party/fixtures/signed-status-statement.json";
 import signedStatusStatementRevoked from "../../../examples/integration-first-relying-party/fixtures/signed-status-statement-revoked.json";
+import type { DecisionReceiptRecord as AppDecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import type { PortableVerificationBundle } from "./buildPortableVerificationBundle";
 
 export const VERIFICATION_FIRST_DEMO_SCENARIOS = [
   "valid",
@@ -35,6 +37,26 @@ const SIAS = issuerAuthorityStatement as SignedIssuerAuthorityStatement;
 
 export function verificationFirstDemoManifest(): VerificationFirstDemoManifest {
   return manifest;
+}
+
+/** Committed #821 fixtures as one portable bundle — synthetic, not live issuance. */
+export function verificationFirstSyntheticPortableBundle(): PortableVerificationBundle {
+  const anchor = PINNED_ANCHOR;
+  return {
+    schema: "abraxas_portable_verification_bundle/1.0.0",
+    decision_receipt: RECEIPT as unknown as AppDecisionReceiptRecord,
+    bundled_trust_anchor: anchor,
+    pinned_trust_anchor: anchor,
+    signed_issuer_authority: SIAS,
+    signed_status_statement: signedStatusStatement as SignedReceiptStatusStatement,
+    registry_version: 1,
+    export_provenance: {
+      trust_anchor_must_be_independently_pinned: true,
+      bundled_trust_anchor_informational_only: true,
+      status_evidence_authoritative: false,
+      status_evidence_source: "unavailable",
+    },
+  };
 }
 
 export function verificationFirstDemoBundleDownloadHints(): {
