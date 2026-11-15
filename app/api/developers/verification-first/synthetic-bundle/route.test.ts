@@ -16,7 +16,10 @@ describe("GET /api/developers/verification-first/synthetic-bundle", () => {
     expect(json.ok).toBe(true);
     expect(json.label).toBe("synthetic_teaching_fixture");
     expect(json.not_for_production).toBe(true);
+    expect(json.teaching_disclaimer).toMatch(/Synthetic/);
+    expect(json.trust_pin_required).toBe(true);
     expect(json.bundle.schema).toBe("abraxas_portable_verification_bundle/1.0.0");
+    expect(json.bundle.export_provenance.bundled_trust_anchor_informational_only).toBe(true);
     expect(res.headers.get("Content-Disposition")).toContain("attachment");
   });
 });

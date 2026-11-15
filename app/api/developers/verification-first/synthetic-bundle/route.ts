@@ -13,7 +13,13 @@ export async function GET() {
       ok: true,
       label: "synthetic_teaching_fixture",
       not_for_production: true,
+      teaching_disclaimer:
+        "Synthetic sandbox fixtures only. Passing verification proves mechanics, not real institutional issuance or production approval.",
+      trust_pin_required: true,
+      bundled_anchor_informational_only: true,
       npm_package: "@abraxas/independent-verifier",
+      npm_registry_status: "not_on_public_npm",
+      verifier_install_doc: "/developers/institutional-verification#independent-verifier",
       bundle,
     },
     {

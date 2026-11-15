@@ -99,6 +99,32 @@ export function InstitutionalVerificationClient() {
         subtitle="Install the distributable institutional verification SDK in your own Node backend. Cryptography, digest v2 trust pins, tenant binding, revocation freshness, and replay guards stay fail-closed without Abraxas Supabase or Next.js."
       />
 
+      <ContentCard title="@abraxas/independent-verifier (portable receipts)" id="independent-verifier">
+        <p style={body}>
+          Portable Partner Flow receipts and signed status statements.{" "}
+          <strong style={{ color: "var(--text-primary)" }}>Not on public npm.</strong> Install from a founder-approved
+          tarball; pin trust anchors out-of-band — never treat a bundled anchor as your trust root.
+        </p>
+        <pre className="abx-code-scroll" style={codeBlock}>{`# With abraxas-app clone (third-party engineers)
+git clone https://github.com/worldlabsprotocol-ux/abraxas-app.git
+cd abraxas-app && npm ci
+npm run build831:pack-verifier
+cd artifacts/npm && shasum -a 256 -c abraxas-independent-verifier-0.1.1.tgz.sha256
+
+# In your backend repository
+npm install /path/to/abraxas-independent-verifier-0.1.1.tgz
+npm run test:integration-first-821   # clean-room example in abraxas-app`}</pre>
+        <p style={{ ...body, marginTop: "0.65rem" }}>
+          Design partners may receive the same <code style={inlineCode}>.tgz</code> and checksum without full repo access.
+          Teaching bundle: <Link href="/api/developers/verification-first/synthetic-bundle" style={{ color: "var(--accent)", fontWeight: 700 }}>synthetic download</Link>
+          {" · "}
+          Example:{" "}
+          <Link href="https://github.com/worldlabsprotocol-ux/abraxas-app/tree/main/examples/integration-first-relying-party" style={{ color: "var(--accent)", fontWeight: 700 }}>
+            integration-first-relying-party
+          </Link>
+        </p>
+      </ContentCard>
+
       <ContentCard title="What the verifier checks">
         <BulletList
           items={[

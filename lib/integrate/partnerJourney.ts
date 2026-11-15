@@ -163,12 +163,32 @@ export const VERIFICATION_FIRST_PARTNER_PATH = {
 } as const;
 
 export const VERIFICATION_FIRST_OFFLINE_CTA = {
-  headline: "Run verification in your environment",
+  headline: "Next: verify offline in your environment",
+  summary: "After you understand the hosted result, take the teaching bundle and verifier into your own runtime.",
   body:
-    "Download the labeled synthetic bundle, pin trust material out of band, and verify with @abraxas/independent-verifier — no Abraxas login or hosted API at verify time.",
-  downloadLabel: "Download synthetic teaching bundle (JSON)",
-  workspaceLabel: "Open offline verification workspace",
-  applyLabel: "Apply for production integration",
+    "@abraxas/independent-verifier is not on public npm. Use the tarball path documented below, pin a trust anchor out-of-band (never rely on the anchor inside a pasted bundle alone), then verify without Abraxas login or hosted APIs.",
+  downloadLabel: "Download labeled synthetic teaching bundle",
+  workspaceLabel: "Verifier install steps",
+  applyLabel: "Apply for authorized production integration",
+  teachingDisclaimer:
+    "The downloadable bundle uses synthetic sandbox fixtures only. A passing teaching check proves verification mechanics, not real institutional authority or production approval.",
+} as const;
+
+/** Working distribution paths without public npm (founder-approved tarball only). */
+export const VERIFICATION_FIRST_VERIFIER_INSTALL = {
+  registryStatus: "not_on_public_npm" as const,
+  withRepoAccess: [
+    "git clone https://github.com/worldlabsprotocol-ux/abraxas-app.git",
+    "cd abraxas-app && npm ci",
+    "npm run build831:pack-verifier",
+    "cd artifacts/npm && shasum -a 256 -c abraxas-independent-verifier-0.1.1.tgz.sha256",
+    "npm install ./abraxas-independent-verifier-0.1.1.tgz   # from your separate app directory",
+    "npm run test:integration-first-821",
+  ],
+  designPartner:
+    "Design partners may receive the same .tgz plus SHA256 from operators without cloning the full monorepo.",
+  trustPin:
+    "Pin trust-anchor-bundle.json through your own channel. Treat bundled_trust_anchor in exports as informational until it matches your pin.",
 } as const;
 
 export const VERIFY_DEVELOPER_EYEBROW = "Developer testing";
