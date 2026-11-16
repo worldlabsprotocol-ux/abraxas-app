@@ -178,7 +178,8 @@ export const INDEPENDENT_VERIFY_PASTE_COPY = {
     sampleLoadFailed: "Teaching sample could not load. Use the demo receipt or try again shortly.",
   },
   errorTitle: "Invalid bundle paste",
-  sampleLoadedHint: "Teaching sample loaded (synthetic, not production). Review it, then run Check this bundle.",
+  sampleLoadedHint:
+    "Synthetic teaching sample loaded (not production issuance). Hosted Check uses the bundle’s signed issuer-authority checkpoint for learning—the same fixtures as Use demo receipt. Offline production still requires your own pinned trust anchor.",
 } as const;
 
 /** Post-verify integration path — no Abraxas account required for steps 1–3. */

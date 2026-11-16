@@ -1,9 +1,11 @@
 // FILE: lib/partner/portableIndependentVerification/integrationFirstDemonstration.test.ts
 
 import { describe, expect, it } from "vitest";
+import { verifyPortableBundle } from "./verifyWithStandaloneVerifier";
 import {
   runVerificationFirstDemoScenario,
   verificationFirstDemoManifest,
+  verificationFirstHostedLearningVerifyInputs,
   verificationFirstSyntheticPortableBundle,
   VERIFICATION_FIRST_DEMO_SCENARIOS,
 } from "./integrationFirstDemonstration";
@@ -14,6 +16,22 @@ describe("verification-first adoption demonstration (Build #821 fixtures)", () =
     expect(bundle.schema).toBe("abraxas_portable_verification_bundle/1.0.0");
     expect(bundle.export_provenance.bundled_trust_anchor_informational_only).toBe(true);
     expect(bundle.decision_receipt.id).toBeTruthy();
+    expect(bundle.signed_issuer_authority).toBeTruthy();
+  });
+
+  it("hosted paste teaching bundle verifies like demo valid when checkpoint supplied", () => {
+    const bundle = verificationFirstSyntheticPortableBundle();
+    const anchor = bundle.bundled_trust_anchor!;
+    const hosted = verifyPortableBundle({
+      bundle,
+      integratorPinnedTrustAnchor: anchor,
+      partnerId: bundle.decision_receipt.partner_id,
+      policyId: bundle.decision_receipt.policy_id,
+      ...verificationFirstHostedLearningVerifyInputs(bundle),
+    });
+    const demo = runVerificationFirstDemoScenario("valid");
+    expect(hosted.currently_acceptable).toBe(demo.verification.currently_acceptable);
+    expect(hosted.issuer_currently_authorized).toBe(true);
   });
 
   it("exposes synthetic non-production manifest", () => {

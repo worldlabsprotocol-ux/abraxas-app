@@ -65,7 +65,7 @@ test.describe("Independent verification default /verify", () => {
     await expect(page.getByText(/Teaching sample loaded/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("textarea")).toContainText("abraxas_portable_verification_bundle");
     await page.getByRole("button", { name: "Check this bundle" }).click();
-    await expect(page.getByText("Verdict", { exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Valid", { exact: true })).toBeVisible({ timeout: 30_000 });
   });
 
   test("malformed paste recovery on mobile", async ({ page }) => {

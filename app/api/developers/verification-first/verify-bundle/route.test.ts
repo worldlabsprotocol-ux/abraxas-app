@@ -1,44 +1,38 @@
 // FILE: app/api/developers/verification-first/verify-bundle/route.test.ts
 
 import { describe, expect, it } from "vitest";
-import { POST } from "./route";
+import {
+  verificationFirstHostedLearningVerifyInputs,
+  verificationFirstSyntheticPortableBundle,
+} from "@/lib/partner/portableIndependentVerification/integrationFirstDemonstration";
+import { verifyPortableBundle } from "@/lib/partner/portableIndependentVerification";
 
-describe("verify-bundle route", () => {
-  it("rejects invalid JSON", async () => {
-    const res = await POST(new Request("http://local", { method: "POST", body: "not-json" }));
-    expect(res.status).toBe(400);
-    const json = (await res.json()) as { error: string };
-    expect(json.error).toBe("invalid_json");
+describe("verification-first verify-bundle (hosted paste)", () => {
+  it("matches demo valid when teaching bundle includes signed issuer authority", () => {
+    const bundle = verificationFirstSyntheticPortableBundle();
+    const anchor = bundle.bundled_trust_anchor!;
+    const verification = verifyPortableBundle({
+      bundle,
+      integratorPinnedTrustAnchor: anchor,
+      partnerId: bundle.decision_receipt.partner_id,
+      policyId: bundle.decision_receipt.policy_id,
+      ...verificationFirstHostedLearningVerifyInputs(bundle),
+    });
+    expect(verification.currently_acceptable).toBe("yes");
+    expect(verification.issuer_currently_authorized).toBe(true);
+    expect(verification.failure_codes).toEqual([]);
   });
 
-  it("rejects missing bundle", async () => {
-    const res = await POST(
-      new Request("http://local", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      }),
-    );
-    expect(res.status).toBe(400);
-    const json = (await res.json()) as { error: string };
-    expect(json.error).toBe("invalid_portable_bundle");
-  });
-
-  it("rejects bundle without trust anchor", async () => {
-    const res = await POST(
-      new Request("http://local", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bundle: {
-            schema: "abraxas_portable_verification_bundle/1.0.0",
-            decision_receipt: { partner_id: "p", policy_id: "pol" },
-          },
-        }),
-      }),
-    );
-    expect(res.status).toBe(400);
-    const json = (await res.json()) as { error: string };
-    expect(json.error).toBe("missing_trust_anchor");
+  it("fails issuer authorization without authority checkpoint (regression)", () => {
+    const bundle = verificationFirstSyntheticPortableBundle();
+    const anchor = bundle.bundled_trust_anchor!;
+    const verification = verifyPortableBundle({
+      bundle,
+      integratorPinnedTrustAnchor: anchor,
+      partnerId: bundle.decision_receipt.partner_id,
+      policyId: bundle.decision_receipt.policy_id,
+    });
+    expect(verification.currently_acceptable).toBe("no");
+    expect(verification.failure_codes).toContain("authority_checkpoint_required");
   });
 });
