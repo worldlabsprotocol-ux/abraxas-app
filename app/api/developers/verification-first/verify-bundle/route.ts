@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import type { PortableVerificationBundle } from "@/lib/partner/portableIndependentVerification/buildPortableVerificationBundle";
 import { verifyPortableBundle } from "@/lib/partner/portableIndependentVerification";
 import { buildDefaultResultRows } from "@/lib/partner/portableIndependentVerification/plainVerificationSummary";
+import { verificationFirstHostedLearningVerifyInputs } from "@/lib/partner/portableIndependentVerification/integrationFirstDemonstration";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -22,11 +23,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "missing_trust_anchor" }, { status: 400 });
   }
   const record = bundle.decision_receipt;
+  const hostedLearning = verificationFirstHostedLearningVerifyInputs(bundle);
   const verification = verifyPortableBundle({
     bundle,
     integratorPinnedTrustAnchor: anchor,
     partnerId: record.partner_id,
     policyId: record.policy_id,
+    ...hostedLearning,
   });
   const plain = buildDefaultResultRows({
     verification,

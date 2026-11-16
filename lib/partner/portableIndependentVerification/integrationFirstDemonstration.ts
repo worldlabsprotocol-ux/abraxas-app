@@ -29,7 +29,10 @@ export type VerificationFirstDemoScenario = (typeof VERIFICATION_FIRST_DEMO_SCEN
 
 export type VerificationFirstDemoManifest = typeof manifest;
 
-const OBSERVED_AT_VALID = "2026-06-01T12:00:05.000Z";
+/** Aligned with #821 signed status fixture freshness window (demo + hosted teaching paste). */
+export const VERIFICATION_FIRST_DEMO_OBSERVED_AT = "2026-06-01T12:00:05.000Z";
+
+const OBSERVED_AT_VALID = VERIFICATION_FIRST_DEMO_OBSERVED_AT;
 
 const RECEIPT = decisionReceipt as DecisionReceiptRecord;
 const PINNED_ANCHOR = trustAnchorBundle as TrustAnchorBundleV1;
@@ -40,6 +43,21 @@ export function verificationFirstDemoManifest(): VerificationFirstDemoManifest {
 }
 
 /** Committed #821 fixtures as one portable bundle — synthetic, not live issuance. */
+/** Hosted paste helper — same issuer-authority checkpoint inputs as demo scenario "valid". */
+export function verificationFirstHostedLearningVerifyInputs(bundle: PortableVerificationBundle): {
+  statementObservedAt?: string;
+  expectedAuthorityStateDigest?: string;
+  acceptedRegistryVersion?: number;
+  minimumRegistryVersion?: number;
+} {
+  const sias = bundle.signed_issuer_authority;
+  if (!sias) return {};
+  return {
+    statementObservedAt: VERIFICATION_FIRST_DEMO_OBSERVED_AT,
+    ...authorityCheckpointFromStatement(sias),
+  };
+}
+
 export function verificationFirstSyntheticPortableBundle(): PortableVerificationBundle {
   const anchor = PINNED_ANCHOR;
   return {
