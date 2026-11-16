@@ -1,7 +1,7 @@
 // FILE: lib/privacy/auditorDisclosure/authoritativeResource.ts
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
-import { verifyRecordSignature } from "@/lib/decisionReceipts/views";
+import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
 import { loadRecordedDecisionReceipt } from "@/lib/institutional/signing/recordedWorkflow";
 import type { AuditorDisclosureCustodyMeta } from "./buildSource";
 
@@ -23,6 +23,11 @@ export async function loadAuthoritativeReceiptForAuditorDisclosure(input: {
 
   if (!verifyRecordSignature(loaded.record)) {
     return { ok: false, reason: "authoritative_receipt_signature_invalid" };
+  }
+
+  const status = resolveReceiptStatus(loaded.record);
+  if (status !== "active") {
+    return { ok: false, reason: `authoritative_receipt_status_${status}` };
   }
 
   return {

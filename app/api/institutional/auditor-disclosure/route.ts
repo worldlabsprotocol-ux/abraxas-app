@@ -8,10 +8,10 @@ import { AUDITOR_DISCLOSURE_PROFILE_NOTICE } from "@/lib/privacy/auditorDisclosu
 import { resolveInstitutionalAuditorPrincipal } from "@/lib/privacy/auditorDisclosure/auditorPrincipal";
 import { resolveAuthoritativeAuditorDisclosureTrust } from "@/lib/privacy/auditorDisclosure/serverTrust";
 import { loadAuthoritativeReceiptForAuditorDisclosure } from "@/lib/privacy/auditorDisclosure/authoritativeResource";
-
-export type AuditorDisclosureRequestBody = {
-  signed_auditor_mandate: SignedAuditorDisclosureMandate;
-};
+import {
+  authorizeRequestedDisclosurePurpose,
+  parseRequestedDisclosurePurpose,
+} from "@/lib/privacy/auditorDisclosure/requestPurpose";
 
 const UNTRUSTED_BODY_KEYS = [
   "trust_anchor_public_jwk",
@@ -44,21 +44,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing_signed_auditor_mandate" }, { status: 400 });
   }
 
+  const requestedPurpose = parseRequestedDisclosurePurpose(body.disclosure_purpose);
+  if (typeof requestedPurpose !== "string") {
+    return NextResponse.json({ ok: false, error: requestedPurpose.reason }, { status: 400 });
+  }
+
   const principal = await resolveInstitutionalAuditorPrincipal(req);
   if (!principal.ok) {
     return NextResponse.json({ ok: false, error: principal.reason }, { status: principal.status });
   }
 
-  if (principal.principal.auditor_id !== signedMandate.payload.authorized_auditor_id) {
-    return failClosed("authenticated_auditor_mismatch");
+  if (principal.principal.auditor_credential_id !== signedMandate.payload.authorized_auditor_id) {
+    return failClosed("authenticated_auditor_credential_mismatch");
   }
 
   if (principal.principal.tenant_id !== signedMandate.payload.tenant_id) {
     return failClosed("authenticated_tenant_mismatch");
   }
 
-  if (!principal.principal.allowed_purposes.includes(signedMandate.payload.purpose)) {
-    return failClosed("authenticated_auditor_purpose_not_allowed");
+  const purposeCheck = authorizeRequestedDisclosurePurpose({
+    requestedPurpose,
+    mandatePurpose: signedMandate.payload.purpose,
+    principalAllowedPurposes: principal.principal.allowed_purposes,
+  });
+  if (!purposeCheck.ok) {
+    return failClosed(purposeCheck.reason);
   }
 
   if (principal.principal.audience_hash !== signedMandate.payload.audience_hash) {
@@ -89,15 +99,16 @@ export async function POST(req: NextRequest) {
     trustAnchorPublicJwk: trust.trust.trustAnchorPublicJwk,
     environment: trust.trust.environment,
     now: new Date(),
-    presenter_auditor_id: principal.principal.auditor_id,
+    presenter_auditor_id: principal.principal.auditor_credential_id,
     tenant_id: principal.principal.tenant_id,
     receipt: authoritative.record,
     custody: authoritative.custody,
     request_context: {
       audience_hash: principal.principal.audience_hash,
-      purpose: signedMandate.payload.purpose,
+      purpose: requestedPurpose,
     },
     minimumRegistryVersion: trust.trust.minimumRegistryVersion,
+    principal_allowed_purposes: principal.principal.allowed_purposes,
   });
 
   if (!result.ok) {

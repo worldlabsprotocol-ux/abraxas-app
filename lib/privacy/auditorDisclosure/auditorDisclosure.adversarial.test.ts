@@ -42,6 +42,7 @@ function permitArgs(overrides: Partial<Parameters<typeof evaluateAuditorDisclosu
       audience_hash: "audience_hash_demo_968",
       purpose: "regulatory_examination" as const,
     },
+    principal_allowed_purposes: ["regulatory_examination"],
     ...overrides,
     signedMandate: signed,
     signedIssuerAuthority: overrides.signedIssuerAuthority ?? fixture.signedIssuerAuthority,
@@ -215,6 +216,40 @@ describe("Build 968 auditor disclosure surface", () => {
       now: NOW,
     });
     expect(verified.ok).toBe(false);
+  });
+
+  it("denies unsupported resource_kind on mandate", () => {
+    const fixture = buildControlledAuditorMandateIssuerFixture();
+    const signed = buildControlledSignedAuditorMandate({
+      fixture,
+      overrides: { resource_kind: "verification_decision" },
+    });
+    const result = evaluateAuditorDisclosureAccess({
+      ...permitArgs(),
+      signedMandate: signed,
+      signedIssuerAuthority: fixture.signedIssuerAuthority,
+      trustAnchorPublicJwk: fixture.trustAnchorPublicJwk,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("auditor_disclosure_resource_kind_unsupported");
+  });
+
+  it("denies revoked authoritative receipt status", () => {
+    const receipt = { ...controlledAuditorReceiptRecord(), status: "revoked" as const, revoked_at: "2026-06-01T00:00:00.000Z" };
+    const result = evaluateAuditorDisclosureAccess(permitArgs({ receipt }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("authoritative_receipt_status_revoked");
+  });
+
+  it("denies when requested purpose is not authorized by mandate", () => {
+    const result = evaluateAuditorDisclosureAccess(
+      permitArgs({
+        request_context: { audience_hash: "audience_hash_demo_968", purpose: "soc2_type2" },
+        principal_allowed_purposes: ["regulatory_examination", "soc2_type2"],
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("disclosure_purpose_not_authorized_by_mandate");
   });
 
   it("denies when request audience does not match signed mandate", () => {

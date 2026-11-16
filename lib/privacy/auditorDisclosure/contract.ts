@@ -10,6 +10,29 @@ export const AUDITOR_DISCLOSURE_MANDATE_SCHEMA_VERSION = "1.0.0" as const;
 export const INSTITUTIONAL_AUDITOR_MANDATE_ISSUER_REASON_CLASS =
   "institutional_auditor_mandate_issuer" as const;
 
+/** Registry + session binding — institutional partner operator keys must not match. */
+export const INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS = "institutional_auditor_disclosure" as const;
+
+export const INSTITUTIONAL_AUDITOR_CREDENTIAL_SESSION_PREFIXES = [
+  "auditor_disclosure:",
+  "auditor_disclosure_",
+] as const;
+
+export function isIndividualAuditorCredentialSessionKey(sessionKeyId: string): boolean {
+  return INSTITUTIONAL_AUDITOR_CREDENTIAL_SESSION_PREFIXES.some((prefix) => sessionKeyId.startsWith(prefix));
+}
+
+/**
+ * Shared partner console operator sessions (native account / generic API keys) do not
+ * inherit auditor disclosure; only individually provisioned auditor credential keys qualify.
+ */
+export function assertIndividualAuditorCredentialSessionKey(sessionKeyId: string): true | { ok: false; reason: "institutional_auditor_credential_not_individual" } {
+  if (!isIndividualAuditorCredentialSessionKey(sessionKeyId)) {
+    return { ok: false, reason: "institutional_auditor_credential_not_individual" };
+  }
+  return true;
+}
+
 export const AUDITOR_DISCLOSURE_PURPOSES = [
   "regulatory_examination",
   "soc2_type2",

@@ -51,7 +51,10 @@ function auditorRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("https://example.test/api/institutional/auditor-disclosure", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      disclosure_purpose: "regulatory_examination",
+      ...body,
+    }),
   });
 }
 
@@ -61,12 +64,12 @@ function mockHappyPath() {
   resolvePrincipalMock.mockResolvedValue({
     ok: true,
     principal: {
-      auditor_id: CONTROLLED_AUDITOR_ID,
+      auditor_credential_id: CONTROLLED_AUDITOR_ID,
       tenant_id: CONTROLLED_TENANT_ID,
       audience_hash: signed.payload.audience_hash,
       allowed_purposes: [signed.payload.purpose],
       partner_id: "acme",
-      session_key_id: "native_account:auditor-demo",
+      session_key_id: "auditor_disclosure:cred_demo_968",
     },
   });
   resolveTrustMock.mockResolvedValue({
@@ -146,12 +149,12 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     expect(loadReceiptMock).not.toHaveBeenCalled();
   });
 
-  it("rejects forged presenter_auditor_id when principal does not match mandate", async () => {
+  it("rejects forged presenter credential when principal does not match mandate", async () => {
     const { signed } = mockHappyPath();
     resolvePrincipalMock.mockResolvedValue({
       ok: true,
       principal: {
-        auditor_id: "auditor_attacker",
+        auditor_credential_id: "auditor_attacker",
         tenant_id: CONTROLLED_TENANT_ID,
         audience_hash: signed.payload.audience_hash,
         allowed_purposes: [signed.payload.purpose],
@@ -162,7 +165,7 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     const res = await auditorDisclosurePOST(auditorRequest({ signed_auditor_mandate: signed }));
     expect(res.status).toBe(403);
     const json = (await res.json()) as { error?: string };
-    expect(json.error).toBe("authenticated_auditor_mismatch");
+    expect(json.error).toBe("authenticated_auditor_credential_mismatch");
   });
 
   it("rejects cross-tenant body tenant claims via authenticated tenant binding", async () => {
@@ -170,7 +173,7 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     resolvePrincipalMock.mockResolvedValue({
       ok: true,
       principal: {
-        auditor_id: CONTROLLED_AUDITOR_ID,
+        auditor_credential_id: CONTROLLED_AUDITOR_ID,
         tenant_id: "tenant_other",
         audience_hash: signed.payload.audience_hash,
         allowed_purposes: [signed.payload.purpose],
@@ -186,11 +189,11 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
 
   it("rejects self-signed attacker anchor (server trust resolution fails closed)", async () => {
     const { signed } = mockHappyPath();
-    resolveTrustMock.mockResolvedValue({ ok: false, reason: "authoritative_trust_anchor_unavailable" });
+    resolveTrustMock.mockResolvedValue({ ok: false, reason: "published_issuer_authority_unconfigured" });
     const res = await auditorDisclosurePOST(auditorRequest({ signed_auditor_mandate: signed }));
     expect(res.status).toBe(503);
     const json = (await res.json()) as { error?: string };
-    expect(json.error).toBe("authoritative_trust_anchor_unavailable");
+    expect(json.error).toBe("published_issuer_authority_unconfigured");
   });
 
   it("rejects altered evidence when authoritative source disagrees with mandate resource", async () => {
@@ -215,7 +218,7 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     resolvePrincipalMock.mockResolvedValue({
       ok: true,
       principal: {
-        auditor_id: CONTROLLED_AUDITOR_ID,
+        auditor_credential_id: CONTROLLED_AUDITOR_ID,
         tenant_id: CONTROLLED_TENANT_ID,
         audience_hash: "audience_wrong_for_request",
         allowed_purposes: [signed.payload.purpose],
@@ -234,7 +237,7 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     resolvePrincipalMock.mockResolvedValue({
       ok: true,
       principal: {
-        auditor_id: CONTROLLED_AUDITOR_ID,
+        auditor_credential_id: CONTROLLED_AUDITOR_ID,
         tenant_id: CONTROLLED_TENANT_ID,
         audience_hash: signed.payload.audience_hash,
         allowed_purposes: ["soc2_type2"],
@@ -245,7 +248,7 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     const res = await auditorDisclosurePOST(auditorRequest({ signed_auditor_mandate: signed }));
     expect(res.status).toBe(403);
     const json = (await res.json()) as { error?: string };
-    expect(json.error).toBe("authenticated_auditor_purpose_not_allowed");
+    expect(json.error).toBe("disclosure_purpose_not_authorized_for_credential");
   });
 
   it("auditor disclosure API denies receipt-only mandate signer", async () => {

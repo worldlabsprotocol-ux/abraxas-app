@@ -91,6 +91,7 @@ export function buildControlledAuditorMandateIssuerFixture(): ControlledAuditorM
 }
 
 export const CONTROLLED_AUDITOR_ID = "auditor_demo_968_primary";
+export const CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY = "auditor_disclosure:cred_demo_968";
 export const CONTROLLED_RECEIPT_ID = "dr_auditor_disclosure_demo_968";
 export const CONTROLLED_TENANT_ID = "tenant_institutional_demo";
 

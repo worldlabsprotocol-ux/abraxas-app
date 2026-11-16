@@ -15,7 +15,20 @@ export {
 export { hashAuditorDisclosureMandatePayload } from "./canonical";
 export { signAuditorDisclosureMandatePayload, verifySignedAuditorDisclosureMandate } from "./signVerify";
 export { evaluateAuditorDisclosureAccess } from "./enforceAccess";
-export { resolveInstitutionalAuditorPrincipal } from "./auditorPrincipal";
+export {
+  resolveInstitutionalAuditorPrincipal,
+  parseAuditorAccessRegistry,
+  type AuditorAccessRegistryEntry,
+} from "./auditorPrincipal";
+export {
+  parseRequestedDisclosurePurpose,
+  authorizeRequestedDisclosurePurpose,
+} from "./requestPurpose";
+export {
+  isIndividualAuditorCredentialSessionKey,
+  assertIndividualAuditorCredentialSessionKey,
+  INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
+} from "./contract";
 export { resolveAuthoritativeAuditorDisclosureTrust, isAuditorMandateRevokedInRegistry } from "./serverTrust";
 export { loadAuthoritativeReceiptForAuditorDisclosure } from "./authoritativeResource";
 export { resolveInstitutionalTenantId } from "./institutionalTenant";

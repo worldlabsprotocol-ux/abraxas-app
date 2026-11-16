@@ -1,6 +1,7 @@
 // FILE: lib/privacy/auditorDisclosure/serverTrust.ts
-// Server-side issuer authority + trust anchor resolution (never from request body).
+// Verify-only issuer authority for read paths — no anchor private key re-signing per disclosure.
 
+import { issuerAuthorityStateDigest } from "@abraxas/independent-verifier";
 import type { SignedIssuerAuthorityStatement } from "@/lib/persistence/boundary/issuerAuthority/contract";
 import {
   buildIssuerAuthorityStatementFromRegistry,
@@ -10,7 +11,7 @@ import {
   readConfiguredIssuerAnchor,
   readCurrentIssuerAuthorityRow,
 } from "@/lib/persistence/boundary/issuerAuthority/registryContinuity";
-import { publishSignedIssuerAuthorityFromRegistry } from "@/lib/persistence/boundary/issuerAuthority/buildFromRegistry";
+import { verifySignedIssuerAuthorityStatement } from "@/lib/persistence/boundary/issuerAuthority/signVerify";
 
 export type AuthoritativeAuditorDisclosureTrust = {
   signedIssuerAuthority: SignedIssuerAuthorityStatement;
@@ -27,6 +28,18 @@ function parseRevokedMandateIds(env: Record<string, string | undefined>): Set<st
 
 export function isAuditorMandateRevokedInRegistry(mandateId: string, env: Record<string, string | undefined> = process.env): boolean {
   return parseRevokedMandateIds(env).has(mandateId);
+}
+
+function loadPublishedSignedIssuerAuthority(
+  env: Record<string, string | undefined>,
+): SignedIssuerAuthorityStatement | { ok: false; reason: string } {
+  const raw = env.ABRAXAS_PUBLISHED_SIGNED_ISSUER_AUTHORITY_JSON?.trim();
+  if (!raw) return { ok: false, reason: "published_issuer_authority_unconfigured" };
+  try {
+    return JSON.parse(raw) as SignedIssuerAuthorityStatement;
+  } catch {
+    return { ok: false, reason: "published_issuer_authority_invalid" };
+  }
 }
 
 export async function resolveAuthoritativeAuditorDisclosureTrust(
@@ -48,14 +61,8 @@ export async function resolveAuthoritativeAuditorDisclosureTrust(
   if (!recorded.ok) return recorded;
   if (!recorded.row) return { ok: false, reason: "authority_bootstrap_required" };
 
-  const privateRaw = env.ABRAXAS_ISSUER_AUTHORITY_ANCHOR_PRIVATE_JWK?.trim();
-  if (!privateRaw) return { ok: false, reason: "authoritative_issuer_signer_unavailable" };
-  let anchorPrivateJwk: JsonWebKey;
-  try {
-    anchorPrivateJwk = JSON.parse(privateRaw) as JsonWebKey;
-  } catch {
-    return { ok: false, reason: "authoritative_issuer_signer_invalid" };
-  }
+  const published = loadPublishedSignedIssuerAuthority(env);
+  if ("ok" in published && published.ok === false) return published;
 
   const built = buildIssuerAuthorityStatementFromRegistry({
     registryVersion: recorded.row.registryVersion,
@@ -65,19 +72,32 @@ export async function resolveAuthoritativeAuditorDisclosureTrust(
   });
   if (!built.ok) return built;
 
-  const signed = publishSignedIssuerAuthorityFromRegistry({
-    registryVersion: recorded.row.registryVersion,
-    supersedesRegistryVersion: recorded.row.supersedesRegistryVersion,
-    anchorKeyId: anchor.anchorKeyId,
-    anchorPrivateJwk,
-    env,
+  const currentDigest = issuerAuthorityStateDigest(built.payload);
+  if (currentDigest !== recorded.row.authorityStateDigest) {
+    return { ok: false, reason: "recorded_authority_mismatch" };
+  }
+
+  const statement = published as SignedIssuerAuthorityStatement;
+  if (issuerAuthorityStateDigest(statement.payload) !== recorded.row.authorityStateDigest) {
+    return { ok: false, reason: "published_issuer_authority_stale" };
+  }
+
+  const verified = verifySignedIssuerAuthorityStatement({
+    statement,
+    trustAnchorPublicJwk: anchor.anchorPublicJwk,
+    acceptedRegistryVersion: recorded.row.registryVersion,
+    expectedAuthorityStateDigest: recorded.row.authorityStateDigest,
   });
-  if (typeof signed === "object" && "ok" in signed && signed.ok === false) return signed;
+  if (!verified.ok) return verified;
+
+  if (statement.payload.environment !== state.environment) {
+    return { ok: false, reason: "published_issuer_authority_environment_mismatch" };
+  }
 
   return {
     ok: true,
     trust: {
-      signedIssuerAuthority: signed as SignedIssuerAuthorityStatement,
+      signedIssuerAuthority: statement,
       trustAnchorPublicJwk: anchor.anchorPublicJwk,
       environment: state.environment,
       minimumRegistryVersion: recorded.row.registryVersion,

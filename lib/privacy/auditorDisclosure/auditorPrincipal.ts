@@ -1,16 +1,20 @@
 // FILE: lib/privacy/auditorDisclosure/auditorPrincipal.ts
-// Binds authenticated Launchpad / institutional operator session to auditor mandate presenter id.
+// Individual auditor credentials — not inherited from generic institutional operator sessions.
 
 import type { NextRequest } from "next/server";
 import {
   requirePartnerConsoleSession,
   resolvePartnerConsoleSessionKeyId,
 } from "@/lib/partner/launchpad/partnerConsoleSession";
-import type { AuditorDisclosurePurpose } from "./contract";
+import {
+  assertIndividualAuditorCredentialSessionKey,
+  INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
+  type AuditorDisclosurePurpose,
+} from "./contract";
 import { resolveInstitutionalTenantId } from "./institutionalTenant";
 
 export type InstitutionalAuditorPrincipal = {
-  auditor_id: string;
+  auditor_credential_id: string;
   tenant_id: string;
   audience_hash: string;
   allowed_purposes: readonly AuditorDisclosurePurpose[];
@@ -18,30 +22,35 @@ export type InstitutionalAuditorPrincipal = {
   session_key_id: string;
 };
 
-type AuditorAccessRegistryEntry = {
+export type AuditorAccessRegistryEntry = {
+  credential_class: typeof INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS;
   partner_id: string;
   session_key_id: string;
-  auditor_id: string;
+  auditor_credential_id: string;
   tenant_id?: string;
   audience_hash: string;
   allowed_purposes: AuditorDisclosurePurpose[];
 };
 
-function parseAuditorAccessRegistry(env: Record<string, string | undefined>): AuditorAccessRegistryEntry[] {
+function isValidRegistryEntry(row: unknown): row is AuditorAccessRegistryEntry {
+  if (!row || typeof row !== "object") return false;
+  const entry = row as AuditorAccessRegistryEntry;
+  return entry.credential_class === INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS
+    && typeof entry.partner_id === "string"
+    && typeof entry.session_key_id === "string"
+    && typeof entry.auditor_credential_id === "string"
+    && typeof entry.audience_hash === "string"
+    && Array.isArray(entry.allowed_purposes)
+    && assertIndividualAuditorCredentialSessionKey(entry.session_key_id) === true;
+}
+
+export function parseAuditorAccessRegistry(env: Record<string, string | undefined>): AuditorAccessRegistryEntry[] {
   const raw = env.ABRAXAS_INSTITUTIONAL_AUDITOR_ACCESS_REGISTRY?.trim();
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((row): row is AuditorAccessRegistryEntry => {
-      return !!row
-        && typeof row === "object"
-        && typeof (row as AuditorAccessRegistryEntry).partner_id === "string"
-        && typeof (row as AuditorAccessRegistryEntry).session_key_id === "string"
-        && typeof (row as AuditorAccessRegistryEntry).auditor_id === "string"
-        && typeof (row as AuditorAccessRegistryEntry).audience_hash === "string"
-        && Array.isArray((row as AuditorAccessRegistryEntry).allowed_purposes);
-    });
+    return parsed.filter(isValidRegistryEntry);
   } catch {
     return [];
   }
@@ -64,6 +73,11 @@ export async function resolveInstitutionalAuditorPrincipal(
     return { ok: false, reason: "institutional_auditor_session_identity_unavailable", status: 401 };
   }
 
+  const individual = assertIndividualAuditorCredentialSessionKey(sessionKeyId);
+  if (individual !== true) {
+    return { ok: false, reason: individual.reason, status: 403 };
+  }
+
   const registry = parseAuditorAccessRegistry(env);
   const match = registry.find(
     (entry) => entry.partner_id === sessionAuth.session.partnerId && entry.session_key_id === sessionKeyId,
@@ -78,7 +92,7 @@ export async function resolveInstitutionalAuditorPrincipal(
   return {
     ok: true,
     principal: {
-      auditor_id: match.auditor_id,
+      auditor_credential_id: match.auditor_credential_id,
       tenant_id: tenantId,
       audience_hash: match.audience_hash,
       allowed_purposes: match.allowed_purposes,
