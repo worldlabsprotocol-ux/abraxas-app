@@ -17,6 +17,7 @@ const UNTRUSTED_BODY_KEYS = [
   "trust_anchor_public_jwk",
   "signed_issuer_authority",
   "presenter_auditor_id",
+  "auditor_credential_id",
   "tenant_id",
   "receipt",
   "custody",

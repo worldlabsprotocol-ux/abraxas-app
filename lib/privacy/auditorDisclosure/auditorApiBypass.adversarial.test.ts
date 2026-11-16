@@ -126,6 +126,19 @@ describe("Build 968 API bypass — auditor vs admin evidence", () => {
     expect(resolveTrustMock).not.toHaveBeenCalled();
   });
 
+  it("rejects caller-supplied auditor_credential_id (session registry is authoritative)", async () => {
+    const { signed } = mockHappyPath();
+    const res = await auditorDisclosurePOST(
+      auditorRequest({
+        signed_auditor_mandate: signed,
+        auditor_credential_id: "auditor_substitution_attempt",
+      }),
+    );
+    expect(res.status).toBe(403);
+    const json = (await res.json()) as { error?: string };
+    expect(json.error).toBe("untrusted_body_field_rejected");
+  });
+
   it("rejects caller-supplied receipt and tenant impersonation fields", async () => {
     mockHappyPath();
     const forged = {
