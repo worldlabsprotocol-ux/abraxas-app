@@ -44,14 +44,39 @@ test.describe("Independent verification default /verify", () => {
     });
   }
 
-  test("malformed paste bundle shows recovery", async ({ page }) => {
+  test("malformed paste keeps input and offers recovery", async ({ page }) => {
+    await page.goto("/verify");
+    await page.getByRole("button", { name: "Paste my receipt" }).click();
+    await expect(page.getByText(/Expected shape/i)).toBeVisible();
+    const textarea = page.locator("textarea");
+    const bad = "BUILD966_POST_MERGE=1";
+    await textarea.fill(bad);
+    await page.getByRole("button", { name: "Check this bundle" }).click();
+    await expect(page.getByText(/doesn't look like a receipt bundle/i)).toBeVisible();
+    await expect(textarea).toHaveValue(bad);
+    await page.getByRole("button", { name: "Use demo receipt instead" }).click();
+    await expect(page.getByText("Valid", { exact: true })).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("load teaching sample then verify paste", async ({ page }) => {
+    await page.goto("/verify");
+    await page.getByRole("button", { name: "Paste my receipt" }).click();
+    await page.getByRole("button", { name: "Load teaching sample" }).click();
+    await expect(page.getByText(/Teaching sample loaded/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator("textarea")).toContainText("abraxas_portable_verification_bundle");
+    await page.getByRole("button", { name: "Check this bundle" }).click();
+    await expect(page.getByText("Verdict", { exact: true })).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("malformed paste recovery on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/verify");
     await page.getByRole("button", { name: "Paste my receipt" }).click();
     await page.locator("textarea").fill("{not-json");
     await page.getByRole("button", { name: "Check this bundle" }).click();
-    await expect(page.getByText(/complete portable verification bundle/i)).toBeVisible();
-    await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("button", { name: "Use demo receipt" })).toBeVisible();
+    await expect(page.getByText(/doesn't look like a receipt bundle/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Load teaching sample" })).toBeVisible();
+    await expect(page.locator("textarea")).toHaveValue("{not-json");
   });
 
   test("mobile layout keeps verdict and next action visible", async ({ page }) => {
