@@ -21,6 +21,7 @@ export const SELECTIVE_DISCLOSURE_SURFACES = [
   "launchpad_summary",
   "action_contract",
   "eligibility_presentation",
+  "auditor_review",
 ] as const;
 export type SelectiveDisclosureSurface = (typeof SELECTIVE_DISCLOSURE_SURFACES)[number];
 
@@ -116,6 +117,22 @@ export const PUBLIC_RECEIPT_ALLOWED_FIELDS = [
   "validity_checked_at",
 ] as const;
 
+/** Institution-supervised audit tier: broader than partner RP surfaces, never raw custody or PII. */
+export const AUDITOR_REVIEW_ALLOWED_FIELDS = [
+  ...PUBLIC_RECEIPT_ALLOWED_FIELDS,
+  "verification_decision_id",
+  "schema_version",
+  "evidence_commitment",
+  "decision_context",
+  "disclosure_mandate_id",
+  "auditor_purpose",
+  "tenant_id",
+  "custody_status",
+  "evidence_classification",
+  "disclosure_surface",
+  "audience_hash",
+] as const;
+
 export const PARTNER_KIT_ALLOWED_FIELDS = [
   "kit_version",
   "outcome",
@@ -165,6 +182,7 @@ export interface SelectiveDisclosureProfile {
   trading_action_fields: readonly string[];
   payment_action_fields: readonly string[];
   launchpad_summary_fields: readonly string[];
+  auditor_review_fields: readonly string[];
   forbidden_classes: readonly SelectiveDisclosureForbiddenClass[];
 }
 
@@ -179,6 +197,7 @@ export const SHARED_SURFACE_FIELDS = {
   trading_action: TRADING_VENUE_CLIENT_VISIBLE_KEYS,
   payment_action: PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS,
   launchpad_summary: LAUNCHPAD_SUMMARY_ALLOWED_FIELDS,
+  auditor_review: AUDITOR_REVIEW_ALLOWED_FIELDS,
   eligibility_presentation: [
     "schema_version",
     "presentation_ref",

@@ -21,6 +21,7 @@ export const RECEIPT_KEY_REASON_CLASSES = [
   "schema_mismatch",
   "unavailable",
   "inconsistent",
+  "institutional_auditor_mandate_issuer",
 ] as const;
 export type ReceiptKeyReasonClass = (typeof RECEIPT_KEY_REASON_CLASSES)[number];
 

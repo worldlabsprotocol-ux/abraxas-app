@@ -162,7 +162,7 @@ function isoTimestamp(value: Date | string | null | undefined): string | null {
   return normalizeDecisionReceiptTimestamp(value);
 }
 
-async function loadRecordedDecisionReceipt(input: {
+export async function loadRecordedDecisionReceipt(input: {
   env: Record<string, string | undefined>;
   receiptId: string;
 }): Promise<
