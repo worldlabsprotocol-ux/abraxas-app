@@ -100,7 +100,7 @@ async function assertAuthoritativeAuditorApiKeyCredential(
   sessionKeyId: string,
 ): Promise<
   | { ok: true }
-  | { ok: false; reason: string; status: 403 }
+  | { ok: false; reason: string; status: 401 | 403 }
 > {
   const authKind = session.authKind ?? (session.accountId ? "account" : "api_key");
   if (authKind !== "api_key") {
