@@ -25,6 +25,15 @@ import { POST as auditorDisclosurePOST } from "@/app/api/institutional/auditor-d
 import { publicReceiptJwkFingerprint } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
 
 const requireSessionMock = vi.hoisted(() => vi.fn());
+const pgCredentialMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/partner/launchpad/launchpadPersistence", () => ({
+  launchpadUsesSovereignPostgres: () => true,
+}));
+
+vi.mock("@/lib/partner/launchpad/sovereign/launchpadPgStore", () => ({
+  pgResolvePartnerApiKeyForAuditorCredential: (...args: unknown[]) => pgCredentialMock(...args),
+}));
 
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   requirePartnerConsoleSession: (...args: unknown[]) => requireSessionMock(...args),
@@ -116,6 +125,7 @@ describe("Build 968 auditor disclosure integration path", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    pgCredentialMock.mockResolvedValue({ ok: true, disposition: "active" });
     loadReceiptSpy = vi.spyOn(recordedWorkflow, "loadRecordedDecisionReceipt");
     continuitySpy = vi.spyOn(registryContinuity, "readCurrentIssuerAuthorityRow");
     anchorSpy = vi.spyOn(registryContinuity, "readConfiguredIssuerAnchor");

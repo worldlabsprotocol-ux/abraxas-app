@@ -15,16 +15,17 @@ import { parseAuditorAccessRegistry, resolveInstitutionalAuditorPrincipal } from
 
 const requireSessionMock = vi.hoisted(() => vi.fn());
 const launchpadPgMock = vi.hoisted(() => ({
-  pgGetApiKeyRevoked: vi.fn(),
+  pgResolvePartnerApiKeyForAuditorCredential: vi.fn(),
 }));
-const sovereignPgFlag = vi.hoisted(() => vi.fn(() => false));
+const sovereignPgFlag = vi.hoisted(() => vi.fn(() => true));
 
 vi.mock("@/lib/partner/launchpad/launchpadPersistence", () => ({
   launchpadUsesSovereignPostgres: () => sovereignPgFlag(),
 }));
 
 vi.mock("@/lib/partner/launchpad/sovereign/launchpadPgStore", () => ({
-  pgGetApiKeyRevoked: (...args: unknown[]) => launchpadPgMock.pgGetApiKeyRevoked(...args),
+  pgResolvePartnerApiKeyForAuditorCredential: (...args: unknown[]) =>
+    launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential(...args),
 }));
 
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
@@ -36,28 +37,38 @@ vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   },
 }));
 
-function registryEnv(overrides: Record<string, unknown> = {}, extraRow?: Record<string, unknown>) {
-  const base = {
-    credential_class: INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
-    partner_id: "acme",
-    session_key_id: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
-    auditor_credential_id: CONTROLLED_AUDITOR_ID,
-    tenant_id: CONTROLLED_TENANT_ID,
-    audience_hash: "audience_hash_demo_968",
-    allowed_purposes: ["regulatory_examination"],
-    ...overrides,
-  };
-  const rows = extraRow ? [base, extraRow] : [base];
+function registryEnv(overrides: Record<string, unknown> = {}) {
   return {
-    ABRAXAS_INSTITUTIONAL_AUDITOR_ACCESS_REGISTRY: JSON.stringify(rows),
+    ABRAXAS_INSTITUTIONAL_AUDITOR_ACCESS_REGISTRY: JSON.stringify([
+      {
+        credential_class: INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
+        partner_id: "acme",
+        session_key_id: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
+        auditor_credential_id: CONTROLLED_AUDITOR_ID,
+        tenant_id: CONTROLLED_TENANT_ID,
+        audience_hash: "audience_hash_demo_968",
+        allowed_purposes: ["regulatory_examination"],
+        ...overrides,
+      },
+    ]),
+  };
+}
+
+function apiKeySession(apiKeyId: string, partnerId = "acme") {
+  return {
+    ok: true,
+    session: { partnerId, environment: "sandbox", apiKeyId, authKind: "api_key" as const },
   };
 }
 
 describe("auditor credential binding invariants", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    sovereignPgFlag.mockReturnValue(false);
-    launchpadPgMock.pgGetApiKeyRevoked.mockResolvedValue(false);
+    sovereignPgFlag.mockReturnValue(true);
+    launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential.mockResolvedValue({
+      ok: true,
+      disposition: "active",
+    });
   });
 
   it("documents legacy prefix helper without requiring it for registry parse", () => {
@@ -69,35 +80,87 @@ describe("auditor credential binding invariants", () => {
   });
 
   it("parseAuditorAccessRegistry accepts UUID partner_api_keys.id session bindings", () => {
-    const env = {
-      ABRAXAS_INSTITUTIONAL_AUDITOR_ACCESS_REGISTRY: JSON.stringify([
-        {
-          credential_class: INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
-          partner_id: "acme",
-          session_key_id: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
-          auditor_credential_id: CONTROLLED_AUDITOR_ID,
-          audience_hash: "audience_hash_demo_968",
-          allowed_purposes: ["regulatory_examination"],
-        },
-      ]),
-    };
-    expect(parseAuditorAccessRegistry(env)).toHaveLength(1);
+    expect(parseAuditorAccessRegistry(registryEnv())).toHaveLength(1);
   });
 
-  it("parseAuditorAccessRegistry drops rows with invalid purposes", () => {
-    const env = {
-      ABRAXAS_INSTITUTIONAL_AUDITOR_ACCESS_REGISTRY: JSON.stringify([
-        {
-          credential_class: INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
-          partner_id: "acme",
-          session_key_id: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
-          auditor_credential_id: CONTROLLED_AUDITOR_ID,
-          audience_hash: "audience_hash_demo_968",
-          allowed_purposes: ["not_a_real_purpose"],
-        },
-      ]),
-    };
-    expect(parseAuditorAccessRegistry(env)).toEqual([]);
+  it("rejects malformed non-UUID session key ids before registry authorize", async () => {
+    requireSessionMock.mockResolvedValue(apiKeySession("key-institutional-operator"));
+    const resolved = await resolveInstitutionalAuditorPrincipal(
+      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
+      registryEnv(),
+    );
+    expect(resolved.ok).toBe(false);
+    if (!resolved.ok) {
+      expect(resolved.reason).toBe("institutional_auditor_session_key_malformed");
+    }
+    expect(launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when sovereign credential store is unavailable", async () => {
+    sovereignPgFlag.mockReturnValue(false);
+    requireSessionMock.mockResolvedValue(apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY));
+    const resolved = await resolveInstitutionalAuditorPrincipal(
+      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
+      registryEnv(),
+    );
+    expect(resolved.ok).toBe(false);
+    if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_credential_status_unavailable");
+  });
+
+  it("rejects missing authoritative API key records", async () => {
+    launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential.mockResolvedValue({
+      ok: false,
+      disposition: "missing",
+    });
+    requireSessionMock.mockResolvedValue(apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY));
+    const resolved = await resolveInstitutionalAuditorPrincipal(
+      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
+      registryEnv(),
+    );
+    expect(resolved.ok).toBe(false);
+    if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_credential_missing");
+  });
+
+  it("rejects revoked API keys (stale console session loses auditor auth)", async () => {
+    launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential.mockResolvedValue({
+      ok: false,
+      disposition: "revoked",
+    });
+    requireSessionMock.mockResolvedValue(apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY));
+    const resolved = await resolveInstitutionalAuditorPrincipal(
+      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
+      registryEnv(),
+    );
+    expect(resolved.ok).toBe(false);
+    if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_credential_revoked");
+  });
+
+  it("rejects partner mismatch from authoritative key record", async () => {
+    launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential.mockResolvedValue({
+      ok: false,
+      disposition: "partner_mismatch",
+    });
+    requireSessionMock.mockResolvedValue(apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY));
+    const resolved = await resolveInstitutionalAuditorPrincipal(
+      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
+      registryEnv(),
+    );
+    expect(resolved.ok).toBe(false);
+    if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_credential_partner_mismatch");
+  });
+
+  it("rejects DB errors from authoritative lookup", async () => {
+    launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential.mockResolvedValue({
+      ok: false,
+      disposition: "unavailable",
+    });
+    requireSessionMock.mockResolvedValue(apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY));
+    const resolved = await resolveInstitutionalAuditorPrincipal(
+      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
+      registryEnv(),
+    );
+    expect(resolved.ok).toBe(false);
+    if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_credential_status_unavailable");
   });
 
   it("rejects native account partner console sessions", async () => {
@@ -113,11 +176,10 @@ describe("auditor credential binding invariants", () => {
     if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_account_session_not_permitted");
   });
 
-  it("resolveInstitutionalAuditorPrincipal denies shared operator API key without registry row", async () => {
-    requireSessionMock.mockResolvedValue({
-      ok: true,
-      session: { partnerId: "acme", environment: "sandbox", apiKeyId: "b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3", authKind: "api_key" },
-    });
+  it("denies shared operator API key without auditor registry row", async () => {
+    requireSessionMock.mockResolvedValue(
+      apiKeySession("b3b3b3b3-b3b3-4b3b-8b3b-b3b3b3b3b3b3"),
+    );
     const resolved = await resolveInstitutionalAuditorPrincipal(
       new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
       registryEnv(),
@@ -126,47 +188,32 @@ describe("auditor credential binding invariants", () => {
     if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_not_authorized");
   });
 
-  it("resolveInstitutionalAuditorPrincipal permits registry-bound UUID api key session", async () => {
-    requireSessionMock.mockResolvedValue({
-      ok: true,
-      session: { partnerId: "acme", environment: "sandbox", apiKeyId: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY, authKind: "api_key" },
-    });
+  it("permits active UUID api key with registry row and authoritative active disposition", async () => {
+    requireSessionMock.mockResolvedValue(apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY));
     const resolved = await resolveInstitutionalAuditorPrincipal(
       new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
       registryEnv(),
     );
     expect(resolved.ok).toBe(true);
+    expect(launchpadPgMock.pgResolvePartnerApiKeyForAuditorCredential).toHaveBeenCalledWith({
+      keyId: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
+      expectedPartnerId: "acme",
+    });
     if (resolved.ok) {
       expect(resolved.principal.auditor_credential_id).toBe(CONTROLLED_AUDITOR_ID);
       expect(resolved.principal.session_key_id).toBe(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY);
     }
   });
 
-  it("resolveInstitutionalAuditorPrincipal denies cross-tenant registry mismatch (wrong partner)", async () => {
-    requireSessionMock.mockResolvedValue({
-      ok: true,
-      session: { partnerId: "other-partner", environment: "sandbox", apiKeyId: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY, authKind: "api_key" },
-    });
+  it("denies cross-tenant registry mismatch (wrong partner in registry only)", async () => {
+    requireSessionMock.mockResolvedValue(
+      apiKeySession(CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY, "other-partner"),
+    );
     const resolved = await resolveInstitutionalAuditorPrincipal(
       new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
       registryEnv(),
     );
     expect(resolved.ok).toBe(false);
     if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_not_authorized");
-  });
-
-  it("resolveInstitutionalAuditorPrincipal denies revoked partner API key when sovereign pg is enabled", async () => {
-    sovereignPgFlag.mockReturnValue(true);
-    launchpadPgMock.pgGetApiKeyRevoked.mockResolvedValue(true);
-    requireSessionMock.mockResolvedValue({
-      ok: true,
-      session: { partnerId: "acme", environment: "sandbox", apiKeyId: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY, authKind: "api_key" },
-    });
-    const resolved = await resolveInstitutionalAuditorPrincipal(
-      new NextRequest("http://localhost/api/institutional/auditor-disclosure"),
-      registryEnv(),
-    );
-    expect(resolved.ok).toBe(false);
-    if (!resolved.ok) expect(resolved.reason).toBe("institutional_auditor_credential_revoked");
   });
 });

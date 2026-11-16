@@ -76,24 +76,58 @@ export function parseAuditorAccessRegistry(env: Record<string, string | undefine
   }
 }
 
-async function assertAuditorApiKeySessionActive(
+function mapCredentialDispositionToReason(
+  disposition: "revoked" | "missing" | "partner_mismatch" | "unavailable",
+):
+  | "institutional_auditor_credential_revoked"
+  | "institutional_auditor_credential_missing"
+  | "institutional_auditor_credential_partner_mismatch"
+  | "institutional_auditor_credential_status_unavailable" {
+  switch (disposition) {
+    case "revoked":
+      return "institutional_auditor_credential_revoked";
+    case "missing":
+      return "institutional_auditor_credential_missing";
+    case "partner_mismatch":
+      return "institutional_auditor_credential_partner_mismatch";
+    default:
+      return "institutional_auditor_credential_status_unavailable";
+  }
+}
+
+async function assertAuthoritativeAuditorApiKeyCredential(
   session: PartnerConsoleSession,
   sessionKeyId: string,
-): Promise<{ ok: true } | { ok: false; reason: "institutional_auditor_credential_revoked"; status: 403 }> {
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: string; status: 403 }
+> {
   const authKind = session.authKind ?? (session.accountId ? "account" : "api_key");
   if (authKind !== "api_key") {
-    return { ok: true };
+    return { ok: false, reason: "institutional_auditor_account_session_not_permitted", status: 403 };
   }
   if (session.apiKeyId && session.apiKeyId !== sessionKeyId) {
-    return { ok: false, reason: "institutional_auditor_credential_revoked", status: 403 };
+    return { ok: false, reason: "institutional_auditor_session_identity_unavailable", status: 401 };
   }
-  if (!PARTNER_API_KEY_UUID.test(sessionKeyId) || !launchpadUsesSovereignPostgres()) {
-    return { ok: true };
+  if (!PARTNER_API_KEY_UUID.test(sessionKeyId)) {
+    return { ok: false, reason: "institutional_auditor_session_key_malformed", status: 403 };
   }
-  const { pgGetApiKeyRevoked } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
-  const revoked = await pgGetApiKeyRevoked(sessionKeyId);
-  if (revoked) {
-    return { ok: false, reason: "institutional_auditor_credential_revoked", status: 403 };
+  if (!launchpadUsesSovereignPostgres()) {
+    return { ok: false, reason: "institutional_auditor_credential_status_unavailable", status: 403 };
+  }
+  const { pgResolvePartnerApiKeyForAuditorCredential } = await import(
+    "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+  );
+  const resolved = await pgResolvePartnerApiKeyForAuditorCredential({
+    keyId: sessionKeyId,
+    expectedPartnerId: session.partnerId,
+  });
+  if (!resolved.ok) {
+    return {
+      ok: false,
+      reason: mapCredentialDispositionToReason(resolved.disposition),
+      status: 403,
+    };
   }
   return { ok: true };
 }
@@ -119,9 +153,9 @@ export async function resolveInstitutionalAuditorPrincipal(
     return { ok: false, reason: "institutional_auditor_account_session_not_permitted", status: 403 };
   }
 
-  const active = await assertAuditorApiKeySessionActive(sessionAuth.session, sessionKeyId);
-  if (!active.ok) {
-    return { ok: false, reason: active.reason, status: active.status };
+  const credential = await assertAuthoritativeAuditorApiKeyCredential(sessionAuth.session, sessionKeyId);
+  if (!credential.ok) {
+    return { ok: false, reason: credential.reason, status: credential.status };
   }
 
   const registry = parseAuditorAccessRegistry(env);

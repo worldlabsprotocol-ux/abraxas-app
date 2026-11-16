@@ -265,6 +265,45 @@ export async function pgGetApiKeyRevoked(keyId: string): Promise<boolean> {
   return Boolean(rows[0]?.revoked_at);
 }
 
+export type PartnerApiKeyAuditorCredentialDisposition =
+  | "active"
+  | "revoked"
+  | "missing"
+  | "partner_mismatch"
+  | "unavailable";
+
+/**
+ * Authoritative partner API key status for auditor disclosure (fail-closed).
+ * Missing keys are not treated as active; DB errors return unavailable.
+ */
+export async function pgResolvePartnerApiKeyForAuditorCredential(input: {
+  keyId: string;
+  expectedPartnerId: string;
+}): Promise<{ ok: true; disposition: "active" } | { ok: false; disposition: Exclude<PartnerApiKeyAuditorCredentialDisposition, "active"> }> {
+  try {
+    const { rows } = await queryAbraxasPg<{
+      partner_id: string;
+      revoked_at: string | null;
+    }>(
+      `select partner_id, revoked_at from public.partner_api_keys where id = $1::uuid limit 1`,
+      [input.keyId],
+    );
+    const row = rows[0];
+    if (!row) {
+      return { ok: false, disposition: "missing" };
+    }
+    if (row.partner_id !== input.expectedPartnerId) {
+      return { ok: false, disposition: "partner_mismatch" };
+    }
+    if (row.revoked_at) {
+      return { ok: false, disposition: "revoked" };
+    }
+    return { ok: true, disposition: "active" };
+  } catch {
+    return { ok: false, disposition: "unavailable" };
+  }
+}
+
 export async function pgInsertSandboxAuditEvent(input: {
   accountId: string;
   partnerId: string;
