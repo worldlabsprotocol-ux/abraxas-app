@@ -38,6 +38,10 @@ function permitArgs(overrides: Partial<Parameters<typeof evaluateAuditorDisclosu
       evidence_classification: "identity_verification" as const,
       evidence_commitment: { digest: "abc123", entry_count: 2 },
     },
+    request_context: {
+      audience_hash: "audience_hash_demo_968",
+      purpose: "regulatory_examination" as const,
+    },
     ...overrides,
     signedMandate: signed,
     signedIssuerAuthority: overrides.signedIssuerAuthority ?? fixture.signedIssuerAuthority,
@@ -211,6 +215,26 @@ describe("Build 968 auditor disclosure surface", () => {
       now: NOW,
     });
     expect(verified.ok).toBe(false);
+  });
+
+  it("denies when request audience does not match signed mandate", () => {
+    const result = evaluateAuditorDisclosureAccess(
+      permitArgs({
+        request_context: { audience_hash: "wrong_audience", purpose: "regulatory_examination" },
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("auditor_mandate_audience_mismatch");
+  });
+
+  it("denies stale mandate after server revocation registry entry", () => {
+    const previous = process.env.ABRAXAS_AUDITOR_DISCLOSURE_REVOKED_MANDATES;
+    process.env.ABRAXAS_AUDITOR_DISCLOSURE_REVOKED_MANDATES = "auditor_mandate_controlled_968_001";
+    const result = evaluateAuditorDisclosureAccess(permitArgs());
+    if (previous === undefined) delete process.env.ABRAXAS_AUDITOR_DISCLOSURE_REVOKED_MANDATES;
+    else process.env.ABRAXAS_AUDITOR_DISCLOSURE_REVOKED_MANDATES = previous;
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("auditor_mandate_revoked_in_registry");
   });
 
   it("re-signing with unknown key fails closed", () => {

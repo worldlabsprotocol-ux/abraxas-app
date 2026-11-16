@@ -8,8 +8,9 @@ import {
   resolveDisclosureProfile,
 } from "@/lib/privacy/selectiveDisclosure";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
-import type { SignedAuditorDisclosureMandate } from "./contract";
+import type { AuditorDisclosurePurpose, SignedAuditorDisclosureMandate } from "./contract";
 import { verifySignedAuditorDisclosureMandate } from "./signVerify";
+import { isAuditorMandateRevokedInRegistry } from "./serverTrust";
 import { buildAuditorDisclosureSource, type AuditorDisclosureCustodyMeta } from "./buildSource";
 import { auditAuditorDisclosurePayload } from "./auditPrivacy";
 
@@ -35,19 +36,43 @@ export function evaluateAuditorDisclosureAccess(input: {
   tenant_id: string;
   receipt: DecisionReceiptRecord | null;
   custody: AuditorDisclosureCustodyMeta;
+  request_context: {
+    audience_hash: string;
+    purpose: AuditorDisclosurePurpose;
+  };
+  env?: Record<string, string | undefined>;
+  minimumRegistryVersion?: number;
 }): AuditorDisclosureEnforcementResult {
+  const env = input.env ?? process.env;
+
+  if (isAuditorMandateRevokedInRegistry(input.signedMandate.payload.mandate_id, env)) {
+    return {
+      ok: false,
+      reason: "auditor_mandate_revoked_in_registry",
+      trust_boundary: "continuity_revocation_registry",
+    };
+  }
   const verified = verifySignedAuditorDisclosureMandate({
     signed: input.signedMandate,
     signedIssuerAuthority: input.signedIssuerAuthority,
     trustAnchorPublicJwk: input.trustAnchorPublicJwk,
     environment: input.environment,
     now: input.now,
+    minimumRegistryVersion: input.minimumRegistryVersion,
   });
   if (!verified.ok) {
     return { ok: false, reason: verified.reason, trust_boundary: verified.trust_boundary };
   }
 
   const mandate = verified.payload;
+
+  if (mandate.audience_hash !== input.request_context.audience_hash) {
+    return { ok: false, reason: "auditor_mandate_audience_mismatch", trust_boundary: "audience_binding" };
+  }
+
+  if (mandate.purpose !== input.request_context.purpose) {
+    return { ok: false, reason: "auditor_mandate_purpose_mismatch", trust_boundary: "purpose_binding" };
+  }
 
   if (mandate.tenant_id !== input.tenant_id) {
     return { ok: false, reason: "auditor_mandate_tenant_mismatch", trust_boundary: "tenant_isolation" };
