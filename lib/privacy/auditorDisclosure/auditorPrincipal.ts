@@ -1,13 +1,15 @@
 // FILE: lib/privacy/auditorDisclosure/auditorPrincipal.ts
-// Individual auditor credentials — not inherited from generic institutional operator sessions.
+// Individual auditor credentials — registry-bound partner API key sessions (UUID ids).
 
 import type { NextRequest } from "next/server";
 import {
   requirePartnerConsoleSession,
   resolvePartnerConsoleSessionKeyId,
+  type PartnerConsoleSession,
 } from "@/lib/partner/launchpad/partnerConsoleSession";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 import {
-  assertIndividualAuditorCredentialSessionKey,
+  AUDITOR_DISCLOSURE_PURPOSES,
   INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
   type AuditorDisclosurePurpose,
 } from "./contract";
@@ -32,16 +34,34 @@ export type AuditorAccessRegistryEntry = {
   allowed_purposes: AuditorDisclosurePurpose[];
 };
 
+const NATIVE_ACCOUNT_SESSION_KEY_PREFIX = "native_account:" as const;
+
+const PARTNER_API_KEY_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isNativePartnerOperatorSessionKey(sessionKeyId: string): boolean {
+  return sessionKeyId.startsWith(NATIVE_ACCOUNT_SESSION_KEY_PREFIX);
+}
+
+function isValidPurpose(value: unknown): value is AuditorDisclosurePurpose {
+  return typeof value === "string" && (AUDITOR_DISCLOSURE_PURPOSES as readonly string[]).includes(value);
+}
+
 function isValidRegistryEntry(row: unknown): row is AuditorAccessRegistryEntry {
   if (!row || typeof row !== "object") return false;
   const entry = row as AuditorAccessRegistryEntry;
   return entry.credential_class === INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS
     && typeof entry.partner_id === "string"
+    && entry.partner_id.length > 0
     && typeof entry.session_key_id === "string"
+    && entry.session_key_id.length > 0
     && typeof entry.auditor_credential_id === "string"
+    && entry.auditor_credential_id.length > 0
     && typeof entry.audience_hash === "string"
+    && entry.audience_hash.length > 0
     && Array.isArray(entry.allowed_purposes)
-    && assertIndividualAuditorCredentialSessionKey(entry.session_key_id) === true;
+    && entry.allowed_purposes.length > 0
+    && entry.allowed_purposes.every(isValidPurpose);
 }
 
 export function parseAuditorAccessRegistry(env: Record<string, string | undefined>): AuditorAccessRegistryEntry[] {
@@ -54,6 +74,28 @@ export function parseAuditorAccessRegistry(env: Record<string, string | undefine
   } catch {
     return [];
   }
+}
+
+async function assertAuditorApiKeySessionActive(
+  session: PartnerConsoleSession,
+  sessionKeyId: string,
+): Promise<{ ok: true } | { ok: false; reason: "institutional_auditor_credential_revoked"; status: 403 }> {
+  const authKind = session.authKind ?? (session.accountId ? "account" : "api_key");
+  if (authKind !== "api_key") {
+    return { ok: true };
+  }
+  if (session.apiKeyId && session.apiKeyId !== sessionKeyId) {
+    return { ok: false, reason: "institutional_auditor_credential_revoked", status: 403 };
+  }
+  if (!PARTNER_API_KEY_UUID.test(sessionKeyId) || !launchpadUsesSovereignPostgres()) {
+    return { ok: true };
+  }
+  const { pgGetApiKeyRevoked } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
+  const revoked = await pgGetApiKeyRevoked(sessionKeyId);
+  if (revoked) {
+    return { ok: false, reason: "institutional_auditor_credential_revoked", status: 403 };
+  }
+  return { ok: true };
 }
 
 export async function resolveInstitutionalAuditorPrincipal(
@@ -73,9 +115,13 @@ export async function resolveInstitutionalAuditorPrincipal(
     return { ok: false, reason: "institutional_auditor_session_identity_unavailable", status: 401 };
   }
 
-  const individual = assertIndividualAuditorCredentialSessionKey(sessionKeyId);
-  if (individual !== true) {
-    return { ok: false, reason: individual.reason, status: 403 };
+  if (isNativePartnerOperatorSessionKey(sessionKeyId)) {
+    return { ok: false, reason: "institutional_auditor_account_session_not_permitted", status: 403 };
+  }
+
+  const active = await assertAuditorApiKeySessionActive(sessionAuth.session, sessionKeyId);
+  if (!active.ok) {
+    return { ok: false, reason: active.reason, status: active.status };
   }
 
   const registry = parseAuditorAccessRegistry(env);

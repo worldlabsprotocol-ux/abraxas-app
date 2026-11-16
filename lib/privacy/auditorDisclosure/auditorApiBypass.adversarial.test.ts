@@ -69,7 +69,7 @@ function mockHappyPath() {
       audience_hash: signed.payload.audience_hash,
       allowed_purposes: [signed.payload.purpose],
       partner_id: "acme",
-      session_key_id: "auditor_disclosure:cred_demo_968",
+      session_key_id: "f47ac10b-58cc-4372-a567-0e02b2c3d968",
     },
   });
   resolveTrustMock.mockResolvedValue({

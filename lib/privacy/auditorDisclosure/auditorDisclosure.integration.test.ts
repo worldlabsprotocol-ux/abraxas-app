@@ -122,7 +122,12 @@ describe("Build 968 auditor disclosure integration path", () => {
     verifySignatureSpy = vi.spyOn(receiptViews, "verifyRecordSignature").mockReturnValue(true);
     requireSessionMock.mockResolvedValue({
       ok: true,
-      session: { partnerId: "acme", environment: "sandbox", apiKeyId: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY },
+      session: {
+        partnerId: "acme",
+        environment: "sandbox",
+        apiKeyId: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
+        authKind: "api_key",
+      },
     });
   });
 
@@ -261,5 +266,37 @@ describe("Build 968 auditor disclosure integration path", () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as { ok?: boolean };
     expect(json.ok).toBe(true);
+  });
+
+  it("POST route fails closed on disallowed disclosure purpose with real principal resolver", async () => {
+    const fixture = buildControlledAuditorMandateIssuerFixture();
+    const env = {
+      ...buildIntegrationEnv().env,
+      ABRAXAS_INSTITUTIONAL_AUDITOR_ACCESS_REGISTRY: JSON.stringify([{
+        credential_class: INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS,
+        partner_id: "acme",
+        session_key_id: CONTROLLED_AUDITOR_CREDENTIAL_SESSION_KEY,
+        auditor_credential_id: CONTROLLED_AUDITOR_ID,
+        tenant_id: CONTROLLED_TENANT_ID,
+        audience_hash: "audience_hash_demo_968",
+        allowed_purposes: ["regulatory_examination"],
+      }]),
+    };
+    Object.assign(process.env, env);
+    const signed = buildControlledSignedAuditorMandate({ fixture });
+    const req = new NextRequest("http://localhost/api/institutional/auditor-disclosure", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        signed_auditor_mandate: signed,
+        disclosure_purpose: "soc2_type2",
+      }),
+    });
+    const principal = await resolveInstitutionalAuditorPrincipal(req, env);
+    expect(principal.ok).toBe(true);
+    const res = await auditorDisclosurePOST(req);
+    expect(res.status).toBe(403);
+    const json = (await res.json()) as { error?: string };
+    expect(json.error).toBe("disclosure_purpose_not_authorized_for_credential");
   });
 });
