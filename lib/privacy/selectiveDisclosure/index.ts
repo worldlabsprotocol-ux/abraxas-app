@@ -2,12 +2,15 @@
 
 export {
   SELECTIVE_DISCLOSURE_VERSION,
+  SELECTIVE_DISCLOSURE_SURFACES,
   SELECTIVE_DISCLOSURE_NOTICE,
   SELECTIVE_DISCLOSURE_CRYPTOGRAPHY_NOTICE,
   SELECTIVE_DISCLOSURE_FORBIDDEN_CLASSES,
   SELECTIVE_DISCLOSURE_CLIENT_OVERRIDE_KEYS,
   SHARED_SURFACE_FIELDS,
+  AUDITOR_REVIEW_ALLOWED_FIELDS,
   type SelectiveDisclosureProfile,
+  type SelectiveDisclosureSurface,
 } from "./contract";
 export { SELECTIVE_DISCLOSURE_PROFILES, GENERIC_MINIMAL_PROFILE, profileFromPack, resolveDisclosureProfile, allowedFieldsForSurface } from "./profiles";
 export { applyDisclosureProfile, pickAllowedKeys, failClosedDisclosureError } from "./enforce";

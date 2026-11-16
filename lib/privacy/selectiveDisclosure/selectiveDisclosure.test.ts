@@ -87,6 +87,7 @@ describe("selective disclosure profiles", () => {
       expect(profile.partner_visible_result).toBe(pack.partner_receives);
       expect([...profile.withheld]).toEqual([...pack.partner_does_not_receive]);
       expect(profile.public_receipt_fields).toEqual(SHARED_SURFACE_FIELDS.public_receipt);
+      expect(profile.auditor_review_fields).toEqual(SHARED_SURFACE_FIELDS.auditor_review);
       expect(profile.sandbox_only === true || profile.production_use === "reviewed_production").toBe(true);
     }
   });

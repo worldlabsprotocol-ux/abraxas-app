@@ -35,6 +35,7 @@ export function profileFromPack(pack: PolicyPack): SelectiveDisclosureProfile {
     trading_action_fields: SHARED_SURFACE_FIELDS.trading_action,
     payment_action_fields: SHARED_SURFACE_FIELDS.payment_action,
     launchpad_summary_fields: SHARED_SURFACE_FIELDS.launchpad_summary,
+    auditor_review_fields: SHARED_SURFACE_FIELDS.auditor_review,
     forbidden_classes: SELECTIVE_DISCLOSURE_FORBIDDEN_CLASSES,
   };
 }
@@ -57,6 +58,7 @@ export const GENERIC_MINIMAL_PROFILE: SelectiveDisclosureProfile = {
   trading_action_fields: SHARED_SURFACE_FIELDS.trading_action,
   payment_action_fields: SHARED_SURFACE_FIELDS.payment_action,
   launchpad_summary_fields: SHARED_SURFACE_FIELDS.launchpad_summary,
+  auditor_review_fields: SHARED_SURFACE_FIELDS.auditor_review,
   forbidden_classes: SELECTIVE_DISCLOSURE_FORBIDDEN_CLASSES,
 };
 
@@ -118,6 +120,8 @@ export function allowedFieldsForSurface(
       return profile.launchpad_summary_fields;
     case "eligibility_presentation":
       return SHARED_SURFACE_FIELDS.eligibility_presentation;
+    case "auditor_review":
+      return profile.auditor_review_fields;
     default:
       return [];
   }
