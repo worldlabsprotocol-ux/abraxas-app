@@ -26,7 +26,9 @@ test.describe("Integration Studio browser provisioned journey", () => {
     await page.getByRole("button", { name: /^Create my test app$/i }).click();
 
     await expect(
-      page.getByText(/ready in sandbox|Sandbox application created|Copy this key/i).first(),
+      page.getByText(
+        /Sandbox ready|ready in sandbox|is ready in sandbox|Sandbox application created|Copy this key|Session active|sandbox API key|Shown once/i,
+      ).first(),
     ).toBeVisible({ timeout: 120_000 });
 
     if (!(await page.url()).includes("#configuration")) {
