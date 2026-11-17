@@ -57,7 +57,8 @@ const nextConfig = {
     /** Peak RSS: avoid compiling server + edge graphs concurrently on 8 GB builders. */
     parallelServerCompiles: vercelBuild ? false : undefined,
     parallelServerBuildTraces: vercelBuild ? false : undefined,
-    staticGenerationMaxConcurrency: vercelBuild ? 1 : undefined,
+    /** Webpack bundle-analyzer stats; disabling on Vercel trims compile RSS. */
+    gzipSize: vercelBuild ? false : undefined,
     optimizePackageImports: [
       "recharts",
       "framer-motion",
