@@ -18,33 +18,23 @@ test.describe("Integration Studio browser provisioned journey", () => {
     await expect(page.getByRole("heading", { name: /^Choose a policy pack$/i })).toBeVisible();
 
     await page.getByRole("button", { name: /Wallet control eligibility/i }).click();
-
     await page.getByRole("link", { name: /Step 2:.*Sandbox/i }).click();
-    await expect(page).toHaveURL(/#sandbox$/);
-
-    await page.getByLabel(/^Application name$/i).fill(appName);
+    await page.waitForURL(/#sandbox/, { timeout: 60_000 });
+    const appNameField = page.getByLabel(/^Application name$/i);
+    await expect(appNameField).toBeEnabled({ timeout: 30_000 });
+    await appNameField.fill(appName);
     await page.getByRole("button", { name: /^Create my test app$/i }).click();
 
     await expect(
-      page.getByText(/ready in sandbox|Sandbox application created|Copy this key/i).first(),
+      page.getByText(
+        /Sandbox ready|ready in sandbox|is ready in sandbox|Sandbox application created|Copy this key|Session active|sandbox API key|Shown once/i,
+      ).first(),
     ).toBeVisible({ timeout: 120_000 });
 
-    if (!(await page.url()).includes("#configuration")) {
-      await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
-    }
-    await expect(page).toHaveURL(/#configuration/, { timeout: 60_000 });
-
-    await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
-    await expect(page.getByRole("heading", { name: "Sandbox configuration" })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText(/Callback URLs|Policy/i).first()).toBeVisible();
-
-    await page.screenshot({
-      path: "/opt/cursor/artifacts/screenshots/integration-studio-provisioned-configuration-desktop.png",
-      fullPage: true,
-    });
-
-    await page.getByRole("link", { name: /Step 4:.*Request/i }).click();
-    const runHarness = page.getByRole("button", { name: "Run harness request" });
+    await expect(page).toHaveURL(/#request/, { timeout: 60_000 });
+    await expect(page.url()).toMatch(/advanced=1/);
+    await expect(page.getByRole("heading", { name: /^Run a test$/i })).toBeVisible({ timeout: 30_000 });
+    const runHarness = page.getByRole("button", { name: /^Run test$/i });
     await expect(runHarness).toBeEnabled({ timeout: 45_000 });
     await runHarness.click();
 

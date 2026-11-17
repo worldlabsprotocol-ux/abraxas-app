@@ -287,9 +287,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Solidity compiler 0.8.24 from pinned release
+        run: |
+          set -euo pipefail
+          compiler="$RUNNER_TEMP/solc-0.8.24"
+          curl --fail --location --retry 5 --retry-all-errors --retry-delay 3 \
+            --output "$compiler" \
+            https://github.com/ethereum/solidity/releases/download/v0.8.24/solc-static-linux
+          chmod 0755 "$compiler"
+          "$compiler" --version | tee "$RUNNER_TEMP/solc-version.txt"
+          grep -q 'Version: 0.8.24+' "$RUNNER_TEMP/solc-version.txt"
+          echo "SOLC_BIN=$compiler" >> "$GITHUB_ENV"
       - name: EVM eligibility verifier tests
         working-directory: contracts/evm-eligibility-verifier
-        run: forge test -vv
+        run: forge test --use "$SOLC_BIN" -vv
 
   solana-eligibility-gate:
     runs-on: ubuntu-latest

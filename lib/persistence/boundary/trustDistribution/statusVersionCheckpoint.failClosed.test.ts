@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../sovereignStagingPg", () => ({
+vi.mock("../sovereignStagingPg.runtime", () => ({
   querySovereignStagingPg: vi.fn(),
 }));
 
-import { querySovereignStagingPg } from "../sovereignStagingPg";
+vi.mock("@/lib/persistence/admin", () => ({
+  getPersistenceAdmin: vi.fn(() => null),
+}));
+
+import { querySovereignStagingPg } from "../sovereignStagingPg.runtime";
 import { nextSignedStatusVersion } from "./statusVersionCheckpoint";
 
 const query = vi.mocked(querySovereignStagingPg);

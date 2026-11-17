@@ -16,6 +16,7 @@ import {
   RECEIPT_VERIFICATION_REGISTRY_ENV,
   assertNoPrivateReceiptKeyMaterial,
   buildReceiptVerificationKeyDocument,
+  loadReceiptVerificationRegistry,
   resolveIssuanceSigningKey,
   resolveVerificationKey,
   verifyRecordSignatureWithRegistry,
@@ -258,6 +259,22 @@ describe("receipt verification key lifecycle", () => {
     expect(PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS).toContain("allowed");
     expect(EVM_PARTNER_CLIENT_VISIBLE_KEYS).toContain("allowed");
     expect(verifyRecordSignature(sampleRecord())).toBe(true);
+  });
+
+  it("allows mandate-issuer and receipt issuance actives to coexist in demo registry", () => {
+    const mandate = generateTestSigningKeyPair("build968-auditor-mandate-issuer");
+    process.env[RECEIPT_VERIFICATION_REGISTRY_ENV] = JSON.stringify([
+      registryEntry({ environment: "demo", reason_class: "active" }),
+      registryEntry({
+        key: mandate,
+        environment: "demo",
+        reason_class: "institutional_auditor_mandate_issuer",
+      }),
+    ]);
+    const loaded = loadReceiptVerificationRegistry();
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    expect(loaded.keys).toHaveLength(2);
   });
 
   it("fails closed when the registry JSON is inconsistent or unavailable", () => {

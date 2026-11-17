@@ -7,6 +7,7 @@ import pg from "pg";
 import type { Pool } from "pg";
 import { assertNotProductionSupabaseProject } from "../isolationGuard";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { getPersistenceAdmin } from "@/lib/persistence/admin";
 
 const DEMO_OPERATIONAL_PROJECT_REF = "ocntwbxarpjeixdnzide";
 
@@ -39,6 +40,36 @@ function getOperationalDemoPgPool(env: Record<string, string | undefined>): Pool
     });
   }
   return operationalPool;
+}
+
+/** Demo operational store via atomic PostgREST RPC (no direct Postgres URL). */
+async function bumpCheckpointViaOperationalPostgrest(
+  receiptId: string,
+): Promise<number | { error: string }> {
+  const client = getPersistenceAdmin();
+  if (!client) return { error: "operational_postgrest_unavailable" };
+
+  const trimmed = receiptId.trim();
+  if (!trimmed) return { error: "receipt_id_required" };
+
+  const { data, error } = await client.rpc("bump_portable_export_status_checkpoint", {
+    p_receipt_id: trimmed,
+  });
+
+  if (error) {
+    if (error.code === "PGRST202" || error.message.includes("Could not find the function")) {
+      return { error: "status_checkpoint_rpc_missing" };
+    }
+    if (error.code === "PGRST205" || error.message.includes("does not exist")) {
+      return { error: "status_checkpoint_table_missing" };
+    }
+    return { error: error.message };
+  }
+
+  const version = typeof data === "number" ? data : Number(data);
+  return Number.isInteger(version) && version > 0
+    ? version
+    : { error: "status_checkpoint_unavailable" };
 }
 
 async function bumpCheckpointOnPool(
@@ -119,6 +150,15 @@ export async function nextSignedStatusVersion(input: {
     if (bumped.error !== "status_checkpoint_table_missing") {
       return { error: bumped.error };
     }
+  }
+
+  const postgrestBump = await bumpCheckpointViaOperationalPostgrest(input.receiptId);
+  if (typeof postgrestBump === "number") return postgrestBump;
+  if (
+    postgrestBump.error !== "status_checkpoint_table_missing"
+    && postgrestBump.error !== "operational_postgrest_unavailable"
+  ) {
+    return { error: postgrestBump.error };
   }
 
   return { error: sovereign.error ?? "status_checkpoint_unavailable" };

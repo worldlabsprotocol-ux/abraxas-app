@@ -706,8 +706,9 @@ export function IntegrationStudioClient({
           window.requestAnimationFrame(() => focusHomepageBuilderWorkspace());
         }
         if (!beginnerSurface && typeof window !== "undefined" && !data.idempotency_replay) {
-          const next = integrationStudioStageHref("request");
-          window.history.replaceState(null, "", next);
+          const url = new URL(window.location.href);
+          url.hash = "request";
+          window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
           window.dispatchEvent(new HashChangeEvent("hashchange"));
         }
       }

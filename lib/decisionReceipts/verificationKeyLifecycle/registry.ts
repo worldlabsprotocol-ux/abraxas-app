@@ -164,7 +164,8 @@ export function loadReceiptVerificationRegistry(
   }
   if (keys.length === 0) return { ok: false, reason: "unavailable" };
   const active = keys.filter((key) => key.status === "active" && key.environment === environment);
-  if (active.length > 1) return { ok: false, reason: "inconsistent" };
+  const activeReceiptIssuance = active.filter((key) => key.reason_class === "active");
+  if (activeReceiptIssuance.length > 1) return { ok: false, reason: "inconsistent" };
   return { ok: true, keys, environment };
 }
 
