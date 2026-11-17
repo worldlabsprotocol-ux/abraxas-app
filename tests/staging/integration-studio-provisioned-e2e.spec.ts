@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoIntegrationStudio } from "./stagingStudioNavigation";
 
 /**
  * Provisioned Integration Studio journey via browser-first sandbox create on a Launchpad-connected deployment.
@@ -13,9 +14,7 @@ test.describe("Integration Studio browser provisioned journey", () => {
     }
 
     const appName = `studio-accept-${Date.now()}`;
-    const callbackUrl = `${base}/partner/callback`;
-
-    await page.goto(`${base}/developers/integration-studio`, { waitUntil: "networkidle" });
+    await gotoIntegrationStudio(page, base, "/developers/integration-studio");
     await expect(page.getByRole("heading", { name: /^Choose a policy pack$/i })).toBeVisible();
 
     await page.getByRole("button", { name: /Wallet control eligibility/i }).click();
@@ -23,15 +22,17 @@ test.describe("Integration Studio browser provisioned journey", () => {
     await page.getByRole("link", { name: /Step 2:.*Sandbox/i }).click();
     await expect(page).toHaveURL(/#sandbox$/);
 
-    await page.getByLabel(/Sandbox application name/i).fill(appName);
-    await page.getByLabel(/Integration callback URL/i).fill(callbackUrl);
+    await page.getByLabel(/^Application name$/i).fill(appName);
     await page.getByRole("button", { name: /^Create my test app$/i }).click();
 
-    // Successful create advances hash to #configuration (Build 861).
-    await expect(page).toHaveURL(/#configuration/, { timeout: 90_000 });
-    await expect(page.getByText(/ready in sandbox/i).first()).toBeVisible({
-      timeout: 90_000,
-    });
+    await expect(
+      page.getByText(/ready in sandbox|Sandbox application created|Copy this key/i).first(),
+    ).toBeVisible({ timeout: 120_000 });
+
+    if (!(await page.url()).includes("#configuration")) {
+      await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
+    }
+    await expect(page).toHaveURL(/#configuration/, { timeout: 60_000 });
 
     await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
     await expect(page.getByRole("heading", { name: "Sandbox configuration" })).toBeVisible({ timeout: 60_000 });

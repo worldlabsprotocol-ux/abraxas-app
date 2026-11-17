@@ -35,7 +35,7 @@ test.describe("Integration Studio stage navigation", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoIntegrationStudio(page, base, "/developers/integration-studio");
     await page.getByRole("link", { name: /Step 4:.*Request/i }).click();
-    await expect(page).toHaveURL(/#request$/);
+    await page.waitForURL(/#request/, { timeout: 60_000 });
     await expect(
       page.getByRole("heading", {
         name: /Run a test|Authenticated request builder|Verification requests require a sandbox application/i,

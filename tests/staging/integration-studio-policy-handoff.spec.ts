@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoIntegrationStudio } from "./stagingStudioNavigation";
 
 const base = process.env.LAUNCHPAD_STAGING_URL?.replace(/\/$/, "") ?? process.env.PLAYWRIGHT_BASE_URL?.replace(/\/$/, "");
 
@@ -11,14 +12,14 @@ test.describe("Integration Studio policy entry", () => {
   });
 
   test("fresh visitor has neutral policy selection", async ({ page }) => {
-    await page.goto(`${base}/developers/integration-studio`, { waitUntil: "networkidle" });
+    await gotoIntegrationStudio(page, base, "/developers/integration-studio");
     await expect(page.getByRole("button", { name: /Age 21 eligibility/i })).toHaveAttribute("aria-pressed", "false");
     await expect(page.getByRole("button", { name: /Wallet control eligibility/i })).toHaveAttribute("aria-pressed", "false");
     await expect(page.getByRole("status").filter({ hasText: /Select one pack/i })).toBeVisible();
   });
 
   test("explicit pack handoff selects policy", async ({ page }) => {
-    await page.goto(`${base}/developers/integration-studio?pack=age_21_retail`, { waitUntil: "networkidle" });
+    await gotoIntegrationStudio(page, base, "/developers/integration-studio?pack=age_21_retail");
     await expect(page.getByRole("button", { name: /Age 21 eligibility/i })).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -32,7 +33,7 @@ test.describe("Integration Studio policy entry", () => {
       headers: { Authorization: `Bearer ${process.env.REUSE_SANDBOX_API_KEY.trim()}` },
     });
     expect(sessionRes.ok()).toBeTruthy();
-    await page.goto(`${base}/developers/integration-studio?app=${appId}`, { waitUntil: "networkidle" });
+    await gotoIntegrationStudio(page, base, `/developers/integration-studio?app=${appId}`);
     await expect(page.getByRole("button", { name: /Wallet control eligibility/i })).toHaveAttribute("aria-pressed", "true");
   });
 });
