@@ -35,6 +35,12 @@ export type BlockchainNativeHarnessResult =
     }
   | { ok: false; code: string };
 
+function isInvalidHarnessScenario(
+  result: PartnerHarnessCaseResult | { ok: false; code: "invalid_scenario" },
+): result is { ok: false; code: "invalid_scenario" } {
+  return "ok" in result && result.ok === false;
+}
+
 export function harnessIssuedReceiptFields(
   harness: PartnerHarnessCaseResult,
 ): { receipt_id: string; payload_hash: string } | null {
@@ -68,7 +74,7 @@ export function runBlockchainNativePrototypeHarness(
       signingSource: "configured_issuer_key",
     });
 
-  if ("ok" in harness && harness.ok === false) {
+  if (isInvalidHarnessScenario(harness)) {
     return { ok: false, code: harness.code };
   }
 
