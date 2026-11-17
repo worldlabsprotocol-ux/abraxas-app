@@ -77,8 +77,9 @@ When `VERCEL=1`, `next.config.js` now:
 
 - Sets webpack `parallelism: 1`
 - Disables `parallelServerCompiles` and `parallelServerBuildTraces`
-- Sets `staticGenerationMaxConcurrency: 1`
+- Disables webpack `gzipSize` stats during compile
 - Sets `webpackBuildWorker: false` explicitly
+- Caps Node heap via `NODE_OPTIONS=--max-old-space-size=6144` on `build:vercel`
 - Enables `optimizePackageImports` for heavy UI/chart packages
 - Keeps `cpus: 1`, `workerThreads: false`
 - Disables production browser source maps

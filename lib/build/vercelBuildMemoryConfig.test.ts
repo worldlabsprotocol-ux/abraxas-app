@@ -8,7 +8,7 @@ describe("Vercel 8GB build memory guards", () => {
     expect(source).toMatch(/vercelBuild\s*=\s*process\.env\.VERCEL\s*===\s*"1"/);
     expect(source).toMatch(/parallelServerCompiles:\s*vercelBuild\s*\?\s*false/);
     expect(source).toMatch(/parallelServerBuildTraces:\s*vercelBuild\s*\?\s*false/);
-    expect(source).toMatch(/staticGenerationMaxConcurrency:\s*vercelBuild\s*\?\s*1/);
+    expect(source).toMatch(/gzipSize:\s*vercelBuild\s*\?\s*false/);
     expect(source).toMatch(/webpackBuildWorker:\s*vercelBuild\s*\?\s*false/);
     expect(source).toMatch(/config\.parallelism\s*=\s*1/);
   });
@@ -19,6 +19,7 @@ describe("Vercel 8GB build memory guards", () => {
     };
     expect(pkg.scripts["build:vercel"]).toContain("ABRAXAS_SKIP_IN_BUILD_VALIDATION=1");
     expect(pkg.scripts["build:vercel"]).toContain("--no-lint");
+    expect(pkg.scripts["build:vercel"]).toContain("NODE_OPTIONS=--max-old-space-size=6144");
   });
 
   it("does not install unused wallet-adapter-wallets meta-package", () => {

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:compile": "ABRAXAS_SKIP_IN_BUILD_VALIDATION=1 next build --no-lint",
-    "build:vercel": "ABRAXAS_SKIP_IN_BUILD_VALIDATION=1 next build --no-lint",
+    "build:vercel": "NODE_OPTIONS=--max-old-space-size=6144 ABRAXAS_SKIP_IN_BUILD_VALIDATION=1 next build --no-lint",
     "validate:typescript": "tsc --noEmit -p tsconfig.validation.json",
     "validate:eslint": "next lint",
     "validate:next-integration": "npm run build",
