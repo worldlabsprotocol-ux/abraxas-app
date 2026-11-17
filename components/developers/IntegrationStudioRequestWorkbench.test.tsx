@@ -25,6 +25,9 @@ vi.mock("@/components/redesign/ui", () => ({
   Btn: ({ href, children, onClick, disabled, newTab }: { href?: string; children: React.ReactNode; onClick?: () => void; disabled?: boolean; newTab?: boolean }) =>
     href ? <a href={href} target={newTab ? "_blank" : undefined}>{children}</a> : <button disabled={disabled} onClick={onClick}>{children}</button>,
 }));
+vi.mock("@/components/developers/BuilderPortableReceiptExportPanel", () => ({
+  BuilderPortableReceiptExportPanel: () => null,
+}));
 
 describe("beginner sandbox test access", () => {
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); operational.signedIn = false; window.sessionStorage.clear(); window.history.replaceState({}, "", "/"); });
