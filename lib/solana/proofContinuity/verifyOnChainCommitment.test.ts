@@ -99,6 +99,7 @@ describe("verifyOnChainReceiptCommitment", () => {
       application_hash: hashScopeId("app"),
       expires_at: 100n,
       status_version: 1n,
+      execution_nonce: 1n,
     });
     expect(msg.subarray(0, 27).toString("utf8")).toBe("ABRAXAS_PROOF_CONTINUITY_V1");
   });

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { PROOF_CONTINUITY_PREFIX } from "./constants";
 
 export const COMMITMENT_MESSAGE_LEN =
-  Buffer.byteLength(PROOF_CONTINUITY_PREFIX, "utf8") + 32 * 5 + 8 + 8;
+  Buffer.byteLength(PROOF_CONTINUITY_PREFIX, "utf8") + 32 * 5 + 8 + 8 + 8;
 
 export type CommitmentMessageFields = {
   receipt_id_hash: Buffer;
@@ -12,6 +12,7 @@ export type CommitmentMessageFields = {
   application_hash: Buffer;
   expires_at: bigint;
   status_version: bigint;
+  execution_nonce: bigint;
 };
 
 export function hashReceiptId(receiptId: string): Buffer {
@@ -40,5 +41,7 @@ export function encodeCommitmentMessage(fields: CommitmentMessageFields): Buffer
   buf.writeBigInt64BE(fields.expires_at, off);
   off += 8;
   buf.writeBigUInt64BE(fields.status_version, off);
+  off += 8;
+  buf.writeBigUInt64BE(fields.execution_nonce, off);
   return buf;
 }

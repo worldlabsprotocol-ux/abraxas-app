@@ -12,8 +12,11 @@ declare_id!("FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1");
 
 pub const REGISTRY_SEED: &[u8] = b"proof_registry";
 pub const COMMITMENT_SEED: &[u8] = b"receipt_commitment";
+pub const SANDBOX_BINDING_SEED: &[u8] = b"sandbox_binding";
+pub const EXECUTION_LEDGER_SEED: &[u8] = b"execution_ledger";
 pub const PROOF_CONTINUITY_PREFIX: &[u8] = b"ABRAXAS_PROOF_CONTINUITY_V1";
-pub const COMMITMENT_MESSAGE_LEN: usize = PROOF_CONTINUITY_PREFIX.len() + 32 + 32 + 32 + 32 + 32 + 8 + 8;
+pub const COMMITMENT_MESSAGE_LEN: usize =
+    PROOF_CONTINUITY_PREFIX.len() + 32 + 32 + 32 + 32 + 32 + 8 + 8 + 8;
 
 pub const STATUS_ACTIVE: u8 = 0;
 pub const STATUS_REVOKED: u8 = 1;
@@ -41,6 +44,71 @@ pub mod abraxas_proof_continuity {
         Ok(())
     }
 
+    pub fn register_sandbox_binding(ctx: Context<RegisterSandboxBinding>) -> Result<()> {
+        let registry = &ctx.accounts.registry;
+        let sandbox = &mut ctx.accounts.sandbox;
+        sandbox.registry = registry.key();
+        sandbox.holder = ctx.accounts.holder.key();
+        sandbox.partner_hash = registry.partner_hash;
+        sandbox.policy_hash = registry.policy_hash;
+        sandbox.application_hash = registry.application_hash;
+        sandbox.bump = ctx.bumps.sandbox;
+        Ok(())
+    }
+
+    pub fn execute_harness_run(
+        ctx: Context<ExecuteHarnessRun>,
+        execution_nonce: u64,
+        receipt_id_hash: [u8; 32],
+        payload_hash: [u8; 32],
+        expires_at: i64,
+        status_version: u64,
+    ) -> Result<()> {
+        require!(execution_nonce >= 1, ProofContinuityError::InvalidVersion);
+        require_keys_eq!(
+            ctx.accounts.sandbox.holder,
+            ctx.accounts.holder.key(),
+            ProofContinuityError::UnauthorizedWallet
+        );
+        let ledger = &mut ctx.accounts.ledger;
+        if ledger.last_execution_nonce == 0 {
+            ledger.sandbox = ctx.accounts.sandbox.key();
+            ledger.bump = ctx.bumps.ledger;
+        } else {
+            require_keys_eq!(ledger.sandbox, ctx.accounts.sandbox.key(), ProofContinuityError::WrongRegistry);
+        }
+        require!(
+            execution_nonce == ledger.last_execution_nonce.saturating_add(1),
+            ProofContinuityError::ReplayRejected
+        );
+
+        let registry = &ctx.accounts.registry;
+        let (pubkey, message) = verified_issuer_message(&ctx.accounts.instructions, registry)?;
+        let fields = parse_commitment_message(&message)?;
+        require_scope_match(registry, &fields)?;
+        require!(fields.execution_nonce == execution_nonce, ProofContinuityError::VersionMismatch);
+        require!(fields.receipt_id_hash == receipt_id_hash, ProofContinuityError::ReceiptMismatch);
+        require!(fields.payload_hash == payload_hash, ProofContinuityError::PayloadMismatch);
+        require!(fields.expires_at == expires_at, ProofContinuityError::ExpiryMismatch);
+        require!(fields.status_version == status_version, ProofContinuityError::VersionMismatch);
+        require!(pubkey == registry.trusted_issuer_pubkey, ProofContinuityError::WrongIssuer);
+        require_eq!(status_version, 1, ProofContinuityError::InvalidVersion);
+
+        let commitment = &mut ctx.accounts.commitment;
+        require_eq!(commitment.status_version, 0, ProofContinuityError::StaleVersion);
+        commitment.registry = registry.key();
+        commitment.receipt_id_hash = receipt_id_hash;
+        commitment.payload_hash = payload_hash;
+        commitment.partner_hash = registry.partner_hash;
+        commitment.policy_hash = registry.policy_hash;
+        commitment.application_hash = registry.application_hash;
+        commitment.expires_at = expires_at;
+        commitment.status = STATUS_ACTIVE;
+        commitment.status_version = status_version;
+        ledger.last_execution_nonce = execution_nonce;
+        Ok(())
+    }
+
     pub fn open_receipt_commitment(
         ctx: Context<OpenReceiptCommitment>,
         receipt_id_hash: [u8; 32],
@@ -59,11 +127,13 @@ pub mod abraxas_proof_continuity {
         payload_hash: [u8; 32],
         expires_at: i64,
         status_version: u64,
+        execution_nonce: u64,
     ) -> Result<()> {
         let registry = &ctx.accounts.registry;
         let (pubkey, message) = verified_issuer_message(&ctx.accounts.instructions, registry)?;
         let fields = parse_commitment_message(&message)?;
         require_scope_match(registry, &fields)?;
+        require!(fields.execution_nonce == execution_nonce, ProofContinuityError::VersionMismatch);
         require!(fields.receipt_id_hash == receipt_id_hash, ProofContinuityError::ReceiptMismatch);
         require!(fields.payload_hash == payload_hash, ProofContinuityError::PayloadMismatch);
         require!(fields.expires_at == expires_at, ProofContinuityError::ExpiryMismatch);
@@ -202,6 +272,7 @@ struct CommitmentMessageFields {
     application_hash: [u8; 32],
     expires_at: i64,
     status_version: u64,
+    execution_nonce: u64,
 }
 
 fn parse_commitment_message(message: &[u8]) -> Result<CommitmentMessageFields> {
@@ -228,6 +299,8 @@ fn parse_commitment_message(message: &[u8]) -> Result<CommitmentMessageFields> {
     let expires_at = i64::from_be_bytes(message[off..off + 8].try_into().unwrap());
     off += 8;
     let status_version = u64::from_be_bytes(message[off..off + 8].try_into().unwrap());
+    off += 8;
+    let execution_nonce = u64::from_be_bytes(message[off..off + 8].try_into().unwrap());
     Ok(CommitmentMessageFields {
         receipt_id_hash,
         payload_hash,
@@ -236,6 +309,7 @@ fn parse_commitment_message(message: &[u8]) -> Result<CommitmentMessageFields> {
         application_hash,
         expires_at,
         status_version,
+        execution_nonce,
     })
 }
 
@@ -291,6 +365,25 @@ pub struct ReceiptCommitment {
     pub bump: u8,
 }
 
+#[account]
+#[derive(InitSpace)]
+pub struct SandboxBinding {
+    pub registry: Pubkey,
+    pub holder: Pubkey,
+    pub partner_hash: [u8; 32],
+    pub policy_hash: [u8; 32],
+    pub application_hash: [u8; 32],
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct ExecutionLedger {
+    pub sandbox: Pubkey,
+    pub last_execution_nonce: u64,
+    pub bump: u8,
+}
+
 #[derive(Accounts)]
 pub struct InitializeProofRegistry<'info> {
     #[account(mut)]
@@ -303,6 +396,69 @@ pub struct InitializeProofRegistry<'info> {
         bump
     )]
     pub registry: Account<'info, ProofContinuityRegistry>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RegisterSandboxBinding<'info> {
+    #[account(mut)]
+    pub holder: Signer<'info>,
+    #[account(
+        seeds = [REGISTRY_SEED, registry.admin.as_ref()],
+        bump = registry.bump
+    )]
+    pub registry: Account<'info, ProofContinuityRegistry>,
+    #[account(
+        init,
+        payer = holder,
+        space = 8 + SandboxBinding::INIT_SPACE,
+        seeds = [SANDBOX_BINDING_SEED, registry.key().as_ref(), holder.key().as_ref()],
+        bump
+    )]
+    pub sandbox: Account<'info, SandboxBinding>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(execution_nonce: u64, receipt_id_hash: [u8; 32])]
+pub struct ExecuteHarnessRun<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub holder: Signer<'info>,
+    #[account(
+        seeds = [REGISTRY_SEED, registry.admin.as_ref()],
+        bump = registry.bump
+    )]
+    pub registry: Account<'info, ProofContinuityRegistry>,
+    #[account(
+        seeds = [SANDBOX_BINDING_SEED, registry.key().as_ref(), holder.key().as_ref()],
+        bump = sandbox.bump,
+        constraint = sandbox.holder == holder.key() @ ProofContinuityError::UnauthorizedWallet,
+    )]
+    pub sandbox: Account<'info, SandboxBinding>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + ExecutionLedger::INIT_SPACE,
+        seeds = [EXECUTION_LEDGER_SEED, sandbox.key().as_ref()],
+        bump
+    )]
+    pub ledger: Account<'info, ExecutionLedger>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + ReceiptCommitment::INIT_SPACE,
+        seeds = [
+            COMMITMENT_SEED,
+            registry.key().as_ref(),
+            receipt_id_hash.as_ref()
+        ],
+        bump
+    )]
+    pub commitment: Account<'info, ReceiptCommitment>,
+    /// CHECK: instructions sysvar
+    #[account(address = anchor_lang::solana_program::sysvar::instructions::ID)]
+    pub instructions: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -332,7 +488,7 @@ pub struct OpenReceiptCommitment<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(receipt_id_hash: [u8; 32])]
+#[instruction(receipt_id_hash: [u8; 32], execution_nonce: u64)]
 pub struct CommitReceipt<'info> {
     pub committer: Signer<'info>,
     #[account(
@@ -437,4 +593,8 @@ pub enum ProofContinuityError {
     NotAcceptable,
     #[msg("expired")]
     Expired,
+    #[msg("unauthorized_wallet")]
+    UnauthorizedWallet,
+    #[msg("replay_rejected")]
+    ReplayRejected,
 }

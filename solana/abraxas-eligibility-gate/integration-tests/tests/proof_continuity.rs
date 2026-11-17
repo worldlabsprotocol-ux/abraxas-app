@@ -33,6 +33,7 @@ fn commitment_message(
     application_hash: [u8; 32],
     expires_at: i64,
     status_version: u64,
+    execution_nonce: u64,
 ) -> Vec<u8> {
     let mut message = vec![0u8; COMMITMENT_MESSAGE_LEN];
     message[..PROOF_CONTINUITY_PREFIX.len()].copy_from_slice(PROOF_CONTINUITY_PREFIX);
@@ -50,6 +51,8 @@ fn commitment_message(
     write_i64_be(&mut message, off, expires_at);
     off += 8;
     write_u64_be(&mut message, off, status_version);
+    off += 8;
+    write_u64_be(&mut message, off, execution_nonce);
     message
 }
 
@@ -193,6 +196,7 @@ async fn commit_fallible(
         scope.application,
         scope.expires_at,
         status_version,
+        1,
     );
     let open_ix = Instruction {
         program_id: PROOF_ID,
@@ -222,6 +226,7 @@ async fn commit_fallible(
             payload_hash: scope.payload,
             expires_at: scope.expires_at,
             status_version,
+            execution_nonce: 1,
         }
         .data(),
     };
@@ -251,6 +256,7 @@ async fn commit_only_fallible(
         scope.application,
         scope.expires_at,
         status_version,
+        1,
     );
     let commit_ix = Instruction {
         program_id: PROOF_ID,
@@ -266,6 +272,7 @@ async fn commit_only_fallible(
             payload_hash: scope.payload,
             expires_at: scope.expires_at,
             status_version,
+            execution_nonce: 1,
         }
         .data(),
     };
@@ -391,6 +398,7 @@ async fn revoked_and_expired_fail_assert() {
         scope.application,
         scope.expires_at,
         2,
+        1,
     );
     let ix = Instruction {
         program_id: PROOF_ID,
@@ -438,6 +446,7 @@ async fn revoked_and_expired_fail_assert() {
         scope.application,
         1,
         3,
+        1,
     );
     let update_exp = Instruction {
         program_id: PROOF_ID,
@@ -488,6 +497,7 @@ async fn tampered_payload_on_update_rejected() {
         scope.application,
         scope.expires_at,
         2,
+        1,
     );
     let ix = Instruction {
         program_id: PROOF_ID,
