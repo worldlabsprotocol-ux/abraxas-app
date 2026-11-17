@@ -37,6 +37,7 @@ import {
   type IllustrativeIndependentVerification,
   type UnifiedTrustExecutionJourney,
 } from "@/lib/partner/integrationStudio/unifiedTrustExecution";
+import { BuilderPortableReceiptExportPanel } from "@/components/developers/BuilderPortableReceiptExportPanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -565,6 +566,11 @@ export function IntegrationStudioRequestWorkbench({
                 <p style={{ margin: "0.55rem 0 0", fontFamily: MONO, fontSize: "0.65rem", color: "var(--text-muted)" }}>
                   receipt_id: {outcome.receiptId}
                 </p>
+              ) : null}
+              {outcome.receiptId && outcome.tone === "success" ? (
+                <div style={{ marginTop: "0.75rem" }}>
+                  <BuilderPortableReceiptExportPanel receiptId={outcome.receiptId} />
+                </div>
               ) : null}
             </div>
           ) : null}

@@ -7,6 +7,7 @@ import { IntegrationStudioRequestWorkbench } from "@/components/developers/Integ
 import { Btn } from "@/components/redesign/ui";
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 
 type ExistingApp = { id: string; application_name: string; policy_id: string };
 type Choice = "choose" | "new" | "existing" | "example";
@@ -18,6 +19,7 @@ export function IntegrationStudioBeginnerFlow({
   onApplicationNameChange, onCreateSandbox, submitting, createError,
   workspaceStatusLine, onContinueWithWallet, onRefreshSession,
   sessionTechnicalDetail = null,
+  walletSignInAvailable = true,
 }: {
   sessionChecked: boolean;
   signedIn: boolean;
@@ -43,11 +45,39 @@ export function IntegrationStudioBeginnerFlow({
   onContinueWithWallet: () => void;
   onRefreshSession: () => void;
   sessionTechnicalDetail?: string | null;
+  walletSignInAvailable?: boolean;
 }) {
   const [showSessionTechnical, setShowSessionTechnical] = useState(false);
   if (!sessionChecked) return <BuilderActiveTask taskKey="check-session" testId="beginner-session-loading" title="Checking your workspace" state="pending" status="Confirming your session" />;
 
   if (!signedIn && !walletAuthorized) {
+    if (!walletSignInAvailable) {
+      return (
+        <BuilderActiveTask
+          taskKey="authorize-sandbox-key"
+          testId="beginner-sign-in-required"
+          title="Attach your sandbox session"
+          description="Wallet sign-in is not operational on this environment. Paste your sandbox API key to continue — fail-closed until a valid Launchpad session is attached."
+          advanced={
+            <details className="abx-builder-technical-panel">
+              <summary className="abx-builder-technical-toggle">Why not wallet?</summary>
+              <p>
+                This demo keeps wallet authorization disabled. Your sandbox key is the authorized path for harness tests and
+                portable receipt export when issuer env is configured.
+              </p>
+            </details>
+          }
+        >
+          <IntegrationStudioSessionHandoff
+            signedIn={false}
+            applicationId={configuredAppId}
+            onSessionChange={(authenticated) => {
+              if (authenticated) onRefreshSession();
+            }}
+          />
+        </BuilderActiveTask>
+      );
+    }
     return <BuilderActiveTask
       taskKey="authorize-wallet" testId="beginner-sign-in-required"
       title="Connect your application" description="Sign in to continue."

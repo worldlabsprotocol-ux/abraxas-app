@@ -3,7 +3,8 @@
 const NEXT_ACTIONS: Record<string, string> = {
   retry: "Retry portable export with bounded exponential backoff.",
   portable_verification_fetch_failed: "Issuer export unreachable — fail closed; retry later.",
-  issuer_export_not_configured: "Contact Abraxas ops for issuer export on this environment.",
+  issuer_export_not_configured:
+    "Issuer portable export is not configured on this deployment. Use /verify teaching samples for synthetic practice, or ask ops to enable demo export env (fail-closed).",
   integrator_trust_anchor_pin_required: "Install out-of-band trust anchor or registry before verifying.",
   untrusted_anchor_substitution: "Reject bundle — anchor not in integrator registry; obtain authorized rotation.",
   anchor_distrusted: "Emergency distrust active — do not verify with this anchor fingerprint.",

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoIntegrationStudio } from "./stagingStudioNavigation";
 
 /**
  * Authenticated partner lifecycle via browser-first Integration Studio sandbox.
@@ -13,7 +14,7 @@ test.describe("Integration Studio browser sandbox lifecycle", () => {
     }
 
     const appName = `studio-e2e-${Date.now()}`;
-    await page.goto(`${base}/developers/integration-studio#sandbox`, { waitUntil: "networkidle" });
+    await gotoIntegrationStudio(page, base, "/developers/integration-studio#sandbox");
 
     const nameInput = page.getByRole("textbox", { name: /application name/i }).first();
     if (!(await nameInput.isVisible().catch(() => false))) {

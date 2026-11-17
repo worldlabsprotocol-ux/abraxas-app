@@ -49,4 +49,16 @@ describe("beginner integration choice", () => {
     expect(screen.getByTestId("beginner-sign-in-required")).toBeInTheDocument();
     expect(screen.queryByText("My app")).not.toBeInTheDocument();
   });
+  it("offers sandbox API attach when wallet sign-in is unavailable", () => {
+    render(
+      <IntegrationStudioBeginnerFlow
+        {...base}
+        signedIn={false}
+        walletAuthorized={false}
+        walletSignInAvailable={false}
+      />,
+    );
+    expect(screen.getByText(/Attach your sandbox session/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Resume with sandbox API key/i)).toBeInTheDocument();
+  });
 });

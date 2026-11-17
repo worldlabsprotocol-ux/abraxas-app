@@ -5,12 +5,13 @@ import { test, expect } from "@playwright/test";
 test.describe("Build 882 product continuity", () => {
   test("homepage architecture stages are navigable on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    await page.getByRole("button", { name: /Show slide 2/i }).click();
-    await expect(page.getByRole("navigation", { name: /Architecture stages/i })).toBeVisible();
-    await page.getByRole("button", { name: /02.*Abraxas decision/i }).click();
-    await expect(page.getByText(/Issuer and delegated authority/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /View full architecture/i })).toBeVisible();
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /Show slide 3:/i }).click();
+    await expect(page.getByRole("navigation", { name: /Introduction chapters/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Application request/i })).toBeVisible();
+    await page.getByRole("button", { name: /Show slide 2:/i }).click();
+    await expect(page.getByRole("heading", { name: /A signature is not the whole decision/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Authority/i })).toBeVisible();
   });
 
   test("Abraxas Guide opens from header", async ({ page }) => {

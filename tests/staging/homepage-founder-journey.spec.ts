@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { completeHomeBuilderDiscovery } from "./stagingStudioNavigation";
 
 /**
  * Founder journey — integration first, layout width, no route hop on create-app.
@@ -19,9 +20,7 @@ test.describe("Homepage founder journey architecture", () => {
     await expect(discovery).toBeVisible({ timeout: 15_000 });
     await expect(discovery.getByRole("heading", { name: /What are you building/i })).toBeVisible();
 
-    await discovery.getByRole("radio", { name: /Website/i }).click();
-    await discovery.getByRole("radio", { name: /Wallet control eligibility/i }).click();
-    await discovery.getByRole("button", { name: /Continue to authorize/i }).click();
+    await completeHomeBuilderDiscovery(discovery);
 
     await expect(discovery).toHaveCount(0);
     expect(page.url()).not.toContain("/developers/ephemeral-sandbox");
@@ -33,6 +32,14 @@ test.describe("Homepage founder journey architecture", () => {
 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/#start-sandbox`, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      window.sessionStorage.removeItem("abx_home_builder_discovery_v1");
+    });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    const discovery = page.getByTestId("home-builder-discovery");
+    if (await discovery.isVisible().catch(() => false)) {
+      await completeHomeBuilderDiscovery(discovery);
+    }
 
     const panel = page.locator(".abx-native-sandbox-chapter__panel--solo").first();
     if (!(await panel.isVisible().catch(() => false))) {
