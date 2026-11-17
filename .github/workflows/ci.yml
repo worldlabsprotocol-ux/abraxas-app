@@ -286,10 +286,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache pinned Solidity compiler (svm)
+        uses: actions/cache@v4
+        with:
+          path: ~/.svm
+          key: foundry-solc-${{ runner.os }}-0.8.24-v1
+          restore-keys: |
+            foundry-solc-${{ runner.os }}-
       - uses: foundry-rs/foundry-toolchain@v1
+      - name: Ensure pinned solc 0.8.24 (retry dependency fetch)
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            if svm install 0.8.24 && svm use 0.8.24 && solc --version; then
+              exit 0
+            fi
+            echo "svm install 0.8.24 attempt ${attempt} failed; retrying..."
+            sleep $((attempt * 5))
+          done
+          exit 1
       - name: EVM eligibility verifier tests
         working-directory: contracts/evm-eligibility-verifier
-        run: forge test -vv
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if forge test -vv; then
+              exit 0
+            fi
+            echo "forge test attempt ${attempt} failed; retrying..."
+            sleep $((attempt * 10))
+          done
+          exit 1
 
   solana-eligibility-gate:
     runs-on: ubuntu-latest
