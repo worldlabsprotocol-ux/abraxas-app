@@ -10,9 +10,10 @@ export const AUDITOR_DISCLOSURE_MANDATE_SCHEMA_VERSION = "1.0.0" as const;
 export const INSTITUTIONAL_AUDITOR_MANDATE_ISSUER_REASON_CLASS =
   "institutional_auditor_mandate_issuer" as const;
 
-/** Registry + session binding — institutional partner operator keys must not match. */
+/** Registry + session binding — authorization is env registry + partner_api_keys.id, not key id prefix. */
 export const INSTITUTIONAL_AUDITOR_CREDENTIAL_CLASS = "institutional_auditor_disclosure" as const;
 
+/** Optional documentary labels in registry metadata; not an authentication gate. */
 export const INSTITUTIONAL_AUDITOR_CREDENTIAL_SESSION_PREFIXES = [
   "auditor_disclosure:",
   "auditor_disclosure_",
@@ -22,10 +23,7 @@ export function isIndividualAuditorCredentialSessionKey(sessionKeyId: string): b
   return INSTITUTIONAL_AUDITOR_CREDENTIAL_SESSION_PREFIXES.some((prefix) => sessionKeyId.startsWith(prefix));
 }
 
-/**
- * Shared partner console operator sessions (native account / generic API keys) do not
- * inherit auditor disclosure; only individually provisioned auditor credential keys qualify.
- */
+/** Legacy helper — prefix naming only; auditor disclosure auth uses registry + API key id. */
 export function assertIndividualAuditorCredentialSessionKey(sessionKeyId: string): true | { ok: false; reason: "institutional_auditor_credential_not_individual" } {
   if (!isIndividualAuditorCredentialSessionKey(sessionKeyId)) {
     return { ok: false, reason: "institutional_auditor_credential_not_individual" };
