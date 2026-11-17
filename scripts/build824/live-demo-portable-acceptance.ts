@@ -32,14 +32,13 @@ async function main() {
     probed_at: new Date().toISOString(),
   };
 
-  const trustedAudience = await resolveBuild824TrustedAudience({
-    demoBase: DEMO_BASE,
+  const trustedAudience = resolveBuild824TrustedAudience({
     receiptId: RECEIPT_ID,
   });
   if ("error" in trustedAudience) {
     report.trusted_audience_error = trustedAudience.error;
     report.hint =
-      "Set ABRAXAS_BUILD824_EXPECTED_PARTNER_ID and ABRAXAS_BUILD824_EXPECTED_POLICY_ID from authorized sandbox provisioning (out-of-band), or use the teaching receipt fixture id.";
+      "Set ABRAXAS_BUILD824_EXPECTED_PARTNER_ID and ABRAXAS_BUILD824_EXPECTED_POLICY_ID from authorized sandbox/application provisioning (out-of-band, not from portable bundle or public receipt). Teaching receipt dr_jSXuDfM_pFMT36du uses synthetic fixture pins only.";
     console.log(JSON.stringify(report, null, 2));
     process.exit(2);
     return;

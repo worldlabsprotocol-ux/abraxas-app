@@ -1,5 +1,6 @@
 // FILE: scripts/build824/resolveBuild824TrustedAudience.ts
-// Trusted integrator audience — never read expected partner/policy from portable bundle JSON.
+// Trusted integrator audience — never read expected partner/policy from portable bundle JSON
+// or from the public receipt API (public data may verify against pins, not establish them).
 
 import {
   BUILD823_DEMO_PARTNER_ID,
@@ -7,13 +8,18 @@ import {
   BUILD823_DEMO_RECEIPT_ID,
 } from "@/lib/partner/portableIndependentVerification/fixtures/build823DemoReceipt.fixture";
 
-export type Build824TrustedAudienceSource = "integrator_env" | "demo_fixture" | "public_receipt_api";
+export type Build824TrustedAudienceSource = "integrator_env" | "demo_fixture_synthetic";
 
 export type Build824TrustedAudience = {
   partner_id: string;
   policy_id: string;
   source: Build824TrustedAudienceSource;
+  /** Teaching fixture only — not live sandbox authority. */
+  synthetic?: boolean;
 };
+
+export const BUILD824_TRUSTED_AUDIENCE_CONFIGURATION_REQUIRED =
+  "trusted_audience_configuration_required" as const;
 
 export function build824TrustedAudienceFromEnv(
   env: Record<string, string | undefined> = process.env,
@@ -24,6 +30,7 @@ export function build824TrustedAudienceFromEnv(
   return { partner_id, policy_id, source: "integrator_env" };
 }
 
+/** Known teaching receipt — synthetic pins for offline/registry demos, not sandbox provisioning authority. */
 export function build824TrustedAudienceForReceiptId(
   receiptId: string,
 ): Build824TrustedAudience | null {
@@ -31,34 +38,17 @@ export function build824TrustedAudienceForReceiptId(
     return {
       partner_id: BUILD823_DEMO_PARTNER_ID,
       policy_id: BUILD823_DEMO_POLICY_ID,
-      source: "demo_fixture",
+      source: "demo_fixture_synthetic",
+      synthetic: true,
     };
   }
   return null;
 }
 
-export type PublicReceiptAudienceRow = {
-  partner_id?: string | null;
-  policy_id?: string | null;
-};
-
-export function build824TrustedAudienceFromPublicReceipt(
-  row: PublicReceiptAudienceRow,
-): Build824TrustedAudience | { error: string } {
-  const partner_id = row.partner_id?.trim() ?? "";
-  const policy_id = row.policy_id?.trim() ?? "";
-  if (!partner_id || !policy_id) {
-    return { error: "public_receipt_audience_unavailable" };
-  }
-  return { partner_id, policy_id, source: "public_receipt_api" };
-}
-
-export async function resolveBuild824TrustedAudience(input: {
-  demoBase: string;
+export function resolveBuild824TrustedAudience(input: {
   receiptId: string;
   env?: Record<string, string | undefined>;
-  fetchFn?: typeof fetch;
-}): Promise<Build824TrustedAudience | { error: string }> {
+}): Build824TrustedAudience | { error: typeof BUILD824_TRUSTED_AUDIENCE_CONFIGURATION_REQUIRED } {
   const env = input.env ?? process.env;
   const fromEnv = build824TrustedAudienceFromEnv(env);
   if (fromEnv) return fromEnv;
@@ -66,12 +56,5 @@ export async function resolveBuild824TrustedAudience(input: {
   const fromFixture = build824TrustedAudienceForReceiptId(input.receiptId);
   if (fromFixture) return fromFixture;
 
-  const fetchImpl = input.fetchFn ?? fetch;
-  const url = `${input.demoBase.replace(/\/$/, "")}/api/receipts/${encodeURIComponent(input.receiptId)}/public`;
-  const res = await fetchImpl(url, { headers: { Accept: "application/json" }, cache: "no-store" });
-  if (!res.ok) {
-    return { error: `public_receipt_http_${res.status}` };
-  }
-  const row = (await res.json()) as PublicReceiptAudienceRow;
-  return build824TrustedAudienceFromPublicReceipt(row);
+  return { error: BUILD824_TRUSTED_AUDIENCE_CONFIGURATION_REQUIRED };
 }
