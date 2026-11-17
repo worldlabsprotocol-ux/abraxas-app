@@ -164,7 +164,7 @@ describe("beginner sandbox test access", () => {
     await waitFor(() => expect(screen.getByText(/independent verification did not accept it/i)).toBeInTheDocument());
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
-  it("explains when Production cannot issue a durable sandbox receipt", async () => {
+  it("explains when demo signing cannot issue a durable sandbox receipt", async () => {
     operational.signedIn = true;
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
@@ -177,9 +177,31 @@ describe("beginner sandbox test access", () => {
     render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
     fireEvent.click(screen.getByRole("button", { name: "Run test" }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(
-      "Abraxas could not issue the verifiable sandbox receipt, so no test was run.",
+      "Abraxas could not sign the verifiable sandbox receipt with the authorized issuer key",
     ));
     expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
+    expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
+  });
+  it("explains when sovereign Launchpad persistence blocks durable sandbox receipt issuance", async () => {
+    operational.signedIn = true;
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, wallet_address: "wallet-1" }) })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({
+          ok: false,
+          code: "launchpad_receipt_persistence_unavailable",
+          error: "Sandbox receipt persistence is temporarily unavailable",
+        }),
+      });
+    vi.stubGlobal("fetch", fetch);
+    render(<IntegrationStudioRequestWorkbench packId="wallet_control" pathId="verify_with_abraxas" policyId="wallet_control" beginnerSurface />);
+    fireEvent.click(screen.getByRole("button", { name: "Run test" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(
+      "sovereign Launchpad persistence is not configured",
+    ));
+    expect(screen.queryByRole("button", { name: "Check again" })).not.toBeInTheDocument();
     expect(screen.queryByText("Sandbox test passed")).not.toBeInTheDocument();
   });
   it("explains the missing authorization store without a pointless retry", async () => {
