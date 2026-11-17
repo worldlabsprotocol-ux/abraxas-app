@@ -5,14 +5,24 @@
 
 import { verifyPortableBundle } from "../../lib/partner/portableIndependentVerification/verifyWithStandaloneVerifier";
 import type { PortableVerificationBundle } from "../../lib/partner/portableIndependentVerification/buildPortableVerificationBundle";
-import {
-  BUILD823_DEMO_PARTNER_ID,
-  BUILD823_DEMO_POLICY_ID,
-  BUILD823_DEMO_RECEIPT_ID,
-} from "../../lib/partner/portableIndependentVerification/fixtures/build823DemoReceipt.fixture";
+import { BUILD823_DEMO_RECEIPT_ID } from "../../lib/partner/portableIndependentVerification/fixtures/build823DemoReceipt.fixture";
+import { resolveBuild824TrustedAudience } from "./resolveBuild824TrustedAudience";
 
 const DEMO_BASE = process.env.ABRAXAS_BUILD824_DEMO_BASE_URL?.trim() ?? "https://demo.abraxasworld.xyz";
 const RECEIPT_ID = process.env.ABRAXAS_BUILD824_RECEIPT_ID?.trim() ?? BUILD823_DEMO_RECEIPT_ID;
+
+function cloneBundleWithTamperedReceiptPartner(
+  bundle: PortableVerificationBundle,
+  forgedPartnerId: string,
+): PortableVerificationBundle {
+  return {
+    ...bundle,
+    decision_receipt: {
+      ...bundle.decision_receipt,
+      partner_id: forgedPartnerId,
+    },
+  };
+}
 
 async function main() {
   const report: Record<string, unknown> = {
@@ -21,6 +31,22 @@ async function main() {
     receipt_id: RECEIPT_ID,
     probed_at: new Date().toISOString(),
   };
+
+  const trustedAudience = await resolveBuild824TrustedAudience({
+    demoBase: DEMO_BASE,
+    receiptId: RECEIPT_ID,
+  });
+  if ("error" in trustedAudience) {
+    report.trusted_audience_error = trustedAudience.error;
+    report.hint =
+      "Set ABRAXAS_BUILD824_EXPECTED_PARTNER_ID and ABRAXAS_BUILD824_EXPECTED_POLICY_ID from authorized sandbox provisioning (out-of-band), or use the teaching receipt fixture id.";
+    console.log(JSON.stringify(report, null, 2));
+    process.exit(2);
+    return;
+  }
+  report.trusted_audience_source = trustedAudience.source;
+  report.trusted_partner_id = trustedAudience.partner_id;
+  report.trusted_policy_id = trustedAudience.policy_id;
 
   const publicRes = await fetch(
     `${DEMO_BASE}/api/receipts/${encodeURIComponent(RECEIPT_ID)}/public`,
@@ -63,13 +89,11 @@ async function main() {
   }
 
   const integratorPinnedTrustAnchor = JSON.parse(pinRaw) as PortableVerificationBundle["bundled_trust_anchor"];
-  const audiencePartnerId = body.bundle.decision_receipt.partner_id;
-  const audiencePolicyId = body.bundle.decision_receipt.policy_id;
   const verified = verifyPortableBundle({
     bundle: body.bundle,
     integratorPinnedTrustAnchor,
-    partnerId: audiencePartnerId,
-    policyId: audiencePolicyId,
+    partnerId: trustedAudience.partner_id,
+    policyId: trustedAudience.policy_id,
     now: new Date(),
   });
 
@@ -90,8 +114,8 @@ async function main() {
   const wrongPinResult = verifyPortableBundle({
     bundle: body.bundle,
     integratorPinnedTrustAnchor: wrongPin,
-    partnerId: BUILD823_DEMO_PARTNER_ID,
-    policyId: BUILD823_DEMO_POLICY_ID,
+    partnerId: trustedAudience.partner_id,
+    policyId: trustedAudience.policy_id,
     now: new Date(),
   });
   report.wrong_integrator_pin = {
@@ -99,17 +123,47 @@ async function main() {
     failure_codes: wrongPinResult.failure_codes,
   };
 
-  const wrongAudience = verifyPortableBundle({
+  const wrongPartner = verifyPortableBundle({
     bundle: body.bundle,
     integratorPinnedTrustAnchor,
     partnerId: "wrong-partner-id",
-    policyId: audiencePolicyId,
+    policyId: trustedAudience.policy_id,
     now: new Date(),
   });
-  report.wrong_audience = {
-    policy_and_audience_match: wrongAudience.policy_and_audience_match,
-    currently_acceptable: wrongAudience.currently_acceptable,
-    failure_codes: wrongAudience.failure_codes,
+  report.wrong_partner = {
+    policy_and_audience_match: wrongPartner.policy_and_audience_match,
+    cryptographically_authentic: wrongPartner.cryptographically_authentic,
+    failure_codes: wrongPartner.failure_codes,
+  };
+
+  const wrongPolicy = verifyPortableBundle({
+    bundle: body.bundle,
+    integratorPinnedTrustAnchor,
+    partnerId: trustedAudience.partner_id,
+    policyId: `${trustedAudience.policy_id}-forged-suffix`,
+    now: new Date(),
+  });
+  report.wrong_policy = {
+    policy_and_audience_match: wrongPolicy.policy_and_audience_match,
+    failure_codes: wrongPolicy.failure_codes,
+  };
+
+  const tamperedBundle = cloneBundleWithTamperedReceiptPartner(
+    body.bundle,
+    "attacker-forged-partner-id",
+  );
+  const tamperedAudience = verifyPortableBundle({
+    bundle: tamperedBundle,
+    integratorPinnedTrustAnchor,
+    partnerId: trustedAudience.partner_id,
+    policyId: trustedAudience.policy_id,
+    now: new Date(),
+  });
+  report.tampered_bundle_receipt_partner = {
+    policy_and_audience_match: tamperedAudience.policy_and_audience_match,
+    cryptographically_authentic: tamperedAudience.cryptographically_authentic,
+    failure_codes: tamperedAudience.failure_codes,
+    note: "Trusted audience unchanged; forged receipt partner inside bundle must not satisfy integrator expectation.",
   };
 
   console.log(JSON.stringify(report, null, 2));

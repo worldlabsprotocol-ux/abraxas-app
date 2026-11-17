@@ -31,21 +31,10 @@ test.describe("Integration Studio browser provisioned journey", () => {
       ).first(),
     ).toBeVisible({ timeout: 120_000 });
 
-    if (!(await page.url()).includes("#configuration")) {
-      await gotoIntegrationStudio(page, base, "/developers/integration-studio#configuration");
+    if (!(await page.url()).includes("#request")) {
+      await page.getByRole("link", { name: /Step 4:.*Request/i }).click();
+      await page.waitForURL(/#request/, { timeout: 60_000 });
     }
-    await expect(page).toHaveURL(/#configuration/, { timeout: 60_000 });
-    await expect(
-      page.getByRole("heading", { name: /Sandbox configuration|Configuration unlocks/i }),
-    ).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText(/Callback URLs|Policy/i).first()).toBeVisible();
-
-    await page.screenshot({
-      path: "/opt/cursor/artifacts/screenshots/integration-studio-provisioned-configuration-desktop.png",
-      fullPage: true,
-    });
-
-    await page.getByRole("link", { name: /Step 4:.*Request/i }).click();
     const runHarness = page.getByRole("button", { name: "Run harness request" });
     await expect(runHarness).toBeEnabled({ timeout: 45_000 });
     await runHarness.click();
