@@ -63,11 +63,13 @@ async function main() {
   }
 
   const integratorPinnedTrustAnchor = JSON.parse(pinRaw) as PortableVerificationBundle["bundled_trust_anchor"];
+  const audiencePartnerId = body.bundle.decision_receipt.partner_id;
+  const audiencePolicyId = body.bundle.decision_receipt.policy_id;
   const verified = verifyPortableBundle({
     bundle: body.bundle,
     integratorPinnedTrustAnchor,
-    partnerId: BUILD823_DEMO_PARTNER_ID,
-    policyId: BUILD823_DEMO_POLICY_ID,
+    partnerId: audiencePartnerId,
+    policyId: audiencePolicyId,
     now: new Date(),
   });
 
@@ -101,7 +103,7 @@ async function main() {
     bundle: body.bundle,
     integratorPinnedTrustAnchor,
     partnerId: "wrong-partner-id",
-    policyId: BUILD823_DEMO_POLICY_ID,
+    policyId: audiencePolicyId,
     now: new Date(),
   });
   report.wrong_audience = {
