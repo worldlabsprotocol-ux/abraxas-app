@@ -2,14 +2,27 @@ import { describe, expect, it } from "vitest";
 import { presentIntegrationTestFailure } from "./integrationTestFailure";
 
 describe("integration test failure presentation", () => {
-  it("identifies unavailable durable receipt issuance as an action-required state", () => {
+  it("identifies unavailable sovereign persistence as an action-required state without a retry", () => {
+    expect(presentIntegrationTestFailure(503, {
+      code: "launchpad_receipt_persistence_unavailable",
+      error: "Sandbox receipt persistence is temporarily unavailable",
+    })).toMatchObject({
+      kind: "action_required",
+      headline: "Sandbox receipt store unavailable",
+      actionLabel: "",
+      refreshSession: false,
+    });
+  });
+
+  it("identifies unavailable demo signing as an action-required state", () => {
     expect(presentIntegrationTestFailure(503, {
       code: "launchpad_signing_unavailable",
       error: "Sandbox receipt issuance is temporarily unavailable",
     })).toEqual({
       kind: "action_required",
-      headline: "Sandbox receipt service unavailable",
-      detail: "Abraxas could not issue the verifiable sandbox receipt, so no test was run. Check again after the receipt service is restored.",
+      headline: "Sandbox receipt signing unavailable",
+      detail:
+        "Abraxas could not sign the verifiable sandbox receipt with the authorized issuer key, so no test was run. Check again after demo signing configuration is restored.",
       actionLabel: "Check again",
       refreshSession: false,
     });

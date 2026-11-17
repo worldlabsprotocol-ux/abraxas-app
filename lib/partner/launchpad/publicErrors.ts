@@ -17,6 +17,8 @@ export const LAUNCHPAD_PUBLIC_ERRORS = {
   credential_revoke_failed: "launchpad_credential_revoke_failed",
   production_request_failed: "launchpad_production_request_failed",
   signing_unavailable: "launchpad_signing_unavailable",
+  /** Sovereign Launchpad Postgres (or equivalent) is unavailable — not a signing-key misconfiguration. */
+  receipt_persistence_unavailable: "launchpad_receipt_persistence_unavailable",
   verify_config_unavailable: "launchpad_verify_config_unavailable",
   policy_version_blocked: "launchpad_policy_version_blocked",
   rate_limited: "launchpad_rate_limited",
