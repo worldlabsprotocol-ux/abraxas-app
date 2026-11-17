@@ -175,14 +175,19 @@ export function IntegrationStudioClient({
     walletProofRecorded,
     serverPolicyLocked,
   } = useUnifiedWorkspaceEmbed();
+  const advancedStudio = searchParams.get("advanced") === "1";
+  const studioQuery = useMemo(
+    () => (advancedStudio ? { ...preservedQuery, advanced: "1" } : preservedQuery),
+    [advancedStudio, preservedQuery],
+  );
   const studioStageHref = useCallback(
     (stage: "policy" | "sandbox" | "configuration" | "request") =>
       buildIntegrationStageUrl({
         basePath: workspaceBasePath,
         stage,
-        query: preservedQuery,
+        query: studioQuery,
       }),
-    [workspaceBasePath, preservedQuery],
+    [workspaceBasePath, studioQuery],
   );
   const packs = listStudioPackSummaries();
   const [packId, setPackId] = useState<PolicyPackId | null>(() => {
@@ -201,11 +206,11 @@ export function IntegrationStudioClient({
   const [venueProfileId, setVenueProfileId] = useState("generic_trading_venue");
   const [signedIn, setSignedIn] = useState(false);
   const [walletAuthorized, setWalletAuthorized] = useState(false);
+  const [walletSignInAvailable, setWalletSignInAvailable] = useState(true);
   const [sessionTechnicalDetail, setSessionTechnicalDetail] = useState<string | null>(null);
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
   const beginnerHomepageEmbed = embeddedInDeveloperWorkspace && variant === "embedded_workspace";
-  const advancedStudio = searchParams.get("advanced") === "1";
   const standaloneStudioPath = pathname === "/developers/integration-studio";
   const beginnerSurface =
     beginnerHomepageEmbed
@@ -463,6 +468,24 @@ export function IntegrationStudioClient({
       }
     }
   }, [authoritativePolicyId, beginnerHomepageEmbed, embeddedInDeveloperWorkspace, variant, walletProofRecorded]);
+
+  useEffect(() => {
+  let cancelled = false;
+  void (async () => {
+    try {
+      const res = await fetch("/api/auth/wallet/enabled", { credentials: "same-origin", cache: "no-store" });
+      const data = (await res.json()) as { enabled?: boolean; operational?: boolean };
+      if (!cancelled) {
+        setWalletSignInAvailable(data.enabled === true && data.operational === true);
+      }
+    } catch {
+      if (!cancelled) setWalletSignInAvailable(false);
+    }
+  })();
+  return () => {
+    cancelled = true;
+  };
+  }, []);
 
   const refreshLaunchpadSession = useCallback(async () => {
     try {
@@ -866,6 +889,7 @@ export function IntegrationStudioClient({
           onContinueWithWallet={continueBeginnerWithWallet}
           onRefreshSession={() => void refreshLaunchpadSession()}
           sessionTechnicalDetail={sessionTechnicalDetail}
+          walletSignInAvailable={walletSignInAvailable}
         />
       </>
     );

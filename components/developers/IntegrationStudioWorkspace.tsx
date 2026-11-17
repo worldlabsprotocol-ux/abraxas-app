@@ -2,8 +2,8 @@
 
 import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
 import { IntegrationStudioStageGuide } from "@/components/developers/IntegrationStudioStageGuide";
 import { IntegrationStudioStageProvider } from "@/lib/developers/integrationStudioStageContext";
@@ -44,9 +44,15 @@ export function IntegrationStudioWorkspace({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { embeddedInDeveloperWorkspace, workspaceBasePath, preservedQuery } = useUnifiedWorkspaceEmbed();
   const homepageStudioEmbed = embeddedInDeveloperWorkspace && workspaceBasePath === "/";
-  const STEPS = buildStudioSteps({ basePath: workspaceBasePath, query: preservedQuery });
+  const studioQuery = useMemo(() => {
+    const query = { ...preservedQuery };
+    if (searchParams.get("advanced") === "1") query.advanced = "1";
+    return query;
+  }, [preservedQuery, searchParams]);
+  const STEPS = buildStudioSteps({ basePath: workspaceBasePath, query: studioQuery });
   const [hashStep, setHashStep] = useState<IntegrationStudioStageId | "receipt" | "verify" | "production">("policy");
 
   useEffect(() => {

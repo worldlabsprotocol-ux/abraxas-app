@@ -27,6 +27,7 @@ import type { BuilderHarnessOutcome } from "@/lib/partner/launchpad/formatHarnes
 import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import { BuilderPortableReceiptExportPanel } from "@/components/developers/BuilderPortableReceiptExportPanel";
 
 
 function kitReadyKey(applicationId: string): string {
@@ -261,6 +262,7 @@ export function ApplicationIntegrationJourneyPanel({
         <p>Starter kits require server setup. Selecting a path does not connect an external application.</p>
       </details>}>
       {testSummary}
+      {outcome.receiptId ? <BuilderPortableReceiptExportPanel receiptId={outcome.receiptId} /> : null}
       <div className="abx-builder-connection-paths" aria-label="Choose an integration path">
         <button type="button" onClick={() => choosePath("website", "wix_velo")}><strong>Website builder</strong><span>Wix Velo backend kit</span></button>
         <button type="button" onClick={() => choosePath("application", "nextjs")}><strong>Web application</strong><span>Next.js server kit</span></button>
@@ -300,6 +302,7 @@ export function ApplicationIntegrationJourneyPanel({
       }
     >
       {testSummary}
+      {outcome.receiptId ? <BuilderPortableReceiptExportPanel receiptId={outcome.receiptId} /> : null}
       {needsWebsiteStack ? (
         <>
           <div data-testid="builder-stack-picker" className="abx-builder-stack-grid" role="radiogroup" aria-label="Website stack">

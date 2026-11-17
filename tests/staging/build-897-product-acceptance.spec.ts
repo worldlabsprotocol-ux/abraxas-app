@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { completeHomeBuilderDiscovery } from "./stagingStudioNavigation";
 
 /**
  * Build 897 — homepage builder stays one document; create-app errors are not generic-only.
@@ -19,9 +20,7 @@ test.describe("Build 897 product acceptance", () => {
       test.skip(true, "Discovery not visible");
     }
 
-    await discovery.getByRole("radio", { name: /Website/i }).click();
-    await discovery.getByRole("radio", { name: /Wallet control eligibility/i }).click();
-    await discovery.getByRole("button", { name: /Continue to authorize/i }).click();
+    await completeHomeBuilderDiscovery(discovery);
 
     await expect(page.getByText("Launchpad session")).toHaveCount(0);
     expect(page.url()).not.toContain("/developers/launchpad");
