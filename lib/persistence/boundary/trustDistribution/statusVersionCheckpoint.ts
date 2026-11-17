@@ -7,6 +7,7 @@ import pg from "pg";
 import type { Pool } from "pg";
 import { assertNotProductionSupabaseProject } from "../isolationGuard";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { getPersistenceAdmin } from "@/lib/persistence/admin";
 
 const DEMO_OPERATIONAL_PROJECT_REF = "ocntwbxarpjeixdnzide";
 
@@ -39,6 +40,46 @@ function getOperationalDemoPgPool(env: Record<string, string | undefined>): Pool
     });
   }
   return operationalPool;
+}
+
+/** Demo operational store via PostgREST when no direct Postgres URL is bound (BUILD #824). */
+async function bumpCheckpointViaOperationalPostgrest(
+  receiptId: string,
+): Promise<number | { error: string }> {
+  const client = getPersistenceAdmin();
+  if (!client) return { error: "operational_postgrest_unavailable" };
+
+  const { data: row, error: readError } = await client
+    .from("portable_export_status_checkpoints")
+    .select("status_version")
+    .eq("receipt_id", receiptId)
+    .maybeSingle();
+
+  if (readError) {
+    if (readError.code === "PGRST205" || readError.message.includes("does not exist")) {
+      return { error: "status_checkpoint_table_missing" };
+    }
+    return { error: readError.message };
+  }
+
+  const nextVersion = (typeof row?.status_version === "number" ? row.status_version : 0) + 1;
+  const { data: written, error: writeError } = await client
+    .from("portable_export_status_checkpoints")
+    .upsert({ receipt_id: receiptId, status_version: nextVersion }, { onConflict: "receipt_id" })
+    .select("status_version")
+    .single();
+
+  if (writeError) {
+    if (writeError.code === "PGRST205" || writeError.message.includes("does not exist")) {
+      return { error: "status_checkpoint_table_missing" };
+    }
+    return { error: writeError.message };
+  }
+
+  const version = written?.status_version;
+  return Number.isInteger(version) && version > 0
+    ? version
+    : { error: "status_checkpoint_unavailable" };
 }
 
 async function bumpCheckpointOnPool(
@@ -119,6 +160,15 @@ export async function nextSignedStatusVersion(input: {
     if (bumped.error !== "status_checkpoint_table_missing") {
       return { error: bumped.error };
     }
+  }
+
+  const postgrestBump = await bumpCheckpointViaOperationalPostgrest(input.receiptId);
+  if (typeof postgrestBump === "number") return postgrestBump;
+  if (
+    postgrestBump.error !== "status_checkpoint_table_missing"
+    && postgrestBump.error !== "operational_postgrest_unavailable"
+  ) {
+    return { error: postgrestBump.error };
   }
 
   return { error: sovereign.error ?? "status_checkpoint_unavailable" };
