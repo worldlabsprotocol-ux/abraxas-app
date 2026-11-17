@@ -32,11 +32,9 @@ test.describe("Integration Studio browser provisioned journey", () => {
     ).toBeVisible({ timeout: 120_000 });
 
     if (!(await page.url()).includes("#configuration")) {
-      await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
+      await gotoIntegrationStudio(page, base, "/developers/integration-studio#configuration");
     }
     await expect(page).toHaveURL(/#configuration/, { timeout: 60_000 });
-
-    await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
     await expect(page.getByRole("heading", { name: "Sandbox configuration" })).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText(/Callback URLs|Policy/i).first()).toBeVisible();
 
