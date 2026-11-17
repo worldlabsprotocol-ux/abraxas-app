@@ -31,11 +31,10 @@ test.describe("Integration Studio browser provisioned journey", () => {
       ).first(),
     ).toBeVisible({ timeout: 120_000 });
 
-    if (!(await page.url()).includes("#request")) {
-      await page.getByRole("link", { name: /Step 4:.*Request/i }).click();
-      await page.waitForURL(/#request/, { timeout: 60_000 });
-    }
-    const runHarness = page.getByRole("button", { name: "Run harness request" });
+    await expect(page).toHaveURL(/#request/, { timeout: 60_000 });
+    await expect(page.url()).toMatch(/advanced=1/);
+    await expect(page.getByRole("heading", { name: /^Run a test$/i })).toBeVisible({ timeout: 30_000 });
+    const runHarness = page.getByRole("button", { name: /^Run test$/i });
     await expect(runHarness).toBeEnabled({ timeout: 45_000 });
     await runHarness.click();
 
