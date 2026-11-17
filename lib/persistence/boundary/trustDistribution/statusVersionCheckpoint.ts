@@ -42,41 +42,31 @@ function getOperationalDemoPgPool(env: Record<string, string | undefined>): Pool
   return operationalPool;
 }
 
-/** Demo operational store via PostgREST when no direct Postgres URL is bound (BUILD #824). */
+/** Demo operational store via atomic PostgREST RPC (no direct Postgres URL). */
 async function bumpCheckpointViaOperationalPostgrest(
   receiptId: string,
 ): Promise<number | { error: string }> {
   const client = getPersistenceAdmin();
   if (!client) return { error: "operational_postgrest_unavailable" };
 
-  const { data: row, error: readError } = await client
-    .from("portable_export_status_checkpoints")
-    .select("status_version")
-    .eq("receipt_id", receiptId)
-    .maybeSingle();
+  const trimmed = receiptId.trim();
+  if (!trimmed) return { error: "receipt_id_required" };
 
-  if (readError) {
-    if (readError.code === "PGRST205" || readError.message.includes("does not exist")) {
+  const { data, error } = await client.rpc("bump_portable_export_status_checkpoint", {
+    p_receipt_id: trimmed,
+  });
+
+  if (error) {
+    if (error.code === "PGRST202" || error.message.includes("Could not find the function")) {
+      return { error: "status_checkpoint_rpc_missing" };
+    }
+    if (error.code === "PGRST205" || error.message.includes("does not exist")) {
       return { error: "status_checkpoint_table_missing" };
     }
-    return { error: readError.message };
+    return { error: error.message };
   }
 
-  const nextVersion = (typeof row?.status_version === "number" ? row.status_version : 0) + 1;
-  const { data: written, error: writeError } = await client
-    .from("portable_export_status_checkpoints")
-    .upsert({ receipt_id: receiptId, status_version: nextVersion }, { onConflict: "receipt_id" })
-    .select("status_version")
-    .single();
-
-  if (writeError) {
-    if (writeError.code === "PGRST205" || writeError.message.includes("does not exist")) {
-      return { error: "status_checkpoint_table_missing" };
-    }
-    return { error: writeError.message };
-  }
-
-  const version = written?.status_version;
+  const version = typeof data === "number" ? data : Number(data);
   return Number.isInteger(version) && version > 0
     ? version
     : { error: "status_checkpoint_unavailable" };

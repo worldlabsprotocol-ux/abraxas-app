@@ -128,6 +128,7 @@
     "test:build-823-real-sandbox-receipt": "vitest run lib/partner/portableIndependentVerification/build823RealSandboxReceipt.test.ts lib/partner/portableIndependentVerification/partnerFlowPortableVerification.test.ts",
     "build823:probe-live-demo-export": "tsx scripts/build823/attempt-live-sandbox-export.ts",
     "build824:live-demo-portable-acceptance": "tsx scripts/build824/live-demo-portable-acceptance.ts",
+    "build824:prove-checkpoint-concurrency": "tsx scripts/build824/prove-checkpoint-concurrency.ts",
     "build864:demo-institutional-receipt-acceptance": "tsx scripts/build-864/demo-institutional-receipt-acceptance.ts",
     "build866:demo-institutional-partner-repeatability": "tsx scripts/build-866/demo-institutional-partner-repeatability.ts",
     "test:build-875-commercial-pilot-readiness": "vitest run lib/commercial/pilotReadiness/commercialValidationGates.test.ts",

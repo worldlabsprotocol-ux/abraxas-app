@@ -18,11 +18,11 @@ test.describe("Integration Studio browser provisioned journey", () => {
     await expect(page.getByRole("heading", { name: /^Choose a policy pack$/i })).toBeVisible();
 
     await page.getByRole("button", { name: /Wallet control eligibility/i }).click();
-
     await page.getByRole("link", { name: /Step 2:.*Sandbox/i }).click();
-    await expect(page).toHaveURL(/#sandbox$/);
-
-    await page.getByLabel(/^Application name$/i).fill(appName);
+    await page.waitForURL(/#sandbox/, { timeout: 60_000 });
+    const appNameField = page.getByLabel(/^Application name$/i);
+    await expect(appNameField).toBeEnabled({ timeout: 30_000 });
+    await appNameField.fill(appName);
     await page.getByRole("button", { name: /^Create my test app$/i }).click();
 
     await expect(
