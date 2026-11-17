@@ -48,7 +48,23 @@ export function IntegrationStudioBeginnerFlow({
   walletSignInAvailable?: boolean;
 }) {
   const [showSessionTechnical, setShowSessionTechnical] = useState(false);
-  if (!sessionChecked) return <BuilderActiveTask taskKey="check-session" testId="beginner-session-loading" title="Checking your workspace" state="pending" status="Confirming your session" />;
+  if (!sessionChecked) {
+    return (
+      <BuilderActiveTask
+        taskKey="check-session"
+        testId="beginner-session-loading"
+        title="Checking your workspace"
+        description="We are confirming whether a sandbox session is already attached. If this takes more than a few seconds, check again or paste your sandbox API key on the next screen."
+        state="pending"
+        status="Confirming your session"
+        action={
+          <button type="button" className="abx-builder-inline-link" onClick={onRefreshSession}>
+            Check session again
+          </button>
+        }
+      />
+    );
+  }
 
   if (!signedIn && !walletAuthorized) {
     if (!walletSignInAvailable) {

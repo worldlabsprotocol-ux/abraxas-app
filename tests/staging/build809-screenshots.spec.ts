@@ -7,7 +7,8 @@ const artifacts = process.env.BUILD809_ARTIFACTS_DIR ?? "/opt/cursor/artifacts";
 test.describe("Build #809 acceptance screenshots", () => {
   test("launchpad entry at 1024px desktop", async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 900 });
-    await page.goto(`${base}/developers/launchpad`, { waitUntil: "networkidle" });
+    await page.goto(`${base}/developers/launchpad`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: "Launchpad", level: 1 }).waitFor({ timeout: 60_000 });
     await page.screenshot({
       path: path.join(artifacts, "build809-launchpad-1024.png"),
       fullPage: true,
@@ -17,7 +18,8 @@ test.describe("Build #809 acceptance screenshots", () => {
 
   test("launchpad entry at 390px mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`${base}/developers/launchpad`, { waitUntil: "networkidle" });
+    await page.goto(`${base}/developers/launchpad`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: "Launchpad", level: 1 }).waitFor({ timeout: 60_000 });
     await page.screenshot({
       path: path.join(artifacts, "build809-launchpad-390.png"),
       fullPage: true,

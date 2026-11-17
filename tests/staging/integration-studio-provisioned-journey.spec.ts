@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoIntegrationStudio } from "./stagingStudioNavigation";
 
 /**
  * Full Integration Studio journey with an authorized staging sandbox application.
@@ -36,7 +37,7 @@ test.describe("Integration Studio provisioned journey", () => {
         }),
     );
 
-    await page.goto(`${base}/developers/integration-studio?app=${applicationId}`, { waitUntil: "networkidle" });
+    await gotoIntegrationStudio(page, base, `/developers/integration-studio?app=${applicationId}`);
     await expect(page.getByRole("heading", { name: /Choose a policy pack/i })).toBeVisible();
 
     await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
