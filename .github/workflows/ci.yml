@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Match vercel.json installCommand; GPU tarball 404 breaks naked npm ci on Actions.
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   typescript-validation:
     name: typescript-validation
