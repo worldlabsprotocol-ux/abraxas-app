@@ -71,11 +71,23 @@ export function presentIntegrationTestFailure(
     };
   }
 
+  if (body.code === "launchpad_receipt_persistence_unavailable") {
+    return {
+      kind: "action_required",
+      headline: "Sandbox receipt store unavailable",
+      detail:
+        "This demo cannot write an authoritative sandbox receipt because sovereign Launchpad persistence is not configured. No test was run. An authorized operator must restore the demo trust store before issuance can continue.",
+      actionLabel: "",
+      refreshSession: false,
+    };
+  }
+
   if (body.code === "launchpad_signing_unavailable") {
     return {
       kind: "action_required",
-      headline: "Sandbox receipt service unavailable",
-      detail: "Abraxas could not issue the verifiable sandbox receipt, so no test was run. Check again after the receipt service is restored.",
+      headline: "Sandbox receipt signing unavailable",
+      detail:
+        "Abraxas could not sign the verifiable sandbox receipt with the authorized issuer key, so no test was run. Check again after demo signing configuration is restored.",
       actionLabel: "Check again",
       refreshSession: false,
     };

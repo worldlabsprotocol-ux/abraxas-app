@@ -122,6 +122,15 @@ export function IntegrationStudioRequestWorkbench({
       wallet_address?: string;
     };
     if (!sessionRes.ok || !session.authenticated || !session.wallet_address) {
+      const walletFailure = {
+        ok: false as const,
+        code: "wallet_authorization_required",
+        error: "Wallet session required for sandbox trust execution",
+      };
+      recordHttpTrace(
+        { method: "GET", path: "/api/auth/wallet/session" },
+        walletFailure,
+      );
       setFailure({
         kind: "action_required",
         headline: "Wallet authorization required",
