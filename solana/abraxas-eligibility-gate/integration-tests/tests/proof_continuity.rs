@@ -574,6 +574,33 @@ async fn tampered_payload_on_update_rejected() {
 }
 
 #[tokio::test]
+async fn unauthorized_wallet_cannot_reserve_issuer_receipt_address() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let scope = Scope::default();
+    init_registry(&mut ctx, &admin, &issuer, &scope).await;
+
+    let unauthorized_payer = Keypair::new();
+    let (registry, _) = registry_pda(&admin.pubkey());
+    let (commitment, _) = commitment_pda(&registry, &scope.receipt);
+    let open_ix = Instruction {
+        program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::OpenReceiptCommitment {
+            payer: unauthorized_payer.pubkey(),
+            registry,
+            commitment,
+            system_program: system_program::id(),
+        }.to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::OpenReceiptCommitment {
+            receipt_id_hash: scope.receipt,
+        }.data(),
+    };
+    assert!(send(&mut ctx, vec![open_ix], &[&unauthorized_payer]).await.is_err());
+    assert!(ctx.banks_client.get_account(commitment).await.unwrap().is_none());
+}
+
+#[tokio::test]
 async fn status_change_signature_binds_requested_status() {
     let mut ctx = start().await;
     let admin = ctx.payer.insecure_clone();
