@@ -126,6 +126,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   testnet_gate_deployment: "Human-operated testnet gate kit",
   institutional_eligibility_gate: "Institutional eligibility gate",
   onchain_verifier_conformance: "Verify your gate integration",
+  blockchain_native_launchpad: "Blockchain-native Launchpad continuity",
 };
 
 const body: React.CSSProperties = {

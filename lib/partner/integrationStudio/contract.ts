@@ -32,6 +32,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "testnet_gate_deployment",
   "institutional_eligibility_gate",
   "onchain_verifier_conformance",
+  "blockchain_native_launchpad",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -125,6 +126,8 @@ export const INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE =
   "Verify your gate integration. Download the versioned verifier package, run local conformance, fix failed bindings or a stale signer, then request a fresh sandbox attestation. Presentation is never enough. No browser deploy, register, or approve. Not a wallet, payment path, or custody layer.";
 export const INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE =
   "Institutional eligibility gate. Institutional policy review required. Sandbox test result for technical integration only. It is not a live KYB or Production approval. Deploy a reusable V2 gate that is not bound to one organization or actor. Then verify the deployed program, register verified sandbox, and request a fresh institutional presentation and chain attestation. Commitments and expiry live only on that attestation. Not document collection, Utila, live KYB, Arc, or Mainnet.";
+export const INTEGRATION_STUDIO_BLOCKCHAIN_NATIVE_NOTICE =
+  "Blockchain-native Launchpad continuity (local/reference). Connect a wallet, authorize one sandbox action, prepare a portable signed receipt, execute against a pinned Solana RPC and proof-continuity program, then independently verify that the same issuance matches the on-chain commitment. Private evidence stays off-chain. Does not replace sovereign PostgreSQL on the default Launchpad path. No public-chain deployment without founder approval.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);
