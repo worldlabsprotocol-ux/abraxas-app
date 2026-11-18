@@ -1,6 +1,6 @@
 use abraxas_proof_continuity::{
     COMMITMENT_MESSAGE_LEN, COMMITMENT_SEED, ID as PROOF_ID, PROOF_CONTINUITY_PREFIX, REGISTRY_SEED,
-    STATUS_EXPIRED, STATUS_REVOKED,
+    STATUS_ACTIVE, STATUS_EXPIRED, STATUS_REVOKED, STATUS_UPDATE_PREFIX,
 };
 use anchor_lang::{InstructionData, ToAccountMetas};
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
@@ -54,6 +54,56 @@ fn commitment_message(
     off += 8;
     write_u64_be(&mut message, off, execution_nonce);
     message
+}
+
+fn status_update_message(
+    receipt_id_hash: [u8; 32],
+    payload_hash: [u8; 32],
+    partner_hash: [u8; 32],
+    policy_hash: [u8; 32],
+    application_hash: [u8; 32],
+    expires_at: i64,
+    status_version: u64,
+    execution_nonce: u64,
+    status: u8,
+) -> Vec<u8> {
+    let canonical = commitment_message(
+        receipt_id_hash, payload_hash, partner_hash, policy_hash, application_hash,
+        expires_at, status_version, execution_nonce,
+    );
+    let mut message = Vec::new();
+    message.extend_from_slice(STATUS_UPDATE_PREFIX);
+    message.extend_from_slice(&canonical[PROOF_CONTINUITY_PREFIX.len()..]);
+    message.push(status);
+    message
+}
+
+fn status_update_ix(
+    admin: &Keypair,
+    registry: Pubkey,
+    commitment: Pubkey,
+    receipt: [u8; 32],
+    payload: [u8; 32],
+    status: u8,
+    version: u64,
+    expires_at: i64,
+) -> Instruction {
+    Instruction {
+        program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::UpdateReceiptStatus {
+            operator: admin.pubkey(),
+            registry,
+            commitment,
+            instructions: solana_sdk::sysvar::instructions::id(),
+        }.to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::UpdateReceiptStatus {
+            receipt_id_hash: receipt,
+            payload_hash: payload,
+            status,
+            status_version: version,
+            expires_at,
+        }.data(),
+    }
 }
 
 fn ed25519_ix(signer: &Keypair, message: &[u8]) -> Instruction {
@@ -390,7 +440,7 @@ async fn revoked_and_expired_fail_assert() {
 
     let (registry, _) = registry_pda(&admin.pubkey());
     let (commitment, _) = commitment_pda(&registry, &scope.receipt);
-    let message = commitment_message(
+    let message = status_update_message(
         scope.receipt,
         scope.payload,
         scope.partner,
@@ -399,6 +449,7 @@ async fn revoked_and_expired_fail_assert() {
         scope.expires_at,
         2,
         1,
+        STATUS_REVOKED,
     );
     let ix = Instruction {
         program_id: PROOF_ID,
@@ -438,7 +489,7 @@ async fn revoked_and_expired_fail_assert() {
     };
     assert!(send(&mut ctx, vec![assert_ix.clone()], &[]).await.is_err());
 
-    let message_exp = commitment_message(
+    let message_exp = status_update_message(
         scope.receipt,
         scope.payload,
         scope.partner,
@@ -447,6 +498,7 @@ async fn revoked_and_expired_fail_assert() {
         1,
         3,
         1,
+        STATUS_EXPIRED,
     );
     let update_exp = Instruction {
         program_id: PROOF_ID,
@@ -489,7 +541,7 @@ async fn tampered_payload_on_update_rejected() {
     let (registry, _) = registry_pda(&admin.pubkey());
     let (commitment, _) = commitment_pda(&registry, &scope.receipt);
     let tampered = h32(77);
-    let message = commitment_message(
+    let message = status_update_message(
         scope.receipt,
         tampered,
         scope.partner,
@@ -498,6 +550,7 @@ async fn tampered_payload_on_update_rejected() {
         scope.expires_at,
         2,
         1,
+        STATUS_REVOKED,
     );
     let ix = Instruction {
         program_id: PROOF_ID,
@@ -518,6 +571,92 @@ async fn tampered_payload_on_update_rejected() {
         .data(),
     };
     assert!(send(&mut ctx, vec![ed25519_ix(&issuer, &message), ix], &[&admin]).await.is_err());
+}
+
+#[tokio::test]
+async fn status_change_signature_binds_requested_status() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let committer = Keypair::new();
+    let scope = Scope::default();
+    init_registry(&mut ctx, &admin, &issuer, &scope).await;
+    commit(&mut ctx, &admin, &issuer, &committer, &scope, 1).await;
+
+    let (registry, _) = registry_pda(&admin.pubkey());
+    let (commitment, _) = commitment_pda(&registry, &scope.receipt);
+    let message = status_update_message(
+        scope.receipt, scope.payload, scope.partner, scope.policy, scope.application,
+        scope.expires_at, 2, 1, STATUS_REVOKED,
+    );
+    // The issuer signed REVOKED, but the operator tries ACTIVE.
+    let unauthorized = status_update_ix(
+        &admin, registry, commitment, scope.receipt, scope.payload,
+        STATUS_ACTIVE, 2, scope.expires_at,
+    );
+    assert!(send(&mut ctx, vec![ed25519_ix(&issuer, &message), unauthorized], &[&admin]).await.is_err());
+
+    // Exactly the signed transition is authorized.
+    let revoke = status_update_ix(
+        &admin, registry, commitment, scope.receipt, scope.payload,
+        STATUS_REVOKED, 2, scope.expires_at,
+    );
+    send(&mut ctx, vec![ed25519_ix(&issuer, &message), revoke], &[&admin]).await.unwrap();
+}
+
+#[tokio::test]
+async fn revoked_receipt_cannot_reactivate() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let committer = Keypair::new();
+    let scope = Scope::default();
+    init_registry(&mut ctx, &admin, &issuer, &scope).await;
+    commit(&mut ctx, &admin, &issuer, &committer, &scope, 1).await;
+    let (registry, _) = registry_pda(&admin.pubkey());
+    let (commitment, _) = commitment_pda(&registry, &scope.receipt);
+    let revoke_msg = status_update_message(
+        scope.receipt, scope.payload, scope.partner, scope.policy, scope.application,
+        scope.expires_at, 2, 1, STATUS_REVOKED,
+    );
+    let revoke = status_update_ix(
+        &admin, registry, commitment, scope.receipt, scope.payload,
+        STATUS_REVOKED, 2, scope.expires_at,
+    );
+    send(&mut ctx, vec![ed25519_ix(&issuer, &revoke_msg), revoke], &[&admin]).await.unwrap();
+
+    let activate_msg = status_update_message(
+        scope.receipt, scope.payload, scope.partner, scope.policy, scope.application,
+        scope.expires_at, 3, 1, STATUS_ACTIVE,
+    );
+    let activate = status_update_ix(
+        &admin, registry, commitment, scope.receipt, scope.payload,
+        STATUS_ACTIVE, 3, scope.expires_at,
+    );
+    assert!(send(&mut ctx, vec![ed25519_ix(&issuer, &activate_msg), activate], &[&admin]).await.is_err());
+}
+
+#[tokio::test]
+async fn status_update_cannot_extend_receipt_expiry() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let committer = Keypair::new();
+    let scope = Scope::default();
+    init_registry(&mut ctx, &admin, &issuer, &scope).await;
+    commit(&mut ctx, &admin, &issuer, &committer, &scope, 1).await;
+    let (registry, _) = registry_pda(&admin.pubkey());
+    let (commitment, _) = commitment_pda(&registry, &scope.receipt);
+    let later = scope.expires_at + 100;
+    let message = status_update_message(
+        scope.receipt, scope.payload, scope.partner, scope.policy, scope.application,
+        later, 2, 1, STATUS_REVOKED,
+    );
+    let update = status_update_ix(
+        &admin, registry, commitment, scope.receipt, scope.payload,
+        STATUS_REVOKED, 2, later,
+    );
+    assert!(send(&mut ctx, vec![ed25519_ix(&issuer, &message), update], &[&admin]).await.is_err());
 }
 
 #[tokio::test]
