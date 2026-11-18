@@ -64,6 +64,7 @@
     "test:sandbox-conformance": "vitest run lib/partner/sandboxPartnerContract/sandboxPartnerContract.test.ts",
     "solana:gate:test": "cargo test --manifest-path solana/abraxas-eligibility-gate/Cargo.toml --workspace -- --nocapture",
     "test:capstone-tokenization": "bash -c 'cd solana/abraxas-eligibility-gate && cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture'",
+    "test:build-979": "bash -c 'cd solana/abraxas-eligibility-gate && cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture'",
     "iat:automated": "tsx scripts/iat-automated.ts",
     "gate:verify-receipt-fixture": "tsx scripts/verify-trust-decision-fixture.ts",
     "release:readiness": "tsx scripts/release-readiness.ts",

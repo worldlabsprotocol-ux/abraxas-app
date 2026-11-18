@@ -9,8 +9,20 @@ use anchor_lang::solana_program::{
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
+    token_2022_extensions::non_transferable_mint_initialize,
     token_interface::{self, Mint, Token2022, TokenAccount},
 };
+use spl_token_2022::extension::ExtensionType;
+
+pub mod entitlement_verify;
+pub use entitlement_verify::{verify_receipt_backed_entitlement, ReceiptBackedEntitlement};
+
+pub fn entitlement_mint_account_len() -> usize {
+    ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(&[
+        ExtensionType::NonTransferable,
+    ])
+    .unwrap_or(278)
+}
 
 declare_id!("FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1");
 
@@ -270,10 +282,53 @@ pub mod abraxas_proof_continuity {
             ctx.accounts.registry.admin,
             ProofContinuityError::UnauthorizedAdmin
         );
+        let registry_key = ctx.accounts.registry.key();
+        let mint_bump = ctx.bumps.mint;
+        if ctx.accounts.mint.lamports() == 0 {
+            let space = entitlement_mint_account_len();
+            let lamports = Rent::get()?.minimum_balance(space);
+            let mint_seeds: &[&[u8]] = &[
+                ENTITLEMENT_MINT_SEED,
+                registry_key.as_ref(),
+                &[mint_bump],
+            ];
+            anchor_lang::system_program::create_account(
+                CpiContext::new_with_signer(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::CreateAccount {
+                        from: ctx.accounts.admin.to_account_info(),
+                        to: ctx.accounts.mint.to_account_info(),
+                    },
+                    &[mint_seeds],
+                ),
+                lamports,
+                space as u64,
+                ctx.accounts.token_program.key,
+            )?;
+            non_transferable_mint_initialize(CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                anchor_spl::token_2022_extensions::NonTransferableMintInitialize {
+                    token_program_id: ctx.accounts.token_program.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
+                },
+            ))?;
+            token_interface::initialize_mint2(
+                CpiContext::new(
+                    ctx.accounts.token_program.to_account_info(),
+                    token_interface::InitializeMint2 {
+                        mint: ctx.accounts.mint.to_account_info(),
+                    },
+                ),
+                0,
+                &ctx.accounts.mint_authority.key(),
+                None,
+            )?;
+        }
         let config = &mut ctx.accounts.entitlement_mint_config;
-        config.registry = ctx.accounts.registry.key();
+        config.registry = registry_key;
         config.mint = ctx.accounts.mint.key();
         config.bump = ctx.bumps.entitlement_mint_config;
+        config.non_transferable = 1;
         Ok(())
     }
 
@@ -515,6 +570,8 @@ pub struct EntitlementMintConfig {
     pub registry: Pubkey,
     pub mint: Pubkey,
     pub bump: u8,
+    /// 1 when Token-2022 NonTransferable mint extension was initialized.
+    pub non_transferable: u8,
 }
 
 #[account]
@@ -734,16 +791,13 @@ pub struct InitializeEntitlementMint<'info> {
         bump
     )]
     pub entitlement_mint_config: Account<'info, EntitlementMintConfig>,
+    /// CHECK: Token-2022 mint PDA (allocated in instruction with NonTransferable extension space).
     #[account(
-        init,
-        payer = admin,
+        mut,
         seeds = [ENTITLEMENT_MINT_SEED, registry.key().as_ref()],
         bump,
-        mint::decimals = 0,
-        mint::authority = mint_authority,
-        mint::token_program = token_program,
     )]
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub mint: UncheckedAccount<'info>,
     /// CHECK: PDA mint authority for entitlement mint only.
     #[account(
         seeds = [ENTITLEMENT_MINT_AUTHORITY_SEED, registry.key().as_ref()],
@@ -881,4 +935,8 @@ pub enum ProofContinuityError {
     InvalidMintDecimals,
     #[msg("unauthorized_admin")]
     UnauthorizedAdmin,
+    #[msg("insufficient_entitlement")]
+    InsufficientEntitlement,
+    #[msg("non_transferable_required")]
+    NonTransferableRequired,
 }

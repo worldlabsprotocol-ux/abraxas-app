@@ -1,0 +1,21 @@
+[package]
+name = "abraxas-proof-entitlement-consumer"
+version = "0.1.0"
+description = "Local/reference relying party that enforces receipt-backed Token-2022 entitlements."
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "abraxas_proof_entitlement_consumer"
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.30.1", features = ["init-if-needed"] }
+anchor-spl = { version = "0.30.1", features = ["token_2022"] }
+abraxas-proof-continuity = { path = "../abraxas-proof-continuity", features = ["no-entrypoint"] }

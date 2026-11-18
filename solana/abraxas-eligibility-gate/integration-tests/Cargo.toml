@@ -10,6 +10,7 @@ abraxas-eligibility-gate = { path = "../programs/abraxas-eligibility-gate", feat
 abraxas-eligibility-consumer = { path = "../programs/abraxas-eligibility-consumer", features = ["no-entrypoint"] }
 abraxas-protocol-access = { path = "../programs/abraxas-protocol-access", features = ["no-entrypoint"] }
 abraxas-proof-continuity = { path = "../programs/abraxas-proof-continuity", features = ["no-entrypoint"] }
+abraxas-proof-entitlement-consumer = { path = "../programs/abraxas-proof-entitlement-consumer", features = ["no-entrypoint"] }
 solana-program-test = "=1.18.26"
 solana-sdk = "=1.18.26"
 spl-token-2022 = { version = "=3.0.5", features = ["no-entrypoint"] }
