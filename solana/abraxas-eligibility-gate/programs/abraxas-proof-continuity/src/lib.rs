@@ -7,6 +7,10 @@ use anchor_lang::solana_program::{
     ed25519_program,
     sysvar::instructions::{load_current_index_checked, load_instruction_at_checked},
 };
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{self, Mint, Token2022, TokenAccount, TokenInterface},
+};
 
 declare_id!("FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1");
 
@@ -14,6 +18,11 @@ pub const REGISTRY_SEED: &[u8] = b"proof_registry";
 pub const COMMITMENT_SEED: &[u8] = b"receipt_commitment";
 pub const SANDBOX_BINDING_SEED: &[u8] = b"sandbox_binding";
 pub const EXECUTION_LEDGER_SEED: &[u8] = b"execution_ledger";
+pub const ENTITLEMENT_MINT_CONFIG_SEED: &[u8] = b"entitlement_mint_config";
+pub const ENTITLEMENT_MINT_SEED: &[u8] = b"entitlement_mint";
+pub const ENTITLEMENT_MINT_AUTHORITY_SEED: &[u8] = b"entitlement_mint_authority";
+pub const ENTITLEMENT_ISSUANCE_SEED: &[u8] = b"entitlement_issuance";
+pub const ENTITLEMENT_TOKEN_AMOUNT: u64 = 1;
 pub const PROOF_CONTINUITY_PREFIX: &[u8] = b"ABRAXAS_PROOF_CONTINUITY_V1";
 /// Status changes use a separate signed domain and include the requested status.
 pub const STATUS_UPDATE_PREFIX: &[u8] = b"ABRAXAS_PROOF_STATUS_V1";
@@ -109,6 +118,8 @@ pub mod abraxas_proof_continuity {
         commitment.expires_at = expires_at;
         commitment.status = STATUS_ACTIVE;
         commitment.status_version = status_version;
+        commitment.authorized_holder = ctx.accounts.holder.key();
+        commitment.bump = ctx.bumps.commitment;
         ledger.last_execution_nonce = execution_nonce;
         Ok(())
     }
@@ -249,6 +260,106 @@ pub mod abraxas_proof_continuity {
         );
         let now = Clock::get()?.unix_timestamp;
         require!(commitment.expires_at > now, ProofContinuityError::Expired);
+        Ok(())
+    }
+
+    /// Registry admin configures a Token-2022 mint for verified entitlement issuance (local/sandbox only).
+    pub fn initialize_entitlement_mint(ctx: Context<InitializeEntitlementMint>) -> Result<()> {
+        require_keys_eq!(
+            ctx.accounts.admin.key(),
+            ctx.accounts.registry.admin,
+            ProofContinuityError::UnauthorizedAdmin
+        );
+        let config = &mut ctx.accounts.entitlement_mint_config;
+        config.registry = ctx.accounts.registry.key();
+        config.mint = ctx.accounts.mint.key();
+        config.bump = ctx.bumps.entitlement_mint_config;
+        Ok(())
+    }
+
+    /// Mint exactly one entitlement token after on-chain proof commitment checks (no off-chain trust).
+    pub fn mint_verified_entitlement(
+        ctx: Context<MintVerifiedEntitlement>,
+        receipt_id_hash: [u8; 32],
+    ) -> Result<()> {
+        require_keys_eq!(
+            ctx.accounts.issuance_ledger.recipient,
+            Pubkey::default(),
+            ProofContinuityError::EntitlementAlreadyMinted
+        );
+        let registry = &ctx.accounts.registry;
+        let commitment = &ctx.accounts.commitment;
+        require_keys_eq!(
+            commitment.registry,
+            registry.key(),
+            ProofContinuityError::WrongRegistry
+        );
+        require!(
+            commitment.receipt_id_hash == receipt_id_hash,
+            ProofContinuityError::ReceiptMismatch
+        );
+        require_scope_match(
+            registry,
+            &CommitmentMessageFields {
+                receipt_id_hash: commitment.receipt_id_hash,
+                payload_hash: commitment.payload_hash,
+                partner_hash: commitment.partner_hash,
+                policy_hash: commitment.policy_hash,
+                application_hash: commitment.application_hash,
+                expires_at: commitment.expires_at,
+                status_version: commitment.status_version,
+                execution_nonce: 0,
+            },
+        )?;
+        require_eq!(commitment.status, STATUS_ACTIVE, ProofContinuityError::NotAcceptable);
+        let now = Clock::get()?.unix_timestamp;
+        require!(commitment.expires_at > now, ProofContinuityError::Expired);
+        require_keys_eq!(
+            ctx.accounts.holder.key(),
+            ctx.accounts.sandbox.holder,
+            ProofContinuityError::UnauthorizedWallet
+        );
+        require_keys_eq!(
+            commitment.authorized_holder,
+            ctx.accounts.holder.key(),
+            ProofContinuityError::UnauthorizedWallet
+        );
+        require!(
+            commitment.authorized_holder != Pubkey::default(),
+            ProofContinuityError::UnauthorizedWallet
+        );
+        require_keys_eq!(
+            ctx.accounts.entitlement_mint_config.mint,
+            ctx.accounts.mint.key(),
+            ProofContinuityError::WrongMint
+        );
+
+        let registry_key = registry.key();
+        let authority_bump = ctx.bumps.mint_authority;
+        let seeds: &[&[u8]] = &[
+            ENTITLEMENT_MINT_AUTHORITY_SEED,
+            registry_key.as_ref(),
+            &[authority_bump],
+        ];
+        let signer = &[seeds];
+        token_interface::mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                token_interface::MintTo {
+                    mint: ctx.accounts.mint.to_account_info(),
+                    to: ctx.accounts.recipient_token_account.to_account_info(),
+                    authority: ctx.accounts.mint_authority.to_account_info(),
+                },
+                signer,
+            ),
+            ENTITLEMENT_TOKEN_AMOUNT,
+        )?;
+
+        let ledger = &mut ctx.accounts.issuance_ledger;
+        ledger.registry = registry_key;
+        ledger.receipt_id_hash = receipt_id_hash;
+        ledger.recipient = ctx.accounts.holder.key();
+        ledger.bump = ctx.bumps.issuance_ledger;
         Ok(())
     }
 }
@@ -393,6 +504,25 @@ pub struct ReceiptCommitment {
     pub expires_at: i64,
     pub status: u8,
     pub status_version: u64,
+    /// Wallet that executed the authorized harness run for this commitment.
+    pub authorized_holder: Pubkey,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct EntitlementMintConfig {
+    pub registry: Pubkey,
+    pub mint: Pubkey,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct EntitlementIssuanceLedger {
+    pub registry: Pubkey,
+    pub receipt_id_hash: [u8; 32],
+    pub recipient: Pubkey,
     pub bump: u8,
 }
 
@@ -587,6 +717,112 @@ pub struct AssertReceiptCommitment<'info> {
     pub commitment: Account<'info, ReceiptCommitment>,
 }
 
+#[derive(Accounts)]
+pub struct InitializeEntitlementMint<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    #[account(
+        seeds = [REGISTRY_SEED, registry.admin.as_ref()],
+        bump = registry.bump
+    )]
+    pub registry: Account<'info, ProofContinuityRegistry>,
+    #[account(
+        init,
+        payer = admin,
+        space = 8 + EntitlementMintConfig::INIT_SPACE,
+        seeds = [ENTITLEMENT_MINT_CONFIG_SEED, registry.key().as_ref()],
+        bump
+    )]
+    pub entitlement_mint_config: Account<'info, EntitlementMintConfig>,
+    #[account(
+        init,
+        payer = admin,
+        seeds = [ENTITLEMENT_MINT_SEED, registry.key().as_ref()],
+        bump,
+        mint::decimals = 0,
+        mint::authority = mint_authority,
+        mint::token_program = token_program,
+    )]
+    pub mint: InterfaceAccount<'info, Mint>,
+    /// CHECK: PDA mint authority for entitlement mint only.
+    #[account(
+        seeds = [ENTITLEMENT_MINT_AUTHORITY_SEED, registry.key().as_ref()],
+        bump
+    )]
+    pub mint_authority: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(receipt_id_hash: [u8; 32])]
+pub struct MintVerifiedEntitlement<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub holder: Signer<'info>,
+    #[account(
+        seeds = [REGISTRY_SEED, registry.admin.as_ref()],
+        bump = registry.bump
+    )]
+    pub registry: Box<Account<'info, ProofContinuityRegistry>>,
+    #[account(
+        seeds = [SANDBOX_BINDING_SEED, registry.key().as_ref(), holder.key().as_ref()],
+        bump = sandbox.bump,
+        constraint = sandbox.holder == holder.key() @ ProofContinuityError::UnauthorizedWallet,
+    )]
+    pub sandbox: Box<Account<'info, SandboxBinding>>,
+    #[account(
+        seeds = [
+            COMMITMENT_SEED,
+            registry.key().as_ref(),
+            receipt_id_hash.as_ref()
+        ],
+        bump = commitment.bump,
+        constraint = commitment.registry == registry.key() @ ProofContinuityError::WrongRegistry,
+    )]
+    pub commitment: Box<Account<'info, ReceiptCommitment>>,
+    #[account(
+        seeds = [ENTITLEMENT_MINT_CONFIG_SEED, registry.key().as_ref()],
+        bump = entitlement_mint_config.bump,
+        constraint = entitlement_mint_config.registry == registry.key() @ ProofContinuityError::WrongRegistry,
+    )]
+    pub entitlement_mint_config: Box<Account<'info, EntitlementMintConfig>>,
+    #[account(
+        mut,
+        constraint = mint.key() == entitlement_mint_config.mint @ ProofContinuityError::WrongMint
+    )]
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        associated_token::mint = mint,
+        associated_token::authority = holder,
+        associated_token::token_program = token_program,
+    )]
+    pub recipient_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + EntitlementIssuanceLedger::INIT_SPACE,
+        seeds = [
+            ENTITLEMENT_ISSUANCE_SEED,
+            registry.key().as_ref(),
+            receipt_id_hash.as_ref()
+        ],
+        bump
+    )]
+    pub issuance_ledger: Box<Account<'info, EntitlementIssuanceLedger>>,
+    /// CHECK: PDA mint authority
+    #[account(
+        seeds = [ENTITLEMENT_MINT_AUTHORITY_SEED, registry.key().as_ref()],
+        bump
+    )]
+    pub mint_authority: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+}
+
 #[error_code]
 pub enum ProofContinuityError {
     #[msg("missing_ed25519_instruction")]
@@ -637,4 +873,12 @@ pub enum ProofContinuityError {
     UnauthorizedRegistryAdmin,
     #[msg("replay_rejected")]
     ReplayRejected,
+    #[msg("entitlement_already_minted")]
+    EntitlementAlreadyMinted,
+    #[msg("wrong_mint")]
+    WrongMint,
+    #[msg("invalid_mint_decimals")]
+    InvalidMintDecimals,
+    #[msg("unauthorized_admin")]
+    UnauthorizedAdmin,
 }
