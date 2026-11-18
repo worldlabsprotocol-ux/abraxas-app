@@ -25,7 +25,7 @@ export function resolveIntegrationStudioExecutionMode(
 }
 
 export const BLOCKCHAIN_NATIVE_STUDIO_PENDING_MESSAGE =
-  "Complete the on-chain execute_harness_run step against the pinned proof-continuity RPC, then confirm with the finalized transaction signature.";
+  "Sign the prepared Solana transaction with your connected wallet. Abraxas will wait for finalized chain state before recording success.";
 
 export type UnifiedTrustExecutionJourney = {
   phase: "awaiting_holder_authorization" | "authorized_pending_execution" | "executed" | "expired" | "failed";

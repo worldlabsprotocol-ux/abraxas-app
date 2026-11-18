@@ -10,26 +10,14 @@ import {
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import {
-  confirmBlockchainNativeStudioExecutionFromPortable,
+  buildBlockchainNativeStudioTransaction,
+  confirmBlockchainNativeStudioExecution,
   prepareBlockchainNativeStudioHarness,
 } from "@/lib/partner/launchpad/blockchainNative/studioExecution";
-import type { PortableHarnessPersistence } from "@/lib/partner/launchpad/blockchainNative/studioHarnessRestore";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: { id: string } };
-
-function parsePortableReceipt(body: unknown): PortableHarnessPersistence | null {
-  if (!body || typeof body !== "object") return null;
-  const record = body as PortableHarnessPersistence;
-  if (typeof record.receipt_id !== "string" || !record.receipt_id.trim()) return null;
-  if (!record.public_payload || typeof record.public_payload !== "object") return null;
-  if (typeof record.signature !== "string" || !record.signature.trim()) return null;
-  if (typeof record.expires_at !== "string" || !record.expires_at.trim()) return null;
-  const payloadHash = (record.public_payload as { payload_hash?: string }).payload_hash;
-  if (typeof payloadHash !== "string" || !payloadHash.trim()) return null;
-  return record;
-}
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
@@ -46,46 +34,80 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   const body = (await req.json().catch(() => ({}))) as {
-    phase?: "prepare" | "confirm";
+    phase?: "prepare" | "build_transaction" | "confirm";
     scenario_id?: string;
+    holder_wallet_address?: string;
+    prepare_token?: string;
     transaction_signature?: string;
-    portable_receipt?: unknown;
   };
 
+  const holderWallet = body.holder_wallet_address?.trim();
+  if (!holderWallet && body.phase !== "prepare") {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+  }
+
   if (body.phase === "prepare") {
-    const prepared = prepareBlockchainNativeStudioHarness({
+    if (!holderWallet) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+    const prepared = await prepareBlockchainNativeStudioHarness({
+      applicationId: app.id,
       partnerId: auth.session.partnerId,
       policyId: app.policy_id,
       policyVersion: app.policy_version,
       policyTemplateId: app.policy_template_id,
       scenarioId: body.scenario_id ?? "approved",
+      holderWallet,
     });
     if (!prepared.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, prepared.code);
     return launchpadJson({
       ok: true,
       phase: "prepared",
+      prepare_token: prepared.prepare_token,
       receipt_id: prepared.receipt_id,
+      execution_nonce: prepared.execution_nonce,
       registry_pda: prepared.registry_pda,
       commitment_pda: prepared.commitment_pda,
       payload_hash_hex: prepared.payload_hash_hex,
-      receipt_id_hash_hex: prepared.receipt_id_hash_hex,
       rpc_url: prepared.rpc_url,
       finality_slots: prepared.finality_slots,
-      portable_receipt: prepared.harness.persistence,
+      holder_wallet: prepared.holder_wallet,
+    });
+  }
+
+  if (body.phase === "build_transaction") {
+    const token = body.prepare_token?.trim();
+    if (!token) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "prepare_token_required");
+  if (!holderWallet) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+    const built = await buildBlockchainNativeStudioTransaction({
+      applicationId: app.id,
+      partnerId: auth.session.partnerId,
+      holderWallet,
+      prepareToken: token,
+    });
+    if (!built.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 422, built.code);
+    return launchpadJson({
+      ok: true,
+      phase: "transaction_ready",
+      kind: built.kind,
+      transaction_base64: built.transaction_base64,
+      recent_blockhash: built.recent_blockhash,
+      last_valid_block_height: built.last_valid_block_height,
     });
   }
 
   if (body.phase === "confirm") {
-    const persistence = parsePortableReceipt(body.portable_receipt);
-    if (!persistence) {
-      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "portable_receipt_required");
-    }
-    const confirmed = await confirmBlockchainNativeStudioExecutionFromPortable({
-      persistence,
+    const token = body.prepare_token?.trim();
+    const signature = body.transaction_signature?.trim();
+    if (!token) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "prepare_token_required");
+    if (!signature) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "chain_transaction_signature_required");
+    if (!holderWallet) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+    const confirmed = await confirmBlockchainNativeStudioExecution({
+      applicationId: app.id,
       partnerId: auth.session.partnerId,
       policyId: app.policy_id,
       policyTemplateId: app.policy_template_id,
-      transactionSignature: body.transaction_signature?.trim(),
+      holderWallet,
+      prepareToken: token,
+      transactionSignature: signature,
     });
     if (!confirmed.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 422, confirmed.code);
     return launchpadJson({

@@ -3,19 +3,24 @@ import { PROOF_CONTINUITY_PROGRAM_ID } from "./constants";
 import { authenticateCommitmentChainEvidence, type CommitmentChainEvidence } from "./solanaAccountEvidence";
 import { hashReceiptId } from "./message";
 import { findProofRegistryPda, findReceiptCommitmentPda } from "./pda";
+import {
+  verifyExecutionTransaction,
+  type ExecutionTxExpectations,
+} from "./verifyExecutionTransaction";
 
 export type FetchChainEvidenceInput = {
   rpcUrl: string;
   programId?: string;
   registryAdmin: string;
   receiptId: string;
-  transactionSignature?: string;
-  minContextSlot?: number;
+  /** Required for acceptance — account bytes alone are insufficient. */
+  transactionSignature: string;
   finalitySlots?: number;
+  executionExpectations: ExecutionTxExpectations;
 };
 
 export type FetchChainEvidenceResult =
-  | { ok: true; evidence: CommitmentChainEvidence; slot: number; signature: string | null }
+  | { ok: true; evidence: CommitmentChainEvidence; slot: number; signature: string }
   | { ok: false; reason: string };
 
 function accountToEvidence(
@@ -26,32 +31,13 @@ function accountToEvidence(
   return { address: address.toBase58(), owner: owner.toBase58(), data };
 }
 
-async function resolveObservationSlot(
-  connection: Connection,
-  signature: string | undefined,
-  finalitySlots: number,
-): Promise<{ ok: true; slot: number; signature: string | null } | { ok: false; reason: string }> {
-  if (!signature) {
-    const slot = await connection.getSlot("finalized");
-    return { ok: true, slot, signature: null };
-  }
-  const status = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true });
-  const value = status?.value?.[0];
-  if (!value) return { ok: false, reason: "chain_transaction_not_found" };
-  if (value.err) return { ok: false, reason: "chain_transaction_failed" };
-  if (value.confirmationStatus !== "finalized" && value.confirmationStatus !== "confirmed") {
-    return { ok: false, reason: "chain_transaction_not_finalized" };
-  }
-  const slot = value.slot ?? 0;
-  const head = await connection.getSlot("finalized");
-  if (head - slot < finalitySlots) return { ok: false, reason: "chain_finality_not_met" };
-  return { ok: true, slot, signature };
-}
-
-/** Reads live Solana accounts from pinned RPC — never accepts caller-supplied account bytes. */
+/** Reads live Solana accounts from pinned RPC after proving the finalized execution transaction. */
 export async function fetchCommitmentChainEvidenceFromRpc(
   input: FetchChainEvidenceInput,
 ): Promise<FetchChainEvidenceResult> {
+  const signature = input.transactionSignature?.trim();
+  if (!signature) return { ok: false, reason: "chain_transaction_signature_required" };
+
   const programId = input.programId ?? PROOF_CONTINUITY_PROGRAM_ID;
   let connection: Connection;
   try {
@@ -59,6 +45,14 @@ export async function fetchCommitmentChainEvidenceFromRpc(
   } catch {
     return { ok: false, reason: "chain_rpc_invalid" };
   }
+
+  const txProof = await verifyExecutionTransaction(
+    connection,
+    signature,
+    input.executionExpectations,
+    input.finalitySlots ?? 32,
+  );
+  if (!txProof.ok) return txProof;
 
   let adminPk: PublicKey;
   let programPk: PublicKey;
@@ -73,17 +67,9 @@ export async function fetchCommitmentChainEvidenceFromRpc(
   const registry = findProofRegistryPda(adminPk);
   const commitment = findReceiptCommitmentPda(registry.address, receiptHash);
 
-  const slotResult = await resolveObservationSlot(
-    connection,
-    input.transactionSignature,
-    input.finalitySlots ?? 32,
-  );
-  if (!slotResult.ok) return slotResult;
-
-  const minContext = input.minContextSlot ?? slotResult.slot;
   const [registryInfo, commitmentInfo] = await connection.getMultipleAccountsInfo(
     [registry.address, commitment.address],
-    { commitment: "finalized", minContextSlot: minContext },
+    { commitment: "finalized", minContextSlot: txProof.slot },
   );
   if (!registryInfo || !commitmentInfo) {
     return { ok: false, reason: "chain_accounts_missing" };
@@ -103,5 +89,5 @@ export async function fetchCommitmentChainEvidenceFromRpc(
   const auth = authenticateCommitmentChainEvidence(evidence);
   if (!auth.ok) return auth;
 
-  return { ok: true, evidence, slot: slotResult.slot, signature: slotResult.signature };
+  return { ok: true, evidence, slot: txProof.slot, signature };
 }

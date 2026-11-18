@@ -10,17 +10,27 @@ const prepare = await fetch("/api/launchpad/applications/${applicationId}/blockc
 });
 const prepared = await prepare.json();
 
-// 2) Run execute_harness_run against pinned local RPC (wallet + authorized issuer)
-//    Use scripts/proof-continuity-studio-execute.ts with prepared.receipt_id
+// 2) Build unsigned transaction (issuer Ed25519 + execute_harness_run)
+const built = await fetch("/api/launchpad/applications/${applicationId}/blockchain-native-execution", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify({
+    phase: "build_transaction",
+    prepare_token: prepared.prepare_token,
+    holder_wallet_address: prepared.holder_wallet,
+  }),
+});
 
-// 3) Confirm with real RPC account fetch + independent verification
+// 3) Wallet signs and sends, then confirm with finalized signature
 const confirm = await fetch("/api/launchpad/applications/${applicationId}/blockchain-native-execution", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   credentials: "include",
   body: JSON.stringify({
     phase: "confirm",
-    portable_receipt: prepared.portable_receipt,
+    prepare_token: prepared.prepare_token,
+    holder_wallet_address: prepared.holder_wallet,
     transaction_signature: "<finalized_solana_signature>",
   }),
 });

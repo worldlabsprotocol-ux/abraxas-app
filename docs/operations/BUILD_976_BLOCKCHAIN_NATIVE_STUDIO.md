@@ -22,8 +22,9 @@ Default hosted Launchpad (`launchpadUsesSovereignPostgres()`) is unchanged.
 
 1. Connect wallet session (existing `/api/auth/wallet/session` gate).
 2. **Prepare** — server issues portable signed receipt + PDA hints (no sovereign PostgreSQL persistence).
-3. **On-chain execute** — holder runs `execute_harness_run` against pinned local validator (CLI or wallet).
-4. **Confirm** — server fetches registry + commitment from RPC, runs independent verifier, checks `verifyOnChainReceiptCommitment` binding.
+3. **Build transaction** — server builds issuer Ed25519 + `execute_harness_run` instructions bound to HMAC `prepare_token` (holder, nonce, receipt).
+4. **Wallet execute** — browser wallet signs and submits; Abraxas waits for **finalized** status.
+5. **Confirm** — server proves the submitted transaction executed the prepared commitment, then fetches accounts from pinned RPC and requires full independent verifier acceptance.
 
 ## Proof
 
@@ -42,7 +43,7 @@ npm run test:build-976
 |------|--------|
 | Live RPC account fetch + authentication | **GO** (when validator + env configured) |
 | Integration Studio UI prepare/confirm | **GO** (local/reference) |
-| Browser wallet-built `execute_harness_run` tx | **NO-GO** (CLI handoff; founder-safe) |
+| Browser wallet-built `execute_harness_run` tx | **GO** (when local validator + env configured) |
 | Public devnet/mainnet deploy | **NO-GO** (founder approval) |
 
 ## Distinction from #975

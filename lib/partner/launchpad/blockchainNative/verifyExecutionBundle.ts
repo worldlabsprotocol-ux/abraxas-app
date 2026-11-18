@@ -6,11 +6,12 @@ import {
 import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 import type { PartnerHarnessCaseResult } from "@/lib/partner/launchpad/partnerTestHarness";
 import { harnessIssuedReceiptFields } from "@/lib/partner/launchpad/blockchainNative/runPrototypeHarness";
-import {
-  fetchCommitmentChainEvidenceFromRpc,
-  type FetchChainEvidenceInput,
-} from "@/lib/solana/proofContinuity/fetchChainEvidence";
+import { fetchCommitmentChainEvidenceFromRpc } from "@/lib/solana/proofContinuity/fetchChainEvidence";
 import { verifyOnChainReceiptCommitment } from "@/lib/solana/proofContinuity/verifyOnChainCommitment";
+import { hashReceiptId } from "@/lib/solana/proofContinuity/message";
+import { findProofRegistryPda, findReceiptCommitmentPda } from "@/lib/solana/proofContinuity/pda";
+import { PublicKey } from "@solana/web3.js";
+import { independentVerificationFullyAccepts } from "./independentAcceptance";
 
 export type BlockchainNativeExecutionBundleResult =
   | {
@@ -20,7 +21,7 @@ export type BlockchainNativeExecutionBundleResult =
       portable: IndependentVerificationResult;
       chain_status_version: bigint;
       observation_slot: number;
-      transaction_signature: string | null;
+      transaction_signature: string;
     }
   | { ok: false; code: string };
 
@@ -32,7 +33,12 @@ export async function verifyBlockchainNativeExecutionBundle(input: {
   pinnedTrustAnchor: TrustAnchorBundleV1;
   signedIssuerAuthority: { payload: unknown; signature: string };
   signedStatusStatement: { payload: { effective_at: string }; signature: string };
-  fetch: FetchChainEvidenceInput;
+  rpcUrl: string;
+  registryAdmin: string;
+  holderWallet: string;
+  executionNonce: bigint;
+  transactionSignature: string;
+  finalitySlots: number;
 }): Promise<BlockchainNativeExecutionBundleResult> {
   const issued = harnessIssuedReceiptFields(input.harness);
   if (!issued) return { ok: false, code: "portable_receipt_missing_payload_hash" };
@@ -60,13 +66,32 @@ export async function verifyBlockchainNativeExecutionBundle(input: {
     statementObservedAt: input.signedStatusStatement.payload.effective_at,
   });
 
-  if (!portable.cryptographically_authentic) {
-    return { ok: false, code: "portable_signature_not_authentic" };
+  if (!independentVerificationFullyAccepts(portable)) {
+    return { ok: false, code: "portable_independent_verification_not_acceptable" };
   }
 
+  const adminPk = new PublicKey(input.registryAdmin);
+  const registry = findProofRegistryPda(adminPk);
+  const receiptHash = hashReceiptId(issued.receipt_id);
+  const commitment = findReceiptCommitmentPda(registry.address, receiptHash);
+  const payloadHash = Buffer.from(issued.payload_hash, "hex");
+  const expiresAt = BigInt(Math.floor(Date.parse(persistence.expires_at) / 1000));
+
   const fetched = await fetchCommitmentChainEvidenceFromRpc({
-    ...input.fetch,
+    rpcUrl: input.rpcUrl,
+    registryAdmin: input.registryAdmin,
     receiptId: issued.receipt_id,
+    transactionSignature: input.transactionSignature,
+    finalitySlots: input.finalitySlots,
+    executionExpectations: {
+      holder: input.holderWallet,
+      commitment: commitment.address.toBase58(),
+      receiptIdHash: receiptHash,
+      payloadHash,
+      executionNonce: input.executionNonce,
+      expiresAt,
+      statusVersion: BigInt(1),
+    },
   });
   if (!fetched.ok) return { ok: false, code: fetched.reason };
 
