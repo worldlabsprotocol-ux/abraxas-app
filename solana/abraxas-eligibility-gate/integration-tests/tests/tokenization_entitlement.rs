@@ -1,5 +1,6 @@
 //! Capstone Token-2022 — verified entitlement mint after proof-continuity authorization.
 
+use abraxas_proof_entitlement_consumer::{ENTITLEMENT_CONSUMPTION_SEED, ID as CONSUMER_ID};
 use abraxas_proof_continuity::{
     COMMITMENT_MESSAGE_LEN, COMMITMENT_SEED, ENTITLEMENT_ISSUANCE_SEED, ENTITLEMENT_MINT_AUTHORITY_SEED,
     ENTITLEMENT_MINT_CONFIG_SEED, ENTITLEMENT_MINT_SEED, EXECUTION_LEDGER_SEED, ID as PROOF_ID,
@@ -19,9 +20,11 @@ use solana_sdk::{
 };
 use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token_2022::{
-    extension::StateWithExtensions,
+    extension::{
+        non_transferable::NonTransferable, BaseStateWithExtensions, StateWithExtensions,
+    },
     instruction as token_ix,
-    state::Account as TokenAccountState,
+    state::{Account as TokenAccountState, Mint as MintState},
 };
 
 fn h32(fill: u8) -> [u8; 32] {
@@ -110,6 +113,21 @@ fn ed25519_ix(signer: &Keypair, message: &[u8]) -> Instruction {
         accounts: vec![],
         data,
     }
+}
+
+fn consumer_process<'a, 'b, 'c, 'd>(
+    program_id: &'a Pubkey,
+    accounts: &'b [solana_sdk::account_info::AccountInfo<'c>],
+    data: &'d [u8],
+) -> solana_sdk::entrypoint::ProgramResult {
+    abraxas_proof_entitlement_consumer::entry(
+        unsafe { &*(program_id as *const Pubkey) },
+        unsafe {
+            &*(accounts as *const [solana_sdk::account_info::AccountInfo<'c>]
+                as *const [solana_sdk::account_info::AccountInfo])
+        },
+        data,
+    )
 }
 
 fn proof_process<'a, 'b, 'c, 'd>(
@@ -214,10 +232,70 @@ async fn start() -> ProgramTestContext {
         spl_associated_token_account::id(),
         processor!(spl_associated_token_account::processor::process_instruction),
     );
+    program_test.add_program(
+        "abraxas_proof_entitlement_consumer",
+        CONSUMER_ID,
+        processor!(consumer_process),
+    );
     program_test.start_with_context().await
 }
 
+fn consumption_pda(registry: &Pubkey, receipt: &[u8; 32]) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[
+            ENTITLEMENT_CONSUMPTION_SEED,
+            registry.as_ref(),
+            receipt.as_ref(),
+        ],
+        &CONSUMER_ID,
+    )
+}
+
+fn consume_entitlement_ix(
+    payer: Pubkey,
+    holder: &Keypair,
+    env: &HarnessEnv,
+    partner: [u8; 32],
+    policy: [u8; 32],
+    application: [u8; 32],
+) -> Instruction {
+    let (issuance_ledger, _) = issuance_ledger_pda(&env.registry, &env.receipt);
+    let (consumption, _) = consumption_pda(&env.registry, &env.receipt);
+    let ata = get_associated_token_address_with_program_id(
+        &holder.pubkey(),
+        &env.mint,
+        &spl_token_2022::id(),
+    );
+    Instruction {
+        program_id: CONSUMER_ID,
+        accounts: abraxas_proof_entitlement_consumer::accounts::ConsumeVerifiedEntitlement {
+            payer,
+            holder: holder.pubkey(),
+            proof_continuity_program: PROOF_ID,
+            registry_admin: env.registry_admin,
+            registry: env.registry,
+            commitment: env.commitment,
+            entitlement_mint_config: env.mint_config,
+            mint: env.mint,
+            recipient_token_account: ata,
+            issuance_ledger,
+            consumption,
+            token_program: spl_token_2022::id(),
+            system_program: system_program::id(),
+        }
+        .to_account_metas(None),
+        data: abraxas_proof_entitlement_consumer::instruction::ConsumeVerifiedEntitlement {
+            receipt_id_hash: env.receipt,
+            partner_hash: partner,
+            policy_hash: policy,
+            application_hash: application,
+        }
+        .data(),
+    }
+}
+
 struct HarnessEnv {
+    registry_admin: Pubkey,
     registry: Pubkey,
     sandbox: Pubkey,
     commitment: Pubkey,
@@ -354,6 +432,7 @@ async fn setup_harness_with_entitlement_mint(
     .unwrap();
 
     HarnessEnv {
+        registry_admin: admin.pubkey(),
         registry,
         sandbox,
         commitment,
@@ -709,10 +788,237 @@ async fn unauthorized_direct_token_mint_rejected() {
     assert!(send(&mut ctx, vec![direct_mint], &[&holder]).await.is_err());
 }
 
+#[tokio::test]
+async fn non_transferable_extension_present_on_entitlement_mint() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let holder = Keypair::new();
+    let env = setup_harness_with_entitlement_mint(&mut ctx, &admin, &issuer, &holder).await;
+    let mint_acc = ctx
+        .banks_client
+        .get_account(env.mint)
+        .await
+        .unwrap()
+        .expect("mint");
+    let mint_state = StateWithExtensions::<MintState>::unpack(&mint_acc.data).unwrap();
+    assert!(mint_state.get_extension::<NonTransferable>().is_ok());
+}
+
+#[tokio::test]
+async fn non_transferable_token_transfer_rejected() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let holder = Keypair::new();
+    let impostor = Keypair::new();
+    let env = setup_harness_with_entitlement_mint(&mut ctx, &admin, &issuer, &holder).await;
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![mint_entitlement_ix(payer, &holder, &env, env.sandbox)],
+        &[&holder],
+    )
+    .await
+    .unwrap();
+    send(
+        &mut ctx,
+        vec![system_instruction::transfer(
+            &admin.pubkey(),
+            &impostor.pubkey(),
+            500_000_000,
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+    let from_ata = get_associated_token_address_with_program_id(
+        &holder.pubkey(),
+        &env.mint,
+        &spl_token_2022::id(),
+    );
+    let to_ata = get_associated_token_address_with_program_id(
+        &impostor.pubkey(),
+        &env.mint,
+        &spl_token_2022::id(),
+    );
+    let create_dest = spl_associated_token_account::instruction::create_associated_token_account(
+        &payer,
+        &impostor.pubkey(),
+        &env.mint,
+        &spl_token_2022::id(),
+    );
+    send(&mut ctx, vec![create_dest], &[]).await.unwrap();
+    let transfer_ix = token_ix::transfer_checked(
+        &spl_token_2022::id(),
+        &from_ata,
+        &env.mint,
+        &to_ata,
+        &holder.pubkey(),
+        &[],
+        1,
+        0,
+    )
+    .unwrap();
+    assert!(send(&mut ctx, vec![transfer_ix], &[&holder]).await.is_err());
+}
+
+#[tokio::test]
+async fn relying_party_consumption_records_on_chain_state() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let holder = Keypair::new();
+    let env = setup_harness_with_entitlement_mint(&mut ctx, &admin, &issuer, &holder).await;
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![mint_entitlement_ix(payer, &holder, &env, env.sandbox)],
+        &[&holder],
+    )
+    .await
+    .unwrap();
+    send(
+        &mut ctx,
+        vec![consume_entitlement_ix(
+            payer,
+            &holder,
+            &env,
+            h32(11),
+            h32(12),
+            h32(13),
+        )],
+        &[&holder],
+    )
+    .await
+    .unwrap();
+    let (consumption, _) = consumption_pda(&env.registry, &env.receipt);
+    let acc = ctx
+        .banks_client
+        .get_account(consumption)
+        .await
+        .unwrap()
+        .expect("consumption ledger");
+    assert_eq!(acc.owner, CONSUMER_ID);
+    assert_eq!(acc.data[8 + 32 + 32 + 32], 1); // consumed bool
+}
+
+#[tokio::test]
+async fn consume_after_revoke_fails_while_token_balance_remains() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let holder = Keypair::new();
+    let env = setup_harness_with_entitlement_mint(&mut ctx, &admin, &issuer, &holder).await;
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![mint_entitlement_ix(payer, &holder, &env, env.sandbox)],
+        &[&holder],
+    )
+    .await
+    .unwrap();
+    send(
+        &mut ctx,
+        vec![consume_entitlement_ix(
+            payer,
+            &holder,
+            &env,
+            h32(11),
+            h32(12),
+            h32(13),
+        )],
+        &[&holder],
+    )
+    .await
+    .unwrap();
+    let message = status_update_message(
+        env.receipt,
+        env.payload,
+        h32(11),
+        h32(12),
+        h32(13),
+        env.expires_at,
+        2,
+        1,
+        STATUS_REVOKED,
+    );
+    let update_ix = Instruction {
+        program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::UpdateReceiptStatus {
+            operator: admin.pubkey(),
+            registry: env.registry,
+            commitment: env.commitment,
+            instructions: solana_sdk::sysvar::instructions::id(),
+        }
+        .to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::UpdateReceiptStatus {
+            receipt_id_hash: env.receipt,
+            payload_hash: env.payload,
+            status: STATUS_REVOKED,
+            status_version: 2,
+            expires_at: env.expires_at,
+        }
+        .data(),
+    };
+    send(
+        &mut ctx,
+        vec![ed25519_ix(&issuer, &message), update_ix],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+    refresh_blockhash(&mut ctx).await;
+    let ata = get_associated_token_address_with_program_id(
+        &holder.pubkey(),
+        &env.mint,
+        &spl_token_2022::id(),
+    );
+    assert_eq!(token_balance(&mut ctx, ata).await, 1);
+    assert!(
+        send(
+            &mut ctx,
+            vec![consume_entitlement_ix(
+                payer,
+                &holder,
+                &env,
+                h32(11),
+                h32(12),
+                h32(13),
+            )],
+            &[&holder],
+        )
+        .await
+        .is_err()
+    );
+}
+
+#[tokio::test]
+async fn duplicate_relying_party_consumption_rejected() {
+    let mut ctx = start().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let holder = Keypair::new();
+    let env = setup_harness_with_entitlement_mint(&mut ctx, &admin, &issuer, &holder).await;
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![mint_entitlement_ix(payer, &holder, &env, env.sandbox)],
+        &[&holder],
+    )
+    .await
+    .unwrap();
+    let ix = consume_entitlement_ix(payer, &holder, &env, h32(11), h32(12), h32(13));
+    send(&mut ctx, vec![ix.clone()], &[&holder]).await.unwrap();
+    refresh_blockhash(&mut ctx).await;
+    assert!(send(&mut ctx, vec![ix], &[&holder]).await.is_err());
+}
+
 // HarnessEnv needs Clone for wrong_policy test
 impl Clone for HarnessEnv {
     fn clone(&self) -> Self {
         Self {
+            registry_admin: self.registry_admin,
             registry: self.registry,
             sandbox: self.sandbox,
             commitment: self.commitment,
