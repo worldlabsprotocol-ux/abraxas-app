@@ -70,4 +70,4 @@ Run: `npm run test:capstone-tokenization`
 
 ## Tested commit
 
-Tested commit (PR branch): `699ffebf` — refresh after merge to `main`.
+Tested commit (PR branch): `786557be` — refresh after merge to `main`.
