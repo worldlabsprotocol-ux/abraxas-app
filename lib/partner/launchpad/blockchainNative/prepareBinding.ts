@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { PortableHarnessPersistence } from "./studioHarnessRestore";
+import { assertPrepareBindingHmacConfigured } from "./prepareBindingSecret";
 
 export type PrepareBindingCore = {
   v: 1;
@@ -22,16 +23,6 @@ export type PrepareBindingPayload = PrepareBindingCore & {
   persistence: PortableHarnessPersistence;
 };
 
-const consumedJti = new Map<string, number>();
-
-function bindingSecret(): string | null {
-  const explicit = process.env.BLOCKCHAIN_NATIVE_PREPARE_HMAC_KEY?.trim();
-  if (explicit) return explicit;
-  const signing = process.env.ABRAXAS_SIGNING_KEY?.trim();
-  if (!signing) return null;
-  return createHash("sha256").update(signing, "utf8").digest("hex");
-}
-
 export function issuePrepareBindingToken(input: {
   application_id: string;
   partner_id: string;
@@ -46,8 +37,8 @@ export function issuePrepareBindingToken(input: {
   persistence: PortableHarnessPersistence;
   ttlSec?: number;
 }): string | null {
-  const secret = bindingSecret();
-  if (!secret) return null;
+  const configured = assertPrepareBindingHmacConfigured();
+  if (!configured.ok) return null;
   const persistence_digest = createHash("sha256").update(JSON.stringify(input.persistence), "utf8").digest("hex");
   const core: PrepareBindingCore = {
     v: 1,
@@ -65,7 +56,7 @@ export function issuePrepareBindingToken(input: {
     persistence_digest,
     expires_at: Math.floor(Date.now() / 1000) + (input.ttlSec ?? 600),
   };
-  const mac = createHmac("sha256", secret).update(JSON.stringify(core)).digest("hex");
+  const mac = createHmac("sha256", configured.secret).update(JSON.stringify(core)).digest("hex");
   return Buffer.from(JSON.stringify({ core, persistence: input.persistence, mac }), "utf8").toString("base64url");
 }
 
@@ -75,11 +66,10 @@ export function verifyPrepareBindingToken(
     application_id: string;
     partner_id: string;
     holder_wallet: string;
-    consume?: boolean;
   },
 ): { ok: true; binding: PrepareBindingPayload } | { ok: false; code: string } {
-  const secret = bindingSecret();
-  if (!secret) return { ok: false, code: "prepare_binding_secret_missing" };
+  const configured = assertPrepareBindingHmacConfigured();
+  if (!configured.ok) return configured;
   let decoded: { core: PrepareBindingCore; persistence: PortableHarnessPersistence; mac: string };
   try {
     decoded = JSON.parse(Buffer.from(token, "base64url").toString("utf8")) as typeof decoded;
@@ -88,7 +78,7 @@ export function verifyPrepareBindingToken(
   }
   const digest = createHash("sha256").update(JSON.stringify(decoded.persistence), "utf8").digest("hex");
   if (digest !== decoded.core.persistence_digest) return { ok: false, code: "prepare_binding_tampered" };
-  const mac = createHmac("sha256", secret).update(JSON.stringify(decoded.core)).digest("hex");
+  const mac = createHmac("sha256", configured.secret).update(JSON.stringify(decoded.core)).digest("hex");
   const left = Buffer.from(mac, "hex");
   const right = Buffer.from(decoded.mac, "hex");
   if (left.length !== right.length || !timingSafeEqual(left, right)) {
@@ -100,10 +90,6 @@ export function verifyPrepareBindingToken(
   if (decoded.core.partner_id !== expectations.partner_id) return { ok: false, code: "prepare_binding_partner_mismatch" };
   if (decoded.core.holder_wallet !== expectations.holder_wallet) {
     return { ok: false, code: "prepare_binding_wallet_mismatch" };
-  }
-  if (consumedJti.has(decoded.core.jti)) return { ok: false, code: "prepare_binding_replay" };
-  if (expectations.consume !== false) {
-    consumedJti.set(decoded.core.jti, decoded.core.expires_at);
   }
   return { ok: true, binding: { ...decoded.core, persistence: decoded.persistence } };
 }

@@ -1,4 +1,5 @@
 import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
+import { resolvePrepareBindingHmacSecret } from "./prepareBindingSecret";
 
 export function blockchainNativeStudioRpcUrl(): string | null {
   const raw = process.env.ABRAXAS_PROOF_CONTINUITY_RPC_URL?.trim();
@@ -22,7 +23,11 @@ export function blockchainNativeFinalitySlots(): number {
 }
 
 export function isBlockchainNativeStudioConfigured(): boolean {
-  return Boolean(blockchainNativeStudioRpcUrl() && blockchainNativeRegistryAdmin());
+  return Boolean(
+    blockchainNativeStudioRpcUrl()
+    && blockchainNativeRegistryAdmin()
+    && resolvePrepareBindingHmacSecret(),
+  );
 }
 
 export const BLOCKCHAIN_NATIVE_STUDIO_PROGRAM_ID = PROOF_CONTINUITY_PROGRAM_ID;

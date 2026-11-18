@@ -11,17 +11,27 @@ Default hosted Launchpad (`launchpadUsesSovereignPostgres()`) is unchanged.
 | Item | Value |
 |------|--------|
 | Integration Studio path id | `blockchain_native_launchpad` |
-| API | `POST /api/launchpad/applications/{id}/blockchain-native-execution` (`prepare` / `confirm`) |
+| API | `POST /api/launchpad/applications/{id}/blockchain-native-execution` (`prepare` / `build_transaction` / `confirm`) |
 | RPC env | `ABRAXAS_PROOF_CONTINUITY_RPC_URL` |
 | Registry admin env | `ABRAXAS_PROOF_CONTINUITY_REGISTRY_ADMIN` |
 | Finality slots | `ABRAXAS_PROOF_CONTINUITY_FINALITY_SLOTS` (default 32) |
 | Portable verify material | `buildDemoTrustAnchorFromEnv`, `ABRAXAS_SIGNED_ISSUER_AUTHORITY_JSON`, `ABRAXAS_SIGNED_STATUS_STATEMENT_JSON` |
 | Issuer signing | `ABRAXAS_SIGNING_KEY` (unchanged; no production signing changes) |
+| Prepare binding HMAC | `BLOCKCHAIN_NATIVE_PREPARE_HMAC_KEY` (≥32 bytes; independent of receipt signing) |
+| Confirm idempotency / JTI tx bind | Ephemeral Redis/KV (`UPSTASH_*` or `REDIS_URL`); required in distributed production |
+
+## Replay and authorization
+
+- **Authoritative execution replay** remains the on-chain execution nonce + receipt commitment (a consumed nonce cannot be re-executed on chain).
+- **Prepare binding JTI → transaction signature** is stored in ephemeral Redis with `SET NX` so the same prepare token cannot confirm two different signatures across Vercel instances.
+- **Duplicate confirm** (same receipt + signature) is idempotent via a distributed confirm cache; no second independent verify pass is fabricated.
+- **Prepare** requires wallet session + signed **action authorization** (`sandbox:verification:test` on `abraxas:launchpad:{applicationId}:blockchain-native`). Build/confirm reject holder addresses that do not match the authenticated session wallet.
 
 ## Journey (builder)
 
 1. Connect wallet session (existing `/api/auth/wallet/session` gate).
-2. **Prepare** — server issues portable signed receipt + PDA hints (no sovereign PostgreSQL persistence).
+2. Sign wallet action authorization for the blockchain-native sandbox resource.
+3. **Prepare** — server issues portable signed receipt + PDA hints (no sovereign PostgreSQL persistence).
 3. **Build transaction** — server builds issuer Ed25519 + `execute_harness_run` instructions bound to HMAC `prepare_token` (holder, nonce, receipt).
 4. **Wallet execute** — browser wallet signs and submits; Abraxas waits for **finalized** status.
 5. **Confirm** — server proves the submitted transaction executed the prepared commitment, then fetches accounts from pinned RPC and requires full independent verifier acceptance.

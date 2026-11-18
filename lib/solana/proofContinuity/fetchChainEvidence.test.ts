@@ -16,6 +16,7 @@ describe("fetchCommitmentChainEvidenceFromRpc", () => {
         executionNonce: BigInt(1),
         expiresAt: BigInt(9_000_000_000),
         statusVersion: BigInt(1),
+        commitmentMessage: Buffer.alloc(32),
       },
     });
     expect(result).toEqual({ ok: false, reason: "chain_transaction_signature_required" });

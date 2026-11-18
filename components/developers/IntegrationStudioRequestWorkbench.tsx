@@ -39,6 +39,7 @@ import {
   type UnifiedTrustExecutionJourney,
 } from "@/lib/partner/integrationStudio/unifiedTrustExecution";
 import { signAndSendPreparedSolanaTransaction } from "@/lib/partner/launchpad/blockchainNative/clientWalletExecution";
+import { fetchWalletActionChallenge, signWalletActionChallenge } from "@/lib/auth/ephemeralWallet/clientActionAuth";
 import { BuilderPortableReceiptExportPanel } from "@/components/developers/BuilderPortableReceiptExportPanel";
 import { useWallet, type WalletContextState } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
@@ -130,7 +131,7 @@ export function IntegrationStudioRequestWorkbench({
   const [trustJourney, setTrustJourney] = useState<UnifiedTrustExecutionJourney | null>(null);
   const [blockchainPrepare, setBlockchainPrepare] = useState<BlockchainNativePrepareView | null>(null);
   const [blockchainPhase, setBlockchainPhase] = useState<"idle" | "prepared" | "submitting" | "confirming">("idle");
-  const { publicKey, signTransaction, connected, connect, wallet } = useWallet();
+  const { publicKey, signTransaction, signMessage, connected, connect, wallet } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
   const continueInFlight = useRef(false);
   const [browserOrigin, setBrowserOrigin] = useState<string | null>(null);
@@ -264,6 +265,33 @@ export function IntegrationStudioRequestWorkbench({
     if (!(await ensureSolanaWalletReady(sessionWallet.wallet_address))) return;
     if (!signTransaction) return;
 
+    if (!signMessage) {
+      setError("This wallet cannot sign authorization messages. Try Phantom or another compatible wallet.");
+      return;
+    }
+    if (!policyId) {
+      setError("Policy context is required before preparing a blockchain-native test.");
+      return;
+    }
+    const actionResource = `abraxas:launchpad:${applicationId}:blockchain-native`;
+    const challenged = await fetchWalletActionChallenge({
+      operation: "sandbox:verification:test",
+      resource: actionResource,
+      policyId,
+    });
+    if (!challenged.ok) {
+      setFailure(presentIntegrationTestFailure(403, { code: challenged.code ?? "action_authorization_required" }));
+      return;
+    }
+    const signedAction = await signWalletActionChallenge({
+      challenge: challenged.challenge,
+      signMessage: (message) => signMessage(message),
+    });
+    if (!signedAction.ok) {
+      setError("Wallet authorization was not completed. Review the request in your wallet and try again.");
+      return;
+    }
+
     setBlockchainPhase("prepared");
     const prepareRes = await fetch(`/api/launchpad/applications/${applicationId}/blockchain-native-execution`, {
       method: "POST",
@@ -273,6 +301,8 @@ export function IntegrationStudioRequestWorkbench({
         phase: "prepare",
         scenario_id: scenarioId,
         holder_wallet_address: sessionWallet.wallet_address,
+        action_challenge_id: signedAction.action_challenge_id,
+        action_signature: signedAction.signature,
       }),
     });
     const prepared = await prepareRes.json().catch(() => ({})) as BlockchainNativePrepareView & {

@@ -3,7 +3,7 @@ import { issuePrepareBindingToken, verifyPrepareBindingToken } from "./prepareBi
 
 describe("blockchain-native prepare binding", () => {
   it("rejects tampered portable persistence", () => {
-    vi.stubEnv("BLOCKCHAIN_NATIVE_PREPARE_HMAC_KEY", "test-secret");
+    vi.stubEnv("BLOCKCHAIN_NATIVE_PREPARE_HMAC_KEY", "01234567890123456789012345678901");
     const persistence = {
       receipt_id: "dr_test",
       public_payload: { payload_hash: "aa".repeat(32), partner_id: "p1", policy_id: "pol1" },
@@ -28,7 +28,6 @@ describe("blockchain-native prepare binding", () => {
       application_id: "app-1",
       partner_id: "p1",
       holder_wallet: "11111111111111111111111111111112",
-      consume: false,
     });
     expect(verified.ok).toBe(true);
     const tampered = JSON.parse(Buffer.from(token!, "base64url").toString("utf8")) as {

@@ -9,6 +9,7 @@ export type EphemeralKvBackend = "upstash" | "tcp" | "none";
 type TcpClient = {
   get: (key: string) => Promise<string | null>;
   set: (key: string, value: string, mode: "EX", ttlSec: number) => Promise<void>;
+  setNx: (key: string, value: string, ttlSec: number) => Promise<boolean>;
   getDel: (key: string) => Promise<string | null>;
   del: (...keys: string[]) => Promise<number>;
   ping: () => Promise<string>;
@@ -49,6 +50,10 @@ async function loadTcpClient(env: Record<string, string | undefined>): Promise<T
         get: (key) => client.get(key),
         set: async (key, value, _mode, ttlSec) => {
           await client.set(key, value, { EX: ttlSec });
+        },
+        setNx: async (key, value, ttlSec) => {
+          const result = await client.set(key, value, { NX: true, EX: ttlSec });
+          return result === "OK";
         },
         getDel: (key) => client.getDel(key),
         del: (...keys) => client.del(keys),
@@ -113,6 +118,24 @@ export async function ephemeralKvSet(
     await tcp.set(key, JSON.stringify(value), "EX", ttlSec);
     return;
   }
+}
+
+export async function ephemeralKvSetNx(
+  key: string,
+  value: unknown,
+  ttlSec: number,
+  env: Record<string, string | undefined> = process.env,
+): Promise<boolean> {
+  const upstash = getEphemeralRedis(env);
+  if (upstash) {
+    const result = await upstash.set(key, value, { nx: true, ex: ttlSec });
+    return result === "OK";
+  }
+  const tcp = await loadTcpClient(env);
+  if (tcp) {
+    return await tcp.setNx(key, JSON.stringify(value), ttlSec);
+  }
+  return false;
 }
 
 export async function ephemeralKvGetDel<T>(

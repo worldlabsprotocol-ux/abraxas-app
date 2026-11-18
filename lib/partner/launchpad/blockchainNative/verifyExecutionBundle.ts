@@ -8,7 +8,7 @@ import type { PartnerHarnessCaseResult } from "@/lib/partner/launchpad/partnerTe
 import { harnessIssuedReceiptFields } from "@/lib/partner/launchpad/blockchainNative/runPrototypeHarness";
 import { fetchCommitmentChainEvidenceFromRpc } from "@/lib/solana/proofContinuity/fetchChainEvidence";
 import { verifyOnChainReceiptCommitment } from "@/lib/solana/proofContinuity/verifyOnChainCommitment";
-import { hashReceiptId } from "@/lib/solana/proofContinuity/message";
+import { encodeCommitmentMessage, hashReceiptId, hashScopeId } from "@/lib/solana/proofContinuity/message";
 import { findProofRegistryPda, findReceiptCommitmentPda } from "@/lib/solana/proofContinuity/pda";
 import { PublicKey } from "@solana/web3.js";
 import { independentVerificationFullyAccepts } from "./independentAcceptance";
@@ -77,6 +77,17 @@ export async function verifyBlockchainNativeExecutionBundle(input: {
   const payloadHash = Buffer.from(issued.payload_hash, "hex");
   const expiresAt = BigInt(Math.floor(Date.parse(persistence.expires_at) / 1000));
 
+  const commitmentMessage = encodeCommitmentMessage({
+    receipt_id_hash: receiptHash,
+    payload_hash: payloadHash,
+    partner_hash: hashScopeId(input.partnerId),
+    policy_hash: hashScopeId(input.policyId),
+    application_hash: hashScopeId(input.policyTemplateId),
+    expires_at: expiresAt,
+    status_version: BigInt(1),
+    execution_nonce: input.executionNonce,
+  });
+
   const fetched = await fetchCommitmentChainEvidenceFromRpc({
     rpcUrl: input.rpcUrl,
     registryAdmin: input.registryAdmin,
@@ -91,6 +102,7 @@ export async function verifyBlockchainNativeExecutionBundle(input: {
       executionNonce: input.executionNonce,
       expiresAt,
       statusVersion: BigInt(1),
+      commitmentMessage,
     },
   });
   if (!fetched.ok) return { ok: false, code: fetched.reason };

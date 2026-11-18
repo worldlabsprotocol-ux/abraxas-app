@@ -20,6 +20,12 @@ import {
 } from "./studioHarnessRestore";
 import { issuePrepareBindingToken, verifyPrepareBindingToken } from "./prepareBinding";
 import { buildStudioChainTransaction, readNextExecutionNonce } from "./buildStudioChainTransaction.server";
+import {
+  assertPrepareJtiNotReusedWithOtherTx,
+  readCachedBlockchainNativeConfirm,
+  requireBlockchainNativeConfirmStore,
+  writeCachedBlockchainNativeConfirm,
+} from "./prepareBindingStore";
 
 export function assertBlockchainNativeStudioReady():
   | { ok: true }
@@ -135,7 +141,6 @@ export async function buildBlockchainNativeStudioTransaction(input: {
     application_id: input.applicationId,
     partner_id: input.partnerId,
     holder_wallet: input.holderWallet,
-    consume: false,
   });
   if (!verified.ok) return verified;
   return buildStudioChainTransaction({
@@ -158,6 +163,9 @@ export async function confirmBlockchainNativeStudioExecution(input: {
   const ready = assertBlockchainNativeStudioReady();
   if (!ready.ok) return ready;
 
+  const store = requireBlockchainNativeConfirmStore();
+  if (!store.ok) return store;
+
   const signature = input.transactionSignature?.trim();
   if (!signature) return { ok: false as const, code: "chain_transaction_signature_required" };
 
@@ -165,9 +173,15 @@ export async function confirmBlockchainNativeStudioExecution(input: {
     application_id: input.applicationId,
     partner_id: input.partnerId,
     holder_wallet: input.holderWallet,
-    consume: true,
   });
   if (!verified.ok) return verified;
+
+  const cached = await readCachedBlockchainNativeConfirm({
+    applicationId: input.applicationId,
+    receiptId: verified.binding.receipt_id,
+    transactionSignature: signature,
+  });
+  if (cached) return cached;
 
   const binding = verified.binding;
   if (binding.policy_id !== input.policyId) return { ok: false as const, code: "prepare_binding_policy_mismatch" };
@@ -198,7 +212,14 @@ export async function confirmBlockchainNativeStudioExecution(input: {
     binding.scenario_id as import("@/lib/partner/launchpad/partnerTestHarness").PartnerHarnessScenarioId,
   );
 
-  return verifyBlockchainNativeExecutionBundle({
+  const jtiGuard = await assertPrepareJtiNotReusedWithOtherTx({
+    jti: binding.jti,
+    transactionSignature: signature,
+    ttlSec: Math.max(60, binding.expires_at - Math.floor(Date.now() / 1000)),
+  });
+  if (!jtiGuard.ok) return jtiGuard;
+
+  const bundle = await verifyBlockchainNativeExecutionBundle({
     harness,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -213,4 +234,16 @@ export async function confirmBlockchainNativeStudioExecution(input: {
     transactionSignature: signature,
     finalitySlots: blockchainNativeFinalitySlots(),
   });
+  if (!bundle.ok) return bundle;
+
+  await writeCachedBlockchainNativeConfirm(
+    {
+      applicationId: input.applicationId,
+      receiptId: binding.receipt_id,
+      transactionSignature: signature,
+    },
+    bundle,
+    Math.max(300, binding.expires_at - Math.floor(Date.now() / 1000)),
+  );
+  return bundle;
 }

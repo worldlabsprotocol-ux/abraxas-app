@@ -14,6 +14,7 @@ import {
   confirmBlockchainNativeStudioExecution,
   prepareBlockchainNativeStudioHarness,
 } from "@/lib/partner/launchpad/blockchainNative/studioExecution";
+import { requireBlockchainNativeHolderWallet } from "@/lib/partner/launchpad/blockchainNative/holderWalletGate";
 
 export const dynamic = "force-dynamic";
 
@@ -39,15 +40,20 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     holder_wallet_address?: string;
     prepare_token?: string;
     transaction_signature?: string;
+    action_challenge_id?: string;
+    action_signature?: string;
   };
 
-  const holderWallet = body.holder_wallet_address?.trim();
-  if (!holderWallet && body.phase !== "prepare") {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
-  }
-
   if (body.phase === "prepare") {
-    if (!holderWallet) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
+    const gated = await requireBlockchainNativeHolderWallet(req, {
+      claimedHolderWallet: body.holder_wallet_address,
+      requireActionAuthorization: true,
+      actionChallengeId: body.action_challenge_id,
+      actionSignature: body.action_signature,
+      applicationId: app.id,
+      policyId: app.policy_id,
+    });
+    if (!gated.ok) return gated.response;
     const prepared = await prepareBlockchainNativeStudioHarness({
       applicationId: app.id,
       partnerId: auth.session.partnerId,
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       policyVersion: app.policy_version,
       policyTemplateId: app.policy_template_id,
       scenarioId: body.scenario_id ?? "approved",
-      holderWallet,
+      holderWallet: gated.holderWallet,
     });
     if (!prepared.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, prepared.code);
     return launchpadJson({
@@ -74,13 +80,18 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   if (body.phase === "build_transaction") {
+    const gated = await requireBlockchainNativeHolderWallet(req, {
+      claimedHolderWallet: body.holder_wallet_address,
+      applicationId: app.id,
+      policyId: app.policy_id,
+    });
+    if (!gated.ok) return gated.response;
     const token = body.prepare_token?.trim();
     if (!token) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "prepare_token_required");
-  if (!holderWallet) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
     const built = await buildBlockchainNativeStudioTransaction({
       applicationId: app.id,
       partnerId: auth.session.partnerId,
-      holderWallet,
+      holderWallet: gated.holderWallet,
       prepareToken: token,
     });
     if (!built.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 422, built.code);
@@ -95,17 +106,22 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   if (body.phase === "confirm") {
+    const gated = await requireBlockchainNativeHolderWallet(req, {
+      claimedHolderWallet: body.holder_wallet_address,
+      applicationId: app.id,
+      policyId: app.policy_id,
+    });
+    if (!gated.ok) return gated.response;
     const token = body.prepare_token?.trim();
     const signature = body.transaction_signature?.trim();
     if (!token) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "prepare_token_required");
     if (!signature) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "chain_transaction_signature_required");
-    if (!holderWallet) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "holder_wallet_required");
     const confirmed = await confirmBlockchainNativeStudioExecution({
       applicationId: app.id,
       partnerId: auth.session.partnerId,
       policyId: app.policy_id,
       policyTemplateId: app.policy_template_id,
-      holderWallet,
+      holderWallet: gated.holderWallet,
       prepareToken: token,
       transactionSignature: signature,
     });

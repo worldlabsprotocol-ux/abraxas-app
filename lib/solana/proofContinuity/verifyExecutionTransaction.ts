@@ -18,6 +18,7 @@ export type ExecutionTxExpectations = {
   executionNonce: bigint;
   expiresAt: bigint;
   statusVersion: bigint;
+  commitmentMessage: Buffer;
 };
 
 function buffersEqual(a: Buffer, b: Buffer): boolean {
@@ -46,6 +47,27 @@ function decodeExecuteHarnessRunData(data: Buffer):
   off += 8;
   const statusVersion = data.readBigUInt64LE(off);
   return { executionNonce, receiptIdHash, payloadHash, expiresAt, statusVersion };
+}
+
+function ed25519InstructionMessage(data: Buffer): Buffer | null {
+  if (data.length < 16) return null;
+  const messageOffset = data.readUInt16LE(10);
+  const messageLen = data.readUInt16LE(12);
+  if (messageOffset + messageLen > data.length) return null;
+  return data.subarray(messageOffset, messageOffset + messageLen);
+}
+
+function holderSignedTransaction(tx: VersionedTransactionResponse, holderPk: PublicKey): boolean {
+  const message = tx.transaction.message;
+  const keys = message.getAccountKeys().staticAccountKeys.slice(0, message.header.numRequiredSignatures);
+  const holderIndex = keys.findIndex((pk) => pk.equals(holderPk));
+  if (holderIndex < 0) return false;
+  const signature = tx.transaction.signatures[holderIndex];
+  if (!signature) return false;
+  const bytes = typeof signature === "string"
+    ? Buffer.from(signature, "base64")
+    : Buffer.from(signature);
+  return bytes.length > 0 && bytes.some((byte) => byte !== 0);
 }
 
 async function requireFinalizedSignature(
@@ -92,10 +114,15 @@ export async function verifyExecutionTransaction(
     maxSupportedTransactionVersion: 0,
   });
   if (!tx) return { ok: false, reason: "chain_transaction_not_found" };
+  if (tx.meta?.err) return { ok: false, reason: "chain_transaction_failed" };
 
   const programId = proofContinuityProgramId();
   const holderPk = new PublicKey(expected.holder);
   const commitmentPk = new PublicKey(expected.commitment);
+  if (!holderSignedTransaction(tx, holderPk)) {
+    return { ok: false, reason: "chain_transaction_holder_not_signer" };
+  }
+
   const instructions = collectInstructions(tx);
   const executeIndex = instructions.findIndex(
     (ix) => ix.programId.equals(programId) && ix.data.subarray(0, 8).equals(EXECUTE_HARNESS_RUN_DISCRIMINATOR),
@@ -120,6 +147,10 @@ export async function verifyExecutionTransaction(
   const prior = instructions[executeIndex - 1]!;
   if (!prior.programId.equals(ED25519_PROGRAM_ID)) {
     return { ok: false, reason: "chain_transaction_ed25519_not_adjacent" };
+  }
+  const issuerMessage = ed25519InstructionMessage(prior.data);
+  if (!issuerMessage || !buffersEqual(issuerMessage, expected.commitmentMessage)) {
+    return { ok: false, reason: "chain_transaction_issuer_message_mismatch" };
   }
 
   const unrelatedProofIx = instructions.some(
