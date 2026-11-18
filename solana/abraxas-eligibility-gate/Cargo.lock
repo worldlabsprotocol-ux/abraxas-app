@@ -33,11 +33,20 @@ version = "0.1.0"
 dependencies = [
  "abraxas-eligibility-consumer",
  "abraxas-eligibility-gate",
+ "abraxas-proof-continuity",
  "abraxas-protocol-access",
  "anchor-lang",
  "solana-program-test",
  "solana-sdk",
  "tokio",
+]
+
+[[package]]
+name = "abraxas-proof-continuity"
+version = "0.1.0"
+dependencies = [
+ "abraxas-eligibility-gate",
+ "anchor-lang",
 ]
 
 [[package]]
