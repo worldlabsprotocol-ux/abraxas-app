@@ -29,6 +29,7 @@ import {
   INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
   INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
   INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
+  INTEGRATION_STUDIO_BLOCKCHAIN_NATIVE_NOTICE,
   INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
@@ -243,6 +244,15 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       operator_reviewed_policy: false,
       funds_movement: false,
       notice: INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
+    },
+    blockchain_native_launchpad: {
+      docs: "/docs/operations/BUILD_976_BLOCKCHAIN_NATIVE_STUDIO.md",
+      title: "Blockchain-native Launchpad continuity",
+      presentation_sufficient: false,
+      funds_movement: false,
+      creates_transactions: true,
+      calls_rpc: true,
+      notice: INTEGRATION_STUDIO_BLOCKCHAIN_NATIVE_NOTICE,
     },
     onchain_verifier_conformance: {
       docs: "/docs/onchain-verifier-conformance",

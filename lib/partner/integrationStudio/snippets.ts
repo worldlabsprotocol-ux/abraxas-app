@@ -21,6 +21,7 @@ import { crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainP
 import { testnetGateDeploymentExample } from "@/lib/partner/testnetGateDeploymentKit/examples";
 import { onchainVerifierConformanceExample } from "@/lib/partner/onchainVerifierConformance/examples";
 import { organizationEligibilityServerExample } from "@/lib/organizationEligibility/examples";
+import { blockchainNativeStudioServerExample } from "@/lib/partner/launchpad/blockchainNative/examples";
 import { nftCollectionGateServerExample } from "@/lib/partner/nftCollectionGate/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
@@ -146,6 +147,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/onchain-verifier-conformance",
       code: onchainVerifierConformanceExample(),
     },
+    blockchain_native_launchpad: {
+      title: "Blockchain-native Launchpad continuity",
+      docs: "/docs/operations/BUILD_976_BLOCKCHAIN_NATIVE_STUDIO.md",
+      code: blockchainNativeStudioServerExample(),
+    },
   };
 }
 
@@ -264,6 +270,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Verify your gate integration",
         docs: "/docs/onchain-verifier-conformance",
         code: onchainVerifierConformanceExample(),
+      };
+    case "blockchain_native_launchpad":
+      return {
+        title: "Blockchain-native Launchpad continuity",
+        docs: "/docs/operations/BUILD_976_BLOCKCHAIN_NATIVE_STUDIO.md",
+        code: blockchainNativeStudioServerExample(),
       };
     default: {
       const _never: never = path;

@@ -930,9 +930,12 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const venue = selection.path === "trading_venue" || selection.capabilities.includes("trading_venue");
   const activity = selection.capabilities.includes("partner_activity_signal");
   const payment = selection.path === "payment_authorization" || selection.capabilities.includes("payment_authorization");
+  const blockchainNativeLaunchpad = selection.path === "blockchain_native_launchpad"
+    || selection.capabilities.includes("blockchain_native_launchpad");
   const solana = selection.path === "solana_gate"
     || selection.capabilities.includes("solana_gate")
-    || selection.platform === "solana_backend";
+    || selection.platform === "solana_backend"
+    || blockchainNativeLaunchpad;
   const wallet = selection.path === "wallet_standard_binding" || selection.capabilities.includes("wallet_standard_binding");
   const portable = selection.path === "portable_action_contract" || selection.capabilities.includes("portable_action_contract");
   const evm = selection.path === "evm_partner_adapter" || selection.capabilities.includes("evm_partner_adapter");

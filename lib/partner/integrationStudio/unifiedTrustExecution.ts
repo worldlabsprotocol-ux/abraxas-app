@@ -1,6 +1,11 @@
 import type { IntegrationStudioPathId } from "./contract";
 
-export type IntegrationStudioExecutionMode = "offchain_portable" | "solana_finalized";
+export type IntegrationStudioExecutionMode =
+  | "offchain_portable"
+  | "solana_finalized"
+  | "blockchain_native_continuity";
+
+const BLOCKCHAIN_NATIVE_PATHS = new Set<IntegrationStudioPathId>(["blockchain_native_launchpad"]);
 
 const SOLANA_EXECUTION_PATHS = new Set<IntegrationStudioPathId>([
   "solana_gate",
@@ -15,8 +20,12 @@ const SOLANA_EXECUTION_PATHS = new Set<IntegrationStudioPathId>([
 export function resolveIntegrationStudioExecutionMode(
   pathId: IntegrationStudioPathId,
 ): IntegrationStudioExecutionMode {
+  if (BLOCKCHAIN_NATIVE_PATHS.has(pathId)) return "blockchain_native_continuity";
   return SOLANA_EXECUTION_PATHS.has(pathId) ? "solana_finalized" : "offchain_portable";
 }
+
+export const BLOCKCHAIN_NATIVE_STUDIO_PENDING_MESSAGE =
+  "Sign the prepared Solana transaction with your connected wallet. Abraxas will wait for finalized chain state before recording success.";
 
 export type UnifiedTrustExecutionJourney = {
   phase: "awaiting_holder_authorization" | "authorized_pending_execution" | "executed" | "expired" | "failed";

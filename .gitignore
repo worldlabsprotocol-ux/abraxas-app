@@ -65,6 +65,7 @@ fix_*.py
 # Solana SBF / ProgramTest output (never commit ELFs or generated deploy keypairs)
 /solana/**/target/
 /solana/**/test-ledger/
+/test-ledger/
 /solana/**/*.so
 /solana/**/*-keypair.json
 

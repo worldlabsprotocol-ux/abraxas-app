@@ -33,15 +33,53 @@ import {
   classifyPortableDecision,
   independentlyAccepted,
   resolveIntegrationStudioExecutionMode,
+  BLOCKCHAIN_NATIVE_STUDIO_PENDING_MESSAGE,
   SOLANA_EXECUTION_PENDING_MESSAGE,
   type IllustrativeIndependentVerification,
   type UnifiedTrustExecutionJourney,
 } from "@/lib/partner/integrationStudio/unifiedTrustExecution";
+import { signAndSendPreparedSolanaTransaction } from "@/lib/partner/launchpad/blockchainNative/clientWalletExecution";
+import { fetchWalletActionChallenge, signWalletActionChallenge } from "@/lib/auth/ephemeralWallet/clientActionAuth";
 import { BuilderPortableReceiptExportPanel } from "@/components/developers/BuilderPortableReceiptExportPanel";
+import { useWallet, type WalletContextState } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 const pendingReceiptKey = (applicationId: string) => `abraxas:harness-pending:${applicationId}`;
+const blockchainNativePrepareKey = (applicationId: string) => `abraxas:blockchain-native-prepare:${applicationId}`;
+
+type BlockchainNativePrepareView = {
+  prepare_token: string;
+  receipt_id: string;
+  payload_hash_hex: string;
+  execution_nonce: string;
+  holder_wallet: string;
+  registry_pda: string;
+  commitment_pda: string;
+  rpc_url: string;
+};
+
+function readBlockchainNativePrepare(applicationId: string): BlockchainNativePrepareView | null {
+  try {
+    const raw = sessionStorage.getItem(blockchainNativePrepareKey(applicationId));
+    return raw ? JSON.parse(raw) as BlockchainNativePrepareView : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveBlockchainNativePrepare(applicationId: string, value: BlockchainNativePrepareView) {
+  try {
+    sessionStorage.setItem(blockchainNativePrepareKey(applicationId), JSON.stringify(value));
+  } catch { /* refresh-safe resume when possible */ }
+}
+
+function clearBlockchainNativePrepare(applicationId: string) {
+  try {
+    sessionStorage.removeItem(blockchainNativePrepareKey(applicationId));
+  } catch { /* no chain state stored here */ }
+}
 
 function readPendingReceipt(applicationId: string): ReturnType<typeof formatHarnessResultForBuilder> | null {
   try {
@@ -91,12 +129,22 @@ export function IntegrationStudioRequestWorkbench({
   const [outcome, setOutcome] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [pendingReceipt, setPendingReceipt] = useState<ReturnType<typeof formatHarnessResultForBuilder> | null>(null);
   const [trustJourney, setTrustJourney] = useState<UnifiedTrustExecutionJourney | null>(null);
+  const [blockchainPrepare, setBlockchainPrepare] = useState<BlockchainNativePrepareView | null>(null);
+  const [blockchainPhase, setBlockchainPhase] = useState<"idle" | "prepared" | "submitting" | "confirming">("idle");
+  const { publicKey, signTransaction, signMessage, connected, connect, wallet } = useWallet();
+  const { setVisible: setWalletModalVisible } = useWalletModal();
   const continueInFlight = useRef(false);
   const [browserOrigin, setBrowserOrigin] = useState<string | null>(null);
 
   useEffect(() => {
     setBrowserOrigin(getPublicAppOrigin());
   }, []);
+
+  useEffect(() => {
+    if (!applicationId) return;
+    const restored = readBlockchainNativePrepare(applicationId);
+    if (restored?.receipt_id) setBlockchainPrepare(restored);
+  }, [applicationId]);
 
   useEffect(() => {
     const challengeId = new URLSearchParams(window.location.search).get("trust_execution_challenge")?.trim();
@@ -111,8 +159,8 @@ export function IntegrationStudioRequestWorkbench({
     });
   }, [trustJourney]);
 
-  async function startUnifiedTrustExecution() {
-    if (!applicationId) return;
+  async function ensureWalletSessionForStudio():
+    Promise<{ ok: true; wallet_address: string } | { ok: false }> {
     const sessionRes = await fetch("/api/auth/wallet/session", {
       credentials: "include",
       cache: "no-store",
@@ -122,15 +170,10 @@ export function IntegrationStudioRequestWorkbench({
       wallet_address?: string;
     };
     if (!sessionRes.ok || !session.authenticated || !session.wallet_address) {
-      const walletFailure = {
-        ok: false as const,
+      recordHttpTrace({ method: "GET", path: "/api/auth/wallet/session" }, {
+        ok: false,
         code: "wallet_authorization_required",
-        error: "Wallet session required for sandbox trust execution",
-      };
-      recordHttpTrace(
-        { method: "GET", path: "/api/auth/wallet/session" },
-        walletFailure,
-      );
+      });
       setFailure({
         kind: "action_required",
         headline: "Wallet authorization required",
@@ -138,15 +181,233 @@ export function IntegrationStudioRequestWorkbench({
         actionLabel: "Resume sign-in",
         refreshSession: true,
       });
+      return { ok: false };
+    }
+    return { ok: true, wallet_address: session.wallet_address };
+  }
+
+  async function ensureSolanaWalletReady(holderAddress: string): Promise<boolean> {
+    if (!connected || !publicKey) {
+      if (wallet) {
+        await connect().catch(() => undefined);
+      } else {
+        setWalletModalVisible(true);
+      }
+    }
+    if (!publicKey) {
+      setFailure({
+        kind: "action_required",
+        headline: "Connect your Solana wallet",
+        detail: "Connect the wallet that will authorize this sandbox action on Solana.",
+        actionLabel: "Connect wallet",
+        refreshSession: false,
+      });
+      return false;
+    }
+    if (publicKey.toBase58() !== holderAddress) {
+      setError("The connected wallet must match your signed-in holder wallet.");
+      return false;
+    }
+    if (!signTransaction) {
+      setError("This wallet cannot sign Solana transactions. Try Phantom or another compatible wallet.");
+      return false;
+    }
+    return true;
+  }
+
+  async function submitPreparedChainTransaction(
+    prepare: BlockchainNativePrepareView,
+    signTx: NonNullable<WalletContextState["signTransaction"]>,
+  ): Promise<string | null> {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const buildRes = await fetch(`/api/launchpad/applications/${applicationId}/blockchain-native-execution`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          phase: "build_transaction",
+          prepare_token: prepare.prepare_token,
+          holder_wallet_address: prepare.holder_wallet,
+        }),
+      });
+      const built = await buildRes.json().catch(() => ({})) as {
+        code?: string;
+        transaction_base64?: string;
+        recent_blockhash?: string;
+        last_valid_block_height?: number;
+        kind?: "register_sandbox" | "execute_harness_run";
+      };
+      if (!buildRes.ok || !built.transaction_base64 || !built.recent_blockhash || !built.last_valid_block_height) {
+        setFailure(presentIntegrationTestFailure(buildRes.status, built));
+        return null;
+      }
+      const signature = await signAndSendPreparedSolanaTransaction({
+        rpcUrl: prepare.rpc_url,
+        transactionBase64: built.transaction_base64,
+        recentBlockhash: built.recent_blockhash,
+        lastValidBlockHeight: built.last_valid_block_height,
+        signTransaction: signTx,
+      });
+      recordHttpTrace(
+        { method: "POST", path: `/api/launchpad/applications/${applicationId}/blockchain-native-execution`, phase: built.kind },
+        { ok: true, signature },
+      );
+      if (built.kind === "execute_harness_run") return signature;
+    }
+    setError("The on-chain sandbox binding could not be registered. Try again.");
+    return null;
+  }
+
+  async function runBlockchainNativeStudioJourney() {
+    if (!applicationId) return;
+    const sessionWallet = await ensureWalletSessionForStudio();
+    if (!sessionWallet.ok) return;
+    if (!(await ensureSolanaWalletReady(sessionWallet.wallet_address))) return;
+    if (!signTransaction) return;
+
+    if (!signMessage) {
+      setError("This wallet cannot sign authorization messages. Try Phantom or another compatible wallet.");
       return;
     }
+    if (!policyId) {
+      setError("Policy context is required before preparing a blockchain-native test.");
+      return;
+    }
+    const actionResource = `abraxas:launchpad:${applicationId}:blockchain-native`;
+    const challenged = await fetchWalletActionChallenge({
+      operation: "sandbox:verification:test",
+      resource: actionResource,
+      policyId,
+    });
+    if (!challenged.ok) {
+      setFailure(presentIntegrationTestFailure(403, { code: challenged.code ?? "action_authorization_required" }));
+      return;
+    }
+    const signedAction = await signWalletActionChallenge({
+      challenge: challenged.challenge,
+      signMessage: (message) => signMessage(message),
+    });
+    if (!signedAction.ok) {
+      setError("Wallet authorization was not completed. Review the request in your wallet and try again.");
+      return;
+    }
+
+    setBlockchainPhase("prepared");
+    const prepareRes = await fetch(`/api/launchpad/applications/${applicationId}/blockchain-native-execution`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        phase: "prepare",
+        scenario_id: scenarioId,
+        holder_wallet_address: sessionWallet.wallet_address,
+        action_challenge_id: signedAction.action_challenge_id,
+        action_signature: signedAction.signature,
+      }),
+    });
+    const prepared = await prepareRes.json().catch(() => ({})) as BlockchainNativePrepareView & {
+      code?: string;
+      prepare_token?: string;
+    };
+    if (!prepareRes.ok || !prepared.prepare_token || !prepared.receipt_id) {
+      setFailure(presentIntegrationTestFailure(prepareRes.status, prepared));
+      setBlockchainPhase("idle");
+      return;
+    }
+    const prepareView: BlockchainNativePrepareView = {
+      prepare_token: prepared.prepare_token,
+      receipt_id: prepared.receipt_id,
+      payload_hash_hex: prepared.payload_hash_hex,
+      execution_nonce: prepared.execution_nonce,
+      holder_wallet: prepared.holder_wallet,
+      registry_pda: prepared.registry_pda,
+      commitment_pda: prepared.commitment_pda,
+      rpc_url: prepared.rpc_url,
+    };
+    setBlockchainPrepare(prepareView);
+    saveBlockchainNativePrepare(applicationId, prepareView);
+
+    setBlockchainPhase("submitting");
+    let signature: string | null = null;
+    try {
+      signature = await submitPreparedChainTransaction(prepareView, signTransaction);
+    } catch {
+      setFailure({
+        kind: "test_failed",
+        headline: "Solana transaction did not complete",
+        detail: "The wallet rejected the request, the network could not be reached, or fees were insufficient.",
+        actionLabel: "Try test again",
+        refreshSession: false,
+      });
+      setBlockchainPhase("prepared");
+      return;
+    }
+    if (!signature) {
+      setBlockchainPhase("prepared");
+      return;
+    }
+
+    setBlockchainPhase("confirming");
+    const confirmRes = await fetch(`/api/launchpad/applications/${applicationId}/blockchain-native-execution`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        phase: "confirm",
+        prepare_token: prepareView.prepare_token,
+        holder_wallet_address: prepareView.holder_wallet,
+        transaction_signature: signature,
+      }),
+    });
+    const confirmed = await confirmRes.json().catch(() => ({})) as {
+      code?: string;
+      independent_verification?: IllustrativeIndependentVerification;
+      receipt_id?: string;
+    };
+    if (!confirmRes.ok || !confirmed.receipt_id) {
+      setFailure(presentIntegrationTestFailure(confirmRes.status, confirmed));
+      setBlockchainPhase("prepared");
+      return;
+    }
+    if (!independentlyAccepted(confirmed.independent_verification)) {
+      setError("Independent verification did not fully accept the signed receipt. No successful test was recorded.");
+      setBlockchainPhase("prepared");
+      return;
+    }
+    clearBlockchainNativePrepare(applicationId);
+    setBlockchainPrepare(null);
+    setBlockchainPhase("idle");
+    setOutcome({
+      headline: "Blockchain-native test verified.",
+      summary: "Your wallet executed the sandbox action on Solana. Abraxas independently verified the portable receipt against finalized on-chain state.",
+      tone: "success",
+      observedAccess: "allow",
+      passed: true,
+      nextActionLabel: "Connect my application",
+      receiptId: confirmed.receipt_id,
+    });
+    persistHarnessSuccess(applicationId, {
+      headline: "Blockchain-native test verified.",
+      summary: "",
+      tone: "success",
+      observedAccess: "allow",
+      passed: true,
+      nextActionLabel: "Connect my application",
+      receiptId: confirmed.receipt_id,
+    });
+  }
+
+  async function startUnifiedTrustExecution() {
+    if (!applicationId) return;
+    const wallet = await ensureWalletSessionForStudio();
+    if (!wallet.ok) return;
 
     const res = await fetch(`/api/launchpad/applications/${applicationId}/sovereign-trust-execution`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({
-        holder_wallet_address: session.wallet_address,
+        holder_wallet_address: wallet.wallet_address,
         solana_network: "devnet",
         defer_execution: true,
       }),
@@ -335,9 +596,39 @@ export function IntegrationStudioRequestWorkbench({
     setFailure(null);
     setOutcome(null);
     setTrustJourney(null);
-    if (resolveIntegrationStudioExecutionMode(pathId) === "solana_finalized") {
+    const executionMode = resolveIntegrationStudioExecutionMode(pathId);
+    if (executionMode === "solana_finalized") {
       setError(SOLANA_EXECUTION_PENDING_MESSAGE);
       setBusy(false);
+      return;
+    }
+    if (executionMode === "blockchain_native_continuity") {
+      try {
+        if (scenarioId === "approved") {
+          await runBlockchainNativeStudioJourney();
+        } else {
+          const requestBody = buildLaunchpadTestScenarioRequestBody({ scenarioId, returnUrl });
+          const res = await fetch(`/api/launchpad/applications/${applicationId}/test`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(requestBody),
+          });
+          const data = await res.json().catch(() => ({})) as { result?: LaunchpadTestRunResult };
+          if (res.ok && data.result) setOutcome(formatHarnessResultForBuilder(data.result));
+          else setFailure(presentIntegrationTestFailure(res.status, data as { code?: string }));
+        }
+      } catch {
+        setFailure({
+          kind: "test_failed",
+          headline: "Blockchain-native test did not complete",
+          detail: "Check pinned RPC configuration and try again.",
+          actionLabel: "Try test again",
+          refreshSession: false,
+        });
+      } finally {
+        setBusy(false);
+      }
       return;
     }
     if (scenarioId === "approved") {
@@ -479,8 +770,8 @@ export function IntegrationStudioRequestWorkbench({
       <BuilderActiveTask
         taskKey="run-sandbox-test"
         testId="builder-run-test-minimal"
-        title={busy ? "Running your test" : failed ? "Your test needs attention" : trustJourney ? "Authorize the sandbox action" : "Run a sandbox test"}
-        description={failed ? "Check the result, then try again." : trustJourney ? "Sign the action-specific request, then verify the resulting receipt." : "See how your app receives a verified result."}
+        title={busy ? "Running your test" : failed ? "Your test needs attention" : blockchainPhase === "submitting" ? "Sign in your wallet" : trustJourney ? "Authorize the sandbox action" : "Run a sandbox test"}
+        description={failed ? "Check the result, then try again." : blockchainPhase === "submitting" ? BLOCKCHAIN_NATIVE_STUDIO_PENDING_MESSAGE : trustJourney ? "Sign the action-specific request, then verify the resulting receipt." : "See how your app receives a verified result."}
         state={busy ? "pending" : failed ? "failure" : "ready"}
         status={busy ? "Running against your sandbox app" : failure?.headline ?? (failed ? outcome?.headline : undefined)}
         error={failure?.detail ?? error}
@@ -498,6 +789,9 @@ export function IntegrationStudioRequestWorkbench({
         {!applicationId ? <p className="abx-builder-journey-support">Create your test app first.</p> : null}
         {trustJourney?.phase === "awaiting_holder_authorization" ? (
           <p className="abx-builder-journey-support">Review and sign the action-specific request, then return here and check authorization.</p>
+        ) : null}
+        {blockchainPrepare?.receipt_id && blockchainPhase !== "idle" ? (
+          <p className="abx-builder-journey-support">Preparing receipt <code>{blockchainPrepare.receipt_id}</code> for your wallet.</p>
         ) : null}
       </BuilderActiveTask>
     );
@@ -552,6 +846,9 @@ export function IntegrationStudioRequestWorkbench({
           <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0 0 0.75rem" }}>
             return_url: {returnUrl}
           </p>
+          {blockchainPhase === "submitting" ? (
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0 0 0.75rem" }}>{BLOCKCHAIN_NATIVE_STUDIO_PENDING_MESSAGE}</p>
+          ) : null}
           {error && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)" }}>{error}</p>}
           {outcome && !busy ? (
             <div
