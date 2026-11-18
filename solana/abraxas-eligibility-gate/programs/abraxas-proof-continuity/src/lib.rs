@@ -15,8 +15,12 @@ pub const COMMITMENT_SEED: &[u8] = b"receipt_commitment";
 pub const SANDBOX_BINDING_SEED: &[u8] = b"sandbox_binding";
 pub const EXECUTION_LEDGER_SEED: &[u8] = b"execution_ledger";
 pub const PROOF_CONTINUITY_PREFIX: &[u8] = b"ABRAXAS_PROOF_CONTINUITY_V1";
+/// Status changes use a separate signed domain and include the requested status.
+pub const STATUS_UPDATE_PREFIX: &[u8] = b"ABRAXAS_PROOF_STATUS_V1";
 pub const COMMITMENT_MESSAGE_LEN: usize =
     PROOF_CONTINUITY_PREFIX.len() + 32 + 32 + 32 + 32 + 32 + 8 + 8 + 8;
+pub const STATUS_UPDATE_MESSAGE_LEN: usize =
+    STATUS_UPDATE_PREFIX.len() + 32 + 32 + 32 + 32 + 32 + 8 + 8 + 8 + 1;
 
 pub const STATUS_ACTIVE: u8 = 0;
 pub const STATUS_REVOKED: u8 = 1;
@@ -181,7 +185,8 @@ pub mod abraxas_proof_continuity {
         );
 
         let (pubkey, message) = verified_issuer_message(&ctx.accounts.instructions, registry)?;
-        let fields = parse_commitment_message(&message)?;
+        let (fields, authorized_status) = parse_status_update_message(&message)?;
+        require!(authorized_status == status, ProofContinuityError::StatusSignatureMismatch);
         require_scope_match(registry, &fields)?;
         require!(fields.receipt_id_hash == receipt_id_hash, ProofContinuityError::ReceiptMismatch);
         require!(fields.payload_hash == payload_hash, ProofContinuityError::PayloadMismatch);
@@ -193,6 +198,13 @@ pub mod abraxas_proof_continuity {
             ProofContinuityError::StaleVersion
         );
 
+        // Authorization for a status change cannot extend the receipt lifetime.
+        require!(expires_at <= commitment.expires_at, ProofContinuityError::ExpiryExtensionRejected);
+        // Terminal states must never be reopened by a later signed update.
+        require!(
+            commitment.status == STATUS_ACTIVE || status != STATUS_ACTIVE,
+            ProofContinuityError::TerminalStatusReactivation
+        );
         commitment.status = status;
         commitment.status_version = status_version;
         commitment.expires_at = expires_at;
@@ -311,6 +323,25 @@ fn parse_commitment_message(message: &[u8]) -> Result<CommitmentMessageFields> {
         status_version,
         execution_nonce,
     })
+}
+
+/// Require the issuer to sign the requested status under a separate domain.
+fn parse_status_update_message(message: &[u8]) -> Result<(CommitmentMessageFields, u8)> {
+    require!(
+        message.len() == STATUS_UPDATE_MESSAGE_LEN,
+        ProofContinuityError::InvalidMessage
+    );
+    require!(
+        message.starts_with(STATUS_UPDATE_PREFIX),
+        ProofContinuityError::InvalidMessage
+    );
+    let status = *message.last().ok_or(ProofContinuityError::InvalidMessage)?;
+    let mut canonical = Vec::with_capacity(COMMITMENT_MESSAGE_LEN);
+    canonical.extend_from_slice(PROOF_CONTINUITY_PREFIX);
+    canonical.extend_from_slice(
+        &message[STATUS_UPDATE_PREFIX.len()..message.len() - 1]
+    );
+    Ok((parse_commitment_message(&canonical)?, status))
 }
 
 fn require_scope_match(
@@ -589,6 +620,12 @@ pub enum ProofContinuityError {
     WrongRegistry,
     #[msg("invalid_status")]
     InvalidStatus,
+    #[msg("status_signature_mismatch")]
+    StatusSignatureMismatch,
+    #[msg("terminal_status_reactivation")]
+    TerminalStatusReactivation,
+    #[msg("expiry_extension_rejected")]
+    ExpiryExtensionRejected,
     #[msg("not_acceptable")]
     NotAcceptable,
     #[msg("expired")]
