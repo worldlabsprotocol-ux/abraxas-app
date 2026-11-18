@@ -1,0 +1,70 @@
+{
+  "build": "981",
+  "environment": "local_program_test",
+  "proof_continuity_program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+  "entitlement_consumer_program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+  "token_program_id": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "execution_kind": "banks_client_transaction",
+  "stages": [
+    {
+      "stage": "register_proof_registry",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "8WLHfJ7osfYo1FP6josu3ZamrrsKCGV2PzvrF4kvmSYe"
+      ],
+      "accounts": {},
+      "notes": "ProofContinuityRegistry initialized"
+    },
+    {
+      "stage": "initialize_partner_trusted_config",
+      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "outcome": "success",
+      "signers": [
+        "EmgeEwKCEJymqBNQc8Ev97MnT3EZ3DYwMvb7mpeSHcCs"
+      ],
+      "accounts": {
+        "trusted_config": "J2LhnEqFbcf4j5HrTtzjtPZCwR41bpBz1ZNqQU7C1Qx2"
+      },
+      "notes": "Partner-owned relying-party configuration PDA"
+    },
+    {
+      "stage": "mint_verified_entitlement",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "pmG8k1Wd9aj8UfEbSAFH2Eib5CTnMXUiavQzPJqPLRp"
+      ],
+      "accounts": {
+        "commitment": "FPW5zUffBATqzn65T61yWqAaN3QCq138aQsaPunzy2XC",
+        "mint": "8T535JeDKDGQW7HpuyYY1GMRoyYnvHtucRH4a3HkcyZp"
+      },
+      "notes": "Token-2022 non-transferable entitlement issued"
+    },
+    {
+      "stage": "partner_consume_verified_entitlement",
+      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "outcome": "success",
+      "signers": [
+        "pmG8k1Wd9aj8UfEbSAFH2Eib5CTnMXUiavQzPJqPLRp",
+        "8WLHfJ7osfYo1FP6josu3ZamrrsKCGV2PzvrF4kvmSYe"
+      ],
+      "accounts": {
+        "consumption": "AncDhYL8eYAr6VjUEtq5DNrsWfDdBYg5qiRJZVs8vyZA"
+      },
+      "notes": "On-chain consumption record created"
+    }
+  ],
+  "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+  "registry": "6k33NB87kUBjE218AhefDoKx46GHuDyJabTdTBkQnv2h",
+  "trusted_config": "J2LhnEqFbcf4j5HrTtzjtPZCwR41bpBz1ZNqQU7C1Qx2",
+  "commitment": "FPW5zUffBATqzn65T61yWqAaN3QCq138aQsaPunzy2XC",
+  "entitlement_mint": "8T535JeDKDGQW7HpuyYY1GMRoyYnvHtucRH4a3HkcyZp",
+  "holder_wallet": "pmG8k1Wd9aj8UfEbSAFH2Eib5CTnMXUiavQzPJqPLRp",
+  "consumption_account": "AncDhYL8eYAr6VjUEtq5DNrsWfDdBYg5qiRJZVs8vyZA",
+  "token_balance": 1,
+  "commitment_status": 0,
+  "consumption_recorded": true,
+  "independent_verification_ok": true,
+  "recorded_at_unix_ms": 1795045368389
+}

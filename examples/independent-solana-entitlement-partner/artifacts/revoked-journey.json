@@ -1,0 +1,52 @@
+{
+  "build": "981",
+  "environment": "local_program_test",
+  "proof_continuity_program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+  "entitlement_consumer_program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+  "token_program_id": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "execution_kind": "banks_client_transaction",
+  "stages": [
+    {
+      "stage": "mint",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "9wUopxx4o152CdjKDGoRQTQk7nc8dC9bGLdyXKjR4pHw"
+      ],
+      "accounts": {},
+      "notes": null
+    },
+    {
+      "stage": "revoke",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "5PpTjtreM5ZpksUxobGtvzfoowYoqKXjyqeUfJVnUppt"
+      ],
+      "accounts": {},
+      "notes": "issuer-signed status update"
+    },
+    {
+      "stage": "consume",
+      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "outcome": "rejected",
+      "signers": [
+        "9wUopxx4o152CdjKDGoRQTQk7nc8dC9bGLdyXKjR4pHw"
+      ],
+      "accounts": {},
+      "notes": "revoked proof — possession insufficient"
+    }
+  ],
+  "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+  "registry": "3moVbSXCYwKeUzVsjYVzgDMiQkzzbJYSCRxEApmXaiMJ",
+  "trusted_config": "BvLES792rRX9a5jrhfUNSqsS7Wvjsse9rewmLars9dJw",
+  "commitment": "wheVJ81GhaLW6XQPNopTFYr3AAzEMuqDPeuu41tRduS",
+  "entitlement_mint": "76JnoUqei9eQ7qa7FQ7yY3n9EFMMxiqfAAmUpWnHnYXx",
+  "holder_wallet": "9wUopxx4o152CdjKDGoRQTQk7nc8dC9bGLdyXKjR4pHw",
+  "consumption_account": null,
+  "token_balance": 1,
+  "commitment_status": 1,
+  "consumption_recorded": false,
+  "independent_verification_ok": false,
+  "recorded_at_unix_ms": 1795045368394
+}

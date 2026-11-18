@@ -37,6 +37,8 @@ dependencies = [
  "abraxas-proof-entitlement-consumer",
  "abraxas-protocol-access",
  "anchor-lang",
+ "serde",
+ "serde_json",
  "solana-program-test",
  "solana-sdk",
  "spl-associated-token-account 2.3.0",
