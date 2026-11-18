@@ -500,7 +500,8 @@ pub struct OpenReceiptCommitment<'info> {
     pub payer: Signer<'info>,
     #[account(
         seeds = [REGISTRY_SEED, registry.admin.as_ref()],
-        bump = registry.bump
+        bump = registry.bump,
+        constraint = registry.admin == payer.key() @ ProofContinuityError::UnauthorizedRegistryAdmin
     )]
     pub registry: Account<'info, ProofContinuityRegistry>,
     #[account(
@@ -632,6 +633,8 @@ pub enum ProofContinuityError {
     Expired,
     #[msg("unauthorized_wallet")]
     UnauthorizedWallet,
+    #[msg("unauthorized_registry_admin")]
+    UnauthorizedRegistryAdmin,
     #[msg("replay_rejected")]
     ReplayRejected,
 }
