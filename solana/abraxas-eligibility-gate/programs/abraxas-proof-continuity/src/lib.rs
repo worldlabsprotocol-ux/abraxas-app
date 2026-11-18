@@ -9,7 +9,7 @@ use anchor_lang::solana_program::{
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{self, Mint, Token2022, TokenAccount, TokenInterface},
+    token_interface::{self, Mint, Token2022, TokenAccount},
 };
 
 declare_id!("FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1");
@@ -750,7 +750,7 @@ pub struct InitializeEntitlementMint<'info> {
         bump
     )]
     pub mint_authority: UncheckedAccount<'info>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     pub system_program: Program<'info, System>,
 }
 
@@ -818,7 +818,7 @@ pub struct MintVerifiedEntitlement<'info> {
         bump
     )]
     pub mint_authority: UncheckedAccount<'info>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
