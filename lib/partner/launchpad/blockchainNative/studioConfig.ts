@@ -19,7 +19,8 @@ export function blockchainNativeRegistryAdmin(): string | null {
 
 export function blockchainNativeFinalitySlots(): number {
   const raw = Number(process.env.ABRAXAS_PROOF_CONTINUITY_FINALITY_SLOTS ?? "32");
-  return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 32;
+  if (!Number.isFinite(raw) || raw < 0) return 32;
+  return Math.floor(raw);
 }
 
 export function isBlockchainNativeStudioConfigured(): boolean {

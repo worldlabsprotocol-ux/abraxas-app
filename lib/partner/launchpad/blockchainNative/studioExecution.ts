@@ -22,7 +22,6 @@ import { issuePrepareBindingToken, verifyPrepareBindingToken } from "./prepareBi
 import { buildStudioChainTransaction, readNextExecutionNonce } from "./buildStudioChainTransaction.server";
 import {
   assertPrepareJtiNotReusedWithOtherTx,
-  readCachedBlockchainNativeConfirm,
   requireBlockchainNativeConfirmStore,
   writeCachedBlockchainNativeConfirm,
 } from "./prepareBindingStore";
@@ -175,13 +174,6 @@ export async function confirmBlockchainNativeStudioExecution(input: {
     holder_wallet: input.holderWallet,
   });
   if (!verified.ok) return verified;
-
-  const cached = await readCachedBlockchainNativeConfirm({
-    applicationId: input.applicationId,
-    receiptId: verified.binding.receipt_id,
-    transactionSignature: signature,
-  });
-  if (cached) return cached;
 
   const binding = verified.binding;
   if (binding.policy_id !== input.policyId) return { ok: false as const, code: "prepare_binding_policy_mismatch" };

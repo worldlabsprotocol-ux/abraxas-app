@@ -6,6 +6,7 @@ import {
 } from "@solana/web3.js";
 import {
   EXECUTE_HARNESS_RUN_DISCRIMINATOR,
+  INITIALIZE_PROOF_REGISTRY_DISCRIMINATOR,
   REGISTER_SANDBOX_BINDING_DISCRIMINATOR,
 } from "./instructionDiscriminator";
 import {
@@ -16,6 +17,38 @@ import {
   proofContinuityProgramId,
 } from "./pda";
 import { encodeCommitmentMessage, hashScopeId } from "./message";
+
+export function buildInitializeProofRegistryInstruction(input: {
+  admin: PublicKey;
+  trustedIssuerPubkey32: Buffer;
+  partnerId: string;
+  policyId: string;
+  applicationId: string;
+}): TransactionInstruction {
+  if (input.trustedIssuerPubkey32.length !== 32) {
+    throw new Error("trusted_issuer_pubkey_invalid");
+  }
+  const registry = findProofRegistryPda(input.admin);
+  const data = Buffer.alloc(8 + 32 + 32 + 32 + 32);
+  INITIALIZE_PROOF_REGISTRY_DISCRIMINATOR.copy(data, 0);
+  let off = 8;
+  input.trustedIssuerPubkey32.copy(data, off);
+  off += 32;
+  hashScopeId(input.partnerId).copy(data, off);
+  off += 32;
+  hashScopeId(input.policyId).copy(data, off);
+  off += 32;
+  hashScopeId(input.applicationId).copy(data, off);
+  return new TransactionInstruction({
+    programId: proofContinuityProgramId(),
+    keys: [
+      { pubkey: input.admin, isSigner: true, isWritable: true },
+      { pubkey: registry.address, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
 
 export type HarnessRunInstructionParams = {
   registryAdmin: PublicKey;

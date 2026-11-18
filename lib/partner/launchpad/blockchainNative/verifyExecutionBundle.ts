@@ -1,4 +1,5 @@
 import {
+  authorityCheckpointFromStatement,
   verifyAbraxasReceiptIndependently,
   type IndependentVerificationResult,
   type TrustAnchorBundleV1,
@@ -12,6 +13,8 @@ import { encodeCommitmentMessage, hashReceiptId, hashScopeId } from "@/lib/solan
 import { findProofRegistryPda, findReceiptCommitmentPda } from "@/lib/solana/proofContinuity/pda";
 import { PublicKey } from "@solana/web3.js";
 import { independentVerificationFullyAccepts } from "./independentAcceptance";
+import { harnessPersistenceToDecisionRecord } from "./studioHarnessRestore";
+import { toIndependentVerifierRecord } from "@/lib/decisionReceipts/independentVerifierBridge";
 
 export type BlockchainNativeExecutionBundleResult =
   | {
@@ -50,7 +53,7 @@ export async function verifyBlockchainNativeExecutionBundle(input: {
   if (!persistence) return { ok: false, code: "portable_receipt_missing_payload_hash" };
 
   const portable = verifyAbraxasReceiptIndependently({
-    record: persistence.public_payload as Parameters<typeof verifyAbraxasReceiptIndependently>[0]["record"],
+    record: toIndependentVerifierRecord(harnessPersistenceToDecisionRecord(persistence)),
     pinnedTrustAnchor: input.pinnedTrustAnchor,
     signedIssuerAuthority: input.signedIssuerAuthority as Parameters<
       typeof verifyAbraxasReceiptIndependently
@@ -64,6 +67,9 @@ export async function verifyBlockchainNativeExecutionBundle(input: {
       environment: "demo",
     },
     statementObservedAt: input.signedStatusStatement.payload.effective_at,
+    ...authorityCheckpointFromStatement(
+      input.signedIssuerAuthority as Parameters<typeof authorityCheckpointFromStatement>[0],
+    ),
   });
 
   if (!independentVerificationFullyAccepts(portable)) {

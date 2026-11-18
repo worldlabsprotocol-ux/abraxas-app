@@ -47,6 +47,17 @@ cargo test --test proof_continuity --test blockchain_native_journey -- --nocaptu
 npm run test:build-976
 ```
 
+**Local execution acceptance** (Solana CLI + disposable `solana-test-validator`; holder signs like browser wallet adapter):
+
+```bash
+# Installs Solana CLI if missing; starts validator, prepares, signs, confirms, independent verify.
+npm run accept:build-976-local
+```
+
+Set `ABRAXAS_BUILD976_LOCAL_ACCEPTANCE=1` to run the vitest entry directly. Artifact: `/opt/cursor/artifacts/build976-local-acceptance.json` when run in cloud agents.
+
+**Note:** Confirm no longer returns stale cached portable results — every confirm re-runs live independent verification (idempotent only for execution binding).
+
 ## GO / NO-GO
 
 | Gate | Status |

@@ -69,8 +69,11 @@ export async function buildStudioChainTransaction(input: {
 
   const registry = findProofRegistryPda(adminPk);
   const sandbox = findSandboxBindingPda(registry.address, holderPk);
-  const sandboxInfo = await connection.getAccountInfo(sandbox.address, { commitment: "finalized" });
-  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("finalized");
+  let sandboxInfo = await connection.getAccountInfo(sandbox.address, { commitment: "finalized" });
+  if (!sandboxInfo) {
+    sandboxInfo = await connection.getAccountInfo(sandbox.address, { commitment: "confirmed" });
+  }
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
   const tx = new Transaction({ feePayer: holderPk, recentBlockhash: blockhash });
 
   if (!sandboxInfo) {
