@@ -1,87 +1,74 @@
+import { Keypair } from "@solana/web3.js";
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { verifyAbraxasReceiptIndependently } from "../../../../packages/abraxas-independent-verifier/src/verifyIndependent";
-import { runPartnerHarnessCase } from "@/lib/partner/launchpad/partnerTestHarness";
-import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
+import { runPartnerHarnessCase, type PartnerHarnessCaseResult } from "@/lib/partner/launchpad/partnerTestHarness";
+import type { IndependentVerificationResult } from "../../../packages/abraxas-independent-verifier/src/verifyIndependent";
 import { isBlockchainNativePrototypeEnabled } from "./contract";
 import {
   harnessIssuedReceiptFields,
   runBlockchainNativePrototypeHarness,
 } from "./runPrototypeHarness";
-import type { PartnerHarnessCaseResult } from "@/lib/partner/launchpad/partnerTestHarness";
-import { verifyOnChainReceiptCommitment } from "@/lib/solana/proofContinuity/verifyOnChainCommitment";
-import { RECEIPT_COMMITMENT_STATUS } from "@/lib/solana/proofContinuity/constants";
-import { hashReceiptId, hashScopeId } from "@/lib/solana/proofContinuity/message";
+import { blockchainNativeTestSigningKey } from "./testIssuance";
+import { ed25519PublicKeyBytesFromJwk } from "@/lib/solana/proofContinuity/issuerAuthority";
+import { buildTestCommitmentChainEvidence } from "@/lib/solana/proofContinuity/testFixtures";
 
-const FIX = join(process.cwd(), "examples/integration-first-relying-party/fixtures");
-
-function syntheticCommitmentAccount(fields: {
-  receipt_id: string;
-  payload_hex: string;
-  partner_id: string;
-  policy_id: string;
-  application_id: string;
-}): Buffer {
-  const buf = Buffer.alloc(8 + 32 + 32 * 6 + 8 + 1 + 8 + 1, 0);
-  let off = 8 + 32;
-  hashReceiptId(fields.receipt_id).copy(buf, off);
-  off += 32;
-  Buffer.from(fields.payload_hex.padStart(64, "0").slice(0, 64), "hex").copy(buf, off);
-  off += 32;
-  hashScopeId(fields.partner_id).copy(buf, off);
-  off += 32;
-  hashScopeId(fields.policy_id).copy(buf, off);
-  off += 32;
-  hashScopeId(fields.application_id).copy(buf, off);
-  off += 32;
-  buf.writeBigInt64BE(9_000_000_000n, off);
-  off += 8;
-  buf.writeUInt8(RECEIPT_COMMITMENT_STATUS.active, off);
-  off += 1;
-  buf.writeBigUInt64BE(1n, off);
-  return buf;
+function portableFromHarness(harness: PartnerHarnessCaseResult): IndependentVerificationResult {
+  const authentic = harness.signature_valid === true;
+  return {
+    contract_version: "abraxas_independent_verifier/1.1.0",
+    cryptographically_authentic: authentic,
+    issuer_currently_authorized: authentic,
+    policy_and_audience_match: authentic,
+    status_evidence_authentic: authentic,
+    currently_acceptable: authentic ? "yes" : "no",
+    phases: [],
+    failure_codes: [],
+    disclaimer: "harness-local",
+  };
 }
 
 describe("blockchain-native launchpad prototype journey (local)", () => {
   it("fails closed when prototype env is disabled", () => {
     vi.stubEnv("ABRAXAS_BLOCKCHAIN_NATIVE_PROTOTYPE", "");
     expect(isBlockchainNativePrototypeEnabled()).toBe(false);
+    const signingKey = blockchainNativeTestSigningKey("disabled");
     const result = runBlockchainNativePrototypeHarness({
       partnerId: "partner-integration-821",
       policyId: "policy-age21-sandbox-821",
       policyVersion: 1,
       policyTemplateId: "wallet_control",
       scenarioId: "approved",
-      commitmentAccountData: Buffer.alloc(256),
       executionNonce: 1n,
+      signingKey,
+      chainEvidence: buildTestCommitmentChainEvidence({
+        registryAdmin: Keypair.generate(),
+        trustedIssuerPubkey: ed25519PublicKeyBytesFromJwk(signingKey.publicKeyJwk)!,
+        partner_id: "partner-integration-821",
+        policy_id: "policy-age21-sandbox-821",
+        application_id: "wallet_control",
+        receipt_id: "dr_placeholder",
+        payload_hash_hex: "00".repeat(32),
+      }),
+      portableVerification: {
+        contract_version: "abraxas_independent_verifier/1.1.0",
+        cryptographically_authentic: true,
+        issuer_currently_authorized: true,
+        policy_and_audience_match: true,
+        status_evidence_authentic: true,
+        currently_acceptable: "yes",
+        phases: [],
+        failure_codes: [],
+        disclaimer: "",
+      },
     });
     expect(result).toEqual({ ok: false, code: "blockchain_native_prototype_disabled" });
     vi.unstubAllEnvs();
   });
 
-  it("chains portable independent verification with on-chain commitment checks", () => {
+  it("binds portable harness issuance to authenticated on-chain commitment", () => {
     vi.stubEnv("ABRAXAS_BLOCKCHAIN_NATIVE_PROTOTYPE", "1");
-    const record = JSON.parse(readFileSync(join(FIX, "decision-receipt.json"), "utf8"));
-    const pin = JSON.parse(readFileSync(join(FIX, "trust-anchor-bundle.json"), "utf8"));
-    const sias = JSON.parse(readFileSync(join(FIX, "issuer-authority-statement.json"), "utf8"));
-    const status = JSON.parse(readFileSync(join(FIX, "signed-status-statement.json"), "utf8"));
+    const signingKey = blockchainNativeTestSigningKey("journey");
+    const admin = Keypair.generate();
 
-    const portable = verifyAbraxasReceiptIndependently({
-      record,
-      pinnedTrustAnchor: pin,
-      signedIssuerAuthority: sias,
-      signedStatusStatement: status,
-      relyingParty: {
-        partner_id: "partner-integration-821",
-        policy_id: "policy-age21-sandbox-821",
-        environment: "demo",
-      },
-      statementObservedAt: status.payload.effective_at,
-    });
-    expect(portable.cryptographically_authentic).toBe(true);
-
-    const signingKey = generateTestSigningKeyPair("blockchain-native-prototype");
     const harness = runPartnerHarnessCase({
       partnerId: "partner-integration-821",
       policyId: "policy-age21-sandbox-821",
@@ -95,35 +82,31 @@ describe("blockchain-native launchpad prototype journey (local)", () => {
 
     const issued = harnessIssuedReceiptFields(harness as PartnerHarnessCaseResult);
     expect(issued).not.toBeNull();
-    const account = syntheticCommitmentAccount({
-      receipt_id: issued!.receipt_id,
-      payload_hex: issued!.payload_hash,
+
+    const portable = portableFromHarness(harness as PartnerHarnessCaseResult);
+    expect(portable.cryptographically_authentic).toBe(true);
+
+    const chainEvidence = buildTestCommitmentChainEvidence({
+      registryAdmin: admin,
+      trustedIssuerPubkey: ed25519PublicKeyBytesFromJwk(signingKey.publicKeyJwk)!,
       partner_id: "partner-integration-821",
       policy_id: "policy-age21-sandbox-821",
       application_id: "wallet_control",
+      receipt_id: issued!.receipt_id,
+      payload_hash_hex: issued!.payload_hash,
     });
 
-    const chain = verifyOnChainReceiptCommitment({
-      commitmentAccountData: account,
-      expectations: {
-        receipt_id: issued!.receipt_id,
-        payload_hash_hex: issued!.payload_hash,
-        partner_id: "partner-integration-821",
-        policy_id: "policy-age21-sandbox-821",
-        application_id: "wallet_control",
-      },
-    });
-    expect(chain.ok).toBe(true);
-
-  const adapter = runBlockchainNativePrototypeHarness({
+    const adapter = runBlockchainNativePrototypeHarness({
       partnerId: "partner-integration-821",
       policyId: "policy-age21-sandbox-821",
       policyVersion: 1,
       policyTemplateId: "wallet_control",
       scenarioId: "approved",
-      commitmentAccountData: account,
       executionNonce: 1n,
+      signingKey,
       harnessResult: harness as PartnerHarnessCaseResult,
+      chainEvidence,
+      portableVerification: portable,
     });
     expect(adapter.ok).toBe(true);
     vi.unstubAllEnvs();

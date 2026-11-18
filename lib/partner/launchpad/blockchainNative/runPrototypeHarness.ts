@@ -2,9 +2,14 @@ import {
   runPartnerHarnessCase,
   type PartnerHarnessCaseResult,
 } from "@/lib/partner/launchpad/partnerTestHarness";
-import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
+import {
+  loadReceiptSigningKey,
+  type ReceiptSigningKeyPair,
+} from "@/lib/decisionReceipts/signing";
 import { hashReceiptId } from "@/lib/solana/proofContinuity/message";
 import { verifyOnChainReceiptCommitment } from "@/lib/solana/proofContinuity/verifyOnChainCommitment";
+import type { CommitmentChainEvidence } from "@/lib/solana/proofContinuity/solanaAccountEvidence";
+import type { IndependentVerificationResult } from "../../../../packages/abraxas-independent-verifier/src/verifyIndependent";
 import {
   BLOCKCHAIN_NATIVE_ADAPTER_LABEL,
   isBlockchainNativePrototypeEnabled,
@@ -17,10 +22,12 @@ export type BlockchainNativeHarnessInput = {
   policyVersion: number;
   policyTemplateId: string;
   scenarioId: string;
-  /** Account data from local validator / ProgramTest (not mocked HTTP). */
-  commitmentAccountData: Buffer;
   executionNonce: bigint;
-  /** Reuse an existing harness issuance (e.g. tests pairing portable + on-chain fixtures). */
+  /** Explicit authorized issuer — no ephemeral keys inside the adapter. */
+  signingKey?: ReceiptSigningKeyPair;
+  chainEvidence: CommitmentChainEvidence;
+  /** Portable independent verification of the same harness issuance. */
+  portableVerification: IndependentVerificationResult;
   harnessResult?: PartnerHarnessCaseResult;
 };
 
@@ -32,6 +39,7 @@ export type BlockchainNativeHarnessResult =
       payload_hash_hex: string;
       portable_evidence: string;
       on_chain_status_version: bigint;
+      execution_nonce: bigint;
     }
   | { ok: false; code: string };
 
@@ -51,6 +59,13 @@ export function harnessIssuedReceiptFields(
   return { receipt_id: persistence.receipt_id, payload_hash: payloadHash };
 }
 
+function resolveAuthorizedSigningKey(
+  explicit?: ReceiptSigningKeyPair,
+): ReceiptSigningKeyPair | null {
+  if (explicit) return explicit;
+  return loadReceiptSigningKey();
+}
+
 /**
  * Blockchain-native execution adapter — parallel to `runLaunchpadTestScenario`, not a bypass.
  * Default hosted Launchpad still requires sovereign PostgreSQL.
@@ -62,6 +77,15 @@ export function runBlockchainNativePrototypeHarness(
     return { ok: false, code: "blockchain_native_prototype_disabled" };
   }
 
+  const signingKey = resolveAuthorizedSigningKey(input.signingKey);
+  if (!signingKey) {
+    return { ok: false, code: "authorized_issuer_key_required" };
+  }
+
+  if (!input.portableVerification.cryptographically_authentic) {
+    return { ok: false, code: "portable_signature_not_authentic" };
+  }
+
   const harness =
     input.harnessResult
     ?? runPartnerHarnessCase({
@@ -70,7 +94,7 @@ export function runBlockchainNativePrototypeHarness(
       policyVersion: input.policyVersion,
       policyTemplateId: input.policyTemplateId,
       scenarioId: input.scenarioId,
-      signingKey: generateTestSigningKeyPair("blockchain-native-prototype"),
+      signingKey,
       signingSource: "configured_issuer_key",
     });
 
@@ -81,8 +105,13 @@ export function runBlockchainNativePrototypeHarness(
   const issued = harnessIssuedReceiptFields(harness);
   if (!issued) return { ok: false, code: "portable_receipt_missing_payload_hash" };
 
+  const receiptHash = hashReceiptId(issued.receipt_id);
+  if (!receiptHash.equals(input.chainEvidence.receiptIdHash)) {
+    return { ok: false, code: "chain_portable_receipt_id_mismatch" };
+  }
+
   const chain = verifyOnChainReceiptCommitment({
-    commitmentAccountData: input.commitmentAccountData,
+    chainEvidence: input.chainEvidence,
     expectations: {
       receipt_id: issued.receipt_id,
       payload_hash_hex: issued.payload_hash,
@@ -90,6 +119,8 @@ export function runBlockchainNativePrototypeHarness(
       policy_id: input.policyId,
       application_id: input.policyTemplateId,
     },
+    portableVerification: input.portableVerification,
+    authorizedIssuerPublicKeyJwk: signingKey.publicKeyJwk,
   });
   if (!chain.ok) return { ok: false, code: chain.reason };
 
@@ -100,6 +131,7 @@ export function runBlockchainNativePrototypeHarness(
     payload_hash_hex: issued.payload_hash,
     portable_evidence: OFF_CHAIN_EVIDENCE_MECHANISM,
     on_chain_status_version: chain.status_version,
+    execution_nonce: input.executionNonce,
   };
 }
 

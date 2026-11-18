@@ -35,3 +35,6 @@ export const POSTGRES_ELIMINATED_ON_ADAPTER_PATH = [
 /** Evidence availability: signed portable export + integrator custody (not chain-only hashes). */
 export const OFF_CHAIN_EVIDENCE_MECHANISM =
   "Signed decision receipt JSON (portable export) held by integrator or holder; on-chain stores payload hash + status continuity only.";
+
+/** Runtime adapter requires configured issuer material — never mints ephemeral keys. */
+export const BLOCKCHAIN_NATIVE_AUTHORIZED_ISSUER_ENV = "ABRAXAS_SIGNING_KEY";

@@ -266,6 +266,34 @@ async fn blockchain_native_launchpad_local_journey() {
     )
     .await
     .unwrap();
+
+    let (commitment_one, _) = commitment_pda(&registry, &receipt_one);
+    let commitment_acc = ctx
+        .banks_client
+        .get_account(commitment_one)
+        .await
+        .unwrap()
+        .expect("commitment account exists");
+    assert_eq!(commitment_acc.owner, PROOF_ID);
+  assert!(commitment_acc.data.len() >= 8 + 32 * 6 + 8 + 1 + 8 + 1);
+    let expires_off = 8 + 32 * 6;
+    let expires_le = i64::from_le_bytes(
+        commitment_acc.data[expires_off..expires_off + 8]
+            .try_into()
+            .unwrap(),
+    );
+    assert_eq!(expires_le, expires_at);
+    if std::env::var("DUMP_PROOF_CONTINUITY_COMMITMENT_HEX").is_ok() {
+        eprintln!(
+            "PROOF_CONTINUITY_COMMITMENT_HEX={}",
+            commitment_acc
+                .data
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>()
+        );
+    }
+
     execute_harness_run(
         &mut ctx,
         &registry,

@@ -1,39 +1,15 @@
+import { Keypair } from "@solana/web3.js";
 import { describe, expect, it } from "vitest";
 import { RECEIPT_COMMITMENT_STATUS } from "./constants";
 import { encodeCommitmentMessage, hashReceiptId, hashScopeId } from "./message";
 import { verifyOnChainReceiptCommitment } from "./verifyOnChainCommitment";
-
-// Minimal synthetic account bytes mirroring on-chain layout after commit (discriminator stub).
-function syntheticCommitmentAccount(fields: {
-  receipt_id: string;
-  payload_hex: string;
-  partner_id: string;
-  policy_id: string;
-  application_id: string;
-  expires_at: number;
-  status: number;
-  status_version: bigint;
-}): Buffer {
-  const buf = Buffer.alloc(8 + 32 + 32 * 6 + 8 + 1 + 8 + 1, 0);
-  let off = 8;
-  off += 32; // registry pubkey
-  hashReceiptId(fields.receipt_id).copy(buf, off);
-  off += 32;
-  Buffer.from(fields.payload_hex, "hex").copy(buf, off);
-  off += 32;
-  hashScopeId(fields.partner_id).copy(buf, off);
-  off += 32;
-  hashScopeId(fields.policy_id).copy(buf, off);
-  off += 32;
-  hashScopeId(fields.application_id).copy(buf, off);
-  off += 32;
-  buf.writeBigInt64BE(BigInt(fields.expires_at), off);
-  off += 8;
-  buf.writeUInt8(fields.status, off);
-  off += 1;
-  buf.writeBigUInt64BE(fields.status_version, off);
-  return buf;
-}
+import {
+  buildTestCommitmentChainEvidence,
+  testIssuerKeypair,
+  trustedIssuerBytesFromKeypair,
+} from "./testFixtures";
+import { ed25519PublicKeyBytesFromJwk } from "./issuerAuthority";
+import { blockchainNativeTestSigningKey } from "@/lib/partner/launchpad/blockchainNative/testIssuance";
 
 describe("verifyOnChainReceiptCommitment", () => {
   const expectations = {
@@ -43,48 +19,46 @@ describe("verifyOnChainReceiptCommitment", () => {
     policy_id: "policy-975",
     application_id: "app-975",
   };
+  const admin = Keypair.generate();
+  const issuer = testIssuerKeypair();
+  const signingKey = blockchainNativeTestSigningKey("verify-on-chain");
 
-  it("accepts matching active commitment", () => {
-    const data = syntheticCommitmentAccount({
+  function evidence() {
+    return buildTestCommitmentChainEvidence({
+      registryAdmin: admin,
+      trustedIssuerPubkey: ed25519PublicKeyBytesFromJwk(signingKey.publicKeyJwk)!,
       ...expectations,
-      payload_hex: expectations.payload_hash_hex,
-      expires_at: 9_000_000_000,
-      status: RECEIPT_COMMITMENT_STATUS.active,
-      status_version: 1n,
     });
+  }
+
+  it("accepts authenticated matching active commitment", () => {
     const result = verifyOnChainReceiptCommitment({
-      commitmentAccountData: data,
+      chainEvidence: evidence(),
       expectations,
       now: new Date("2026-01-01T00:00:00Z"),
+      authorizedIssuerPublicKeyJwk: signingKey.publicKeyJwk,
     });
     expect(result.ok).toBe(true);
   });
 
   it("rejects tampered payload hash", () => {
-    const data = syntheticCommitmentAccount({
-      ...expectations,
-      payload_hex: "cd".repeat(32),
-      expires_at: 9_000_000_000,
-      status: RECEIPT_COMMITMENT_STATUS.active,
-      status_version: 1n,
-    });
     const result = verifyOnChainReceiptCommitment({
-      commitmentAccountData: data,
-      expectations,
+      chainEvidence: evidence(),
+      expectations: { ...expectations, payload_hash_hex: "cd".repeat(32) },
     });
     expect(result).toEqual({ ok: false, reason: "on_chain_payload_mismatch" });
   });
 
   it("rejects revoked on-chain status", () => {
-    const data = syntheticCommitmentAccount({
+    const ev = buildTestCommitmentChainEvidence({
+      registryAdmin: admin,
+      trustedIssuerPubkey: trustedIssuerBytesFromKeypair(issuer),
       ...expectations,
-      payload_hex: expectations.payload_hash_hex,
-      expires_at: 9_000_000_000,
-      status: RECEIPT_COMMITMENT_STATUS.revoked,
       status_version: 2n,
     });
+    ev.commitment.data.writeUInt8(RECEIPT_COMMITMENT_STATUS.revoked, 8 + 32 * 6 + 8);
     const result = verifyOnChainReceiptCommitment({
-      commitmentAccountData: data,
+      chainEvidence: ev,
       expectations,
     });
     expect(result).toEqual({ ok: false, reason: "on_chain_status_not_active" });

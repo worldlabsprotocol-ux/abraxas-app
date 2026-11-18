@@ -1,4 +1,7 @@
+import { RECEIPT_COMMITMENT_DISCRIMINATOR } from "./anchorDiscriminator";
 import { RECEIPT_COMMITMENT_STATUS } from "./constants";
+
+export const RECEIPT_COMMITMENT_ACCOUNT_SIZE = 8 + 32 + 32 * 5 + 8 + 1 + 8 + 1;
 
 /** Decodes Anchor `ReceiptCommitment` account data (8-byte discriminator + fields). */
 export type DecodedReceiptCommitment = {
@@ -14,7 +17,8 @@ export type DecodedReceiptCommitment = {
 };
 
 export function decodeReceiptCommitmentAccount(data: Buffer): DecodedReceiptCommitment | null {
-  if (data.length < 8 + 32 + 32 * 5 + 8 + 1 + 8 + 1) return null;
+  if (data.length < RECEIPT_COMMITMENT_ACCOUNT_SIZE) return null;
+  if (!data.subarray(0, 8).equals(RECEIPT_COMMITMENT_DISCRIMINATOR)) return null;
   let off = 8;
   const registry = data.subarray(off, off + 32);
   off += 32;
@@ -28,11 +32,11 @@ export function decodeReceiptCommitmentAccount(data: Buffer): DecodedReceiptComm
   off += 32;
   const application_hash = data.subarray(off, off + 32).toString("hex");
   off += 32;
-  const expires_at = Number(data.readBigInt64BE(off));
+  const expires_at = Number(data.readBigInt64LE(off));
   off += 8;
   const status = data.readUInt8(off);
   off += 1;
-  const status_version = data.readBigUInt64BE(off);
+  const status_version = data.readBigUInt64LE(off);
   return {
     registry: Buffer.from(registry).toString("hex"),
     receipt_id_hash,

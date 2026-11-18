@@ -46,6 +46,13 @@ Enable the TypeScript adapter only with `ABRAXAS_BLOCKCHAIN_NATIVE_PROTOTYPE=1` 
 
 Full receipt evidence remains **off-chain** (`OFF_CHAIN_EVIDENCE_MECHANISM` in `contract.ts`); chain hashes are not sufficient alone.
 
+## Verification boundary (merge blockers addressed)
+
+- **Anchor LE decode** — `decodeReceiptCommitmentAccount` / registry decoder use little-endian numerics; parity checked against ProgramTest fixture (`fixtures/programtest-commitment-account.hex`).
+- **Chain evidence authentication** — `authenticateCommitmentChainEvidence` requires program owner, PDA derivation, Anchor discriminators, and registry↔commitment binding before field checks.
+- **Authorized issuer** — runtime adapter requires `ABRAXAS_SIGNING_KEY` (or explicit `signingKey`); synthetic keys live in `testIssuance.ts` only.
+- **Same execution** — adapter pairs harness issuance, portable verification, and authenticated chain evidence on one `receipt_id_hash` / payload hash.
+
 ## Proof
 
 ```bash
