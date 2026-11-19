@@ -1,0 +1,92 @@
+{
+  "build": "981",
+  "environment": "local_program_test",
+  "proof_continuity_program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+  "entitlement_consumer_program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+  "token_program_id": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "execution_kind": "banks_client_transaction",
+  "stages": [
+    {
+      "stage": "mint",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "AXJH3G23fazmNy9oeSBEgpctrVvaQdEG1Pwgux9veBxU"
+      ],
+      "accounts": {},
+      "notes": null
+    },
+    {
+      "stage": "revoke",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "7gubUVNrxqDm5vqWfUPA2caqhCPd78oaBqyQ41KvezSe"
+      ],
+      "accounts": {},
+      "notes": "issuer-signed status update"
+    },
+    {
+      "stage": "consume",
+      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "outcome": "rejected",
+      "signers": [
+        "AXJH3G23fazmNy9oeSBEgpctrVvaQdEG1Pwgux9veBxU"
+      ],
+      "accounts": {},
+      "notes": "revoked proof — possession insufficient"
+    }
+  ],
+  "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+  "registry": "7CRyCfQsLZH616bJHbRX13qbd6QDcruGKmCy6cn5FuAg",
+  "trusted_config": "9KEZfH4DyyjE55kzfSktjwBvoAoSdQbEzNvnmNdjMj5i",
+  "commitment": "8BVnYjra3VtqjNzYG4LyBQsDfmeehoVeV3TP7qXXNzq4",
+  "entitlement_mint": "BFeQfy5DoW1ivp877Pj3Vg8b7ikUQveB96u9kvZB4mWj",
+  "holder_wallet": "AXJH3G23fazmNy9oeSBEgpctrVvaQdEG1Pwgux9veBxU",
+  "consumption_account": null,
+  "token_balance": 1,
+  "commitment_status": 1,
+  "consumption_recorded": false,
+  "independent_verification_ok": false,
+  "recorded_at_unix_ms": 1795047261599,
+  "partner_evidence": {
+    "registry_admin": "7gubUVNrxqDm5vqWfUPA2caqhCPd78oaBqyQ41KvezSe",
+    "relying_party_admin": "7gubUVNrxqDm5vqWfUPA2caqhCPd78oaBqyQ41KvezSe",
+    "observation_unix_timestamp": 1795047261,
+    "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+    "entitlement_mint": "BFeQfy5DoW1ivp877Pj3Vg8b7ikUQveB96u9kvZB4mWj",
+    "holder_wallet": "AXJH3G23fazmNy9oeSBEgpctrVvaQdEG1Pwgux9veBxU",
+    "evidence_supply": "program_test_banks_client_capture",
+    "registry": {
+      "pubkey": "7CRyCfQsLZH616bJHbRX13qbd6QDcruGKmCy6cn5FuAg",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "v91UQgHKsfxjXz3kVj4FuzVhYE71xseu3HjDH9aUMAM8uv93D4S6qz/V4w7NgKXs3PGT9Ws6Uj00p4tTUhIUZao+7bIegZVGCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD8"
+    },
+    "commitment": {
+      "pubkey": "8BVnYjra3VtqjNzYG4LyBQsDfmeehoVeV3TP7qXXNzq4",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "DDggWSHZ9excE74z0YKNsR+1m2560vcY1YAdkN7Yrl+FguB0+IWyURUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAECAAAAAAAAAI18JCjXs5imqZOdoQFNpRpqveeOrF5/LB7MT24d+f3R/w=="
+    },
+    "mint_config": {
+      "pubkey": "5Wx8LX1CwcySqcPGxasn67kMhSQdsc9fu2wD5F12KLcy",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "aP1AG5gizjdcE74z0YKNsR+1m2560vcY1YAdkN7Yrl+FguB0+IWyUZhVTFCJJm7RI221IjNCQ8iIuga8/XQskwy9+b3qkQDE/wE="
+    },
+    "issuance_ledger": {
+      "pubkey": "AxxSE1eb9vR4tQp3jb3D4NTmoPALCBufhMsfcLNh7Wtg",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "1JB9JEWzAY1cE74z0YKNsR+1m2560vcY1YAdkN7Yrl+FguB0+IWyURUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVjXwkKNezmKapk52hAU2lGmq9546sXn8sHsxPbh35/dH+"
+    },
+    "trusted_config": {
+      "pubkey": "9KEZfH4DyyjE55kzfSktjwBvoAoSdQbEzNvnmNdjMj5i",
+      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "data_base64": "E36B3psXa0BjXz3kVj4FuzVhYE71xseu3HjDH9aUMAM8uv93D4S6q2NfPeRWPgW7NWFgTvXGx67ceMMf1pQwAzy6/3cPhLqrCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
+    },
+    "holder_token_account": {
+      "pubkey": "BgAowrgbEJJ85oULjjNEZ3Yxrp23Xx473w9JeQcvoSak",
+      "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "data_base64": "mFVMUIkmbtEjbbUiM0JDyIi6Brz9dCyTDL35veqRAMSNfCQo17OYpqmTnaEBTaUaar3njqxefywezE9uHfn90QEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
+    },
+    "consumption": null
+  }
+}

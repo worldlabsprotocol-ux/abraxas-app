@@ -1,0 +1,114 @@
+{
+  "build": "981",
+  "environment": "local_program_test",
+  "proof_continuity_program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+  "entitlement_consumer_program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+  "token_program_id": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "execution_kind": "banks_client_transaction",
+  "stages": [
+    {
+      "stage": "register_proof_registry",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "3L2M1sCWpERDohPEQo9Dv2G8fb515hZ5evDKwU6AfmYD"
+      ],
+      "accounts": {},
+      "notes": "ProofContinuityRegistry initialized"
+    },
+    {
+      "stage": "initialize_partner_trusted_config",
+      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "outcome": "success",
+      "signers": [
+        "3a6h4GH4NmuJ6KQHxvJ5M8gmjNEA7iYhHwQZ5Ky3pL4P"
+      ],
+      "accounts": {
+        "trusted_config": "7fCSAanwRAMSKQ3NsznuAwnMy2xFJJJbaTs4Lyxp5a2D"
+      },
+      "notes": "Partner-owned relying-party configuration PDA"
+    },
+    {
+      "stage": "mint_verified_entitlement",
+      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "outcome": "success",
+      "signers": [
+        "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ"
+      ],
+      "accounts": {
+        "commitment": "C4VgukxG3jGLfAGFQFhXa43f4QyJruf6vusuEz7ML7Bj",
+        "mint": "ADATBp9zHRTv7ZssdtaZ9nJBCPzEwXpGdMPHj5GtqVy4"
+      },
+      "notes": "Token-2022 non-transferable entitlement issued"
+    },
+    {
+      "stage": "partner_consume_verified_entitlement",
+      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "outcome": "success",
+      "signers": [
+        "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ",
+        "3L2M1sCWpERDohPEQo9Dv2G8fb515hZ5evDKwU6AfmYD"
+      ],
+      "accounts": {
+        "consumption": "FYPEmqeJzYeJ6iZLoiWiVvVWzbzFs66SdHe6jf9KeQXC"
+      },
+      "notes": "On-chain consumption record created"
+    }
+  ],
+  "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+  "registry": "J9nQA4yGAme8EXrEiYgNLjq6jzRU65vdTUPoquHZjZyE",
+  "trusted_config": "7fCSAanwRAMSKQ3NsznuAwnMy2xFJJJbaTs4Lyxp5a2D",
+  "commitment": "C4VgukxG3jGLfAGFQFhXa43f4QyJruf6vusuEz7ML7Bj",
+  "entitlement_mint": "ADATBp9zHRTv7ZssdtaZ9nJBCPzEwXpGdMPHj5GtqVy4",
+  "holder_wallet": "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ",
+  "consumption_account": "FYPEmqeJzYeJ6iZLoiWiVvVWzbzFs66SdHe6jf9KeQXC",
+  "token_balance": 1,
+  "commitment_status": 0,
+  "consumption_recorded": true,
+  "independent_verification_ok": true,
+  "recorded_at_unix_ms": 1795047261606,
+  "partner_evidence": {
+    "registry_admin": "3L2M1sCWpERDohPEQo9Dv2G8fb515hZ5evDKwU6AfmYD",
+    "relying_party_admin": "3a6h4GH4NmuJ6KQHxvJ5M8gmjNEA7iYhHwQZ5Ky3pL4P",
+    "observation_unix_timestamp": 1795047261,
+    "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+    "entitlement_mint": "ADATBp9zHRTv7ZssdtaZ9nJBCPzEwXpGdMPHj5GtqVy4",
+    "holder_wallet": "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ",
+    "evidence_supply": "program_test_banks_client_capture",
+    "registry": {
+      "pubkey": "J9nQA4yGAme8EXrEiYgNLjq6jzRU65vdTUPoquHZjZyE",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "v91UQgHKsfwilu4cLSnF4wF+5XSb9/NX3pEdYvgNqbfTXjt0qjaSogjqQZMp5cjKArD8aA4EDniue1h264YAAroZmFJfhMJgCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD8"
+    },
+    "commitment": {
+      "pubkey": "C4VgukxG3jGLfAGFQFhXa43f4QyJruf6vusuEz7ML7Bj",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "DDggWSHZ9ez+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAABAAAAAAAAAMidjSaYw0DGEeefxcNuTKtrYzuEe8coKu2uwy2Nsa0T/Q=="
+    },
+    "mint_config": {
+      "pubkey": "W9pcEUQa51ccSK7ZeDPQvKaJYiVE17QDmkMGkxtLRoC",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "aP1AG5gizjf+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazYjW1sDYu2Su5isZQ3uTEsPzto8EZZ4EHCF3i/B3DmCz/wE="
+    },
+    "issuance_ledger": {
+      "pubkey": "4KE4z5FBVTte7YbzeQhSMqD1RiKt8d8vMzjkbN8wa68C",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "1JB9JEWzAY3+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVyJ2NJpjDQMYR55/Fw25Mq2tjO4R7xygq7a7DLY2xrRP/"
+    },
+    "trusted_config": {
+      "pubkey": "7fCSAanwRAMSKQ3NsznuAwnMy2xFJJJbaTs4Lyxp5a2D",
+      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "data_base64": "E36B3psXa0AmMfmXJ4PCjhqigR3m0L5qz01kA86zq5CjZGpwrQSlaCKW7hwtKcXjAX7ldJv381fekR1i+A2pt9NeO3SqNpKiCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD+"
+    },
+    "holder_token_account": {
+      "pubkey": "HuhEfTe85Z51aq17WUxyhT3AR6edBurbEMJJVBfcrZZ3",
+      "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "data_base64": "iNbWwNi7ZK7mKxlDe5MSw/O2jwRlngQcIXeL8HcOYLPInY0mmMNAxhHnn8XDbkyra2M7hHvHKCrtrsMtjbGtEwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
+    },
+    "consumption": {
+      "pubkey": "FYPEmqeJzYeJ6iZLoiWiVvVWzbzFs66SdHe6jf9KeQXC",
+      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "data_base64": "vqpUcjK+qi/+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVyJ2NJpjDQMYR55/Fw25Mq2tjO4R7xygq7a7DLY2xrRMBXT/+agAAAAABAAAAAAAAAP8="
+    }
+  }
+}
