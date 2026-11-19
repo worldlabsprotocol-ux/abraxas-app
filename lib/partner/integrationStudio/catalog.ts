@@ -30,6 +30,7 @@ import {
   INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
   INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
   INTEGRATION_STUDIO_BLOCKCHAIN_NATIVE_NOTICE,
+  INTEGRATION_STUDIO_TOKEN_2022_ENTITLEMENT_NOTICE,
   INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
@@ -253,6 +254,15 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       creates_transactions: true,
       calls_rpc: true,
       notice: INTEGRATION_STUDIO_BLOCKCHAIN_NATIVE_NOTICE,
+    },
+    token_2022_receipt_entitlement: {
+      docs: "/docs/operations/BUILD_982_INTEGRATION_STUDIO_ACTIVATION.md",
+      title: "Token-2022 receipt-backed entitlement",
+      presentation_sufficient: false,
+      funds_movement: false,
+      creates_transactions: false,
+      calls_rpc: false,
+      notice: INTEGRATION_STUDIO_TOKEN_2022_ENTITLEMENT_NOTICE,
     },
     onchain_verifier_conformance: {
       docs: "/docs/onchain-verifier-conformance",

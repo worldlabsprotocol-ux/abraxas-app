@@ -37,3 +37,24 @@ const confirm = await fetch("/api/launchpad/applications/${applicationId}/blockc
 const bundle = await confirm.json();
 console.log(bundle.independent_verification, bundle.chain_status_version);`;
 }
+
+export function token2022EntitlementStudioServerExample(applicationId = "your-application-id"): string {
+  return `// Token-2022 entitlement Integration Studio (capabilities → independent handoff)
+
+const journey = await fetch("/api/launchpad/applications/${applicationId}/token2022-entitlement-journey", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify({ phase: "capabilities" }),
+});
+const capabilities = await journey.json();
+// capabilities.trusted_scope is bound to your Launchpad application — never accept client overrides.
+
+const handoff = await fetch("/api/launchpad/applications/${applicationId}/token2022-entitlement-journey", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify({ phase: "independent_handoff", run_structural_verify: false }),
+});
+console.log((await handoff.json()).verification_tiers, (await handoff.json()).independent_handoff);`;
+}

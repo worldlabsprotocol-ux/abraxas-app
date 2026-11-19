@@ -33,6 +33,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "institutional_eligibility_gate",
   "onchain_verifier_conformance",
   "blockchain_native_launchpad",
+  "token_2022_receipt_entitlement",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -128,6 +129,8 @@ export const INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE =
   "Institutional eligibility gate. Institutional policy review required. Sandbox test result for technical integration only. It is not a live KYB or Production approval. Deploy a reusable V2 gate that is not bound to one organization or actor. Then verify the deployed program, register verified sandbox, and request a fresh institutional presentation and chain attestation. Commitments and expiry live only on that attestation. Not document collection, Utila, live KYB, Arc, or Mainnet.";
 export const INTEGRATION_STUDIO_BLOCKCHAIN_NATIVE_NOTICE =
   "Blockchain-native Launchpad continuity (local/reference). Connect a wallet, authorize one sandbox action, prepare a portable signed receipt, execute against a pinned Solana RPC and proof-continuity program, then independently verify that the same issuance matches the on-chain commitment. Private evidence stays off-chain. Does not replace sovereign PostgreSQL on the default Launchpad path. No public-chain deployment without founder approval.";
+export const INTEGRATION_STUDIO_TOKEN_2022_ENTITLEMENT_NOTICE =
+  "Receipt-backed Token-2022 entitlement journey. Choose your authorized sandbox scope, verify proof continuity, study or execute non-transferable issuance, consume through the independent entitlement consumer, then verify outside the hosted UI. Local ProgramTest artifacts are accurately labeled and are not live Mainnet transactions. Structural snapshot checks are not authenticated chain proof. Production entitlement execution stays disabled without separate deployment approval.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

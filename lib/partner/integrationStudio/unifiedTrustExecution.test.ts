@@ -15,6 +15,9 @@ describe("Integration Studio unified trust execution", () => {
     expect(resolveIntegrationStudioExecutionMode("verify_with_abraxas")).toBe("offchain_portable");
     expect(resolveIntegrationStudioExecutionMode("institutional_eligibility_gate")).toBe("solana_finalized");
     expect(resolveIntegrationStudioExecutionMode("blockchain_native_launchpad")).toBe("blockchain_native_continuity");
+    expect(resolveIntegrationStudioExecutionMode("token_2022_receipt_entitlement")).toBe(
+      "token_2022_entitlement_reference",
+    );
     expect(resolveIntegrationStudioExecutionMode("solana_onchain_eligibility_gate")).toBe("solana_finalized");
     expect(SOLANA_EXECUTION_PENDING_MESSAGE).toMatch(/finalized Solana authorization/i);
     expect(SOLANA_EXECUTION_PENDING_MESSAGE).toMatch(/will not report an offchain decision as onchain/i);

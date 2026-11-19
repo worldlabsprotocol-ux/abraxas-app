@@ -3,9 +3,11 @@ import type { IntegrationStudioPathId } from "./contract";
 export type IntegrationStudioExecutionMode =
   | "offchain_portable"
   | "solana_finalized"
-  | "blockchain_native_continuity";
+  | "blockchain_native_continuity"
+  | "token_2022_entitlement_reference";
 
 const BLOCKCHAIN_NATIVE_PATHS = new Set<IntegrationStudioPathId>(["blockchain_native_launchpad"]);
+const TOKEN_2022_ENTITLEMENT_PATHS = new Set<IntegrationStudioPathId>(["token_2022_receipt_entitlement"]);
 
 const SOLANA_EXECUTION_PATHS = new Set<IntegrationStudioPathId>([
   "solana_gate",
@@ -21,6 +23,7 @@ export function resolveIntegrationStudioExecutionMode(
   pathId: IntegrationStudioPathId,
 ): IntegrationStudioExecutionMode {
   if (BLOCKCHAIN_NATIVE_PATHS.has(pathId)) return "blockchain_native_continuity";
+  if (TOKEN_2022_ENTITLEMENT_PATHS.has(pathId)) return "token_2022_entitlement_reference";
   return SOLANA_EXECUTION_PATHS.has(pathId) ? "solana_finalized" : "offchain_portable";
 }
 

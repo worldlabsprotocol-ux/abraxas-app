@@ -932,10 +932,13 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const payment = selection.path === "payment_authorization" || selection.capabilities.includes("payment_authorization");
   const blockchainNativeLaunchpad = selection.path === "blockchain_native_launchpad"
     || selection.capabilities.includes("blockchain_native_launchpad");
+  const token2022Entitlement = selection.path === "token_2022_receipt_entitlement"
+    || selection.capabilities.includes("token_2022_receipt_entitlement");
   const solana = selection.path === "solana_gate"
     || selection.capabilities.includes("solana_gate")
     || selection.platform === "solana_backend"
-    || blockchainNativeLaunchpad;
+    || blockchainNativeLaunchpad
+    || token2022Entitlement;
   const wallet = selection.path === "wallet_standard_binding" || selection.capabilities.includes("wallet_standard_binding");
   const portable = selection.path === "portable_action_contract" || selection.capabilities.includes("portable_action_contract");
   const evm = selection.path === "evm_partner_adapter" || selection.capabilities.includes("evm_partner_adapter");
