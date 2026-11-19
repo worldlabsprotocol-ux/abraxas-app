@@ -42,9 +42,9 @@ cargo run --bin partner-verify revoked
 
 ## How to verify success
 
-1. `authorized-journey.json` shows `independent_verification_ok: true` and a consumption account.
-2. `partner-verify authorized` exits 0 with stage trace (program IDs + accounts from executed tests).
-3. After revoke journey, `revoked-journey.json` shows token balance **1**, `consumption_recorded: false`, `independent_verification_ok: false`.
+1. `partner-verify authorized` prints an **untrusted execution report**, then **independently re-verifies** embedded account snapshots (PDAs, program owners, `verify_receipt_backed_entitlement`). Exit 0 only when evidence proves authorization.
+2. The JSON field `independent_verification_ok` is a test-runner note only — editing it does not change CLI proof.
+3. `partner-verify revoked` must pass independent checks with entitlement **not** authorizing and no consumption PDA.
 
 ## How to reproduce revoked-proof rejection
 

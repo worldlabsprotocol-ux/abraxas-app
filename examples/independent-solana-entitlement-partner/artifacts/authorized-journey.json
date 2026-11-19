@@ -11,7 +11,7 @@
       "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
       "outcome": "success",
       "signers": [
-        "8WLHfJ7osfYo1FP6josu3ZamrrsKCGV2PzvrF4kvmSYe"
+        "AShW298S3KXgT6Z3fiTPw19GAkewcTcD9voDvMnnVgcK"
       ],
       "accounts": {},
       "notes": "ProofContinuityRegistry initialized"
@@ -21,10 +21,10 @@
       "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
       "outcome": "success",
       "signers": [
-        "EmgeEwKCEJymqBNQc8Ev97MnT3EZ3DYwMvb7mpeSHcCs"
+        "6vBazpKk6hLfdVMA1pqZZ5VnaZXGDe7msxg5nR5KXuzR"
       ],
       "accounts": {
-        "trusted_config": "J2LhnEqFbcf4j5HrTtzjtPZCwR41bpBz1ZNqQU7C1Qx2"
+        "trusted_config": "4EJ3VE3JHWsg59jbqMjRswTaSBeRv6gfZeT7HLr8XTbx"
       },
       "notes": "Partner-owned relying-party configuration PDA"
     },
@@ -33,11 +33,11 @@
       "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
       "outcome": "success",
       "signers": [
-        "pmG8k1Wd9aj8UfEbSAFH2Eib5CTnMXUiavQzPJqPLRp"
+        "J8ty5NuU8bEzy6WvhsYaGxUoK5rpELbBXvwkbJXUCu9d"
       ],
       "accounts": {
-        "commitment": "FPW5zUffBATqzn65T61yWqAaN3QCq138aQsaPunzy2XC",
-        "mint": "8T535JeDKDGQW7HpuyYY1GMRoyYnvHtucRH4a3HkcyZp"
+        "commitment": "Ac5Vw2p59wTa5477nnLcwz9eBG7MyixTQFpCt8tCKumT",
+        "mint": "6s9MmDD8yNHeJsEEGzf42pFqJ2vpMbc4LvSMhuU8vtRL"
       },
       "notes": "Token-2022 non-transferable entitlement issued"
     },
@@ -46,25 +46,68 @@
       "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
       "outcome": "success",
       "signers": [
-        "pmG8k1Wd9aj8UfEbSAFH2Eib5CTnMXUiavQzPJqPLRp",
-        "8WLHfJ7osfYo1FP6josu3ZamrrsKCGV2PzvrF4kvmSYe"
+        "J8ty5NuU8bEzy6WvhsYaGxUoK5rpELbBXvwkbJXUCu9d",
+        "AShW298S3KXgT6Z3fiTPw19GAkewcTcD9voDvMnnVgcK"
       ],
       "accounts": {
-        "consumption": "AncDhYL8eYAr6VjUEtq5DNrsWfDdBYg5qiRJZVs8vyZA"
+        "consumption": "4ychfJKx9PYGZxBmCy9WmKKTRSUGR28E4k5EHWaR4KJR"
       },
       "notes": "On-chain consumption record created"
     }
   ],
   "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-  "registry": "6k33NB87kUBjE218AhefDoKx46GHuDyJabTdTBkQnv2h",
-  "trusted_config": "J2LhnEqFbcf4j5HrTtzjtPZCwR41bpBz1ZNqQU7C1Qx2",
-  "commitment": "FPW5zUffBATqzn65T61yWqAaN3QCq138aQsaPunzy2XC",
-  "entitlement_mint": "8T535JeDKDGQW7HpuyYY1GMRoyYnvHtucRH4a3HkcyZp",
-  "holder_wallet": "pmG8k1Wd9aj8UfEbSAFH2Eib5CTnMXUiavQzPJqPLRp",
-  "consumption_account": "AncDhYL8eYAr6VjUEtq5DNrsWfDdBYg5qiRJZVs8vyZA",
+  "registry": "8C3AjWxxSmYKdmUULsK8L65AS8iyghs8HUe6GENhh5HV",
+  "trusted_config": "4EJ3VE3JHWsg59jbqMjRswTaSBeRv6gfZeT7HLr8XTbx",
+  "commitment": "Ac5Vw2p59wTa5477nnLcwz9eBG7MyixTQFpCt8tCKumT",
+  "entitlement_mint": "6s9MmDD8yNHeJsEEGzf42pFqJ2vpMbc4LvSMhuU8vtRL",
+  "holder_wallet": "J8ty5NuU8bEzy6WvhsYaGxUoK5rpELbBXvwkbJXUCu9d",
+  "consumption_account": "4ychfJKx9PYGZxBmCy9WmKKTRSUGR28E4k5EHWaR4KJR",
   "token_balance": 1,
   "commitment_status": 0,
   "consumption_recorded": true,
   "independent_verification_ok": true,
-  "recorded_at_unix_ms": 1795045368389
+  "recorded_at_unix_ms": 1795046699562,
+  "partner_evidence": {
+    "registry_admin": "AShW298S3KXgT6Z3fiTPw19GAkewcTcD9voDvMnnVgcK",
+    "relying_party_admin": "6vBazpKk6hLfdVMA1pqZZ5VnaZXGDe7msxg5nR5KXuzR",
+    "observation_unix_timestamp": 1795046699,
+    "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
+    "entitlement_mint": "6s9MmDD8yNHeJsEEGzf42pFqJ2vpMbc4LvSMhuU8vtRL",
+    "holder_wallet": "J8ty5NuU8bEzy6WvhsYaGxUoK5rpELbBXvwkbJXUCu9d",
+    "registry": {
+      "pubkey": "8C3AjWxxSmYKdmUULsK8L65AS8iyghs8HUe6GENhh5HV",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "v91UQgHKsfyMTn8W59arXppwom7kq3MTkidoKRaU3Vg9QQc+XgHTTCStqAw8hQK61qdsfweM28frqUg6WoI2/d/d0hnRnGVZCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
+    },
+    "commitment": {
+      "pubkey": "Ac5Vw2p59wTa5477nnLcwz9eBG7MyixTQFpCt8tCKumT",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "DDggWSHZ9exq1aYGdwyid7iRfHB6qPIidKT9RA+qHHZvSVHFru9w7BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAABAAAAAAAAAP6cgKKRiYSFPMpLlvhmVha0zNVniT2jyc1z7YI6ubCs/g=="
+    },
+    "mint_config": {
+      "pubkey": "72F6n5Mk3jfXGzaRntj1bX1PForq98VoWTAwyWAuBPKa",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "aP1AG5gizjdq1aYGdwyid7iRfHB6qPIidKT9RA+qHHZvSVHFru9w7Fci7Ou9yngBMDsWdGp/+OoACgME/RhrT0e8lL8VvTRH/wE="
+    },
+    "issuance_ledger": {
+      "pubkey": "BELgKHRcNtrAnP4mMnvFPoq1H8WdDQVojrWFdyxbVBCR",
+      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "data_base64": "1JB9JEWzAY1q1aYGdwyid7iRfHB6qPIidKT9RA+qHHZvSVHFru9w7BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUV/pyAopGJhIU8ykuW+GZWFrTM1WeJPaPJzXPtgjq5sKz/"
+    },
+    "trusted_config": {
+      "pubkey": "4EJ3VE3JHWsg59jbqMjRswTaSBeRv6gfZeT7HLr8XTbx",
+      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "data_base64": "E36B3psXa0BX6i/zwWfGyfxoxuoh7rqYPf2MVg5E5T5GKvghuXZ/IoxOfxbn1qtemnCibuSrcxOSJ2gpFpTdWD1BBz5eAdNMCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD9"
+    },
+    "holder_token_account": {
+      "pubkey": "8VwppnNAkbQKSWoE7CS8jFtUYHvxNJbnJ6yN6nrvLbxe",
+      "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "data_base64": "VyLs673KeAEwOxZ0an/46gAKAwT9GGtPR7yUvxW9NEf+nICikYmEhTzKS5b4ZlYWtMzVZ4k9o8nNc+2COrmwrAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
+    },
+    "consumption": {
+      "pubkey": "4ychfJKx9PYGZxBmCy9WmKKTRSUGR28E4k5EHWaR4KJR",
+      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "data_base64": "vqpUcjK+qi9q1aYGdwyid7iRfHB6qPIidKT9RA+qHHZvSVHFru9w7BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUV/pyAopGJhIU8ykuW+GZWFrTM1WeJPaPJzXPtgjq5sKwBKz3+agAAAAABAAAAAAAAAP0="
+    }
+  }
 }

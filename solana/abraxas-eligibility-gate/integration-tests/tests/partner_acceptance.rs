@@ -1,8 +1,9 @@
 //! BUILD #981 — independent partner acceptance (local ProgramTest only).
 
 use abraxas_eligibility_gate_integration_tests::entitlement_partner::{
-    artifact_repo_path, hex32, now_ms, program_ids_banner, verify_independent_partner_state,
-    write_artifact, JourneyStage, PartnerJourneyArtifact, ARTIFACT_REL, ARTIFACT_REVOKE_REL,
+    artifact_repo_path, capture_partner_evidence, hex32, now_ms, program_ids_banner,
+    verify_independent_from_evidence, verify_independent_partner_state, write_artifact,
+    JourneyStage, PartnerJourneyArtifact, ARTIFACT_REL, ARTIFACT_REVOKE_REL,
 };
 use abraxas_proof_continuity::{ID as PROOF_ID, STATUS_REVOKED};
 use anchor_lang::{InstructionData, ToAccountMetas};
@@ -145,6 +146,22 @@ async fn partner_complete_authorized_journey() {
         &spl_token_2022::id(),
     );
     let balance = token_balance(&mut ctx, ata).await;
+    let partner_evidence = capture_partner_evidence(
+        &mut ctx,
+        env.registry_admin,
+        env.relying_party_admin,
+        env.registry,
+        env.commitment,
+        env.mint_config,
+        env.mint,
+        holder.pubkey(),
+        env.trusted_config,
+        env.receipt,
+        Some(consumption),
+    )
+    .await;
+    let evidence_report = verify_independent_from_evidence(&partner_evidence).expect("evidence");
+    assert!(evidence_report.entitlement_currently_authorizes);
     let artifact = PartnerJourneyArtifact {
         build: "981".into(),
         environment: "local_program_test".into(),
@@ -166,6 +183,7 @@ async fn partner_complete_authorized_journey() {
         independent_verification_ok: verification.verifier_accepts_entitlement
             && verification.consumption_consumed,
         recorded_at_unix_ms: now_ms(),
+        partner_evidence: Some(partner_evidence),
     };
     write_artifact(ARTIFACT_REL, &artifact).expect("write authorized artifact");
     assert!(artifact_repo_path(ARTIFACT_REL).exists());
@@ -265,6 +283,20 @@ async fn partner_revoke_then_deny_while_token_remains() {
     assert_eq!(verification.token_balance, 1);
 
     let (proof_id, consumer_id, token_id) = program_ids_banner();
+    let partner_evidence = capture_partner_evidence(
+        &mut ctx,
+        env.registry_admin,
+        env.relying_party_admin,
+        env.registry,
+        env.commitment,
+        env.mint_config,
+        env.mint,
+        holder.pubkey(),
+        env.trusted_config,
+        env.receipt,
+        None,
+    )
+    .await;
     let artifact = PartnerJourneyArtifact {
         build: "981".into(),
         environment: "local_program_test".into(),
@@ -303,8 +335,29 @@ async fn partner_revoke_then_deny_while_token_remains() {
         consumption_recorded: false,
         independent_verification_ok: false,
         recorded_at_unix_ms: now_ms(),
+        partner_evidence: Some(partner_evidence),
     };
     write_artifact(ARTIFACT_REVOKE_REL, &artifact).expect("write revoked artifact");
+}
+
+#[tokio::test]
+async fn partner_tampered_json_flag_does_not_fool_independent_verifier() {
+    let evidence =
+        abraxas_eligibility_gate_integration_tests::entitlement_partner::load_artifact(
+            ARTIFACT_REVOKE_REL,
+        )
+        .expect("revoked artifact")
+        .partner_evidence
+        .expect("evidence");
+    let mut artifact =
+        abraxas_eligibility_gate_integration_tests::entitlement_partner::load_artifact(
+            ARTIFACT_REVOKE_REL,
+        )
+        .unwrap();
+    artifact.independent_verification_ok = true;
+    let report = verify_independent_from_evidence(&evidence).unwrap();
+    assert!(!report.entitlement_currently_authorizes);
+    assert!(artifact.independent_verification_ok);
 }
 
 #[tokio::test]

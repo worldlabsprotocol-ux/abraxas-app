@@ -1,19 +1,19 @@
-//! CLI: verify partner journey artifact (no Abraxas hosted UI).
+//! CLI: partner journey — untrusted execution report + independent evidence verification.
 use abraxas_eligibility_gate_integration_tests::entitlement_partner::{
-    cli_report, load_artifact, is_revoked_artifact, PartnerJourneyArtifact,
+    execution_report, independent_passes_authorized_journey, independent_passes_revoked_journey,
+    independent_verification_report, load_artifact,
+    verify_independent_from_evidence, PartnerJourneyArtifact,
 };
 use std::env;
 
 fn main() {
-    let path = env::args()
-        .nth(1)
-        .unwrap_or_else(|| {
-            eprintln!(
-                "usage: partner-verify <artifact.json|authorized|revoked>\n\
-                 If authorized|revoked, reads committed BUILD #981 examples artifacts."
-            );
-            std::process::exit(2);
-        });
+    let path = env::args().nth(1).unwrap_or_else(|| {
+        eprintln!(
+            "usage: partner-verify <artifact.json|authorized|revoked>\n\
+             Prints an untrusted execution report, then independently re-verifies embedded account evidence."
+        );
+        std::process::exit(2);
+    });
     let artifact: PartnerJourneyArtifact = if path == "authorized" {
         load_artifact(
             abraxas_eligibility_gate_integration_tests::entitlement_partner::ARTIFACT_REL,
@@ -28,18 +28,34 @@ fn main() {
         let bytes = std::fs::read(&path).expect("read artifact");
         serde_json::from_slice::<PartnerJourneyArtifact>(&bytes).expect("parse artifact")
     };
-    println!("{}", cli_report(&artifact));
-    if path == "revoked" || is_revoked_artifact(&artifact) {
-        if artifact.token_balance != 1 || artifact.consumption_recorded {
-            eprintln!("revoked journey invariant failed");
+
+    println!("{}", execution_report(&artifact));
+
+    let Some(evidence) = &artifact.partner_evidence else {
+        eprintln!("\n=== INDEPENDENT RE-VERIFICATION ===");
+        eprintln!("SKIPPED: artifact has no partner_evidence snapshots.");
+        eprintln!("This file is an execution report only, not independently verified proof.");
+        std::process::exit(2);
+    };
+
+    let report = match verify_independent_from_evidence(evidence) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("\nIndependent verification error: {e}");
             std::process::exit(1);
         }
-        if artifact.independent_verification_ok {
-            eprintln!("revoked journey must not pass independent verification");
-            std::process::exit(1);
-        }
-    } else if !artifact.independent_verification_ok {
-        eprintln!("authorized journey failed independent verification flag");
+    };
+    println!("\n{}", independent_verification_report(&report));
+
+    let ok = if report.consumption_consumed {
+        independent_passes_authorized_journey(&report)
+    } else {
+        independent_passes_revoked_journey(&report)
+    };
+
+    if !ok {
+        eprintln!("\nIndependent verification FAILED (JSON flags ignored).");
         std::process::exit(1);
     }
+    println!("\nIndependent verification PASSED (derived from account evidence only).");
 }
