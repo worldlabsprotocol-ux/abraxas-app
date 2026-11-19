@@ -1,7 +1,8 @@
 //! BUILD #981 — independent partner acceptance (local ProgramTest only).
 
 use abraxas_eligibility_gate_integration_tests::entitlement_partner::{
-    artifact_repo_path, capture_partner_evidence, hex32, now_ms, program_ids_banner,
+    artifact_repo_path, capture_partner_evidence, evidence_snapshots_are_authenticated_chain_proof,
+    hex32, is_authenticated_chain_proof, now_ms, program_ids_banner, resolve_authenticated_chain,
     verify_independent_from_evidence, verify_independent_partner_state, write_artifact,
     JourneyStage, PartnerJourneyArtifact, ARTIFACT_REL, ARTIFACT_REVOKE_REL,
 };
@@ -338,6 +339,17 @@ async fn partner_revoke_then_deny_while_token_remains() {
         partner_evidence: Some(partner_evidence),
     };
     write_artifact(ARTIFACT_REVOKE_REL, &artifact).expect("write revoked artifact");
+}
+
+#[tokio::test]
+async fn partner_offline_snapshots_not_authenticated_chain_evidence() {
+    let artifact =
+        abraxas_eligibility_gate_integration_tests::entitlement_partner::load_artifact(ARTIFACT_REL)
+            .expect("artifact");
+    let evidence = artifact.partner_evidence.expect("evidence");
+    assert!(!evidence_snapshots_are_authenticated_chain_proof(&evidence));
+    let auth = resolve_authenticated_chain(&evidence, None);
+    assert!(!is_authenticated_chain_proof(&auth));
 }
 
 #[tokio::test]

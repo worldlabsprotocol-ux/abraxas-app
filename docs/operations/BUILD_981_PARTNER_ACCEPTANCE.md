@@ -10,7 +10,8 @@ Local ProgramTest / sandbox only.
 
 - Library: `solana/abraxas-eligibility-gate/integration-tests/src/entitlement_partner.rs`
 - CLI: `cargo run --bin partner-verify authorized|revoked`
-- **Execution report** (JSON claims, untrusted) vs **independent re-verification** (base64 account snapshots + PDA checks + `verify_receipt_backed_entitlement`). CLI exit code uses evidence only.
+- **Execution report** (untrusted JSON) → **structural/semantic** (offline snapshots; not chain proof) → **authenticated on-chain** via `PARTNER_VERIFY_RPC_URL` or explicit NOT PERFORMED for ProgramTest artifacts.
+- **Executable acceptance** remains `partner_acceptance` ProgramTests (BanksClient).
 
 ## Acceptance matrix
 

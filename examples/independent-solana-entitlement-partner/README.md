@@ -42,9 +42,17 @@ cargo run --bin partner-verify revoked
 
 ## How to verify success
 
-1. `partner-verify authorized` prints an **untrusted execution report**, then **independently re-verifies** embedded account snapshots (PDAs, program owners, `verify_receipt_backed_entitlement`). Exit 0 only when evidence proves authorization.
-2. The JSON field `independent_verification_ok` is a test-runner note only — editing it does not change CLI proof.
-3. `partner-verify revoked` must pass independent checks with entitlement **not** authorizing and no consumption PDA.
+Three layers (do not confuse them):
+
+| Layer | What it proves |
+|-------|----------------|
+| **ProgramTest** `partner_acceptance` | Executable local acceptance (BanksClient transactions) |
+| **`partner-verify` structural** | Offline consistency of JSON-embedded snapshots (PDAs, owners, receipt semantics) — **not** proof of real chain state |
+| **RPC** (`PARTNER_VERIFY_RPC_URL`) | Authenticated on-chain bytes when accounts exist on your chosen cluster |
+
+1. Run `npm run test:build-981` for authoritative **local** acceptance.
+2. `partner-verify authorized` / `revoked` checks structural semantics only; it labels authenticated on-chain verification **NOT PERFORMED** without RPC.
+3. JSON fields and base64 blobs can be edited — only RPC attestation or fresh ProgramTest runs establish stronger proof.
 
 ## How to reproduce revoked-proof rejection
 
