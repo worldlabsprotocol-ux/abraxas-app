@@ -1,12 +1,20 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
 import { ENTITLEMENT_CONSUMER_PROGRAM_ID } from "@/lib/solana/token2022Entitlement/constants";
+import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 import {
   findEntitlementMintConfigPda,
   findTrustedRelyingPartyConfigPda,
 } from "@/lib/solana/token2022Entitlement/pda";
 import { findProofRegistryPda } from "@/lib/solana/proofContinuity/pda";
-import { connectedSandboxProgramBytecodeDigest, readConnectedSandboxPinnedConfig } from "./connectedSandboxConfig";
+import {
+  connectedSandboxAttestationsReady,
+  connectedSandboxGenesisHash,
+  entitlementConsumerProgramSha256,
+  proofContinuityProgramSha256,
+  readConnectedSandboxPinnedConfig,
+} from "./connectedSandboxConfig";
+import { verifyDeployedProgramBytecode } from "./verifyDeployedProgramIdentity";
 
 export type ConnectedSandboxBoundaryResult =
   | {
@@ -28,14 +36,19 @@ function isProductionSurface(): boolean {
   return process.env.NODE_ENV === "production" && vercel !== "preview" && vercel !== "development";
 }
 
-async function assertExecutableProgram(
+async function assertUpgradeableProgramDeployed(
   connection: Connection,
   expectedId: string,
 ): Promise<{ ok: true } | { ok: false; code: string }> {
-  const info = await connection.getAccountInfo(new PublicKey(expectedId), "confirmed");
+  let info;
+  try {
+    info = await connection.getAccountInfo(new PublicKey(expectedId), "confirmed");
+  } catch {
+    return { ok: false, code: "rpc_unavailable" };
+  }
   if (!info?.executable) return { ok: false, code: "program_not_deployed" };
-  if (!info.owner.toBase58().includes("BPF")) {
-    return { ok: false, code: "program_owner_untrusted" };
+  if (info.owner.toBase58() !== SOLANA_UPGRADEABLE_LOADER) {
+    return { ok: false, code: "program_loader_untrusted" };
   }
   return { ok: true };
 }
@@ -73,7 +86,7 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
     return { ok: false, code: "rpc_unavailable", detail: "Pinned RPC URL is unreachable." };
   }
 
-  const expectedGenesis = process.env.ABRAXAS_CONNECTED_SANDBOX_GENESIS_HASH?.trim();
+  const expectedGenesis = connectedSandboxGenesisHash();
   if (expectedGenesis) {
     try {
       const genesis = await connection.getGenesisHash();
@@ -85,26 +98,64 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
     }
   }
 
-  const proofCheck = await assertExecutableProgram(connection, pinned.proof_continuity_program_id);
+  const proofCheck = await assertUpgradeableProgramDeployed(connection, pinned.proof_continuity_program_id);
   if (!proofCheck.ok) {
-    return {
-      ok: false,
-      code: "proof_continuity_program_unavailable",
-      detail: "Proof continuity program is not deployed at the pinned address.",
-    };
+    const code =
+      proofCheck.code === "rpc_unavailable"
+        ? "rpc_unavailable"
+        : "proof_continuity_program_unavailable";
+    const detail =
+      proofCheck.code === "rpc_unavailable"
+        ? "Could not reach pinned RPC while checking proof continuity deployment."
+        : "Proof continuity program is not deployed at the pinned address.";
+    return { ok: false, code, detail };
   }
-  const consumerCheck = await assertExecutableProgram(connection, pinned.entitlement_consumer_program_id);
+  const consumerCheck = await assertUpgradeableProgramDeployed(connection, pinned.entitlement_consumer_program_id);
   if (!consumerCheck.ok) {
-    return {
-      ok: false,
-      code: "token2022_unavailable",
-      detail: "Entitlement consumer program is not deployed at the pinned address.",
-    };
+    const code =
+      consumerCheck.code === "rpc_unavailable" ? "rpc_unavailable" : "token2022_unavailable";
+    const detail =
+      consumerCheck.code === "rpc_unavailable"
+        ? "Could not reach pinned RPC while checking entitlement consumer deployment."
+        : "Entitlement consumer program is not deployed at the pinned address.";
+    return { ok: false, code, detail };
   }
 
-  const digest = connectedSandboxProgramBytecodeDigest();
-  if (digest) {
-    // Optional operator-controlled deployment attestation (programdata account hash) — skip when unset.
+  const proofSha = proofContinuityProgramSha256();
+  const consumerSha = entitlementConsumerProgramSha256();
+  if (proofSha) {
+    const attestation = await verifyDeployedProgramBytecode(
+      connection,
+      pinned.proof_continuity_program_id,
+      proofSha,
+    );
+    if (!attestation.ok) {
+      if (attestation.code === "rpc_unavailable") {
+        return { ok: false, code: "rpc_unavailable", detail: "RPC unavailable during proof continuity attestation." };
+      }
+      return {
+        ok: false,
+        code: "proof_continuity_program_attestation_mismatch",
+        detail: "Deployed proof continuity bytecode does not match operator attestation.",
+      };
+    }
+  }
+  if (consumerSha) {
+    const attestation = await verifyDeployedProgramBytecode(
+      connection,
+      pinned.entitlement_consumer_program_id,
+      consumerSha,
+    );
+    if (!attestation.ok) {
+      if (attestation.code === "rpc_unavailable") {
+        return { ok: false, code: "rpc_unavailable", detail: "RPC unavailable during entitlement consumer attestation." };
+      }
+      return {
+        ok: false,
+        code: "entitlement_consumer_program_attestation_mismatch",
+        detail: "Deployed entitlement consumer bytecode does not match operator attestation.",
+      };
+    }
   }
 
   const adminPk = new PublicKey(pinned.registry_admin);
@@ -112,37 +163,43 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
   const mintConfig = findEntitlementMintConfigPda(registry.address);
   const trustedConfig = findTrustedRelyingPartyConfigPda(new PublicKey(pinned.relying_party_admin));
 
-  const [registryInfo, mintConfigInfo, trustedConfigInfo] = await Promise.all([
-    connection.getAccountInfo(registry.address, "confirmed"),
-    connection.getAccountInfo(mintConfig.address, "confirmed"),
-    connection.getAccountInfo(trustedConfig.address, "confirmed"),
-  ]);
+  let registryInfo;
+  let mintConfigInfo;
+  let trustedConfigInfo;
+  try {
+    [registryInfo, mintConfigInfo, trustedConfigInfo] = await Promise.all([
+      connection.getAccountInfo(registry.address, "confirmed"),
+      connection.getAccountInfo(mintConfig.address, "confirmed"),
+      connection.getAccountInfo(trustedConfig.address, "confirmed"),
+    ]);
+  } catch {
+    return { ok: false, code: "rpc_unavailable", detail: "Could not read operator infrastructure accounts." };
+  }
 
   const infrastructureReady = Boolean(registryInfo && mintConfigInfo && trustedConfigInfo);
+  const attestationsReady = connectedSandboxAttestationsReady();
 
-  if (!infrastructureReady) {
+  const base = {
+    rpc_url: pinned.rpc_url,
+    cluster_label: pinned.cluster_label,
+    registry_admin: pinned.registry_admin,
+    relying_party_admin: pinned.relying_party_admin,
+    registry_pda: registry.address.toBase58(),
+    entitlement_mint_config_pda: mintConfig.address.toBase58(),
+    trusted_config_pda: trustedConfig.address.toBase58(),
+  };
+
+  if (!infrastructureReady || !attestationsReady) {
     return {
       ok: true,
-      rpc_url: pinned.rpc_url,
-      cluster_label: pinned.cluster_label,
-      registry_admin: pinned.registry_admin,
-      relying_party_admin: pinned.relying_party_admin,
+      ...base,
       mint_and_consume_actionable: false,
-      registry_pda: registry.address.toBase58(),
-      entitlement_mint_config_pda: mintConfig.address.toBase58(),
-      trusted_config_pda: trustedConfig.address.toBase58(),
     };
   }
 
   return {
     ok: true,
-    rpc_url: pinned.rpc_url,
-    cluster_label: pinned.cluster_label,
-    registry_admin: pinned.registry_admin,
-    relying_party_admin: pinned.relying_party_admin,
+    ...base,
     mint_and_consume_actionable: true,
-    registry_pda: registry.address.toBase58(),
-    entitlement_mint_config_pda: mintConfig.address.toBase58(),
-    trusted_config_pda: trustedConfig.address.toBase58(),
   };
 }

@@ -121,12 +121,16 @@ export function IntegrationStudioToken2022EntitlementJourney({
     void loadJourney("capabilities");
   }, [loadJourney]);
 
-  async function runConnectedPhase(phase: "prepare_mint" | "confirm_mint" | "prepare_consume" | "confirm_consume", signature?: string) {
-    if (!applicationId || !prepareToken) return;
+  async function runConnectedPhase(
+    phase: "prepare_mint" | "confirm_mint" | "prepare_consume" | "confirm_consume",
+    signature?: string,
+  ): Promise<{ ok: boolean }> {
+    if (!applicationId || !prepareToken) return { ok: false };
     const setPhase = phase.includes("mint") ? setMintPhase : setConsumePhase;
+    if (phase.startsWith("confirm")) setPhase("confirming");
+    if (phase.startsWith("prepare")) setPhase("signing");
     setExecError("");
     try {
-      if (phase.startsWith("prepare")) setPhase("signing");
       const res = await fetch(`/api/launchpad/applications/${applicationId}/token2022-connected-execution`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,6 +142,7 @@ export function IntegrationStudioToken2022EntitlementJourney({
         }),
       });
       const data = await res.json().catch(() => ({})) as {
+        ok?: boolean;
         code?: string;
         transaction_base64?: string;
         recent_blockhash?: string;
@@ -147,40 +152,55 @@ export function IntegrationStudioToken2022EntitlementJourney({
         token_balance?: string;
         recovery?: { detail?: string };
       };
-      if (!res.ok) {
-        setPhase("denied");
-        setExecError(data.recovery?.detail ?? data.code ?? "connected_execution_failed");
-        return;
+      if (!res.ok || data.ok === false) {
+        if (phase.startsWith("confirm") && signature) {
+          setPhase("confirming");
+          setExecError(data.recovery?.detail ?? data.code ?? "connected_execution_confirmation_failed");
+        } else {
+          setPhase("denied");
+          setExecError(data.recovery?.detail ?? data.code ?? "connected_execution_failed");
+        }
+        return { ok: false };
       }
       if (phase.startsWith("prepare") && data.transaction_base64 && signTransaction) {
         setPhase("submitted");
-        const sig = await signAndSendPreparedSolanaTransaction({
-          rpcUrl: data.rpc_url!,
-          transactionBase64: data.transaction_base64,
-          recentBlockhash: data.recent_blockhash!,
-          lastValidBlockHeight: data.last_valid_block_height!,
-          signTransaction,
-        });
+        let sig: string;
+        try {
+          sig = await signAndSendPreparedSolanaTransaction({
+            rpcUrl: data.rpc_url!,
+            transactionBase64: data.transaction_base64,
+            recentBlockhash: data.recent_blockhash!,
+            lastValidBlockHeight: data.last_valid_block_height!,
+            signTransaction,
+          });
+        } catch {
+          setPhase("denied");
+          setExecError("Wallet rejected the transaction signature.");
+          return { ok: false };
+        }
+        if (phase === "prepare_mint") setMintSig(sig);
+        else setConsumeSig(sig);
         setPhase("confirming");
-        await runConnectedPhase(
+        const confirmed = await runConnectedPhase(
           phase === "prepare_mint" ? "confirm_mint" : "confirm_consume",
           sig,
         );
-        if (phase === "prepare_mint") setMintSig(sig);
-        else setConsumeSig(sig);
-        setPhase("verified");
-        return;
+        return confirmed;
       }
       if (phase.startsWith("confirm")) {
-        setPhase("verified");
-        if (data.transaction_signature) {
-          if (phase === "confirm_mint") setMintSig(data.transaction_signature);
-          else setConsumeSig(data.transaction_signature);
+        const txSig = data.transaction_signature ?? signature ?? null;
+        if (txSig) {
+          if (phase === "confirm_mint") setMintSig(txSig);
+          else setConsumeSig(txSig);
         }
+        setPhase("verified");
+        return { ok: true };
       }
+      return { ok: true };
     } catch {
       setPhase("denied");
       setExecError("Wallet signature rejected or RPC unreachable.");
+      return { ok: false };
     }
   }
 
@@ -298,7 +318,13 @@ export function IntegrationStudioToken2022EntitlementJourney({
               {mintSig ? <p style={{ fontFamily: MONO, fontSize: "0.62rem" }}>mint_tx: {mintSig}</p> : null}
               <Btn
                 size="sm"
-                disabled={!prepareToken || mintPhase === "signing" || mintPhase === "confirming"}
+                disabled={
+                  !prepareToken
+                  || mintPhase === "signing"
+                  || mintPhase === "submitted"
+                  || mintPhase === "confirming"
+                  || mintPhase === "verified"
+                }
                 onClick={() => void runConnectedPhase("prepare_mint")}
               >
                 Sign mint transaction
@@ -346,7 +372,14 @@ export function IntegrationStudioToken2022EntitlementJourney({
               {consumeSig ? <p style={{ fontFamily: MONO, fontSize: "0.62rem" }}>consume_tx: {consumeSig}</p> : null}
               <Btn
                 size="sm"
-                disabled={!prepareToken || consumePhase === "signing" || consumePhase === "confirming"}
+                disabled={
+                  !prepareToken
+                  || consumePhase === "signing"
+                  || consumePhase === "submitted"
+                  || consumePhase === "confirming"
+                  || consumePhase === "verified"
+                  || mintPhase !== "verified"
+                }
                 onClick={() => void runConnectedPhase("prepare_consume")}
               >
                 Sign consume transaction

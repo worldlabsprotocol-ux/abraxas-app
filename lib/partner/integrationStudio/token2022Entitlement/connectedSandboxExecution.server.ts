@@ -1,11 +1,6 @@
 import "server-only";
 
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_2022_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
-  unpackAccount,
-} from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import {
   buildConsumeVerifiedEntitlementInstruction,
@@ -19,6 +14,10 @@ import {
 } from "@/lib/solana/proofContinuity/decodeCommitment";
 import { findProofRegistryPda, findReceiptCommitmentPda } from "@/lib/solana/proofContinuity/pda";
 import { verifyPrepareBindingToken } from "@/lib/partner/launchpad/blockchainNative/prepareBinding";
+import {
+  verifyConsumeEntitlementTransaction,
+  verifyMintEntitlementTransaction,
+} from "@/lib/solana/token2022Entitlement/verifyEntitlementTransaction";
 import { evaluateConnectedSandboxBoundary } from "./connectedSandboxBoundary";
 
 export type ConnectedTxReady =
@@ -40,6 +39,7 @@ export type ConnectedConfirmResult =
       phase: "mint_confirmed" | "consume_confirmed";
       transaction_signature: string;
       observation_slot: number;
+      confirmation_commitment: "finalized" | "confirmed";
       token_balance: string | null;
       consumption_initialized: boolean;
       public_accounts: ReturnType<typeof resolveEntitlementPublicAccounts>;
@@ -223,43 +223,33 @@ export async function confirmConnectedSandboxMint(input: {
   if (!verified.ok) return { ok: false, code: verified.code };
 
   const connection = new Connection(boundary.rpc_url, { commitment: "finalized" });
-  const status = await connection.getSignatureStatus(input.transaction_signature, { searchTransactionHistory: true });
-  if (!status.value || status.value.err) return { ok: false, code: "transaction_confirmation_failure" };
-  if (status.value.confirmationStatus !== "finalized" && status.value.confirmationStatus !== "confirmed") {
-    return { ok: false, code: "transaction_not_finalized" };
-  }
-
   const admin = new PublicKey(boundary.registry_admin);
   const holder = new PublicKey(input.holder_wallet);
   const relyingPartyAdmin = new PublicKey(boundary.relying_party_admin);
   const receiptHash = hashReceiptId(verified.binding.receipt_id);
+
+  const txProof = await verifyMintEntitlementTransaction(connection, input.transaction_signature, {
+    holder: input.holder_wallet,
+    registryAdmin: boundary.registry_admin,
+    relyingPartyAdmin: boundary.relying_party_admin,
+    receiptIdHash: receiptHash,
+  });
+  if (!txProof.ok) return { ok: false, code: txProof.reason };
+
   const mint = resolveEntitlementPublicAccounts({
     registryAdmin: admin,
     relyingPartyAdmin,
     holder,
     receiptIdHash: receiptHash,
   });
-  const ata = getAssociatedTokenAddressSync(
-    new PublicKey(mint.entitlement_mint),
-    holder,
-    false,
-    TOKEN_2022_PROGRAM_ID,
-  );
-  const tokenInfo = await connection.getAccountInfo(ata, "finalized");
-  let tokenBalance: string | null = null;
-  if (tokenInfo?.data) {
-    const unpacked = unpackAccount(ata, tokenInfo, TOKEN_2022_PROGRAM_ID);
-    tokenBalance = unpacked.amount.toString();
-  }
-
-  const slot = status.context.slot;
 
   return {
     ok: true,
     phase: "mint_confirmed",
     transaction_signature: input.transaction_signature,
-    observation_slot: slot,
-    token_balance: tokenBalance,
+    observation_slot: txProof.slot,
+    confirmation_commitment: txProof.confirmation_status,
+    token_balance: txProof.token_balance,
     consumption_initialized: false,
     public_accounts: mint,
     verification_tiers: {
@@ -299,13 +289,19 @@ export async function confirmConnectedSandboxConsume(input: {
   if (!verified.ok) return { ok: false, code: verified.code };
 
   const connection = new Connection(boundary.rpc_url, { commitment: "finalized" });
-  const status = await connection.getSignatureStatus(input.transaction_signature, { searchTransactionHistory: true });
-  if (!status.value || status.value.err) return { ok: false, code: "transaction_confirmation_failure" };
-
   const admin = new PublicKey(boundary.registry_admin);
   const holder = new PublicKey(input.holder_wallet);
   const relyingPartyAdmin = new PublicKey(boundary.relying_party_admin);
   const receiptHash = hashReceiptId(verified.binding.receipt_id);
+
+  const txProof = await verifyConsumeEntitlementTransaction(connection, input.transaction_signature, {
+    holder: input.holder_wallet,
+    registryAdmin: boundary.registry_admin,
+    relyingPartyAdmin: boundary.relying_party_admin,
+    receiptIdHash: receiptHash,
+  });
+  if (!txProof.ok) return { ok: false, code: txProof.reason };
+
   const accounts = resolveEntitlementPublicAccounts({
     registryAdmin: admin,
     relyingPartyAdmin,
@@ -313,15 +309,14 @@ export async function confirmConnectedSandboxConsume(input: {
     receiptIdHash: receiptHash,
   });
 
-  const consumptionInfo = await connection.getAccountInfo(new PublicKey(accounts.consumption), "finalized");
-
   return {
     ok: true,
     phase: "consume_confirmed",
     transaction_signature: input.transaction_signature,
-    observation_slot: status.context.slot,
+    observation_slot: txProof.slot,
+    confirmation_commitment: txProof.confirmation_status,
     token_balance: null,
-    consumption_initialized: Boolean(consumptionInfo?.data && consumptionInfo.data.length > 8),
+    consumption_initialized: true,
     public_accounts: accounts,
     verification_tiers: {
       execution_report: {

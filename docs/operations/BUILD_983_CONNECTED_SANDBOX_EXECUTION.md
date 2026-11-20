@@ -13,8 +13,10 @@ Holder-wallet **mint** and **consume** against a pinned non-production Solana RP
 | `ABRAXAS_ENTITLEMENT_RELYING_PARTY_ADMIN` | Trusted relying-party config admin |
 | `BLOCKCHAIN_NATIVE_PREPARE_HMAC_KEY` | Prepare token binding (existing) |
 | `ABRAXAS_CONNECTED_SANDBOX_CLUSTER` | Label (e.g. `devnet-local`) |
-| `ABRAXAS_CONNECTED_SANDBOX_GENESIS_HASH` | Optional cluster pin |
-| `ABRAXAS_CONNECTED_SANDBOX_PROGRAM_SHA256` | Optional bytecode attestation |
+| `ABRAXAS_CONNECTED_SANDBOX_GENESIS_HASH` | **Required** before `mint_and_consume_actionable` |
+| `ABRAXAS_PROOF_CONTINUITY_PROGRAM_SHA256` | SHA-256 of deployed proof-continuity ELF |
+| `ABRAXAS_ENTITLEMENT_CONSUMER_PROGRAM_SHA256` | SHA-256 of deployed entitlement-consumer ELF |
+| `ABRAXAS_CONNECTED_SANDBOX_PROGRAM_SHA256` | Deprecated fallback for both program digests |
 
 Program IDs are **allowlisted** to repository constants — browser cannot override.
 
@@ -43,6 +45,8 @@ Artifacts: `solana/abraxas-eligibility-gate/target/deploy/*.so`
 1. Recorded signature (untrusted until re-fetched)
 2. N/A for live step (offline snapshots not used for live mint)
 3. RPC observation at configured sandbox (`finalized` / `confirmed`)
+
+Confirmation **rejects** unrelated signatures: the server decodes the on-chain transaction, checks the expected Anchor instruction (program, accounts, receipt hash, holder signer), and verifies post-state (issuance ledger, Token-2022 balance, consumption flag). Upgradeable-loader ELF SHA-256 must match operator env before execution is actionable.
 
 ## Tests
 

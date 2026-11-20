@@ -14,8 +14,9 @@ export type ConnectedSandboxPinnedConfig = {
   proof_continuity_program_id: string;
   entitlement_consumer_program_id: string;
   token_program_id: string;
-  /** Optional sha256 hex of deployed program bytecode for fail-closed allowlist. */
-  program_bytecode_sha256_hex: string | null;
+  genesis_hash: string | null;
+  proof_continuity_program_sha256_hex: string | null;
+  entitlement_consumer_program_sha256_hex: string | null;
 };
 
 function pinnedClusterLabel(): string {
@@ -26,10 +27,43 @@ export function entitlementRelyingPartyAdmin(): string | null {
   return process.env.ABRAXAS_ENTITLEMENT_RELYING_PARTY_ADMIN?.trim() || null;
 }
 
-export function connectedSandboxProgramBytecodeDigest(): string | null {
-  const raw = process.env.ABRAXAS_CONNECTED_SANDBOX_PROGRAM_SHA256?.trim();
+function parseSha256HexEnv(name: string): string | null {
+  const raw = process.env[name]?.trim();
   if (!raw) return null;
   return /^[0-9a-f]{64}$/i.test(raw) ? raw.toLowerCase() : null;
+}
+
+/** Pinned cluster genesis hash — required before connected execution is actionable. */
+export function connectedSandboxGenesisHash(): string | null {
+  const raw = process.env.ABRAXAS_CONNECTED_SANDBOX_GENESIS_HASH?.trim();
+  return raw && raw.length > 0 ? raw : null;
+}
+
+export function proofContinuityProgramSha256(): string | null {
+  return (
+    parseSha256HexEnv("ABRAXAS_PROOF_CONTINUITY_PROGRAM_SHA256")
+    ?? parseSha256HexEnv("ABRAXAS_CONNECTED_SANDBOX_PROGRAM_SHA256")
+  );
+}
+
+export function entitlementConsumerProgramSha256(): string | null {
+  return (
+    parseSha256HexEnv("ABRAXAS_ENTITLEMENT_CONSUMER_PROGRAM_SHA256")
+    ?? parseSha256HexEnv("ABRAXAS_CONNECTED_SANDBOX_PROGRAM_SHA256")
+  );
+}
+
+/** @deprecated Prefer per-program SHA-256 env vars. */
+export function connectedSandboxProgramBytecodeDigest(): string | null {
+  return parseSha256HexEnv("ABRAXAS_CONNECTED_SANDBOX_PROGRAM_SHA256");
+}
+
+export function connectedSandboxAttestationsReady(): boolean {
+  return Boolean(
+    connectedSandboxGenesisHash()
+    && proofContinuityProgramSha256()
+    && entitlementConsumerProgramSha256(),
+  );
 }
 
 export function readConnectedSandboxPinnedConfig(): ConnectedSandboxPinnedConfig | null {
@@ -51,6 +85,8 @@ export function readConnectedSandboxPinnedConfig(): ConnectedSandboxPinnedConfig
     proof_continuity_program_id: proofId,
     entitlement_consumer_program_id: consumerId,
     token_program_id: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-    program_bytecode_sha256_hex: connectedSandboxProgramBytecodeDigest(),
+    genesis_hash: connectedSandboxGenesisHash(),
+    proof_continuity_program_sha256_hex: proofContinuityProgramSha256(),
+    entitlement_consumer_program_sha256_hex: entitlementConsumerProgramSha256(),
   };
 }
