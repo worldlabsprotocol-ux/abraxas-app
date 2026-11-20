@@ -1,20 +1,24 @@
 import { createHash } from "node:crypto";
-import {
-  ephemeralKvDel,
-  ephemeralKvGet,
-  ephemeralKvSet,
-  ephemeralKvSetNx,
-  resolveEphemeralKvBackend,
-} from "@/lib/auth/ephemeralWallet/redisKv";
+import { ephemeralKvGet, resolveEphemeralKvBackend } from "@/lib/auth/ephemeralWallet/redisKv";
 import { EphemeralStateUnavailableError } from "@/lib/auth/ephemeralWallet/errors";
 import {
   isDistributedProductionEnvironment,
   processTransientStateAllowed,
 } from "@/lib/auth/ephemeralWallet/transientStatePolicy";
+import {
+  atomicBindConnectedSandboxSignature,
+  atomicCommitConnectedSandboxConfirm,
+  atomicConnectedSandboxPrepareTransition,
+  connectedSandboxAtomicTransitionsSupported,
+  readConnectedSandboxPrepareBundle,
+  resetConnectedSandboxAtomicBundlesForTests,
+} from "./connectedSandboxAtomicBundle";
+
 export type CachedToken2022ConnectedConfirm = {
   ok: true;
   phase: "mint_confirmed" | "consume_confirmed";
   prepared_message_hash_hex: string;
+  preparation_generation: number;
   transaction_signature: string;
   observation_slot: number;
   confirmation_commitment: "finalized" | "confirmed";
@@ -36,8 +40,6 @@ export type CachedToken2022ConnectedConfirm = {
   };
 };
 
-const PREPARE_PREFIX = "abraxas:token2022-connected:prepare:v1:";
-const JTI_ACTION_PREFIX = "abraxas:token2022-connected:jti:v1:";
 const CONFIRM_PREFIX = "abraxas:token2022-connected:confirm:v1:";
 
 export type ConnectedSandboxPrepareAction = "mint" | "consume";
@@ -53,12 +55,11 @@ export type ConnectedSandboxPrepareRecord = {
   cluster_label: string;
   message_hash_hex: string;
   expires_at: number;
+  generation: number;
 };
 
-type MemoryEntry = { value: string; expiresAtMs: number };
-const memoryPrepare = new Map<string, MemoryEntry>();
-const memoryJtiAction = new Map<string, MemoryEntry>();
-const memoryConfirm = new Map<string, MemoryEntry>();
+type MemoryConfirmEntry = { value: string; expiresAtMs: number };
+const memoryConfirm = new Map<string, MemoryConfirmEntry>();
 
 function useDistributedStore(env: Record<string, string | undefined>): boolean {
   return resolveEphemeralKvBackend(env) !== "none";
@@ -67,14 +68,6 @@ function useDistributedStore(env: Record<string, string | undefined>): boolean {
 function memoryAllowed(env: Record<string, string | undefined>): boolean {
   if (isDistributedProductionEnvironment(env)) return false;
   return processTransientStateAllowed(env) || env.VITEST === "true";
-}
-
-function prepareKey(jti: string, action: ConnectedSandboxPrepareAction): string {
-  return `${PREPARE_PREFIX}${jti}:${action}`;
-}
-
-function jtiActionKey(jti: string, action: ConnectedSandboxPrepareAction): string {
-  return `${JTI_ACTION_PREFIX}${jti}:${action}`;
 }
 
 function confirmKey(input: {
@@ -89,42 +82,26 @@ function confirmKey(input: {
   return `${CONFIRM_PREFIX}${digest}`;
 }
 
-export async function resetConnectedSandboxJtiActionBinding(
-  jti: string,
-  action: ConnectedSandboxPrepareAction,
-  env: Record<string, string | undefined> = process.env,
-): Promise<void> {
-  const key = jtiActionKey(jti, action);
-  if (useDistributedStore(env)) {
-    await ephemeralKvDel(key, env);
-    return;
-  }
-  if (memoryAllowed(env)) memoryJtiAction.delete(key);
-}
-
 export function requireConnectedSandboxPrepareStore(
   env: Record<string, string | undefined> = process.env,
 ): { ok: true } | { ok: false; code: string } {
-  if (useDistributedStore(env)) return { ok: true };
+  if (useDistributedStore(env)) {
+    if (!connectedSandboxAtomicTransitionsSupported(env)) {
+      return { ok: false, code: "connected_atomic_store_unsupported" };
+    }
+    return { ok: true };
+  }
   if (memoryAllowed(env)) return { ok: true };
   return { ok: false, code: "prepare_binding_store_unavailable" };
 }
 
 export async function writeConnectedSandboxPrepareRecord(
-  record: ConnectedSandboxPrepareRecord,
+  record: Omit<ConnectedSandboxPrepareRecord, "generation">,
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
-  const key = prepareKey(record.jti, record.action);
-  const wire = JSON.stringify(record);
-  if (useDistributedStore(env)) {
-    await ephemeralKvSet(key, record, ttlSec, env);
-    await resetConnectedSandboxJtiActionBinding(record.jti, record.action, env);
-    return;
-  }
-  if (!memoryAllowed(env)) throw new EphemeralStateUnavailableError();
-  memoryPrepare.set(key, { value: wire, expiresAtMs: Date.now() + ttlSec * 1000 });
-  await resetConnectedSandboxJtiActionBinding(record.jti, record.action, env);
+  const result = await atomicConnectedSandboxPrepareTransition(record, ttlSec, env);
+  if (!result.ok) throw new EphemeralStateUnavailableError(result.code);
 }
 
 export async function readConnectedSandboxPrepareRecord(
@@ -132,17 +109,10 @@ export async function readConnectedSandboxPrepareRecord(
   action: ConnectedSandboxPrepareAction,
   env: Record<string, string | undefined> = process.env,
 ): Promise<ConnectedSandboxPrepareRecord | null> {
-  const key = prepareKey(jti, action);
-  if (useDistributedStore(env)) {
-    return ephemeralKvGet<ConnectedSandboxPrepareRecord>(key, env);
-  }
-  if (!memoryAllowed(env)) return null;
-  const entry = memoryPrepare.get(key);
-  if (!entry || entry.expiresAtMs <= Date.now()) {
-    memoryPrepare.delete(key);
-    return null;
-  }
-  return JSON.parse(entry.value) as ConnectedSandboxPrepareRecord;
+  const bundle = await readConnectedSandboxPrepareBundle(jti, action, env);
+  if (!bundle) return null;
+  if (bundle.prepare.expires_at <= Math.floor(Date.now() / 1000)) return null;
+  return bundle.prepare;
 }
 
 export async function assertConnectedSandboxJtiActionNotReusedWithOtherTx(
@@ -151,34 +121,18 @@ export async function assertConnectedSandboxJtiActionNotReusedWithOtherTx(
     action: ConnectedSandboxPrepareAction;
     transactionSignature: string;
     ttlSec: number;
+    generation: number;
   },
   env: Record<string, string | undefined> = process.env,
 ): Promise<{ ok: true } | { ok: false; code: string }> {
-  const key = jtiActionKey(input.jti, input.action);
-  if (useDistributedStore(env)) {
-    const created = await ephemeralKvSetNx(key, input.transactionSignature, input.ttlSec, env);
-    if (!created) {
-      const existing = await ephemeralKvGet<string>(key, env);
-      if (existing && existing !== input.transactionSignature) {
-        return { ok: false, code: "prepare_binding_replay" };
-      }
-    }
-    return { ok: true };
-  }
-  if (!memoryAllowed(env)) {
-    return { ok: false, code: "prepare_binding_store_unavailable" };
-  }
-  const entry = memoryJtiAction.get(key);
-  if (entry && entry.expiresAtMs > Date.now() && entry.value !== input.transactionSignature) {
-    return { ok: false, code: "prepare_binding_replay" };
-  }
-  if (!entry || entry.expiresAtMs <= Date.now()) {
-    memoryJtiAction.set(key, {
-      value: input.transactionSignature,
-      expiresAtMs: Date.now() + input.ttlSec * 1000,
-    });
-  }
-  return { ok: true };
+  return atomicBindConnectedSandboxSignature({
+    jti: input.jti,
+    action: input.action,
+    generation: input.generation,
+    transactionSignature: input.transactionSignature,
+    ttlSec: input.ttlSec,
+    env,
+  });
 }
 
 export async function readCachedToken2022ConnectedConfirm(
@@ -194,6 +148,11 @@ export async function readCachedToken2022ConnectedConfirm(
   if (useDistributedStore(env)) {
     const cached = await ephemeralKvGet<CachedToken2022ConnectedConfirm>(key, env);
     if (!cached) return null;
+    if (typeof cached === "string") {
+      const parsed = JSON.parse(cached) as CachedToken2022ConnectedConfirm;
+      if (parsed.prepared_message_hash_hex !== input.messageHashHex) return null;
+      return parsed;
+    }
     if (cached.prepared_message_hash_hex !== input.messageHashHex) return null;
     return cached;
   }
@@ -214,22 +173,39 @@ export async function writeCachedToken2022ConnectedConfirm(
     action: ConnectedSandboxPrepareAction;
     messageHashHex: string;
     transactionSignature: string;
+    generation: number;
   },
   result: CachedToken2022ConnectedConfirm,
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
-): Promise<void> {
+): Promise<{ ok: true } | { ok: false; code: string }> {
   const key = confirmKey(input);
-  if (useDistributedStore(env)) {
-    await ephemeralKvSet(key, result, ttlSec, env);
-    return;
+  const payload: CachedToken2022ConnectedConfirm = {
+    ...result,
+    preparation_generation: input.generation,
+    prepared_message_hash_hex: input.messageHashHex,
+  };
+
+  const commit = await atomicCommitConnectedSandboxConfirm({
+    jti: input.jti,
+    action: input.action,
+    generation: input.generation,
+    messageHashHex: input.messageHashHex,
+    transactionSignature: input.transactionSignature,
+    confirmKey: key,
+    result: payload,
+    ttlSec,
+    env,
+  });
+  if (!commit.ok) return commit;
+
+  if (!useDistributedStore(env) && memoryAllowed(env)) {
+    memoryConfirm.set(key, { value: JSON.stringify(payload), expiresAtMs: Date.now() + ttlSec * 1000 });
   }
-  if (!memoryAllowed(env)) throw new EphemeralStateUnavailableError();
-  memoryConfirm.set(key, { value: JSON.stringify(result), expiresAtMs: Date.now() + ttlSec * 1000 });
+  return { ok: true };
 }
 
 export function resetConnectedSandboxPrepareStoreForTests(): void {
-  memoryPrepare.clear();
-  memoryJtiAction.clear();
   memoryConfirm.clear();
+  resetConnectedSandboxAtomicBundlesForTests();
 }

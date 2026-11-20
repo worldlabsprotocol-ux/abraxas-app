@@ -27,5 +27,8 @@ export async function readCurrentPreparedToken2022Confirm(input: {
     transactionSignature: input.transactionSignature,
   });
   if (!cached) return { ok: false, code: "connected_confirm_cache_miss" };
+  if (cached.preparation_generation !== prepared.generation) {
+    return { ok: false, code: "connected_confirm_cache_miss" };
+  }
   return { ok: true, cached, message_hash_hex: prepared.message_hash_hex };
 }

@@ -13,6 +13,7 @@ type TcpClient = {
   getDel: (key: string) => Promise<string | null>;
   del: (...keys: string[]) => Promise<number>;
   ping: () => Promise<string>;
+  eval: (script: string, keys: string[], args: string[]) => Promise<unknown>;
 };
 
 let tcpClient: TcpClient | null = null;
@@ -58,6 +59,7 @@ async function loadTcpClient(env: Record<string, string | undefined>): Promise<T
         getDel: (key) => client.getDel(key),
         del: (...keys) => client.del(keys),
         ping: () => client.ping(),
+        eval: (script, keys, args) => client.eval(script, { keys, arguments: args }),
       };
       return tcpClient;
     })();
@@ -169,6 +171,31 @@ export async function ephemeralKvDel(
     return await tcp.del(key);
   }
   return 0;
+}
+
+export async function ephemeralKvEval(
+  script: string,
+  keys: string[],
+  args: string[],
+  env: Record<string, string | undefined> = process.env,
+): Promise<unknown> {
+  const upstash = getEphemeralRedis(env);
+  if (upstash) {
+    return upstash.eval(script, keys, args);
+  }
+  const tcp = await loadTcpClient(env);
+  if (tcp) {
+    return tcp.eval(script, keys, args);
+  }
+  throw new Error("ephemeral_kv_unavailable");
+}
+
+/** Lua-capable backends support atomic connected-sandbox prepare transitions. */
+export function ephemeralKvSupportsAtomicScripts(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  const backend = resolveEphemeralKvBackend(env);
+  return backend === "tcp" || backend === "upstash";
 }
 
 export async function probeEphemeralKv(

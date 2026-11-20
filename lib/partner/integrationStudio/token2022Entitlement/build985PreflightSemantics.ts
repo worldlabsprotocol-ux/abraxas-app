@@ -1,6 +1,7 @@
 import type { ConnectedSandboxBoundaryResult } from "./connectedSandboxBoundary";
 import type { EphemeralKvBackend } from "@/lib/auth/ephemeralWallet/redisKv";
-import { probeEphemeralKv } from "@/lib/auth/ephemeralWallet/redisKv";
+import { ephemeralKvSupportsAtomicScripts, probeEphemeralKv } from "@/lib/auth/ephemeralWallet/redisKv";
+import { connectedSandboxAtomicTransitionsSupported } from "./connectedSandboxAtomicBundle";
 
 /** Operational readiness only — never issued by read-only preflight. */
 export type Build985ConnectedChainVerificationStatus = "CONNECTED_SANDBOX_VERIFIED" | "NOT_PERFORMED";
@@ -36,7 +37,8 @@ export type DistributedKvReadiness = {
   connectivity_ok: boolean;
   connectivity_code: string | null;
   multi_instance_ready: boolean;
-  atomic_prepare_jti_guarantee: "unresolved_documented" | "verified";
+  atomic_prepare_jti_guarantee: "unsupported_backend" | "implementation_verified" | "not_validated";
+  distributed_concurrency_acceptance: "NOT_PERFORMED" | "PASSED";
 };
 
 const PREFLIGHT_CONNECTED_VERIFICATION_DETAIL =
@@ -103,14 +105,23 @@ export async function assessDistributedKvReadiness(
   const probe = await probeEphemeralKv(env);
   const configured = probe.backend !== "none";
   const connectivity_checked = configured;
+  const atomicSupported =
+    connectedSandboxAtomicTransitionsSupported(env) && ephemeralKvSupportsAtomicScripts(env);
+  const distributedConcurrencyPassed = env.ABRAXAS_BUILD986_DISTRIBUTED_ATOMIC_ACCEPTANCE === "1";
+  const atomicGuarantee: DistributedKvReadiness["atomic_prepare_jti_guarantee"] = !configured
+    ? "not_validated"
+    : !atomicSupported
+      ? "unsupported_backend"
+      : "implementation_verified";
   return {
     backend: probe.backend,
     configured,
     connectivity_checked,
     connectivity_ok: probe.ok,
     connectivity_code: probe.code,
-    multi_instance_ready: configured && probe.ok,
-    atomic_prepare_jti_guarantee: "unresolved_documented",
+    multi_instance_ready: configured && probe.ok && atomicSupported,
+    atomic_prepare_jti_guarantee: atomicGuarantee,
+    distributed_concurrency_acceptance: distributedConcurrencyPassed ? "PASSED" : "NOT_PERFORMED",
   };
 }
 

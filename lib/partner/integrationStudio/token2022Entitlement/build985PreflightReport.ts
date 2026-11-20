@@ -141,9 +141,9 @@ export async function buildBuild985PreflightReport(input: {
       "Founder approval before spend, mainnet, or production activation.",
     ],
     distributed_replay_notes: [
-      "Prepare records and JTI signature bindings use two KV operations (prepare write, then JTI reset); atomic multi-key update is unresolved — see connectedSandboxPrepareStore tests for in-process guarantees only.",
-      "Confirmation re-reads the current prepare record and rejects message-hash mismatch; confirm cache keys include message hash.",
-      "See connectedSandboxPrepareStore.test.ts and connectedSandboxConfirmCache.test.ts for executable replay cases.",
+      "Connected sandbox preparation uses atomic bundle transitions (single Lua-evaluated key per jti/action) with monotonic generation.",
+      "Confirmation binds and commits against preparation generation; stale caches miss when generation advances.",
+      "Run connectedSandboxAtomic.redis.integration.test.ts with TCP Redis for distributed concurrency acceptance.",
     ],
     go_no_go: {
       local_engineering: "GO — ProgramTest partner journey and vitest prepare/confirm suites pass on CI agent.",

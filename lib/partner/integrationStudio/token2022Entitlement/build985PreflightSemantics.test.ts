@@ -153,12 +153,13 @@ describe("BUILD #985 preflight semantics", () => {
     assertPreflightReportHasNoRpcSecrets(wire);
   });
 
-  it("documents unresolved atomic prepare/JTI guarantee", async () => {
+  it("reports atomic implementation status without claiming distributed concurrency unless env set", async () => {
     const report = await buildBuild985PreflightReport({
       boundary: actionableBoundary,
       env: { VITEST: "true" },
     });
-    expect(report.distributed_kv_readiness.atomic_prepare_jti_guarantee).toBe("unresolved_documented");
-    expect(report.distributed_replay_notes[0]).toMatch(/unresolved/i);
+    expect(report.distributed_kv_readiness.atomic_prepare_jti_guarantee).toBe("not_validated");
+    expect(report.distributed_kv_readiness.distributed_concurrency_acceptance).toBe("NOT_PERFORMED");
+    expect(report.distributed_replay_notes[0]).toMatch(/atomic bundle/i);
   });
 });
