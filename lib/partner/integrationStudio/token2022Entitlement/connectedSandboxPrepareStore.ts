@@ -101,7 +101,7 @@ export async function writeConnectedSandboxPrepareRecord(
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
   const result = await atomicConnectedSandboxPrepareTransition(record, ttlSec, env);
-  if (!result.ok) throw new EphemeralStateUnavailableError(result.code);
+  if (!result.ok) throw new EphemeralStateUnavailableError();
 }
 
 export async function readConnectedSandboxPrepareRecord(
