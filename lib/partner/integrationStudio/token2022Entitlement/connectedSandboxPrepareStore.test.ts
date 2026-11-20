@@ -100,9 +100,11 @@ describe("token2022 connected prepare store", () => {
   });
 
   it("returns cached confirm payloads for duplicate confirmation requests", async () => {
+    const hash = "f".repeat(64);
     const result = {
       ok: true as const,
       phase: "mint_confirmed" as const,
+      prepared_message_hash_hex: hash,
       transaction_signature: "sig-cache",
       observation_slot: 9,
       confirmation_commitment: "finalized" as const,
@@ -124,13 +126,14 @@ describe("token2022 connected prepare store", () => {
       },
     };
     await writeCachedToken2022ConnectedConfirm(
-      { jti: "jti-cache", action: "mint", transactionSignature: "sig-cache" },
+      { jti: "jti-cache", action: "mint", messageHashHex: hash, transactionSignature: "sig-cache" },
       result,
       300,
     );
     const cached = await readCachedToken2022ConnectedConfirm({
       jti: "jti-cache",
       action: "mint",
+      messageHashHex: hash,
       transactionSignature: "sig-cache",
     });
     expect(cached?.transaction_signature).toBe("sig-cache");

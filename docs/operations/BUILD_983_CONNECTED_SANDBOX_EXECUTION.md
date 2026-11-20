@@ -52,6 +52,8 @@ Confirmation **rejects** unrelated signatures: the server decodes the on-chain t
 
 Each `prepare_mint` / `prepare_consume` stores a durable record (ephemeral KV when configured, in-memory in dev/tests) keyed by prepare-token **JTI + action**, including the SHA-256 of the exact serialized transaction message, scope ids, receipt, and cluster label. Confirmation compares the on-chain message hash to that record and enforces one signature per JTI/action (idempotent retries for the same signature). A refreshed prepare overwrites the message hash — older successful transactions cannot confirm a newer preparation.
 
+Confirm caches are keyed by **JTI + action + message hash + signature** and are only read after loading the current prepare record, so a superseded preparation cannot resurrect a prior cached success.
+
 ## Tests
 
 ```bash

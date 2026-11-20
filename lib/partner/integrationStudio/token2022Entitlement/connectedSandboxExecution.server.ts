@@ -22,10 +22,9 @@ import {
   assertPreparedTransactionConfirmation,
   bindPreparedTransactionToPrepareToken,
 } from "./connectedSandboxPrepareBinding";
-import {
-  readCachedToken2022ConnectedConfirm,
-  writeCachedToken2022ConnectedConfirm,
-} from "./connectedSandboxPrepareStore";
+import { writeCachedToken2022ConnectedConfirm } from "./connectedSandboxPrepareStore";
+import { readCurrentPreparedToken2022Confirm } from "./connectedSandboxConfirmCache";
+import { readConnectedSandboxPrepareRecord, requireConnectedSandboxPrepareStore } from "./connectedSandboxPrepareStore";
 import { evaluateConnectedSandboxBoundary } from "./connectedSandboxBoundary";
 
 export type ConnectedTxReady =
@@ -45,6 +44,7 @@ export type ConnectedConfirmResult =
   | {
       ok: true;
       phase: "mint_confirmed" | "consume_confirmed";
+      prepared_message_hash_hex: string;
       transaction_signature: string;
       observation_slot: number;
       confirmation_commitment: "finalized" | "confirmed";
@@ -253,12 +253,15 @@ export async function confirmConnectedSandboxMint(input: {
   if (!verified.ok) return { ok: false, code: verified.code };
 
   const connection = new Connection(boundary.rpc_url, { commitment: "finalized" });
-  const cachedEarly = await readCachedToken2022ConnectedConfirm({
+  const store = requireConnectedSandboxPrepareStore();
+  if (!store.ok) return { ok: false, code: store.code };
+
+  const currentCache = await readCurrentPreparedToken2022Confirm({
     jti: verified.binding.jti,
     action: "mint",
     transactionSignature: input.transaction_signature,
   });
-  if (cachedEarly) return cachedEarly;
+  if (currentCache.ok) return currentCache.cached;
 
   const preparedOk = await assertPreparedTransactionConfirmation({
     action: "mint",
@@ -292,9 +295,13 @@ export async function confirmConnectedSandboxMint(input: {
     receiptIdHash: receiptHash,
   });
 
+  const preparedRecord = await readConnectedSandboxPrepareRecord(verified.binding.jti, "mint");
+  if (!preparedRecord) return { ok: false, code: "connected_prepare_not_found" };
+
   const confirmed = {
     ok: true as const,
     phase: "mint_confirmed" as const,
+    prepared_message_hash_hex: preparedRecord.message_hash_hex,
     transaction_signature: input.transaction_signature,
     observation_slot: txProof.slot,
     confirmation_commitment: txProof.confirmation_status,
@@ -324,6 +331,7 @@ export async function confirmConnectedSandboxMint(input: {
     {
       jti: verified.binding.jti,
       action: "mint",
+      messageHashHex: preparedRecord.message_hash_hex,
       transactionSignature: input.transaction_signature,
     },
     confirmed,
@@ -351,12 +359,15 @@ export async function confirmConnectedSandboxConsume(input: {
   if (!verified.ok) return { ok: false, code: verified.code };
 
   const connection = new Connection(boundary.rpc_url, { commitment: "finalized" });
-  const cachedEarly = await readCachedToken2022ConnectedConfirm({
+  const store = requireConnectedSandboxPrepareStore();
+  if (!store.ok) return { ok: false, code: store.code };
+
+  const currentCache = await readCurrentPreparedToken2022Confirm({
     jti: verified.binding.jti,
     action: "consume",
     transactionSignature: input.transaction_signature,
   });
-  if (cachedEarly) return cachedEarly;
+  if (currentCache.ok) return currentCache.cached;
 
   const preparedOk = await assertPreparedTransactionConfirmation({
     action: "consume",
@@ -390,9 +401,13 @@ export async function confirmConnectedSandboxConsume(input: {
     receiptIdHash: receiptHash,
   });
 
+  const preparedRecord = await readConnectedSandboxPrepareRecord(verified.binding.jti, "consume");
+  if (!preparedRecord) return { ok: false, code: "connected_prepare_not_found" };
+
   const confirmed = {
     ok: true as const,
     phase: "consume_confirmed" as const,
+    prepared_message_hash_hex: preparedRecord.message_hash_hex,
     transaction_signature: input.transaction_signature,
     observation_slot: txProof.slot,
     confirmation_commitment: txProof.confirmation_status,
@@ -422,6 +437,7 @@ export async function confirmConnectedSandboxConsume(input: {
     {
       jti: verified.binding.jti,
       action: "consume",
+      messageHashHex: preparedRecord.message_hash_hex,
       transactionSignature: input.transaction_signature,
     },
     confirmed,

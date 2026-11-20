@@ -1,5 +1,11 @@
 import { createHash } from "node:crypto";
-import { ephemeralKvGet, ephemeralKvSet, ephemeralKvSetNx, resolveEphemeralKvBackend } from "@/lib/auth/ephemeralWallet/redisKv";
+import {
+  ephemeralKvDel,
+  ephemeralKvGet,
+  ephemeralKvSet,
+  ephemeralKvSetNx,
+  resolveEphemeralKvBackend,
+} from "@/lib/auth/ephemeralWallet/redisKv";
 import { EphemeralStateUnavailableError } from "@/lib/auth/ephemeralWallet/errors";
 import {
   isDistributedProductionEnvironment,
@@ -8,6 +14,7 @@ import {
 export type CachedToken2022ConnectedConfirm = {
   ok: true;
   phase: "mint_confirmed" | "consume_confirmed";
+  prepared_message_hash_hex: string;
   transaction_signature: string;
   observation_slot: number;
   confirmation_commitment: "finalized" | "confirmed";
@@ -73,12 +80,26 @@ function jtiActionKey(jti: string, action: ConnectedSandboxPrepareAction): strin
 function confirmKey(input: {
   jti: string;
   action: ConnectedSandboxPrepareAction;
+  messageHashHex: string;
   transactionSignature: string;
 }): string {
   const digest = createHash("sha256")
-    .update(`${input.jti}|${input.action}|${input.transactionSignature}`, "utf8")
+    .update(`${input.jti}|${input.action}|${input.messageHashHex}|${input.transactionSignature}`, "utf8")
     .digest("hex");
   return `${CONFIRM_PREFIX}${digest}`;
+}
+
+export async function resetConnectedSandboxJtiActionBinding(
+  jti: string,
+  action: ConnectedSandboxPrepareAction,
+  env: Record<string, string | undefined> = process.env,
+): Promise<void> {
+  const key = jtiActionKey(jti, action);
+  if (useDistributedStore(env)) {
+    await ephemeralKvDel(key, env);
+    return;
+  }
+  if (memoryAllowed(env)) memoryJtiAction.delete(key);
 }
 
 export function requireConnectedSandboxPrepareStore(
@@ -98,10 +119,12 @@ export async function writeConnectedSandboxPrepareRecord(
   const wire = JSON.stringify(record);
   if (useDistributedStore(env)) {
     await ephemeralKvSet(key, record, ttlSec, env);
+    await resetConnectedSandboxJtiActionBinding(record.jti, record.action, env);
     return;
   }
   if (!memoryAllowed(env)) throw new EphemeralStateUnavailableError();
   memoryPrepare.set(key, { value: wire, expiresAtMs: Date.now() + ttlSec * 1000 });
+  await resetConnectedSandboxJtiActionBinding(record.jti, record.action, env);
 }
 
 export async function readConnectedSandboxPrepareRecord(
@@ -159,12 +182,20 @@ export async function assertConnectedSandboxJtiActionNotReusedWithOtherTx(
 }
 
 export async function readCachedToken2022ConnectedConfirm(
-  input: { jti: string; action: ConnectedSandboxPrepareAction; transactionSignature: string },
+  input: {
+    jti: string;
+    action: ConnectedSandboxPrepareAction;
+    messageHashHex: string;
+    transactionSignature: string;
+  },
   env: Record<string, string | undefined> = process.env,
 ): Promise<CachedToken2022ConnectedConfirm | null> {
   const key = confirmKey(input);
   if (useDistributedStore(env)) {
-    return ephemeralKvGet<CachedToken2022ConnectedConfirm>(key, env);
+    const cached = await ephemeralKvGet<CachedToken2022ConnectedConfirm>(key, env);
+    if (!cached) return null;
+    if (cached.prepared_message_hash_hex !== input.messageHashHex) return null;
+    return cached;
   }
   if (!memoryAllowed(env)) return null;
   const entry = memoryConfirm.get(key);
@@ -172,11 +203,18 @@ export async function readCachedToken2022ConnectedConfirm(
     memoryConfirm.delete(key);
     return null;
   }
-  return JSON.parse(entry.value) as CachedToken2022ConnectedConfirm;
+  const parsed = JSON.parse(entry.value) as CachedToken2022ConnectedConfirm;
+  if (parsed.prepared_message_hash_hex !== input.messageHashHex) return null;
+  return parsed;
 }
 
 export async function writeCachedToken2022ConnectedConfirm(
-  input: { jti: string; action: ConnectedSandboxPrepareAction; transactionSignature: string },
+  input: {
+    jti: string;
+    action: ConnectedSandboxPrepareAction;
+    messageHashHex: string;
+    transactionSignature: string;
+  },
   result: CachedToken2022ConnectedConfirm,
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
