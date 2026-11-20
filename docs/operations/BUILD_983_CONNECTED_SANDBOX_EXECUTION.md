@@ -48,6 +48,10 @@ Artifacts: `solana/abraxas-eligibility-gate/target/deploy/*.so`
 
 Confirmation **rejects** unrelated signatures: the server decodes the on-chain transaction, checks the expected Anchor instruction (program, accounts, receipt hash, holder signer), and verifies post-state (issuance ledger, Token-2022 balance, consumption flag). Upgradeable-loader ELF SHA-256 must match operator env before execution is actionable.
 
+### Prepare-to-confirmation binding
+
+Each `prepare_mint` / `prepare_consume` stores a durable record (ephemeral KV when configured, in-memory in dev/tests) keyed by prepare-token **JTI + action**, including the SHA-256 of the exact serialized transaction message, scope ids, receipt, and cluster label. Confirmation compares the on-chain message hash to that record and enforces one signature per JTI/action (idempotent retries for the same signature). A refreshed prepare overwrites the message hash — older successful transactions cannot confirm a newer preparation.
+
 ## Tests
 
 ```bash

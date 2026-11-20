@@ -84,7 +84,7 @@ export function decodeEntitlementConsumption(data: Buffer): {
   return { registry, receiptIdHash, holder, consumed };
 }
 
-async function loadFinalizedTransaction(
+export async function loadFinalizedTransaction(
   connection: Connection,
   signature: string,
 ): Promise<

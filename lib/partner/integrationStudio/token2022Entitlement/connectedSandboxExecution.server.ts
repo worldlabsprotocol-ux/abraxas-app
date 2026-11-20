@@ -18,6 +18,14 @@ import {
   verifyConsumeEntitlementTransaction,
   verifyMintEntitlementTransaction,
 } from "@/lib/solana/token2022Entitlement/verifyEntitlementTransaction";
+import {
+  assertPreparedTransactionConfirmation,
+  bindPreparedTransactionToPrepareToken,
+} from "./connectedSandboxPrepareBinding";
+import {
+  readCachedToken2022ConnectedConfirm,
+  writeCachedToken2022ConnectedConfirm,
+} from "./connectedSandboxPrepareStore";
 import { evaluateConnectedSandboxBoundary } from "./connectedSandboxBoundary";
 
 export type ConnectedTxReady =
@@ -131,6 +139,17 @@ export async function buildConnectedSandboxMintTransaction(input: {
     receiptIdHash: receiptHash,
   });
 
+  const bound = await bindPreparedTransactionToPrepareToken({
+    binding: verified.binding,
+    boundary,
+    tx,
+    action: "mint",
+    application_id: input.application_id,
+    partner_id: input.partner_id,
+    holder_wallet: input.holder_wallet,
+  });
+  if (!bound.ok) return { ok: false, code: bound.code };
+
   return {
     ok: true,
     phase: "mint_transaction_ready",
@@ -188,6 +207,17 @@ export async function buildConnectedSandboxConsumeTransaction(input: {
     }),
   );
 
+  const bound = await bindPreparedTransactionToPrepareToken({
+    binding: verified.binding,
+    boundary,
+    tx,
+    action: "consume",
+    application_id: input.application_id,
+    partner_id: input.partner_id,
+    holder_wallet: input.holder_wallet,
+  });
+  if (!bound.ok) return { ok: false, code: bound.code };
+
   return {
     ok: true,
     phase: "consume_transaction_ready",
@@ -223,6 +253,25 @@ export async function confirmConnectedSandboxMint(input: {
   if (!verified.ok) return { ok: false, code: verified.code };
 
   const connection = new Connection(boundary.rpc_url, { commitment: "finalized" });
+  const cachedEarly = await readCachedToken2022ConnectedConfirm({
+    jti: verified.binding.jti,
+    action: "mint",
+    transactionSignature: input.transaction_signature,
+  });
+  if (cachedEarly) return cachedEarly;
+
+  const preparedOk = await assertPreparedTransactionConfirmation({
+    action: "mint",
+    application_id: input.application_id,
+    partner_id: input.partner_id,
+    holder_wallet: input.holder_wallet,
+    transaction_signature: input.transaction_signature,
+    binding: verified.binding,
+    boundary,
+    connection,
+  });
+  if (!preparedOk.ok) return { ok: false, code: preparedOk.code };
+
   const admin = new PublicKey(boundary.registry_admin);
   const holder = new PublicKey(input.holder_wallet);
   const relyingPartyAdmin = new PublicKey(boundary.relying_party_admin);
@@ -243,9 +292,9 @@ export async function confirmConnectedSandboxMint(input: {
     receiptIdHash: receiptHash,
   });
 
-  return {
-    ok: true,
-    phase: "mint_confirmed",
+  const confirmed = {
+    ok: true as const,
+    phase: "mint_confirmed" as const,
     transaction_signature: input.transaction_signature,
     observation_slot: txProof.slot,
     confirmation_commitment: txProof.confirmation_status,
@@ -254,21 +303,34 @@ export async function confirmConnectedSandboxMint(input: {
     public_accounts: mint,
     verification_tiers: {
       execution_report: {
-        tier: "chain_transaction_signature",
+        tier: "chain_transaction_signature" as const,
         disclaimer: "Transaction signature is a recorded execution claim until independently re-fetched.",
       },
       structural_semantic: {
-        tier: "not_applicable",
+        tier: "not_applicable" as const,
         disclaimer: "Live RPC observation supersedes offline snapshots for this step.",
       },
       authenticated_chain: {
-        tier: "rpc_observation",
-        status: "observed",
+        tier: "rpc_observation" as const,
+        status: "observed" as const,
         disclaimer:
           "Observed finalized RPC state at configured sandbox — not absolute cryptographic finality across independent auditors.",
       },
     },
   };
+
+  const ttlSec = Math.max(300, verified.binding.expires_at - Math.floor(Date.now() / 1000));
+  await writeCachedToken2022ConnectedConfirm(
+    {
+      jti: verified.binding.jti,
+      action: "mint",
+      transactionSignature: input.transaction_signature,
+    },
+    confirmed,
+    ttlSec,
+  );
+
+  return confirmed;
 }
 
 export async function confirmConnectedSandboxConsume(input: {
@@ -289,6 +351,25 @@ export async function confirmConnectedSandboxConsume(input: {
   if (!verified.ok) return { ok: false, code: verified.code };
 
   const connection = new Connection(boundary.rpc_url, { commitment: "finalized" });
+  const cachedEarly = await readCachedToken2022ConnectedConfirm({
+    jti: verified.binding.jti,
+    action: "consume",
+    transactionSignature: input.transaction_signature,
+  });
+  if (cachedEarly) return cachedEarly;
+
+  const preparedOk = await assertPreparedTransactionConfirmation({
+    action: "consume",
+    application_id: input.application_id,
+    partner_id: input.partner_id,
+    holder_wallet: input.holder_wallet,
+    transaction_signature: input.transaction_signature,
+    binding: verified.binding,
+    boundary,
+    connection,
+  });
+  if (!preparedOk.ok) return { ok: false, code: preparedOk.code };
+
   const admin = new PublicKey(boundary.registry_admin);
   const holder = new PublicKey(input.holder_wallet);
   const relyingPartyAdmin = new PublicKey(boundary.relying_party_admin);
@@ -309,9 +390,9 @@ export async function confirmConnectedSandboxConsume(input: {
     receiptIdHash: receiptHash,
   });
 
-  return {
-    ok: true,
-    phase: "consume_confirmed",
+  const confirmed = {
+    ok: true as const,
+    phase: "consume_confirmed" as const,
     transaction_signature: input.transaction_signature,
     observation_slot: txProof.slot,
     confirmation_commitment: txProof.confirmation_status,
@@ -320,19 +401,32 @@ export async function confirmConnectedSandboxConsume(input: {
     public_accounts: accounts,
     verification_tiers: {
       execution_report: {
-        tier: "chain_transaction_signature",
+        tier: "chain_transaction_signature" as const,
         disclaimer: "Transaction signature is a recorded execution claim until independently re-fetched.",
       },
       structural_semantic: {
-        tier: "not_applicable",
+        tier: "not_applicable" as const,
         disclaimer: "Live RPC observation supersedes offline snapshots for this step.",
       },
       authenticated_chain: {
-        tier: "rpc_observation",
-        status: "observed",
+        tier: "rpc_observation" as const,
+        status: "observed" as const,
         disclaimer:
           "Observed finalized RPC state at configured sandbox — not absolute cryptographic finality across independent auditors.",
       },
     },
   };
+
+  const ttlSec = Math.max(300, verified.binding.expires_at - Math.floor(Date.now() / 1000));
+  await writeCachedToken2022ConnectedConfirm(
+    {
+      jti: verified.binding.jti,
+      action: "consume",
+      transactionSignature: input.transaction_signature,
+    },
+    confirmed,
+    ttlSec,
+  );
+
+  return confirmed;
 }
