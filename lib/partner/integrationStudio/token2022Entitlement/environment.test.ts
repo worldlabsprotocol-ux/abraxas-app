@@ -16,6 +16,7 @@ describe("resolveToken2022StudioEnvironment", () => {
   it("labels missing RPC as local ProgramTest reference", async () => {
     vi.stubEnv("VERCEL_ENV", "development");
     vi.stubEnv("ABRAXAS_PROOF_CONTINUITY_RPC_URL", "");
+    vi.stubEnv("ABRAXAS_ENTITLEMENT_RELYING_PARTY_ADMIN", "");
     const env = await resolveToken2022StudioEnvironment();
     expect(env.kind).toBe("local_program_test_reference");
     expect(env.mint_and_consume_actionable).toBe(false);

@@ -375,8 +375,10 @@ export function IntegrationStudioRequestWorkbench({
       setBlockchainPhase("prepared");
       return;
     }
-    clearBlockchainNativePrepare(applicationId);
-    setBlockchainPrepare(null);
+    if (pathId !== "token_2022_receipt_entitlement") {
+      clearBlockchainNativePrepare(applicationId);
+      setBlockchainPrepare(null);
+    }
     setBlockchainPhase("idle");
     setOutcome({
       headline: "Blockchain-native test verified.",
@@ -817,6 +819,13 @@ export function IntegrationStudioRequestWorkbench({
         onRunProofTest={() => void runHarness()}
         proofBusy={busy}
         proofError={error || failure?.detail || ""}
+        prepareToken={blockchainPrepare?.prepare_token ?? null}
+        onCommitProofOnChain={() => void runBlockchainNativeStudioJourney()}
+        chainCommitReady={Boolean(
+          outcome?.tone === "success"
+            && (pathId === "token_2022_receipt_entitlement" ? Boolean(blockchainPrepare?.prepare_token) : blockchainPhase === "idle"),
+        )}
+        chainBusy={busy && blockchainPhase !== "idle"}
       />
     );
     if (beginnerSurface) {
@@ -878,6 +887,13 @@ export function IntegrationStudioRequestWorkbench({
           onRunProofTest={() => void runHarness()}
           proofBusy={busy}
           proofError={error || failure?.detail || ""}
+          prepareToken={blockchainPrepare?.prepare_token ?? null}
+          onCommitProofOnChain={() => void runBlockchainNativeStudioJourney()}
+          chainCommitReady={Boolean(
+          outcome?.tone === "success"
+            && (pathId === "token_2022_receipt_entitlement" ? Boolean(blockchainPrepare?.prepare_token) : blockchainPhase === "idle"),
+        )}
+          chainBusy={busy && blockchainPhase !== "idle"}
         />
       ) : null}
     <ContentCard title="Run a test" id="request">

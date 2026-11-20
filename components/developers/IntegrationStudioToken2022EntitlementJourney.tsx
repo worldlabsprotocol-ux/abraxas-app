@@ -5,6 +5,8 @@ import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import type { Token2022StudioJourneyPayload } from "@/lib/partner/integrationStudio/token2022Entitlement/studioJourney.server";
+import { signAndSendPreparedSolanaTransaction } from "@/lib/partner/launchpad/blockchainNative/clientWalletExecution";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -39,6 +41,8 @@ const STEPS: { id: StepId; title: string; lead: string }[] = [
   },
 ];
 
+type ExecPhase = "idle" | "signing" | "submitted" | "confirming" | "verified" | "denied";
+
 export function IntegrationStudioToken2022EntitlementJourney({
   applicationId,
   signedIn,
@@ -48,6 +52,10 @@ export function IntegrationStudioToken2022EntitlementJourney({
   onRunProofTest,
   proofBusy,
   proofError,
+  prepareToken,
+  onCommitProofOnChain,
+  chainCommitReady,
+  chainBusy,
 }: {
   applicationId: string | null;
   signedIn: boolean;
@@ -57,12 +65,22 @@ export function IntegrationStudioToken2022EntitlementJourney({
   onRunProofTest: () => void;
   proofBusy: boolean;
   proofError: string;
+  prepareToken: string | null;
+  onCommitProofOnChain: () => void;
+  chainCommitReady: boolean;
+  chainBusy: boolean;
 }) {
+  const { signTransaction } = useWallet();
   const [activeStep, setActiveStep] = useState<StepId>("choose");
   const [journey, setJourney] = useState<Token2022StudioJourneyPayload | null>(null);
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(false);
   const [structuralBusy, setStructuralBusy] = useState(false);
+  const [mintPhase, setMintPhase] = useState<ExecPhase>("idle");
+  const [consumePhase, setConsumePhase] = useState<ExecPhase>("idle");
+  const [mintSig, setMintSig] = useState<string | null>(null);
+  const [consumeSig, setConsumeSig] = useState<string | null>(null);
+  const [execError, setExecError] = useState("");
 
   const loadJourney = useCallback(
     async (phase: "capabilities" | "independent_handoff", runStructural = false) => {
@@ -102,6 +120,69 @@ export function IntegrationStudioToken2022EntitlementJourney({
   useEffect(() => {
     void loadJourney("capabilities");
   }, [loadJourney]);
+
+  async function runConnectedPhase(phase: "prepare_mint" | "confirm_mint" | "prepare_consume" | "confirm_consume", signature?: string) {
+    if (!applicationId || !prepareToken) return;
+    const setPhase = phase.includes("mint") ? setMintPhase : setConsumePhase;
+    setExecError("");
+    try {
+      if (phase.startsWith("prepare")) setPhase("signing");
+      const res = await fetch(`/api/launchpad/applications/${applicationId}/token2022-connected-execution`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          phase,
+          prepare_token: prepareToken,
+          transaction_signature: signature,
+        }),
+      });
+      const data = await res.json().catch(() => ({})) as {
+        code?: string;
+        transaction_base64?: string;
+        recent_blockhash?: string;
+        last_valid_block_height?: number;
+        rpc_url?: string;
+        transaction_signature?: string;
+        token_balance?: string;
+        recovery?: { detail?: string };
+      };
+      if (!res.ok) {
+        setPhase("denied");
+        setExecError(data.recovery?.detail ?? data.code ?? "connected_execution_failed");
+        return;
+      }
+      if (phase.startsWith("prepare") && data.transaction_base64 && signTransaction) {
+        setPhase("submitted");
+        const sig = await signAndSendPreparedSolanaTransaction({
+          rpcUrl: data.rpc_url!,
+          transactionBase64: data.transaction_base64,
+          recentBlockhash: data.recent_blockhash!,
+          lastValidBlockHeight: data.last_valid_block_height!,
+          signTransaction,
+        });
+        setPhase("confirming");
+        await runConnectedPhase(
+          phase === "prepare_mint" ? "confirm_mint" : "confirm_consume",
+          sig,
+        );
+        if (phase === "prepare_mint") setMintSig(sig);
+        else setConsumeSig(sig);
+        setPhase("verified");
+        return;
+      }
+      if (phase.startsWith("confirm")) {
+        setPhase("verified");
+        if (data.transaction_signature) {
+          if (phase === "confirm_mint") setMintSig(data.transaction_signature);
+          else setConsumeSig(data.transaction_signature);
+        }
+      }
+    } catch {
+      setPhase("denied");
+      setExecError("Wallet signature rejected or RPC unreachable.");
+    }
+  }
 
   const env = journey?.environment;
   const reference = journey?.local_reference;
@@ -181,7 +262,23 @@ export function IntegrationStudioToken2022EntitlementJourney({
           <Btn size="sm" disabled={proofBusy || !applicationId || !signedIn} loading={proofBusy} onClick={onRunProofTest}>
             {proofVerified ? "Re-run proof test" : "Run proof verification test"}
           </Btn>
-          {proofVerified ? (
+          {env?.mint_and_consume_actionable ? (
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", marginTop: "0.65rem" }}>
+              Connected sandbox: commit the receipt on Solana before minting.
+            </p>
+          ) : null}
+          {env?.mint_and_consume_actionable ? (
+            <Btn
+              size="sm"
+              variant="secondary"
+              disabled={chainBusy || !proofVerified}
+              loading={chainBusy}
+              onClick={onCommitProofOnChain}
+            >
+              {chainCommitReady ? "Proof committed on chain" : "Sign proof commitment"}
+            </Btn>
+          ) : null}
+          {proofVerified && (!env?.mint_and_consume_actionable || chainCommitReady) ? (
             <Btn size="sm" variant="secondary" style={{ marginLeft: "0.5rem" }} onClick={() => setActiveStep("receive")}>
               Continue
             </Btn>
@@ -191,8 +288,22 @@ export function IntegrationStudioToken2022EntitlementJourney({
 
       {activeStep === "receive" && reference ? (
         <div>
+          {execError ? <p role="alert" style={{ color: "var(--danger, #f87171)", fontSize: "0.78rem" }}>{execError}</p> : null}
           {env?.mint_and_consume_actionable ? (
-            <p style={{ fontFamily: FONT, fontSize: "0.78rem" }}>Wallet signing will be required for minting.</p>
+            <>
+              <p style={{ fontFamily: FONT, fontSize: "0.78rem" }}>
+                Sign once to mint your non-transferable Token-2022 entitlement on the pinned sandbox.
+              </p>
+              <p style={{ fontFamily: MONO, fontSize: "0.62rem" }}>State: {mintPhase}</p>
+              {mintSig ? <p style={{ fontFamily: MONO, fontSize: "0.62rem" }}>mint_tx: {mintSig}</p> : null}
+              <Btn
+                size="sm"
+                disabled={!prepareToken || mintPhase === "signing" || mintPhase === "confirming"}
+                onClick={() => void runConnectedPhase("prepare_mint")}
+              >
+                Sign mint transaction
+              </Btn>
+            </>
           ) : (
             <p role="status" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--warning, #f59e0b)" }}>
               Live mint is unavailable in this environment. Review the executed ProgramTest reference below — this is not
@@ -214,7 +325,11 @@ export function IntegrationStudioToken2022EntitlementJourney({
               mint: {reference.entitlement_mint} · commitment: {reference.commitment}
             </p>
           </details>
-          <Btn size="sm" onClick={() => setActiveStep("use")}>
+          <Btn
+            size="sm"
+            onClick={() => setActiveStep("use")}
+            disabled={env?.mint_and_consume_actionable && mintPhase !== "verified"}
+          >
             Continue
           </Btn>
         </div>
@@ -223,7 +338,20 @@ export function IntegrationStudioToken2022EntitlementJourney({
       {activeStep === "use" && reference ? (
         <div>
           {env?.mint_and_consume_actionable ? (
-            <p style={{ fontFamily: FONT, fontSize: "0.78rem" }}>Consumer execution uses your trusted relying-party configuration.</p>
+            <>
+              <p style={{ fontFamily: FONT, fontSize: "0.78rem" }}>
+                Sign to record entitlement consumption through the independent consumer program.
+              </p>
+              <p style={{ fontFamily: MONO, fontSize: "0.62rem" }}>State: {consumePhase}</p>
+              {consumeSig ? <p style={{ fontFamily: MONO, fontSize: "0.62rem" }}>consume_tx: {consumeSig}</p> : null}
+              <Btn
+                size="sm"
+                disabled={!prepareToken || consumePhase === "signing" || consumePhase === "confirming"}
+                onClick={() => void runConnectedPhase("prepare_consume")}
+              >
+                Sign consume transaction
+              </Btn>
+            </>
           ) : (
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>
               Consumption record from ProgramTest reference (labeled local evidence).

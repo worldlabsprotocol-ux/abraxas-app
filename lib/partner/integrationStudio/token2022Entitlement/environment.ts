@@ -1,11 +1,4 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import {
-  blockchainNativeRegistryAdmin,
-  blockchainNativeStudioRpcUrl,
-  isBlockchainNativeStudioConfigured,
-} from "@/lib/partner/launchpad/blockchainNative/studioConfig";
-import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
-import { ENTITLEMENT_CONSUMER_PROGRAM_ID } from "@/lib/solana/token2022Entitlement/constants";
+import { evaluateConnectedSandboxBoundary } from "./connectedSandboxBoundary";
 
 export type Token2022StudioEnvironmentKind =
   | "production_unavailable"
@@ -20,84 +13,43 @@ export type Token2022StudioEnvironment = {
   entitlement_consumer_on_rpc: boolean;
   rpc_url: string | null;
   registry_admin: string | null;
+  cluster_label: string | null;
   detail: string;
 };
 
-function isProductionSurface(): boolean {
-  const vercel = process.env.VERCEL_ENV?.trim();
-  if (vercel === "production") return true;
-  return process.env.NODE_ENV === "production" && vercel !== "preview" && vercel !== "development";
-}
-
-async function programDeployedOnRpc(programId: string, rpcUrl: string): Promise<boolean> {
-  try {
-    const connection = new Connection(rpcUrl, "confirmed");
-    const info = await connection.getAccountInfo(new PublicKey(programId), "confirmed");
-    return Boolean(info?.executable);
-  } catch {
-    return false;
-  }
-}
-
 export async function resolveToken2022StudioEnvironment(): Promise<Token2022StudioEnvironment> {
-  if (isProductionSurface()) {
+  const boundary = await evaluateConnectedSandboxBoundary();
+  if (!boundary.ok) {
+    const kind: Token2022StudioEnvironmentKind =
+      boundary.code === "production_entitlement_unavailable"
+        ? "production_unavailable"
+        : "local_program_test_reference";
     return {
-      kind: "production_unavailable",
-      label: "Production — entitlement execution disabled",
+      kind,
+      label: boundary.code,
       mint_and_consume_actionable: false,
       proof_continuity_on_rpc: false,
       entitlement_consumer_on_rpc: false,
       rpc_url: null,
       registry_admin: null,
-      detail:
-        "Receipt-backed Token-2022 studio execution is not enabled on production without founder deployment approval.",
+      cluster_label: null,
+      detail: boundary.detail,
     };
   }
 
-  const rpc = blockchainNativeStudioRpcUrl();
-  const admin = blockchainNativeRegistryAdmin();
-  if (!isBlockchainNativeStudioConfigured() || !rpc || !admin) {
-    return {
-      kind: "local_program_test_reference",
-      label: "Local ProgramTest reference (BUILD #981)",
-      mint_and_consume_actionable: false,
-      proof_continuity_on_rpc: false,
-      entitlement_consumer_on_rpc: false,
-      rpc_url: null,
-      registry_admin: null,
-      detail:
-        "Studios without pinned proof-continuity RPC show executed ProgramTest evidence only. This is not a live cluster transaction.",
-    };
-  }
-
-  const [proofOnRpc, consumerOnRpc] = await Promise.all([
-    programDeployedOnRpc(PROOF_CONTINUITY_PROGRAM_ID, rpc),
-    programDeployedOnRpc(ENTITLEMENT_CONSUMER_PROGRAM_ID, rpc),
-  ]);
-
-  if (proofOnRpc && consumerOnRpc) {
-    return {
-      kind: "connected_sandbox",
-      label: "Connected sandbox RPC",
-      mint_and_consume_actionable: false,
-      proof_continuity_on_rpc: true,
-      entitlement_consumer_on_rpc: true,
-      rpc_url: rpc,
-      registry_admin: admin,
-      detail:
-        "Programs are visible on the configured RPC. Studio mint/consume adapter wiring for holder wallets is not yet exposed here; use the local ProgramTest reference or partner-verify for full journeys.",
-    };
-  }
-
+  const programsVisible = boundary.mint_and_consume_actionable
+    || Boolean(boundary.registry_pda);
   return {
-    kind: "local_program_test_reference",
-    label: "Local reference — RPC missing entitlement programs",
-    mint_and_consume_actionable: false,
-    proof_continuity_on_rpc: proofOnRpc,
-    entitlement_consumer_on_rpc: consumerOnRpc,
-    rpc_url: rpc,
-    registry_admin: admin,
-    detail:
-      "Pinned RPC does not have both proof-continuity and entitlement consumer programs. Mint and consume controls remain unavailable in the browser.",
+    kind: programsVisible ? "connected_sandbox" : "local_program_test_reference",
+    label: boundary.cluster_label,
+    mint_and_consume_actionable: boundary.mint_and_consume_actionable,
+    proof_continuity_on_rpc: programsVisible,
+    entitlement_consumer_on_rpc: programsVisible,
+    rpc_url: boundary.rpc_url,
+    registry_admin: boundary.registry_admin,
+    cluster_label: boundary.cluster_label,
+    detail: boundary.mint_and_consume_actionable
+      ? "Connected sandbox is ready for holder-wallet mint and consume transactions."
+      : "Programs or operator infrastructure accounts are not ready on the pinned RPC. See BUILD #983 deployment package.",
   };
 }
