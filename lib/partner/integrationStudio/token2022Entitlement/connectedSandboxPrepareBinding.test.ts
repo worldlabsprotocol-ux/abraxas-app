@@ -89,8 +89,11 @@ describe("connected sandbox prepare-to-confirmation binding", () => {
       boundary,
       connection: {} as never,
     });
-    expect(result).toEqual({ ok: true });
-    expect(messageHash.length).toBe(64);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.generation).toBeGreaterThan(0);
+      expect(result.message_hash_hex).toBe(messageHash);
+    }
   });
 
   it("rejects an older transaction after prepare is refreshed", async () => {

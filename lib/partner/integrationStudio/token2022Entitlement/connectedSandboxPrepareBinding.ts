@@ -80,7 +80,10 @@ export async function assertPreparedTransactionConfirmation(input: {
   binding: PrepareBindingPayload;
   boundary: ConnectedBoundaryReady;
   connection: Connection;
-}): Promise<{ ok: true } | { ok: false; code: string }> {
+}): Promise<
+  | { ok: true; generation: number; message_hash_hex: string }
+  | { ok: false; code: string }
+> {
   const store = requireConnectedSandboxPrepareStore();
   if (!store.ok) return store;
 
@@ -90,20 +93,34 @@ export async function assertPreparedTransactionConfirmation(input: {
   const scope = prepareScopeMatchesRecord(prepared, input);
   if (!scope.ok) return scope;
 
+  const ticketGeneration = prepared.generation;
+  const ticketMessageHash = prepared.message_hash_hex;
+
+  const loaded = await loadFinalizedTransaction(input.connection, input.transaction_signature);
+  if (!loaded.ok) return { ok: false, code: loaded.reason };
+  const onChainHash = hashVersionedTransactionMessage(loaded.tx);
+  if (onChainHash !== ticketMessageHash) {
+    return { ok: false, code: "connected_prepare_message_mismatch" };
+  }
+
+  const stillPrepared = await readConnectedSandboxPrepareRecord(input.binding.jti, input.action);
+  if (
+    !stillPrepared
+    || stillPrepared.generation !== ticketGeneration
+    || stillPrepared.message_hash_hex !== ticketMessageHash
+  ) {
+    return { ok: false, code: "prepare_superseded" };
+  }
+
   const ttlSec = Math.max(60, input.binding.expires_at - Math.floor(Date.now() / 1000));
   const jtiGuard = await assertConnectedSandboxJtiActionNotReusedWithOtherTx({
     jti: input.binding.jti,
     action: input.action,
     transactionSignature: input.transaction_signature,
     ttlSec,
+    generation: ticketGeneration,
   });
   if (!jtiGuard.ok) return jtiGuard;
 
-  const loaded = await loadFinalizedTransaction(input.connection, input.transaction_signature);
-  if (!loaded.ok) return { ok: false, code: loaded.reason };
-  const onChainHash = hashVersionedTransactionMessage(loaded.tx);
-  if (onChainHash !== prepared.message_hash_hex) {
-    return { ok: false, code: "connected_prepare_message_mismatch" };
-  }
-  return { ok: true };
+  return { ok: true, generation: ticketGeneration, message_hash_hex: ticketMessageHash };
 }

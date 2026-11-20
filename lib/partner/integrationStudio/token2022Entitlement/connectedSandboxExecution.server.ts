@@ -274,6 +274,8 @@ export async function confirmConnectedSandboxMint(input: {
     connection,
   });
   if (!preparedOk.ok) return { ok: false, code: preparedOk.code };
+  const confirmGeneration = preparedOk.generation;
+  const confirmMessageHash = preparedOk.message_hash_hex;
 
   const admin = new PublicKey(boundary.registry_admin);
   const holder = new PublicKey(input.holder_wallet);
@@ -297,11 +299,18 @@ export async function confirmConnectedSandboxMint(input: {
 
   const preparedRecord = await readConnectedSandboxPrepareRecord(verified.binding.jti, "mint");
   if (!preparedRecord) return { ok: false, code: "connected_prepare_not_found" };
+  if (
+    preparedRecord.generation !== confirmGeneration
+    || preparedRecord.message_hash_hex !== confirmMessageHash
+  ) {
+    return { ok: false, code: "prepare_superseded" };
+  }
 
   const confirmed = {
     ok: true as const,
     phase: "mint_confirmed" as const,
-    prepared_message_hash_hex: preparedRecord.message_hash_hex,
+    prepared_message_hash_hex: confirmMessageHash,
+    preparation_generation: confirmGeneration,
     transaction_signature: input.transaction_signature,
     observation_slot: txProof.slot,
     confirmation_commitment: txProof.confirmation_status,
@@ -327,16 +336,18 @@ export async function confirmConnectedSandboxMint(input: {
   };
 
   const ttlSec = Math.max(300, verified.binding.expires_at - Math.floor(Date.now() / 1000));
-  await writeCachedToken2022ConnectedConfirm(
+  const cached = await writeCachedToken2022ConnectedConfirm(
     {
       jti: verified.binding.jti,
       action: "mint",
-      messageHashHex: preparedRecord.message_hash_hex,
+      messageHashHex: confirmMessageHash,
       transactionSignature: input.transaction_signature,
+      generation: confirmGeneration,
     },
     confirmed,
     ttlSec,
   );
+  if (!cached.ok) return { ok: false, code: cached.code };
 
   return confirmed;
 }
@@ -380,6 +391,8 @@ export async function confirmConnectedSandboxConsume(input: {
     connection,
   });
   if (!preparedOk.ok) return { ok: false, code: preparedOk.code };
+  const confirmGeneration = preparedOk.generation;
+  const confirmMessageHash = preparedOk.message_hash_hex;
 
   const admin = new PublicKey(boundary.registry_admin);
   const holder = new PublicKey(input.holder_wallet);
@@ -403,11 +416,18 @@ export async function confirmConnectedSandboxConsume(input: {
 
   const preparedRecord = await readConnectedSandboxPrepareRecord(verified.binding.jti, "consume");
   if (!preparedRecord) return { ok: false, code: "connected_prepare_not_found" };
+  if (
+    preparedRecord.generation !== confirmGeneration
+    || preparedRecord.message_hash_hex !== confirmMessageHash
+  ) {
+    return { ok: false, code: "prepare_superseded" };
+  }
 
   const confirmed = {
     ok: true as const,
     phase: "consume_confirmed" as const,
-    prepared_message_hash_hex: preparedRecord.message_hash_hex,
+    prepared_message_hash_hex: confirmMessageHash,
+    preparation_generation: confirmGeneration,
     transaction_signature: input.transaction_signature,
     observation_slot: txProof.slot,
     confirmation_commitment: txProof.confirmation_status,
@@ -433,16 +453,18 @@ export async function confirmConnectedSandboxConsume(input: {
   };
 
   const ttlSec = Math.max(300, verified.binding.expires_at - Math.floor(Date.now() / 1000));
-  await writeCachedToken2022ConnectedConfirm(
+  const cached = await writeCachedToken2022ConnectedConfirm(
     {
       jti: verified.binding.jti,
       action: "consume",
-      messageHashHex: preparedRecord.message_hash_hex,
+      messageHashHex: confirmMessageHash,
       transactionSignature: input.transaction_signature,
+      generation: confirmGeneration,
     },
     confirmed,
     ttlSec,
   );
+  if (!cached.ok) return { ok: false, code: cached.code };
 
   return confirmed;
 }

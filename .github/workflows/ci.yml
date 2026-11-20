@@ -548,6 +548,12 @@ jobs:
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
           NEXT_PUBLIC_SOLANA_NETWORK: devnet
           ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
+      - name: BUILD #986 connected sandbox atomic Redis integration
+        run: npx vitest run lib/partner/integrationStudio/token2022Entitlement/connectedSandboxAtomic.redis.integration.test.ts
+        env:
+          NODE_ENV: test
+          ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
+          ABRAXAS_BUILD986_DISTRIBUTED_ATOMIC_ACCEPTANCE: "1"
 
 
 
