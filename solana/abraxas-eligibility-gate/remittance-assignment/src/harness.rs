@@ -1,5 +1,8 @@
 use solana_program_test::{processor, BanksClientError, ProgramTest, ProgramTestContext};
 use solana_sdk::{
+    account::Account,
+    feature::{self, Feature},
+    feature_set,
     instruction::Instruction,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
@@ -13,6 +16,34 @@ pub async fn start_program_test() -> ProgramTestContext {
         "spl_token_2022",
         spl_token_2022::id(),
         processor!(spl_token_2022::processor::Processor::process),
+    );
+    test.start_with_context().await
+}
+
+/// ProgramTest with the ZK ElGamal proof program required for confidential Token-2022 instructions.
+pub async fn start_program_test_with_zk_proofs() -> ProgramTestContext {
+    let mut test = ProgramTest::default();
+    test.add_program(
+        "spl_token_2022",
+        spl_token_2022::id(),
+        processor!(spl_token_2022::processor::Processor::process),
+    );
+    test.add_program(
+        "solana_zk_token_proof_program",
+        solana_zk_token_sdk::zk_token_proof_program::id(),
+        Some(solana_zk_token_proof_program::Entrypoint::vm),
+    );
+    test.set_compute_max_units(1_400_000);
+    let zk_fee_feature = feature_set::enable_zk_transfer_with_fee::id();
+    test.add_account(
+        zk_fee_feature,
+        Account {
+            lamports: 1_000_000_000,
+            data: bincode::serialize(&Feature::default()).expect("feature"),
+            owner: feature::id(),
+            executable: false,
+            rent_epoch: 0,
+        },
     );
     test.start_with_context().await
 }

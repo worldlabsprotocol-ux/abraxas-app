@@ -5909,8 +5909,11 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
 name = "token2022-remittance-assignment"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "solana-program-test",
  "solana-sdk",
+ "solana-zk-token-proof-program",
+ "solana-zk-token-sdk",
  "spl-associated-token-account 2.3.0",
  "spl-token-2022 3.0.5",
  "tokio",

@@ -3,7 +3,9 @@
 pub mod harness;
 pub mod mint_public;
 pub mod mint_privacy;
+pub mod confidential;
 
 pub use harness::*;
 pub use mint_public::*;
 pub use mint_privacy::*;
+pub use confidential::*;

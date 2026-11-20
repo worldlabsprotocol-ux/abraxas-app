@@ -1,6 +1,6 @@
 # Token-2022 remittance assignment — engineering report
 
-## Status: **partial GO** (core public path green; confidential lifecycle pending zk VM)
+## Status: **near GO** (public + confidential lifecycle green in ProgramTest; CPI Guard optional ignored)
 
 ## Module location
 
@@ -13,24 +13,26 @@
 | Public remittance mint extensions | Green |
 | Epoch fee calculation + `transfer_checked_with_fee` | Green |
 | Default frozen + simulated KYC thaw | Green |
-| Privacy mint (PermanentDelegate + CT mint config + CT fee config) | Green init tests |
-| PermanentDelegate public-balance seizure demo | Green |
-| Full confidential deposit/transfer/withdraw + ZK proofs | **Not run** (ignored; needs zk-elgamal proof program in ProgramTest) |
-| CPI Guard optional challenge | **Ignored** |
+| Privacy mint (PermanentDelegate + CT mint + CT fee when public fee present) | Green |
+| PermanentDelegate public-balance transfer | Green |
+| Confidential configure / approve / deposit / apply / ZK transfer / withdraw | Green (lifecycle mint without public `TransferFeeConfig`; see README) |
+| Confidential + public transfer fee in one mint | **Documented gap** (split proof context required on modern clusters) |
+| CPI Guard optional challenge | **Ignored** stub |
 
 ## Test command
 
 ```bash
-cd solana/abraxas-eligibility-gate
-cargo test -p token2022-remittance-assignment
+npm run test:remittance-assignment
+# or
+cd solana/abraxas-eligibility-gate && cargo test -p token2022-remittance-assignment
 ```
 
-**Pass/fail (2026-11-20 PST):** 6 passed, 2 ignored (confidential lifecycle, CPI guard).
-
-## Abraxas separation
-
-No changes to entitlement consumer, proof continuity mint semantics, Launchpad, or production env. Workspace member only adds isolated crate.
+**Pass/fail (latest run):** 8 passed, 1 ignored (optional CPI guard).
 
 ## Privacy vs seizure finding
 
-`PermanentDelegate` successfully moves **public** balances via `TransferChecked`. Confidential balances require confidential-transfer instructions and owner-approved ciphertext state; delegate authority does not substitute for decrypting or moving encrypted pending/available balances.
+`PermanentDelegate` moves **public** balances via `TransferChecked`. After deposit into confidential balance, public amount is zero and delegate `TransferChecked` **fails** — encrypted balances are not recoverable via delegate authority alone.
+
+## Abraxas separation
+
+No changes to entitlement consumer, proof continuity mint semantics, Launchpad, or production env.

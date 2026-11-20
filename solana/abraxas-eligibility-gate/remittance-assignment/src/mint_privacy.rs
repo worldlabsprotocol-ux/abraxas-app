@@ -2,6 +2,7 @@
 
 use solana_program_test::ProgramTestContext;
 use solana_sdk::{pubkey::Pubkey, signature::{Keypair, Signer}, system_instruction};
+use solana_zk_token_sdk::encryption::elgamal::ElGamalKeypair;
 use spl_token_2022::{
     extension::{
         confidential_transfer::{
@@ -24,18 +25,31 @@ pub struct PrivacyRemittanceEnvironment {
     pub permanent_delegate: Pubkey,
     pub mint_authority: Pubkey,
     pub freeze_authority: Pubkey,
+    pub confidential_transfer_authority: Pubkey,
+    pub withheld_fee_elgamal: solana_zk_token_sdk::zk_token_elgamal::pod::ElGamalPubkey,
 }
 
-pub fn privacy_mint_extensions() -> Vec<ExtensionType> {
-    let mut ext = public_mint_extensions();
+pub fn privacy_mint_extensions(include_public_transfer_fee: bool) -> Vec<ExtensionType> {
+    let mut ext = if include_public_transfer_fee {
+        public_mint_extensions()
+    } else {
+        vec![
+            ExtensionType::MetadataPointer,
+            ExtensionType::DefaultAccountState,
+            ExtensionType::MintCloseAuthority,
+        ]
+    };
     ext.push(ExtensionType::PermanentDelegate);
     ext.push(ExtensionType::ConfidentialTransferMint);
-    ext.push(ExtensionType::ConfidentialTransferFeeConfig);
+    if include_public_transfer_fee {
+        ext.push(ExtensionType::ConfidentialTransferFeeConfig);
+    }
     ext
 }
 
-pub fn privacy_mint_space() -> usize {
-    ExtensionType::try_calculate_account_len::<Mint>(&privacy_mint_extensions()).expect("privacy mint space")
+pub fn privacy_mint_space(include_public_transfer_fee: bool) -> usize {
+    ExtensionType::try_calculate_account_len::<Mint>(&privacy_mint_extensions(include_public_transfer_fee))
+        .expect("privacy mint space")
 }
 
 pub async fn create_privacy_remittance_mint(
@@ -44,12 +58,42 @@ pub async fn create_privacy_remittance_mint(
     permanent_delegate: &Pubkey,
     spec: PublicRemittanceMintSpec,
 ) -> PrivacyRemittanceEnvironment {
-    let _spec = spec;
+    create_privacy_remittance_mint_inner(ctx, payer, permanent_delegate, spec, true).await
+}
+
+/// Privacy mint **without** public `TransferFeeConfig` — used to exercise the confidential ZK transfer
+/// path in ProgramTest. Combining public transfer fees with confidential transfer presently requires
+/// split proof context state accounts when `enable_zk_transfer_with_fee` is active on cluster.
+pub async fn create_privacy_remittance_mint_confidential_lifecycle(
+    ctx: &mut ProgramTestContext,
+    payer: &Keypair,
+    permanent_delegate: &Pubkey,
+) -> PrivacyRemittanceEnvironment {
+    create_privacy_remittance_mint_inner(
+        ctx,
+        payer,
+        permanent_delegate,
+        PublicRemittanceMintSpec {
+            transfer_fee_basis_points: 0,
+            maximum_fee: 0,
+        },
+        false,
+    )
+    .await
+}
+
+async fn create_privacy_remittance_mint_inner(
+    ctx: &mut ProgramTestContext,
+    payer: &Keypair,
+    permanent_delegate: &Pubkey,
+    spec: PublicRemittanceMintSpec,
+    include_public_transfer_fee: bool,
+) -> PrivacyRemittanceEnvironment {
     let mint_keypair = Keypair::new();
     let mint = mint_keypair.pubkey();
     let mint_authority = payer.pubkey();
     let freeze_authority = payer.pubkey();
-    let space = privacy_mint_space();
+    let space = privacy_mint_space(include_public_transfer_fee);
     let rent = ctx.banks_client.get_rent().await.unwrap().minimum_balance(space);
 
     use spl_token_2022::extension::{
@@ -67,31 +111,47 @@ pub async fn create_privacy_remittance_mint(
         space as u64,
         &spl_token_2022::id(),
     );
-    let init_fee = initialize_transfer_fee_config(
-        &spl_token_2022::id(),
-        &mint,
-        Some(&mint_authority),
-        Some(&mint_authority),
-        _spec.transfer_fee_basis_points,
-        _spec.maximum_fee,
-    )
-    .unwrap();
+    let mut setup = vec![create];
+    if include_public_transfer_fee {
+        let init_fee = initialize_transfer_fee_config(
+            &spl_token_2022::id(),
+            &mint,
+            Some(&mint_authority),
+            Some(&mint_authority),
+            spec.transfer_fee_basis_points,
+            spec.maximum_fee,
+        )
+        .unwrap();
+        setup.push(init_fee);
+    }
     let init_meta = initialize_metadata_pointer(&spl_token_2022::id(), &mint, Some(mint_authority), Some(mint)).unwrap();
     let init_frozen = initialize_default_account_state(&spl_token_2022::id(), &mint, &AccountState::Frozen).unwrap();
     let init_close = initialize_mint_close_authority(&spl_token_2022::id(), &mint, Some(&mint_authority)).unwrap();
     let init_perm = initialize_permanent_delegate(&spl_token_2022::id(), &mint, permanent_delegate).unwrap();
-    let elgamal_audit = spl_token_2022::solana_zk_token_sdk::zk_token_elgamal::pod::ElGamalPubkey::default();
-    let init_ct_fee = initialize_confidential_transfer_fee_config(
-        &spl_token_2022::id(),
-        &mint,
-        Some(mint_authority),
-        elgamal_audit,
-    )
-    .unwrap();
+    let withheld_elgamal_pod = if include_public_transfer_fee {
+        let withheld_fee_keys = ElGamalKeypair::new_rand();
+        spl_token_2022::solana_zk_token_sdk::zk_token_elgamal::pod::ElGamalPubkey(
+            withheld_fee_keys.pubkey().to_bytes(),
+        )
+    } else {
+        spl_token_2022::solana_zk_token_sdk::zk_token_elgamal::pod::ElGamalPubkey::default()
+    };
+    let mut init_ct_fee = None;
+    if include_public_transfer_fee {
+        init_ct_fee = Some(
+            initialize_confidential_transfer_fee_config(
+                &spl_token_2022::id(),
+                &mint,
+                Some(mint_authority),
+                withheld_elgamal_pod,
+            )
+            .unwrap(),
+        );
+    }
     let init_ct = initialize_confidential_transfer_mint(
         &spl_token_2022::id(),
         &mint,
-        None,
+        Some(mint_authority),
         false,
         None,
     )
@@ -105,11 +165,12 @@ pub async fn create_privacy_remittance_mint(
     )
     .unwrap();
 
-    send(
-        ctx,
-        vec![create, init_fee, init_meta, init_frozen, init_close, init_perm, init_ct_fee, init_ct, init_mint],
-        &[payer, &mint_keypair],
-    )
+    setup.extend([init_meta, init_frozen, init_close, init_perm]);
+    if let Some(ix) = init_ct_fee {
+        setup.push(ix);
+    }
+    setup.extend([init_ct, init_mint]);
+    send(ctx, setup, &[payer, &mint_keypair])
     .await
     .expect("privacy remittance mint");
 
@@ -119,6 +180,8 @@ pub async fn create_privacy_remittance_mint(
         permanent_delegate: *permanent_delegate,
         mint_authority,
         freeze_authority,
+        confidential_transfer_authority: mint_authority,
+        withheld_fee_elgamal: withheld_elgamal_pod,
     }
 }
 
