@@ -21,7 +21,10 @@ import { crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainP
 import { testnetGateDeploymentExample } from "@/lib/partner/testnetGateDeploymentKit/examples";
 import { onchainVerifierConformanceExample } from "@/lib/partner/onchainVerifierConformance/examples";
 import { organizationEligibilityServerExample } from "@/lib/organizationEligibility/examples";
-import { blockchainNativeStudioServerExample } from "@/lib/partner/launchpad/blockchainNative/examples";
+import {
+  blockchainNativeStudioServerExample,
+  token2022EntitlementStudioServerExample,
+} from "@/lib/partner/launchpad/blockchainNative/examples";
 import { nftCollectionGateServerExample } from "@/lib/partner/nftCollectionGate/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
@@ -152,6 +155,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/operations/BUILD_976_BLOCKCHAIN_NATIVE_STUDIO.md",
       code: blockchainNativeStudioServerExample(),
     },
+    token_2022_receipt_entitlement: {
+      title: "Token-2022 receipt-backed entitlement",
+      docs: "/docs/operations/BUILD_982_INTEGRATION_STUDIO_ACTIVATION.md",
+      code: token2022EntitlementStudioServerExample(),
+    },
   };
 }
 
@@ -276,6 +284,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Blockchain-native Launchpad continuity",
         docs: "/docs/operations/BUILD_976_BLOCKCHAIN_NATIVE_STUDIO.md",
         code: blockchainNativeStudioServerExample(),
+      };
+    case "token_2022_receipt_entitlement":
+      return {
+        title: "Token-2022 receipt-backed entitlement",
+        docs: "/docs/operations/BUILD_982_INTEGRATION_STUDIO_ACTIVATION.md",
+        code: token2022EntitlementStudioServerExample(),
       };
     default: {
       const _never: never = path;

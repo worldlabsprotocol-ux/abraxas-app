@@ -11,7 +11,7 @@
       "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
       "outcome": "success",
       "signers": [
-        "3L2M1sCWpERDohPEQo9Dv2G8fb515hZ5evDKwU6AfmYD"
+        "HzmEHysp1AaHYSuP2b99mGfY1apgLbiMQzhdD8CaJ5vg"
       ],
       "accounts": {},
       "notes": "ProofContinuityRegistry initialized"
@@ -21,10 +21,10 @@
       "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
       "outcome": "success",
       "signers": [
-        "3a6h4GH4NmuJ6KQHxvJ5M8gmjNEA7iYhHwQZ5Ky3pL4P"
+        "DubNPTibJpSyuKpfCjvCYVzKP6CnszxBGZQ9mJbUMMSK"
       ],
       "accounts": {
-        "trusted_config": "7fCSAanwRAMSKQ3NsznuAwnMy2xFJJJbaTs4Lyxp5a2D"
+        "trusted_config": "JCa8o7RyqigEuZfrxwNf61tfR2s2ze6ktgE4icMKh3HY"
       },
       "notes": "Partner-owned relying-party configuration PDA"
     },
@@ -33,11 +33,11 @@
       "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
       "outcome": "success",
       "signers": [
-        "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ"
+        "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST"
       ],
       "accounts": {
-        "commitment": "C4VgukxG3jGLfAGFQFhXa43f4QyJruf6vusuEz7ML7Bj",
-        "mint": "ADATBp9zHRTv7ZssdtaZ9nJBCPzEwXpGdMPHj5GtqVy4"
+        "commitment": "ASxgaqxKNYytoR6imvjMbWzpxWDMk75F4sNZ742ZNA6u",
+        "mint": "6LzUmxJV2Y7ko1Dqev4sWAQjS7UdG8N2wgKWZZ7sU1gg"
       },
       "notes": "Token-2022 non-transferable entitlement issued"
     },
@@ -46,69 +46,69 @@
       "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
       "outcome": "success",
       "signers": [
-        "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ",
-        "3L2M1sCWpERDohPEQo9Dv2G8fb515hZ5evDKwU6AfmYD"
+        "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST",
+        "HzmEHysp1AaHYSuP2b99mGfY1apgLbiMQzhdD8CaJ5vg"
       ],
       "accounts": {
-        "consumption": "FYPEmqeJzYeJ6iZLoiWiVvVWzbzFs66SdHe6jf9KeQXC"
+        "consumption": "BMP4n1fNuwspFrsbH9zeHkUSa7RzMRi9PBNiZ28goK2V"
       },
       "notes": "On-chain consumption record created"
     }
   ],
   "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-  "registry": "J9nQA4yGAme8EXrEiYgNLjq6jzRU65vdTUPoquHZjZyE",
-  "trusted_config": "7fCSAanwRAMSKQ3NsznuAwnMy2xFJJJbaTs4Lyxp5a2D",
-  "commitment": "C4VgukxG3jGLfAGFQFhXa43f4QyJruf6vusuEz7ML7Bj",
-  "entitlement_mint": "ADATBp9zHRTv7ZssdtaZ9nJBCPzEwXpGdMPHj5GtqVy4",
-  "holder_wallet": "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ",
-  "consumption_account": "FYPEmqeJzYeJ6iZLoiWiVvVWzbzFs66SdHe6jf9KeQXC",
+  "registry": "ChMXtTrzyAtFFLBV2PvnJodnoAvBR8nmPvp3UWAow9Ab",
+  "trusted_config": "JCa8o7RyqigEuZfrxwNf61tfR2s2ze6ktgE4icMKh3HY",
+  "commitment": "ASxgaqxKNYytoR6imvjMbWzpxWDMk75F4sNZ742ZNA6u",
+  "entitlement_mint": "6LzUmxJV2Y7ko1Dqev4sWAQjS7UdG8N2wgKWZZ7sU1gg",
+  "holder_wallet": "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST",
+  "consumption_account": "BMP4n1fNuwspFrsbH9zeHkUSa7RzMRi9PBNiZ28goK2V",
   "token_balance": 1,
   "commitment_status": 0,
   "consumption_recorded": true,
   "independent_verification_ok": true,
-  "recorded_at_unix_ms": 1795047261606,
+  "recorded_at_unix_ms": 1795066454585,
   "partner_evidence": {
-    "registry_admin": "3L2M1sCWpERDohPEQo9Dv2G8fb515hZ5evDKwU6AfmYD",
-    "relying_party_admin": "3a6h4GH4NmuJ6KQHxvJ5M8gmjNEA7iYhHwQZ5Ky3pL4P",
-    "observation_unix_timestamp": 1795047261,
+    "registry_admin": "HzmEHysp1AaHYSuP2b99mGfY1apgLbiMQzhdD8CaJ5vg",
+    "relying_party_admin": "DubNPTibJpSyuKpfCjvCYVzKP6CnszxBGZQ9mJbUMMSK",
+    "observation_unix_timestamp": 1795066454,
     "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-    "entitlement_mint": "ADATBp9zHRTv7ZssdtaZ9nJBCPzEwXpGdMPHj5GtqVy4",
-    "holder_wallet": "EW7syE4HK1gHG1RKHDb6nZfh3Fy3YF337UYHcUzJ7XzJ",
+    "entitlement_mint": "6LzUmxJV2Y7ko1Dqev4sWAQjS7UdG8N2wgKWZZ7sU1gg",
+    "holder_wallet": "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST",
     "evidence_supply": "program_test_banks_client_capture",
     "registry": {
-      "pubkey": "J9nQA4yGAme8EXrEiYgNLjq6jzRU65vdTUPoquHZjZyE",
+      "pubkey": "ChMXtTrzyAtFFLBV2PvnJodnoAvBR8nmPvp3UWAow9Ab",
       "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "v91UQgHKsfwilu4cLSnF4wF+5XSb9/NX3pEdYvgNqbfTXjt0qjaSogjqQZMp5cjKArD8aA4EDniue1h264YAAroZmFJfhMJgCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD8"
+      "data_base64": "v91UQgHKsfz8hxtm4adGltIM+8oZtXVsSCqh17Z+hkntzrao0Xo0Ee/02ndafm9FvkYOyrx3Eg7UJt1Sgj7k6CQIMVDPAnZRCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
     },
     "commitment": {
-      "pubkey": "C4VgukxG3jGLfAGFQFhXa43f4QyJruf6vusuEz7ML7Bj",
+      "pubkey": "ASxgaqxKNYytoR6imvjMbWzpxWDMk75F4sNZ742ZNA6u",
       "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "DDggWSHZ9ez+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAABAAAAAAAAAMidjSaYw0DGEeefxcNuTKtrYzuEe8coKu2uwy2Nsa0T/Q=="
+      "data_base64": "DDggWSHZ9eytxwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAABAAAAAAAAABa2AzKS5XNSiV5NJ0gzvCQXR24NofTRCyfZ5SFpIRDc/w=="
     },
     "mint_config": {
-      "pubkey": "W9pcEUQa51ccSK7ZeDPQvKaJYiVE17QDmkMGkxtLRoC",
+      "pubkey": "5UFvf2NGKUWTbz1qw8rWiqrZqCE2zPrA33SFXt9Xjpqs",
       "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "aP1AG5gizjf+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazYjW1sDYu2Su5isZQ3uTEsPzto8EZZ4EHCF3i/B3DmCz/wE="
+      "data_base64": "aP1AG5gizjetxwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/E9pdioypM6v/eUM/vGCRQUVKHigMLsxFpCO5WGzpT8V/gE="
     },
     "issuance_ledger": {
-      "pubkey": "4KE4z5FBVTte7YbzeQhSMqD1RiKt8d8vMzjkbN8wa68C",
+      "pubkey": "BHFLsa3S1DBDtqvR4xnTMfpAQGMSDMbL3Nx7thBietai",
       "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "1JB9JEWzAY3+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVyJ2NJpjDQMYR55/Fw25Mq2tjO4R7xygq7a7DLY2xrRP/"
+      "data_base64": "1JB9JEWzAY2txwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFrYDMpLlc1KJXk0nSDO8JBdHbg2h9NELJ9nlIWkhENz9"
     },
     "trusted_config": {
-      "pubkey": "7fCSAanwRAMSKQ3NsznuAwnMy2xFJJJbaTs4Lyxp5a2D",
+      "pubkey": "JCa8o7RyqigEuZfrxwNf61tfR2s2ze6ktgE4icMKh3HY",
       "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
-      "data_base64": "E36B3psXa0AmMfmXJ4PCjhqigR3m0L5qz01kA86zq5CjZGpwrQSlaCKW7hwtKcXjAX7ldJv381fekR1i+A2pt9NeO3SqNpKiCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD+"
+      "data_base64": "E36B3psXa0C/xU5ZekHIjOZByPOa0PcKecDsDzwJ85Lm8Yr5HF3l3PyHG2bhp0aW0gz7yhm1dWxIKqHXtn6GSe3OtqjRejQRCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
     },
     "holder_token_account": {
-      "pubkey": "HuhEfTe85Z51aq17WUxyhT3AR6edBurbEMJJVBfcrZZ3",
+      "pubkey": "4u9eK61dWsYy17mcGjvh9zGzZuz9CJJGYZwCN1FAhMYE",
       "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-      "data_base64": "iNbWwNi7ZK7mKxlDe5MSw/O2jwRlngQcIXeL8HcOYLPInY0mmMNAxhHnn8XDbkyra2M7hHvHKCrtrsMtjbGtEwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
+      "data_base64": "T2l2KjKkzq/95Qz+8YJFBRUoeKAwuzEWkI7lYbOlPxUWtgMykuVzUoleTSdIM7wkF0duDaH00Qsn2eUhaSEQ3AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
     },
     "consumption": {
-      "pubkey": "FYPEmqeJzYeJ6iZLoiWiVvVWzbzFs66SdHe6jf9KeQXC",
+      "pubkey": "BMP4n1fNuwspFrsbH9zeHkUSa7RzMRi9PBNiZ28goK2V",
       "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
-      "data_base64": "vqpUcjK+qi/+1qhFr/P5jjRhdSNBTMSkcTYjpJ5kkdJCsxS93lgazRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVyJ2NJpjDQMYR55/Fw25Mq2tjO4R7xygq7a7DLY2xrRMBXT/+agAAAAABAAAAAAAAAP8="
+      "data_base64": "vqpUcjK+qi+txwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFrYDMpLlc1KJXk0nSDO8JBdHbg2h9NELJ9nlIWkhENwBVor+agAAAAABAAAAAAAAAP8="
     }
   }
 }

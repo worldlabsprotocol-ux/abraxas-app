@@ -127,6 +127,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   institutional_eligibility_gate: "Institutional eligibility gate",
   onchain_verifier_conformance: "Verify your gate integration",
   blockchain_native_launchpad: "Blockchain-native Launchpad continuity",
+  token_2022_receipt_entitlement: "Token-2022 receipt-backed entitlement",
 };
 
 const body: React.CSSProperties = {
@@ -1201,6 +1202,11 @@ export function IntegrationStudioClient({
         {pathId === "cross_chain_protocol_access" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Private proof, then fresh consent, then an audience-bound receipt, then a mandatory public-receipt re-fetch, then a one-time chain authorization, then partner-owned activate_protocol_access. Local/sandbox reference on EVM and Solana. A presentation is never sufficient. Browser input cannot choose chain, contract, program, receipt, policy, action, signer, nonce, expiry, or entitlement.
+          </p>
+        )}
+        {pathId === "token_2022_receipt_entitlement" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Five-step workspace: choose authorized scope, verify proof continuity, receive a non-transferable Token-2022 entitlement, consume through the independent entitlement consumer, then verify with partner-verify outside this UI. Local ProgramTest evidence is labeled honestly. Structural snapshot checks are not authenticated chain proof. Production mint and consume stay disabled without deployment approval.
           </p>
         )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (

@@ -43,6 +43,7 @@ import { fetchWalletActionChallenge, signWalletActionChallenge } from "@/lib/aut
 import { BuilderPortableReceiptExportPanel } from "@/components/developers/BuilderPortableReceiptExportPanel";
 import { useWallet, type WalletContextState } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { IntegrationStudioToken2022EntitlementJourney } from "@/components/developers/IntegrationStudioToken2022EntitlementJourney";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -602,6 +603,44 @@ export function IntegrationStudioRequestWorkbench({
       setBusy(false);
       return;
     }
+    if (executionMode === "token_2022_entitlement_reference") {
+      if (scenarioId === "approved") {
+        try {
+          await startUnifiedTrustExecution();
+        } catch {
+          setFailure({
+            kind: "test_failed",
+            headline: "Proof verification did not start",
+            detail: "The harness request did not complete. Check your sandbox session and try again.",
+            actionLabel: "Try test again",
+            refreshSession: false,
+          });
+        }
+      } else {
+        const requestBody = buildLaunchpadTestScenarioRequestBody({ scenarioId, returnUrl });
+        try {
+          const res = await fetch(`/api/launchpad/applications/${applicationId}/test`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(requestBody),
+          });
+          const data = await res.json().catch(() => ({})) as { result?: LaunchpadTestRunResult };
+          if (res.ok && data.result) setOutcome(formatHarnessResultForBuilder(data.result));
+          else setFailure(presentIntegrationTestFailure(res.status, data as { code?: string }));
+        } catch {
+          setFailure({
+            kind: "test_failed",
+            headline: "Negative scenario did not complete",
+            detail: "Check your connection and sandbox session.",
+            actionLabel: "Try test again",
+            refreshSession: false,
+          });
+        }
+      }
+      setBusy(false);
+      return;
+    }
     if (executionMode === "blockchain_native_continuity") {
       try {
         if (scenarioId === "approved") {
@@ -764,6 +803,36 @@ export function IntegrationStudioRequestWorkbench({
     return <BeginnerPartnerAccessGate applicationId={applicationId} onReady={onRefreshSession ?? (() => {})} />;
   }
 
+  const token2022EntitlementPath = pathId === "token_2022_receipt_entitlement";
+  const proofVerifiedForEntitlement = Boolean(outcome?.tone === "success" && outcome.receiptId);
+
+  if (token2022EntitlementPath && applicationId) {
+  const entitlementShell = (
+      <IntegrationStudioToken2022EntitlementJourney
+        applicationId={applicationId}
+        signedIn={signedIn}
+        policyId={policyId}
+        proofReceiptId={outcome?.receiptId ?? null}
+        proofVerified={proofVerifiedForEntitlement}
+        onRunProofTest={() => void runHarness()}
+        proofBusy={busy}
+        proofError={error || failure?.detail || ""}
+      />
+    );
+    if (beginnerSurface) {
+      return (
+        <>
+          {entitlementShell}
+          {failure ? (
+            <p className="abx-builder-journey-support" role="alert">
+              {failure.headline}: {failure.detail}
+            </p>
+          ) : null}
+        </>
+      );
+    }
+  }
+
   if (beginnerSurface) {
     const failed = Boolean(failure || error || (outcome && outcome.tone !== "success"));
     return (
@@ -798,6 +867,19 @@ export function IntegrationStudioRequestWorkbench({
   }
 
   return (
+    <>
+      {token2022EntitlementPath && applicationId ? (
+        <IntegrationStudioToken2022EntitlementJourney
+          applicationId={applicationId}
+          signedIn={signedIn}
+          policyId={policyId}
+          proofReceiptId={outcome?.receiptId ?? null}
+          proofVerified={proofVerifiedForEntitlement}
+          onRunProofTest={() => void runHarness()}
+          proofBusy={busy}
+          proofError={error || failure?.detail || ""}
+        />
+      ) : null}
     <ContentCard title="Run a test" id="request">
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
         Run a real sandbox verification. When it succeeds, connect your application backend on the next step.
@@ -899,6 +981,7 @@ export function IntegrationStudioRequestWorkbench({
         </div>
       ) : null}
     </ContentCard>
+    </>
   );
 }
 
