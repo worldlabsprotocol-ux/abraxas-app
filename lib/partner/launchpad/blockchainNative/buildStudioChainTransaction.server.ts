@@ -101,7 +101,7 @@ export async function buildStudioChainTransaction(input: {
     payloadHash,
     partnerId: input.binding.partner_id,
     policyId: input.binding.policy_id,
-    applicationId: input.binding.policy_template_id,
+    applicationId: input.binding.application_id,
     expiresAt,
     executionNonce,
     statusVersion: BigInt(1),
