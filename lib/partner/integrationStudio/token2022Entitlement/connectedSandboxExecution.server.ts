@@ -62,7 +62,7 @@ async function loadCommitmentForBinding(input: {
   const receiptHash = hashReceiptId(input.receiptId);
   const registry = findProofRegistryPda(input.registryAdmin);
   const commitmentPk = findReceiptCommitmentPda(registry.address, receiptHash);
-  const info = await connection.getAccountInfo(commitmentPk.address, "confirmed");
+  const info = await input.connection.getAccountInfo(commitmentPk.address, "confirmed");
   if (!info?.data) return { ok: false, code: "commitment_missing_on_chain" };
   const decoded = decodeReceiptCommitmentAccount(Buffer.from(info.data));
   if (!decoded) return { ok: false, code: "commitment_decode_failed" };

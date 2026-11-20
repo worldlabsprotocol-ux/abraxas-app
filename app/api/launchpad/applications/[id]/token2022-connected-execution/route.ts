@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         recovery: token2022EntitlementRecovery(recoveryKey),
       });
     }
-    return launchpadJson({ ok: true, ...built });
+    return launchpadJson(built);
   }
 
   if (body.phase === "confirm_mint") {
@@ -114,13 +114,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!signature) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "chain_transaction_signature_required");
     const confirmed = await confirmConnectedSandboxMint({ ...common, transaction_signature: signature });
     if (!confirmed.ok) return launchpadJson({ ok: false, code: confirmed.code });
-    return launchpadJson({ ok: true, ...confirmed });
+    return launchpadJson(confirmed);
   }
 
   if (body.phase === "prepare_consume") {
     const built = await buildConnectedSandboxConsumeTransaction(common);
     if (!built.ok) return launchpadJson({ ok: false, code: built.code });
-    return launchpadJson({ ok: true, ...built });
+    return launchpadJson(built);
   }
 
   if (body.phase === "confirm_consume") {
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!signature) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "chain_transaction_signature_required");
     const confirmed = await confirmConnectedSandboxConsume({ ...common, transaction_signature: signature });
     if (!confirmed.ok) return launchpadJson({ ok: false, code: confirmed.code });
-    return launchpadJson({ ok: true, ...confirmed });
+    return launchpadJson(confirmed);
   }
 
   return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "invalid_phase");
