@@ -29,6 +29,10 @@ name = "remittance_confidential_lifecycle"
 path = "tests/confidential_lifecycle.rs"
 
 [[test]]
+name = "remittance_confidential_adversarial"
+path = "tests/confidential_adversarial.rs"
+
+[[test]]
 name = "remittance_cpi_guard_optional"
 path = "tests/cpi_guard_optional.rs"
 

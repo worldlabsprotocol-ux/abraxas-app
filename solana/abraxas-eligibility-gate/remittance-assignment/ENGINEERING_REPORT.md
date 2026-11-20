@@ -1,38 +1,38 @@
 # Token-2022 remittance assignment — engineering report
 
-## Status: **near GO** (public + confidential lifecycle green in ProgramTest; CPI Guard optional ignored)
+## Status: **GO** (mandatory path; CPI Guard optional still ignored)
 
-## Module location
+| # | Deliverable | Status |
+|---|-------------|--------|
+| 1 | Combined mint extensions | ✅ `inspect_combined_privacy_mint_extensions` |
+| 2 | Confidential transfer **with fee** on combined mint | ✅ context-state `VerifyTransferWithFee` + `inner_transfer_with_fee` |
+| 3 | PermanentDelegate seizure limit | ✅ lifecycle + delegate tests |
+| 4 | Adversarial cases | ✅ wrong fee params; decryptable/proof mismatch |
+| 5 | README + reproducible tests | ✅ |
+| 6 | CPI Guard optional | ⏸ ignored |
 
-`solana/abraxas-eligibility-gate/remittance-assignment/`
+## Combined mint extensions (verified via `StateWithExtensions`)
 
-## Implemented
+`TransferFeeConfig`, `MetadataPointer`, `DefaultAccountState`, `MintCloseAuthority`, `PermanentDelegate`, `ConfidentialTransferMint` (manual approval), `ConfidentialTransferFeeConfig`.
 
-| Area | Status |
-|------|--------|
-| Public remittance mint extensions | Green |
-| Epoch fee calculation + `transfer_checked_with_fee` | Green |
-| Default frozen + simulated KYC thaw | Green |
-| Privacy mint (PermanentDelegate + CT mint + CT fee when public fee present) | Green |
-| PermanentDelegate public-balance transfer | Green |
-| Confidential configure / approve / deposit / apply / ZK transfer / withdraw | Green (lifecycle mint without public `TransferFeeConfig`; see README) |
-| Confidential + public transfer fee in one mint | **Documented gap** (split proof context required on modern clusters) |
-| CPI Guard optional challenge | **Ignored** stub |
+## Confidential fee path
 
-## Test command
+- Epoch fee parameters read from mint for proof generation (`get_epoch_fee`).
+- Proof pre-verification transaction → context state account owned by `ZkTokenProof1111...`.
+- Transfer transaction references context account (`proof_instruction_offset = 0`).
+
+## Tests
 
 ```bash
 npm run test:remittance-assignment
-# or
-cd solana/abraxas-eligibility-gate && cargo test -p token2022-remittance-assignment
 ```
 
-**Pass/fail (latest run):** 8 passed, 1 ignored (optional CPI guard).
+**Latest:** 10 passed, 1 ignored.
 
-## Privacy vs seizure finding
+## Seizure limitation
 
-`PermanentDelegate` moves **public** balances via `TransferChecked`. After deposit into confidential balance, public amount is zero and delegate `TransferChecked` **fails** — encrypted balances are not recoverable via delegate authority alone.
+Delegate `TransferChecked` succeeds on public balances only. Post-confidential-deposit, delegate transfer fails; encrypted state is not accessible via PermanentDelegate.
 
-## Abraxas separation
+## Submission decision
 
-No changes to entitlement consumer, proof continuity mint semantics, Launchpad, or production env.
+**GO** for class submission on mandatory requirements. CPI Guard remains optional/out of scope unless explicitly requested post-review.

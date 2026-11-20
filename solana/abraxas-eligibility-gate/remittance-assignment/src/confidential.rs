@@ -14,10 +14,13 @@ use spl_token_2022::{
         confidential_transfer::{
             account_info::{ApplyPendingBalanceAccountInfo, TransferAccountInfo, WithdrawAccountInfo},
             instruction::{
-                apply_pending_balance, approve_account, configure_account, deposit, transfer, withdraw,
+                apply_pending_balance, approve_account, configure_account, deposit, inner_transfer_with_fee,
+                transfer, withdraw,
             },
             ConfidentialTransferAccount,
         },
+        confidential_transfer_fee::ConfidentialTransferFeeConfig,
+        transfer_fee::TransferFeeConfig,
         BaseStateWithExtensions, ExtensionType, StateWithExtensions,
     },
     instruction::{initialize_account3, thaw_account},
@@ -27,6 +30,8 @@ use spl_token_2022::{
 use std::num::NonZeroI8;
 
 use crate::harness::send;
+use crate::mint_public::epoch_transfer_fee;
+use crate::proof_context::create_and_verify_transfer_with_fee_context;
 
 pub const CONFIDENTIAL_COMPUTE_UNIT_LIMIT: u32 = 1_400_000;
 
@@ -212,6 +217,82 @@ pub async fn confidential_deposit(
     send(ctx, vec![ix], &[payer, owner])
         .await
         .expect("confidential deposit");
+}
+
+pub async fn confidential_transfer_with_public_transfer_fee(
+    ctx: &mut ProgramTestContext,
+    payer: &Keypair,
+    owner: &Keypair,
+    source: &Pubkey,
+    dest: &Pubkey,
+    mint: &Pubkey,
+    mint_data: &[u8],
+    keys: &ConfidentialHolderKeys,
+    dest_elgamal_pubkey: &ElGamalPubkey,
+    withheld_authority_elgamal: &ElGamalPubkey,
+    transfer_amount: u64,
+) {
+    let source_data = ctx.banks_client.get_account(*source).await.unwrap().unwrap().data;
+    let extension = unpack_confidential_account(&source_data);
+    let transfer_info = TransferAccountInfo::new(&extension);
+
+    let mint_state = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(mint_data).unwrap();
+    let fee_cfg = mint_state.get_extension::<TransferFeeConfig>().unwrap();
+    let epoch = ctx
+        .banks_client
+        .get_sysvar::<solana_sdk::clock::Clock>()
+        .await
+        .unwrap()
+        .epoch;
+    let transfer_fee = fee_cfg.get_epoch_fee(epoch);
+    let fee_basis_points: u16 = transfer_fee.transfer_fee_basis_points.into();
+    let maximum_fee: u64 = transfer_fee.maximum_fee.into();
+
+    let _expected_public_fee = epoch_transfer_fee(mint_data, epoch, transfer_amount);
+    let proof_data = transfer_info
+        .generate_transfer_with_fee_proof_data(
+            transfer_amount,
+            &keys.elgamal,
+            &keys.aes,
+            dest_elgamal_pubkey,
+            None,
+            withheld_authority_elgamal,
+            fee_basis_points,
+            maximum_fee,
+        )
+        .expect("transfer-with-fee proof data");
+
+    let new_decryptable = transfer_info
+        .new_decryptable_available_balance(transfer_amount, &keys.aes)
+        .expect("post-transfer decryptable");
+
+    let context = create_and_verify_transfer_with_fee_context(
+        ctx,
+        payer,
+        &payer.pubkey(),
+        &proof_data,
+    )
+    .await;
+
+    let proof_location = ProofLocation::ContextStateAccount(&context.pubkey);
+    let transfer_ix = inner_transfer_with_fee(
+        &spl_token_2022::id(),
+        source,
+        mint,
+        dest,
+        new_decryptable.into(),
+        &owner.pubkey(),
+        &[],
+        proof_location,
+    )
+    .expect("inner transfer with fee");
+    send(ctx, vec![transfer_ix], &[payer, owner])
+        .await
+        .expect("confidential transfer with public transfer fee");
+
+    let _ct_fee_cfg = mint_state
+        .get_extension::<ConfidentialTransferFeeConfig>()
+        .expect("confidential transfer fee config");
 }
 
 pub async fn confidential_transfer(

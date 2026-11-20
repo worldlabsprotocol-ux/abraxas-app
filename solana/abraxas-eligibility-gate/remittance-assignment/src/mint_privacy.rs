@@ -185,6 +185,31 @@ async fn create_privacy_remittance_mint_inner(
     }
 }
 
+pub fn inspect_combined_privacy_mint_extensions(data: &[u8]) -> Result<(), String> {
+    let mint = StateWithExtensions::<Mint>::unpack(data).map_err(|e| e.to_string())?;
+    mint.get_extension::<spl_token_2022::extension::transfer_fee::TransferFeeConfig>()
+        .map_err(|e| e.to_string())?;
+    mint.get_extension::<spl_token_2022::extension::metadata_pointer::MetadataPointer>()
+        .map_err(|e| e.to_string())?;
+    mint.get_extension::<spl_token_2022::extension::default_account_state::DefaultAccountState>()
+        .map_err(|e| e.to_string())?;
+    mint.get_extension::<spl_token_2022::extension::mint_close_authority::MintCloseAuthority>()
+        .map_err(|e| e.to_string())?;
+    mint.get_extension::<spl_token_2022::extension::permanent_delegate::PermanentDelegate>()
+        .map_err(|e| e.to_string())?;
+    mint.get_extension::<ConfidentialTransferMint>()
+        .map_err(|e| e.to_string())?;
+    mint.get_extension::<spl_token_2022::extension::confidential_transfer_fee::ConfidentialTransferFeeConfig>()
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn withheld_authority_pubkey(env: &PrivacyRemittanceEnvironment) -> solana_zk_token_sdk::encryption::elgamal::ElGamalPubkey {
+    env.withheld_fee_elgamal
+        .try_into()
+        .expect("withheld elgamal pubkey")
+}
+
 pub fn inspect_privacy_mint(data: &[u8]) -> Result<(ConfidentialTransferMint, Pubkey), String> {
     let mint = StateWithExtensions::<Mint>::unpack(data).map_err(|e| e.to_string())?;
     let ct = mint

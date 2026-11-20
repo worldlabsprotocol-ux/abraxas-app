@@ -1,47 +1,45 @@
-//! Full confidential transfer lifecycle with real ZK proof instructions in ProgramTest.
+//! Full confidential transfer lifecycle on the combined privacy remittance mint.
 
 use solana_sdk::signature::Signer;
+use solana_zk_token_sdk::encryption::elgamal::ElGamalPubkey;
 use spl_token_2022::{
     extension::{BaseStateWithExtensions, StateWithExtensions},
     instruction::transfer_checked,
 };
 use token2022_remittance_assignment::{
-    apply_pending, confidential_deposit, confidential_transfer, confidential_withdraw,
-    configure_holder_account, create_confidential_ready_token_account,
-    create_privacy_remittance_mint, create_privacy_remittance_mint_confidential_lifecycle,
-    manual_confidential_approval, thaw_for_simulated_kyc,
-    ConfidentialHolderKeys, PublicRemittanceMintSpec, REMITTANCE_DECIMALS,
+    apply_pending, confidential_deposit, confidential_transfer_with_public_transfer_fee,
+    confidential_withdraw, configure_holder_account, create_confidential_ready_token_account,
+    create_privacy_remittance_mint, inspect_combined_privacy_mint_extensions, manual_confidential_approval,
+    thaw_for_simulated_kyc, withheld_authority_pubkey, ConfidentialHolderKeys, PublicRemittanceMintSpec,
+    REMITTANCE_DECIMALS,
     harness::{send, token_account_amount, start_program_test_with_zk_proofs},
 };
 
 #[tokio::test]
-async fn confidential_transfer_lifecycle_with_fee_on_privacy_mint() {
+async fn confidential_transfer_lifecycle_with_fee_on_combined_privacy_mint() {
     let mut ctx = start_program_test_with_zk_proofs().await;
     let payer = ctx.payer.insecure_clone();
     let delegate = solana_sdk::signature::Keypair::new();
     let alice = solana_sdk::signature::Keypair::new();
     let bob = solana_sdk::signature::Keypair::new();
-    let env =
-        create_privacy_remittance_mint_confidential_lifecycle(&mut ctx, &payer, &delegate.pubkey()).await;
+    let env = create_privacy_remittance_mint(
+        &mut ctx,
+        &payer,
+        &delegate.pubkey(),
+        PublicRemittanceMintSpec {
+            transfer_fee_basis_points: 50,
+            maximum_fee: 1_000_000,
+        },
+    )
+    .await;
+
+    let mint_data = ctx.banks_client.get_account(env.mint).await.unwrap().unwrap().data;
+    inspect_combined_privacy_mint_extensions(&mint_data).expect("combined mint extensions");
 
     let alice_keys = ConfidentialHolderKeys::new_rand();
     let bob_keys = ConfidentialHolderKeys::new_rand();
-    let alice_ata = token2022_remittance_assignment::create_confidential_ready_token_account_with_fee_layout(
-        &mut ctx,
-        &payer,
-        &alice.pubkey(),
-        &env.mint,
-        false,
-    )
-    .await;
-    let bob_ata = token2022_remittance_assignment::create_confidential_ready_token_account_with_fee_layout(
-        &mut ctx,
-        &payer,
-        &bob.pubkey(),
-        &env.mint,
-        false,
-    )
-    .await;
+    let alice_ata = create_confidential_ready_token_account(&mut ctx, &payer, &alice.pubkey(), &env.mint).await;
+    let bob_ata = create_confidential_ready_token_account(&mut ctx, &payer, &bob.pubkey(), &env.mint).await;
 
     configure_holder_account(&mut ctx, &payer, &alice, &alice_ata, &env.mint, &alice_keys).await;
     configure_holder_account(&mut ctx, &payer, &bob, &bob_ata, &env.mint, &bob_keys).await;
@@ -92,15 +90,18 @@ async fn confidential_transfer_lifecycle_with_fee_on_privacy_mint() {
 
     apply_pending(&mut ctx, &payer, &alice, &alice_ata, &alice_keys).await;
 
-    confidential_transfer(
+    let withheld: ElGamalPubkey = withheld_authority_pubkey(&env);
+    confidential_transfer_with_public_transfer_fee(
         &mut ctx,
         &payer,
         &alice,
         &alice_ata,
         &bob_ata,
         &env.mint,
+        &mint_data,
         &alice_keys,
         &bob_keys.elgamal.pubkey(),
+        &withheld,
         400_000,
     )
     .await;
@@ -121,7 +122,6 @@ async fn confidential_transfer_lifecycle_with_fee_on_privacy_mint() {
 
     assert_eq!(token_account_amount(&mut ctx, bob_ata).await, 100_000);
 
-    // PermanentDelegate cannot move funds after public balance was deposited into confidential state.
     let seize = transfer_checked(
         &spl_token_2022::id(),
         &alice_ata,
@@ -150,8 +150,8 @@ async fn confidential_configure_rejected_without_manual_approval() {
         &payer,
         &delegate.pubkey(),
         PublicRemittanceMintSpec {
-            transfer_fee_basis_points: 0,
-            maximum_fee: 0,
+            transfer_fee_basis_points: 50,
+            maximum_fee: 1_000_000,
         },
     )
     .await;

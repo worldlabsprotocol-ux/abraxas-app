@@ -1,7 +1,8 @@
 use solana_sdk::signature::Signer;
 use spl_token_2022::instruction::transfer_checked;
 use token2022_remittance_assignment::{
-    create_privacy_remittance_mint, create_token_account, inspect_privacy_mint,
+    create_privacy_remittance_mint, create_token_account, inspect_combined_privacy_mint_extensions,
+    inspect_privacy_mint,
     PublicRemittanceMintSpec, REMITTANCE_DECIMALS, start_program_test,
     harness::{send, token_account_amount},
 };
@@ -22,6 +23,7 @@ async fn privacy_mint_includes_confidential_transfer_and_permanent_delegate() {
     )
     .await;
     let data = ctx.banks_client.get_account(env.mint).await.unwrap().unwrap().data;
+    inspect_combined_privacy_mint_extensions(&data).unwrap();
     let (ct, perm) = inspect_privacy_mint(&data).unwrap();
     assert!(!bool::from(ct.auto_approve_new_accounts)); // manual approval required
     assert_eq!(perm, delegate.pubkey());

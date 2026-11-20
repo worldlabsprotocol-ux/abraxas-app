@@ -2,51 +2,59 @@
 
 **Course assignment · Andreia Canadas · due 25 Nov 2026**
 
-This crate is an **isolated** reference implementation inside Abraxas. It does **not** modify receipt-backed entitlement mints, Integration Studio #983 flows, or production configuration.
+Isolated crate under `solana/abraxas-eligibility-gate/remittance-assignment/`. Does **not** modify Abraxas entitlement mints, BUILD #983, or production configuration.
 
-## Objective
+## Combined privacy remittance mint (single reissue)
 
-Demonstrate a fee-bearing remittance-style Token-2022 mint with:
+One mint carries **all** required extensions:
 
-- Transfer fees (epoch-aware via `calculate_epoch_fee` + `transfer_checked_with_fee`)
-- Metadata pointer (self)
-- Default account state **Frozen** + simulated KYC thaw (distinct from approval)
-- Mint close authority
-- A **second mint** with PermanentDelegate + confidential-transfer mint configuration
-- Full confidential lifecycle in ProgramTest (configure → manual approval → deposit → apply pending → ZK transfer → withdraw)
+| Extension | Role |
+|-----------|------|
+| `TransferFeeConfig` | Public transfer fees (epoch-aware) |
+| `MetadataPointer` | Self-referential metadata |
+| `DefaultAccountState` | New accounts **Frozen** |
+| `MintCloseAuthority` | Mint close authority |
+| `PermanentDelegate` | Regulatory-style public-balance authority |
+| `ConfidentialTransferMint` | Manual confidential approval |
+| `ConfidentialTransferFeeConfig` | Confidential transfer fee encryption |
+
+Initialization order matches SPL Token-2022 requirements (`ExtensionType::try_calculate_account_len`, extension inits before `InitializeMint2`).
+
+## Confidential transfer with fee (combined mint)
+
+Public `TransferFeeConfig` and confidential transfer coexist. With `enable_zk_transfer_with_fee` active (as on mainnet-class clusters), the educational implementation:
+
+1. Generates a `TransferWithFeeData` proof client-side.
+2. Pre-verifies it into a **ZK proof context state account** (`VerifyTransferWithFee`).
+3. Executes `inner_transfer_with_fee` with `ProofLocation::ContextStateAccount`.
+
+This avoids oversized single-transaction proof payloads while using real instructions—no mocked ciphertext updates.
 
 ## Run tests
-
-From repo root:
 
 ```bash
 npm run test:remittance-assignment
 ```
 
-Or from the Solana workspace:
+Or:
 
 ```bash
 cd solana/abraxas-eligibility-gate
 cargo test -p token2022-remittance-assignment -- --nocapture
 ```
 
-**Expected:** 8 passing integration tests, 1 ignored optional CPI Guard stub.
+**Expected:** **10 passed**, **1 ignored** (optional CPI Guard stub).
 
-Confidential tests load `solana_zk_token_proof_program` and enable `enable_zk_transfer_with_fee` in the ProgramTest genesis.
-
-## Known limitation (documented honestly)
-
-When **both** public `TransferFeeConfig` and `ConfidentialTransferFeeConfig` are enabled, confidential transfers on clusters with `enable_zk_transfer_with_fee` require **split proof context state** instructions. This educational crate exercises:
-
-- Public remittance fees on mint #1 (full tests)
-- Confidential lifecycle on mint #2 **without** public transfer-fee extension (ZK `Transfer` + `VerifyTransfer`)
-
-Combining all three in one mint is left as follow-up; see `ENGINEERING_REPORT.md`.
+Tests load `solana_zk_token_proof_program` and activate `enable_zk_transfer_with_fee` in ProgramTest genesis.
 
 ## Privacy vs seizure finding
 
-`PermanentDelegate` can move **public** balances via ordinary `TransferChecked` when authorized, but **confidential** balances require the confidential-transfer instruction family and owner-approved account state. After funds are deposited into confidential balance, a PermanentDelegate **cannot** recover them via public `TransferChecked` (see `confidential_transfer_lifecycle_with_fee_on_privacy_mint`).
+`PermanentDelegate` can move **public** balances via `TransferChecked`. After deposit into confidential balance, public amount is zero and delegate transfer **fails** (`InsufficientFunds` / error `0x1` in tests). PermanentDelegate does **not** decrypt or move encrypted confidential balances; recovery would require separate architecture (owner keys, compliance tooling, or non-private balances)—not an implied on-chain seizure primitive.
+
+## Optional
+
+`remittance_cpi_guard_optional` remains **ignored** until after mandatory work.
 
 ## Abraxas separation
 
-No imports from proof-continuity, entitlement consumer, or Launchpad routes. Entitlement tokens remain non-transferable with different authority rules.
+No entitlement consumer, proof continuity, or Launchpad integration.
