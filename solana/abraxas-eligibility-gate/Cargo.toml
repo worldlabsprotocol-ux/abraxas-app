@@ -6,6 +6,7 @@ members = [
   "programs/abraxas-proof-continuity",
   "programs/abraxas-proof-entitlement-consumer",
   "integration-tests",
+  "remittance-assignment",
 ]
 resolver = "2"
 
