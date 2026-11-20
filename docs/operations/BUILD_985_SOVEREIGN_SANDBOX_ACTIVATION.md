@@ -8,9 +8,13 @@
 | Label | Meaning |
 |-------|---------|
 | **LOCAL PROGRAMTEST ACCEPTED** | BanksClient / ProgramTest journey green with repository program IDs |
-| **CONNECTED SANDBOX VERIFIED** | Genuine wallet-signed tx on pinned RPC + independent verifier checks |
-| **NOT PERFORMED** | Step not run in this build (missing env, no browser session, etc.) |
-| **BLOCKED** | Configuration or policy prevents progress (wrong cluster, attestation mismatch, production surface) |
+| **NOT CONFIGURED** | Required operator env absent (`npm run build-985:preflight`) |
+| **BLOCKED** | Policy/cluster/attestation/KV or infrastructure mismatch |
+| **READY FOR CONNECTED EXECUTION** | Prerequisites pass (`mint_and_consume_actionable` + distributed KV probe); **not** verification success |
+| **CONNECTED SANDBOX VERIFIED** | Wallet-signed mint/consume on pinned RPC + independent `partner-verify` evidence — **never** emitted by read-only preflight |
+| **NOT PERFORMED** | Step not executed (browser UX, connected wallet journey, etc.) |
+
+Preflight JSON uses `acceptance.connected_operational_status` for readiness and `acceptance.connected_chain_verification.status` (always `NOT_PERFORMED` from preflight). RPC URLs are never serialized — only redacted endpoint metadata.
 
 ---
 
@@ -71,7 +75,7 @@ Unexpected bytecode or genesis → `evaluateConnectedSandboxBoundary()` **fails 
 3. Initialize proof registry, entitlement mint config, trusted relying-party config for the Launchpad partner/policy/application binding.
 4. Set server env: RPC URL, registry admin, relying-party admin, prepare HMAC, cluster label, genesis hash, both ELF SHA-256 values.
 5. Configure ephemeral KV for multi-instance prepare/confirm.
-6. Re-run `npm run build-985:preflight` until `mint_and_consume_actionable` is true **and** execute wallet-signed mint/consume with independent verifier export.
+6. Re-run `npm run build-985:preflight` until operational status is **READY FOR CONNECTED EXECUTION**, then execute wallet-signed mint/consume and export independent verifier evidence (separate from preflight).
 
 Estimated network cost: **not computed** — depends on cluster choice and account rent; operator must quote from cluster tooling.
 
@@ -98,9 +102,7 @@ Executable coverage in vitest (included in `npm run test:build-985`):
 - Superseded prepare message hash / confirm cache scoping (`connectedSandboxConfirmCache.test.ts`)
 - Prepare-to-confirmation binding and wrong-message rejection (`connectedSandboxPrepareBinding.test.ts`)
 
-**Engineering note:** `writeConnectedSandboxPrepareRecord` writes the prepare payload then resets the JTI binding in **two** KV operations. Confirmation always re-reads the prepare record and matches on-chain message hash, so a stale confirm cache cannot override a newer prepare when message hashes differ. Multi-instance operators should still use shared ephemeral KV before connected traffic.
-
-No additional code changes required for BUILD #985 — existing tests pass.
+**Engineering note:** `writeConnectedSandboxPrepareRecord` writes the prepare payload then resets the JTI binding in **two** KV operations. Multi-key atomicity remains **unresolved** until concurrency-tested or corrected. Confirmation re-reads the prepare record and matches on-chain message hash, so a stale confirm cache cannot override a newer prepare when message hashes differ. Multi-instance connected traffic requires distributed KV with a successful `probeEphemeralKv` — env presence alone is insufficient.
 
 ---
 
@@ -188,4 +190,4 @@ Submit repository `https://github.com/worldlabsprotocol-ux/abraxas-app` with pat
 npm run build-985:preflight
 ```
 
-Read-only report; exit code `2` when connected boundary is **BLOCKED**, `0` when **NOT PERFORMED** or actionable.
+Read-only report; exit code `2` when operational status is **NOT CONFIGURED** or **BLOCKED**. Never claims **CONNECTED SANDBOX VERIFIED**.
