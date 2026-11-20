@@ -66,6 +66,7 @@
     "test:capstone-tokenization": "bash -c 'cd solana/abraxas-eligibility-gate && cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture'",
     "test:build-979": "bash -c 'cd solana/abraxas-eligibility-gate && cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture'",
     "test:build-980": "bash -c 'cd solana/abraxas-eligibility-gate && cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture'",
+    "test:remittance-assignment": "bash -c 'cd solana/abraxas-eligibility-gate && cargo test -p token2022-remittance-assignment'",
     "test:build-981": "bash examples/independent-solana-entitlement-partner/run-acceptance.sh",
     "test:build-982": "vitest run lib/partner/integrationStudio/token2022Entitlement lib/partner/integrationStudio/unifiedTrustExecution.test.ts lib/partner/starterKit/starterKit.test.ts",
     "iat:automated": "tsx scripts/iat-automated.ts",

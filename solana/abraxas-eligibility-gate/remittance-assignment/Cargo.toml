@@ -1,0 +1,42 @@
+[package]
+name = "token2022-remittance-assignment"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Isolated educational Token-2022 remittance stablecoin reference (class assignment). Not Abraxas production."
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "remittance_public_mint"
+path = "tests/public_mint.rs"
+
+[[test]]
+name = "remittance_transfer_fees"
+path = "tests/transfer_fees.rs"
+
+[[test]]
+name = "remittance_kyc_thaw"
+path = "tests/kyc_thaw.rs"
+
+[[test]]
+name = "remittance_privacy_limits"
+path = "tests/privacy_permanent_delegate.rs"
+
+[[test]]
+name = "remittance_confidential_lifecycle"
+path = "tests/confidential_lifecycle.rs"
+
+[[test]]
+name = "remittance_cpi_guard_optional"
+path = "tests/cpi_guard_optional.rs"
+
+[dependencies]
+solana-program-test = "=1.18.26"
+solana-sdk = "=1.18.26"
+spl-token-2022 = { version = "=3.0.5", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "=2.3.0", features = ["no-entrypoint"] }
+
+[dev-dependencies]
+tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
