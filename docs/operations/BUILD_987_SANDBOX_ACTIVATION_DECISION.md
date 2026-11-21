@@ -12,7 +12,7 @@ Observed on 2026-11-21 from merged main `a17258cb978fcbc52527792e9b8f6289e090cd0
 | --- | --- |
 | Existing connected sandbox operator environment | `build-985:preflight` reports `NOT_CONFIGURED`: RPC, registry/relying-party admins, HMAC, genesis/ELF attestations absent; distributed KV backend `none`. |
 | Local validator | `solana-test-validator` and `solana` not installed; WSL access denied. No local validator transaction was run. |
-| Program artifacts | Both program sources and IDs exist; neither `target/deploy/*.so` file is present in this checkout. Historic hashes in BUILD #985 cannot attest a newly built ELF. This PR extends the existing pinned-toolchain CI job to build and upload candidate ELFs and print their byte lengths and SHA-256; its output remains unverified until CI completes. |
+| Program artifacts | CI run `44923423922` passed and uploaded both candidate ELFs. The entitlement artifact was downloaded with GitHub CLI and both files' lengths and SHA-256 independently matched the CI output below. Historic hashes in BUILD #985 do not attest these new bytes. |
 | Devnet identity | Read-only public RPC `getGenesisHash` returned `EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG`. Pin and recheck at activation. |
 | Expected Devnet programs | Read-only `getAccountInfo` returned no account for proof continuity `FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1` or entitlement consumer `CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T`. |
 | Redis distributed replay | Redis executable/listener and configured KV URL absent here. BUILD #986 Lua integration acceptance was not rerun against real Redis. |
@@ -20,6 +20,17 @@ Observed on 2026-11-21 from merged main `a17258cb978fcbc52527792e9b8f6289e090cd0
 | Browser journey | Not performed. No wallet-signed mint, consumption, independent partner verification, or revocation transaction occurred. |
 
 The read-only preflight originally failed on Windows because it unconditionally created `/opt/cursor/artifacts`, even when `BUILD_985_PREFLIGHT_OUT` named a local file. It now creates the selected output file's parent directory. Its `NOT_CONFIGURED` result is the expected fail-closed outcome.
+
+## Candidate artifacts and deployment authority
+
+The pinned-toolchain CI job in [run 44923423922](https://github.com/worldlabsprotocol-ux/abraxas-app/actions/runs/44923423922) completed successfully. `gh run download 44923423922 -n solana-entitlement-candidates-4e34dc479aa52ea6f22846e14f3834cf457d65f8` retrieved the archive to an isolated directory. `Get-FileHash -Algorithm SHA256` and file lengths independently matched the job output:
+
+| Program | Repository program ID | ELF bytes | CI SHA-256 |
+| --- | --- | ---: | --- |
+| Proof continuity | `FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1` | 421,384 | `dd6d9ecb4392663ca0b667362280eb158848bc9390ee0080abab8cf54838d00b` |
+| Entitlement consumer | `CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T` | 295,688 | `67995bf80bed80d6f37b3b0eb378b9da328f59cccef9ac433ad25f2faf7a9cce` |
+
+The IDs match the programs' `declare_id!` values, `Anchor.toml`, and TypeScript constants; this does **not** prove custody of the corresponding private signers. Neither program account exists on the probed Devnet RPC. No matching program-address keypair is tracked in the repository; no operator-controlled keypair custody or administrator public key was available in this environment. Deploying at those fixed IDs requires each corresponding program-address signer (supplied through `solana program deploy --program-id`), a fee payer, and a chosen upgrade-authority signer. The upgrade-authority public key cannot be read from an account that has not yet been deployed. The proof registry and relying-party administrator public keys must also be named before initialization. **No replacement ID or signer may be generated silently.**
 
 ## Solana-native boundary
 
@@ -37,7 +48,23 @@ The Redis Lua bundle in `connectedSandboxAtomicBundle.ts` coordinates short-live
 
 ## Cost and founder approval packet
 
-Exact SOL is **unverified** because the ELFs and account allocation sizes are absent. Once built, calculate one-time rent for each upgradeable Program and ProgramData account, registry, mint/configuration, trusted relying-party account, holder token account, and temporary deployment buffer using Devnet `getMinimumBalanceForRentExemption` at each actual allocated byte size. Add deployment/write/initialization and mint/consume transaction fees using signed-message fee quotes, with a buffer for failed transactions. Check balances before asking for a funding amount. ProgramData rent depends on deployed bytecode allocation and upgrade capacity; the deployment buffer is temporary. Do not infer Devnet cost from a different ELF build.
+The measured ELFs allow a **rent model**, assuming explicit `--max-len` equal to each ELF byte length (no initial upgrade headroom). Read-only Devnet `getMinimumBalanceForRentExemption` calls on 2026-11-21 returned:
+
+| Allocation | Bytes | Rent-exempt Devnet SOL |
+| --- | ---: | ---: |
+| Two upgradeable Program accounts | 36 each | 0.00166624 total |
+| Proof ProgramData | 45 + 421,384 | 2.14150956 |
+| Consumer ProgramData | 45 + 295,688 | 1.50297388 |
+| Two temporary deployment buffers | 37 + each ELF | 3.64440216 total |
+| One registry, trusted relying-party config, mint config, receipt commitment, issuance ledger, consumption account, and Token-2022 mint | 177, 177, 74, 250, 105, 122, 278 | 0.01056132 total |
+
+The **3.64614968 Devnet SOL** Program plus ProgramData figure is a lower bound, **not an approved deployment budget**. The enumerated permanent account subtotal is 3.65671100 Devnet SOL; if both deployment buffers must be funded concurrently, the observed-size subtotal reaches 7.30111316 Devnet SOL before the holder token account and fees. The Token-2022 associated token account receives required extensions from the non-transferable mint; its exact size/rent must be obtained from the actual mint initialization, not assumed from a legacy 165-byte token account. Additional required accounts, any larger `max-len`, payer balance, deployment transaction fees, and retries must be included before specifying an exact funding transfer. These figures do not represent real-money SOL.
+
+For planning only, a 174-byte Token-2022 account carrying `NonTransferableAccount` and `ImmutableOwner` would cost 0.00153416 Devnet SOL at the queried rent rate, bringing the modeled permanent subtotal to **3.65824516 Devnet SOL** and a conservative concurrent-buffer peak to **7.30264732 Devnet SOL**. Confirm that size through the Token-2022 account-size instruction or actual initialized mint before approval. The 0.01209548 Devnet SOL initialization estimate includes one each of registry, trusted config, mint config, receipt commitment, issuance ledger, consumption account, Token-2022 mint, and modeled holder token account. It does not include additional accounts a final transaction plan may require.
+
+Transaction fees must be quoted with `getFeeForMessage` or the Solana CLI against the actual deployment and initialization messages. A provisional **8 Devnet SOL ceiling** would leave less than 0.7 Devnet SOL beyond the enumerated concurrent rent, but it is **not a funding request or approval packet** until signer addresses, balances, token account rent, actual messages, and buffer sequencing are verified. If the program-address signers are unavailable, deployment at the fixed IDs is blocked regardless of balance.
+
+The official [Devnet CLI guidance](https://solana.com/docs/intro/installation/solana-cli-basics) states a **5 Devnet SOL per request** limit; the [web faucet](https://faucet.solana.com/) displays **at most two requests every eight hours** without increased access. Two successful 5 SOL CLI requests could cover the modeled 8 Devnet SOL ceiling from an empty payer wallet, but this is not a guaranteed rate or balance. The operator must first identify the payer public key and query its actual balance. No faucet request was made.
 
 Recurring cost is **unverified**: the public Devnet RPC is suitable for this read-only probe, not an operational service-level commitment. Reuse an existing authorized Redis/RPC service if available; otherwise quote its actual monthly charge before approval. No paid RPC or Redis purchase is authorized here.
 
