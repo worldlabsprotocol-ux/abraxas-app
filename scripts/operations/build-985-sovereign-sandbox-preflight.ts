@@ -7,6 +7,7 @@
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { assertPreflightReportHasNoRpcSecrets } from "@/lib/partner/integrationStudio/token2022Entitlement/build985PreflightSemantics";
 import { buildBuild985PreflightReport } from "@/lib/partner/integrationStudio/token2022Entitlement/build985PreflightReport";
 import { evaluateConnectedSandboxBoundary } from "@/lib/partner/integrationStudio/token2022Entitlement/connectedSandboxBoundary";
@@ -20,7 +21,7 @@ async function main() {
   const wire = JSON.stringify(report, null, 2);
   assertPreflightReportHasNoRpcSecrets(wire);
 
-  mkdirSync("/opt/cursor/artifacts", { recursive: true });
+  mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, wire);
   console.log(wire);
   console.log(`\nReport written: ${OUT}`);
