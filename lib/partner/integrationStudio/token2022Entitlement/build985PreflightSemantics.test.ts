@@ -18,6 +18,8 @@ const actionableBoundary: Extract<ConnectedSandboxBoundaryResult, { ok: true }> 
   cluster_label: "sandbox-test",
   registry_admin: "11111111111111111111111111111112",
   relying_party_admin: "22222222222222222222222222222223",
+  proof_continuity_program_id: "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+  entitlement_consumer_program_id: "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
   mint_and_consume_actionable: true,
   registry_pda: "reg",
   entitlement_mint_config_pda: "mc",
