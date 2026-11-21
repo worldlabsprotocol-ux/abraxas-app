@@ -1,6 +1,4 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
-import { ENTITLEMENT_CONSUMER_PROGRAM_ID } from "@/lib/solana/token2022Entitlement/constants";
 import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 import {
   findEntitlementMintConfigPda,
@@ -8,6 +6,7 @@ import {
 } from "@/lib/solana/token2022Entitlement/pda";
 import { findProofRegistryPda } from "@/lib/solana/proofContinuity/pda";
 import {
+  connectedProgramIdsApproved,
   connectedSandboxAttestationsReady,
   connectedSandboxGenesisHash,
   entitlementConsumerProgramSha256,
@@ -74,10 +73,12 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
     };
   }
 
-  if (
-    pinned.proof_continuity_program_id !== PROOF_CONTINUITY_PROGRAM_ID
-    || pinned.entitlement_consumer_program_id !== ENTITLEMENT_CONSUMER_PROGRAM_ID
-  ) {
+  if (!connectedProgramIdsApproved({
+    clusterLabel: pinned.cluster_label,
+    genesisHash: pinned.genesis_hash,
+    proofId: pinned.proof_continuity_program_id,
+    consumerId: pinned.entitlement_consumer_program_id,
+  })) {
     return { ok: false, code: "untrusted_program_id", detail: "Pinned program IDs do not match allowlisted builds." };
   }
 

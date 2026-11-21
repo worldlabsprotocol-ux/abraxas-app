@@ -96,8 +96,8 @@ export async function buildBuild985PreflightReport(input: {
     build: 985,
     generated_at: new Date().toISOString(),
     pinned_program_ids: {
-      proof_continuity: PROOF_CONTINUITY_PROGRAM_ID,
-      entitlement_consumer: ENTITLEMENT_CONSUMER_PROGRAM_ID,
+      proof_continuity: pinned?.proof_continuity_program_id ?? PROOF_CONTINUITY_PROGRAM_ID,
+      entitlement_consumer: pinned?.entitlement_consumer_program_id ?? ENTITLEMENT_CONSUMER_PROGRAM_ID,
     },
     local_repository_artifact_sha256: {
       abraxas_proof_continuity_so: sha256File(join(DEPLOY_DIR, "abraxas_proof_continuity.so")),
