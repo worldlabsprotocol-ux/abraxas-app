@@ -355,6 +355,31 @@ jobs:
             --manifest-path programs/abraxas-protocol-access/Cargo.toml
       - name: Print secret-free protocol-access candidate digest
         run: npx tsx scripts/solana-protocol-access-candidate-digest.ts --report-only
+      - name: Build entitlement programs with pinned SBF tools
+        working-directory: solana/abraxas-eligibility-gate
+        run: |
+          for program in abraxas-proof-continuity abraxas-proof-entitlement-consumer; do
+            PATH="$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH" \
+              cargo-build-sbf --tools-version v1.53 --no-rustup-override \
+              --manifest-path "programs/$program/Cargo.toml"
+          done
+      - name: Report entitlement ELF lengths and SHA-256
+        working-directory: solana/abraxas-eligibility-gate
+        run: |
+          for program in abraxas_proof_continuity abraxas_proof_entitlement_consumer; do
+            file="target/deploy/$program.so"
+            test -s "$file"
+            wc -c "$file"
+            sha256sum "$file"
+          done
+      - name: Upload entitlement deployment candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: solana-entitlement-candidates-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            solana/abraxas-eligibility-gate/target/deploy/abraxas_proof_continuity.so
+            solana/abraxas-eligibility-gate/target/deploy/abraxas_proof_entitlement_consumer.so
       - name: Upload deterministic unreviewed Solana candidates
         uses: actions/upload-artifact@v4
         with:
@@ -554,9 +579,3 @@ jobs:
           NODE_ENV: test
           ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
           ABRAXAS_BUILD986_DISTRIBUTED_ATOMIC_ACCEPTANCE: "1"
-
-
-
-
-
-
