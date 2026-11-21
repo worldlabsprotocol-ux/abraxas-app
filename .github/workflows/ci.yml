@@ -339,6 +339,8 @@ jobs:
           ONNXRUNTIME_NODE_INSTALL_CUDA: skip
       - name: Enforce canonical release toolchains
         run: npm run check:toolchain-contract
+      - name: Check entitlement program identity consistency
+        run: node --test scripts/operations/check-devnet-program-identities.test.mjs
       - name: Rebuild the reviewed ELF with pinned SBF tools
         working-directory: solana/abraxas-eligibility-gate
         run: |
