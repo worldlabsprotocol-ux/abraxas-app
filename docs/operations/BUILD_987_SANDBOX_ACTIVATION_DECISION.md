@@ -21,6 +21,12 @@ Observed on 2026-11-21 from merged main `a17258cb978fcbc52527792e9b8f6289e090cd0
 
 The read-only preflight originally failed on Windows because it unconditionally created `/opt/cursor/artifacts`, even when `BUILD_985_PREFLIGHT_OUT` named a local file. It now creates the selected output file's parent directory. Its `NOT_CONFIGURED` result is the expected fail-closed outcome.
 
+## Solana-native boundary
+
+The existing proof program already initializes Token-2022 `NonTransferable` and uses the associated token program (`programs/abraxas-proof-continuity/src/lib.rs`). The existing consumer checks trusted registry/partner/policy/application scope, receipt-backed entitlement validity, holder token ownership, and single-use state (`programs/abraxas-proof-entitlement-consumer/src/lib.rs`). **Reuse** these Solana rails; do not build another token lifecycle or consumer. **Keep** private evidence and issuer/policy evaluation off-chain where Solana cannot establish their truth. **Keep** signed receipt commitments and current on-chain revocation/consumption checks for independent relying parties.
+
+The Redis Lua bundle in `connectedSandboxAtomicBundle.ts` coordinates short-lived off-chain prepare generations, message hashes, signature binding, and idempotent confirmation across server instances. Solana transaction uniqueness does not automatically make a superseded *off-chain* preparation invalid. **Simplify later only if** an exact wallet-signed, chain-bound authorization flow proves the same tenant/policy binding, supersession, concurrency, and failure semantics without the distributed store. That is a separate measurable change, not a prerequisite for Devnet activation.
+
 ## Exact activation order
 
 1. Retrieve the two candidate ELFs from the existing pinned-toolchain CI artifact after its check passes. Independently record each byte length and SHA-256, confirm the program source revision and repository IDs, and identify operator-controlled program-address keypairs and upgrade authorities without exporting private keys. Do not reuse historic hashes without byte-for-byte confirmation.
