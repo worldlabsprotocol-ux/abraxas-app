@@ -6,14 +6,14 @@ export const COMMITMENT_SEED = Buffer.from("receipt_commitment");
 export const SANDBOX_BINDING_SEED = Buffer.from("sandbox_binding");
 export const EXECUTION_LEDGER_SEED = Buffer.from("execution_ledger");
 
-export function proofContinuityProgramId(): PublicKey {
-  return new PublicKey(PROOF_CONTINUITY_PROGRAM_ID);
+export function proofContinuityProgramId(programId: PublicKey = new PublicKey(PROOF_CONTINUITY_PROGRAM_ID)): PublicKey {
+  return programId;
 }
 
-export function findProofRegistryPda(admin: PublicKey): { address: PublicKey; bump: number } {
+export function findProofRegistryPda(admin: PublicKey, programId?: PublicKey): { address: PublicKey; bump: number } {
   const [address, bump] = PublicKey.findProgramAddressSync(
     [REGISTRY_SEED, admin.toBuffer()],
-    proofContinuityProgramId(),
+    proofContinuityProgramId(programId),
   );
   return { address, bump };
 }
@@ -21,26 +21,27 @@ export function findProofRegistryPda(admin: PublicKey): { address: PublicKey; bu
 export function findReceiptCommitmentPda(
   registry: PublicKey,
   receiptIdHash: Buffer,
+  programId?: PublicKey,
 ): { address: PublicKey; bump: number } {
   const [address, bump] = PublicKey.findProgramAddressSync(
     [COMMITMENT_SEED, registry.toBuffer(), receiptIdHash],
-    proofContinuityProgramId(),
+    proofContinuityProgramId(programId),
   );
   return { address, bump };
 }
 
-export function findSandboxBindingPda(registry: PublicKey, holder: PublicKey): { address: PublicKey; bump: number } {
+export function findSandboxBindingPda(registry: PublicKey, holder: PublicKey, programId?: PublicKey): { address: PublicKey; bump: number } {
   const [address, bump] = PublicKey.findProgramAddressSync(
     [SANDBOX_BINDING_SEED, registry.toBuffer(), holder.toBuffer()],
-    proofContinuityProgramId(),
+    proofContinuityProgramId(programId),
   );
   return { address, bump };
 }
 
-export function findExecutionLedgerPda(sandbox: PublicKey): { address: PublicKey; bump: number } {
+export function findExecutionLedgerPda(sandbox: PublicKey, programId?: PublicKey): { address: PublicKey; bump: number } {
   const [address, bump] = PublicKey.findProgramAddressSync(
     [EXECUTION_LEDGER_SEED, sandbox.toBuffer()],
-    proofContinuityProgramId(),
+    proofContinuityProgramId(programId),
   );
   return { address, bump };
 }

@@ -19,6 +19,7 @@ export type ExecutionTxExpectations = {
   expiresAt: bigint;
   statusVersion: bigint;
   commitmentMessage: Buffer;
+  programId?: PublicKey;
 };
 
 function buffersEqual(a: Buffer, b: Buffer): boolean {
@@ -116,7 +117,7 @@ export async function verifyExecutionTransaction(
   if (!tx) return { ok: false, reason: "chain_transaction_not_found" };
   if (tx.meta?.err) return { ok: false, reason: "chain_transaction_failed" };
 
-  const programId = proofContinuityProgramId();
+  const programId = proofContinuityProgramId(expected.programId);
   const holderPk = new PublicKey(expected.holder);
   const commitmentPk = new PublicKey(expected.commitment);
   if (!holderSignedTransaction(tx, holderPk)) {

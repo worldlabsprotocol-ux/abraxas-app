@@ -24,11 +24,12 @@ export function buildInitializeProofRegistryInstruction(input: {
   partnerId: string;
   policyId: string;
   applicationId: string;
+  programId?: PublicKey;
 }): TransactionInstruction {
   if (input.trustedIssuerPubkey32.length !== 32) {
     throw new Error("trusted_issuer_pubkey_invalid");
   }
-  const registry = findProofRegistryPda(input.admin);
+  const registry = findProofRegistryPda(input.admin, input.programId);
   const data = Buffer.alloc(8 + 32 + 32 + 32 + 32);
   INITIALIZE_PROOF_REGISTRY_DISCRIMINATOR.copy(data, 0);
   let off = 8;
@@ -40,7 +41,7 @@ export function buildInitializeProofRegistryInstruction(input: {
   off += 32;
   hashScopeId(input.applicationId).copy(data, off);
   return new TransactionInstruction({
-    programId: proofContinuityProgramId(),
+    programId: proofContinuityProgramId(input.programId),
     keys: [
       { pubkey: input.admin, isSigner: true, isWritable: true },
       { pubkey: registry.address, isSigner: false, isWritable: true },
@@ -62,17 +63,19 @@ export type HarnessRunInstructionParams = {
   expiresAt: bigint;
   executionNonce: bigint;
   statusVersion?: bigint;
+  programId?: PublicKey;
 };
 
 export function buildRegisterSandboxBindingInstruction(input: {
   registryAdmin: PublicKey;
   holder: PublicKey;
+  programId?: PublicKey;
 }): TransactionInstruction {
-  const registry = findProofRegistryPda(input.registryAdmin);
-  const sandbox = findSandboxBindingPda(registry.address, input.holder);
+  const registry = findProofRegistryPda(input.registryAdmin, input.programId);
+  const sandbox = findSandboxBindingPda(registry.address, input.holder, input.programId);
   const data = Buffer.concat([REGISTER_SANDBOX_BINDING_DISCRIMINATOR]);
   return new TransactionInstruction({
-    programId: proofContinuityProgramId(),
+    programId: proofContinuityProgramId(input.programId),
     keys: [
       { pubkey: input.holder, isSigner: true, isWritable: true },
       { pubkey: registry.address, isSigner: false, isWritable: false },
@@ -88,10 +91,10 @@ export function buildExecuteHarnessRunInstruction(params: HarnessRunInstructionP
   commitment: PublicKey;
   commitmentMessage: Buffer;
 } {
-  const registry = findProofRegistryPda(params.registryAdmin);
-  const sandbox = findSandboxBindingPda(registry.address, params.holder);
-  const ledger = findExecutionLedgerPda(sandbox.address);
-  const commitment = findReceiptCommitmentPda(registry.address, params.receiptIdHash);
+  const registry = findProofRegistryPda(params.registryAdmin, params.programId);
+  const sandbox = findSandboxBindingPda(registry.address, params.holder, params.programId);
+  const ledger = findExecutionLedgerPda(sandbox.address, params.programId);
+  const commitment = findReceiptCommitmentPda(registry.address, params.receiptIdHash, params.programId);
   const statusVersion = params.statusVersion ?? BigInt(1);
   const commitmentMessage = encodeCommitmentMessage({
     receipt_id_hash: params.receiptIdHash,
@@ -117,7 +120,7 @@ export function buildExecuteHarnessRunInstruction(params: HarnessRunInstructionP
   off += 8;
   data.writeBigUInt64LE(statusVersion, off);
   const instruction = new TransactionInstruction({
-    programId: proofContinuityProgramId(),
+    programId: proofContinuityProgramId(params.programId),
     keys: [
       { pubkey: params.payer, isSigner: true, isWritable: true },
       { pubkey: params.holder, isSigner: true, isWritable: false },
