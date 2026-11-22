@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/home/HomeBuilderDiscovery.tsx
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BuilderActiveTask } from "@/components/developers/BuilderActiveTask";
 import { Btn } from "@/components/redesign/ui";
 import { listStudioPackSummaries } from "@/lib/partner/integrationStudio";
@@ -9,7 +9,10 @@ import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import {
   HOME_BUILDER_PLATFORMS,
-  type HomeBuilderPlatformId,
+  clearHomeBuilderDiscoveryDraft,
+  readHomeBuilderDiscoveryDraft,
+  type HomeBuilderDiscoveryDraft,
+  writeHomeBuilderDiscoveryDraft,
   writeHomeBuilderDiscoveryIntent,
 } from "@/lib/home/homeBuilderDiscovery";
 
@@ -28,9 +31,19 @@ export function HomeBuilderDiscovery({ onComplete }: { onComplete: () => void })
     return BEGINNER_PACK_ORDER.map((id) => byId.get(id)).filter(Boolean) as typeof summaries;
   }, []);
 
-  const [step, setStep] = useState<"platform" | "pack">("platform");
-  const [platform, setPlatform] = useState<HomeBuilderPlatformId | null>(null);
-  const [packId, setPackId] = useState<PolicyPackId | null>(null);
+  const [draft, setDraft] = useState<HomeBuilderDiscoveryDraft>({ step: "platform", platform: null, policyPackId: null });
+
+  useEffect(() => {
+    const saved = readHomeBuilderDiscoveryDraft();
+    if (saved) setDraft(saved);
+  }, []);
+
+  const updateDraft = (next: HomeBuilderDiscoveryDraft) => {
+    setDraft(next);
+    writeHomeBuilderDiscoveryDraft(next);
+  };
+
+  const { step, platform, policyPackId: packId } = draft;
 
   if (step === "platform") {
     return (
@@ -39,7 +52,7 @@ export function HomeBuilderDiscovery({ onComplete }: { onComplete: () => void })
         testId="home-builder-discovery"
         title="What are you building?"
         description="Choose where Abraxas would fit."
-        action={<Btn size="sm" disabled={!platform} onClick={() => setStep("pack")}>Continue</Btn>}
+        action={<Btn size="sm" disabled={!platform} onClick={() => updateDraft({ ...draft, step: "pack" })}>Continue</Btn>}
       >
         <div className="abx-home-builder-discovery__platform-grid" role="radiogroup" aria-label="Integration type">
           {HOME_BUILDER_PLATFORMS.map((option) => (
@@ -47,7 +60,7 @@ export function HomeBuilderDiscovery({ onComplete }: { onComplete: () => void })
               className={platform === option.id
                 ? "abx-home-builder-discovery__platform abx-home-builder-discovery__platform--selected"
                 : "abx-home-builder-discovery__platform"}
-              onClick={() => setPlatform(option.id)}>
+              onClick={() => updateDraft({ ...draft, platform: option.id })}>
               <span className="abx-home-builder-discovery__platform-label">{option.label}</span>
               <span className="abx-home-builder-discovery__platform-detail">{option.detail}</span>
             </button>
@@ -66,9 +79,10 @@ export function HomeBuilderDiscovery({ onComplete }: { onComplete: () => void })
       action={<Btn size="sm" disabled={!packId} onClick={() => {
         if (!platform || !packId) return;
         writeHomeBuilderDiscoveryIntent({ platform, policyPackId: packId });
+        clearHomeBuilderDiscoveryDraft();
         onComplete();
       }}>Continue to builder</Btn>}
-      advanced={<button type="button" className="abx-builder-inline-link" onClick={() => setStep("platform")}>Change platform</button>}
+      advanced={<button type="button" className="abx-builder-inline-link" onClick={() => updateDraft({ ...draft, step: "platform" })}>Change platform</button>}
     >
       <div className="abx-home-builder-discovery__pack-grid" role="radiogroup" aria-label="Verification objective">
         {packs.map((pack) => {
@@ -79,7 +93,7 @@ export function HomeBuilderDiscovery({ onComplete }: { onComplete: () => void })
               className={packId === id
                 ? "abx-home-builder-discovery__pack abx-home-builder-discovery__pack--selected"
                 : "abx-home-builder-discovery__pack"}
-              onClick={() => setPackId(id)}>
+              onClick={() => updateDraft({ ...draft, policyPackId: id })}>
               {pack.display_name}
             </button>
           );
