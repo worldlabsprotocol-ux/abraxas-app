@@ -22,7 +22,7 @@ export function ProtocolIdentityExhibit() {
       />
       <ProtocolBrandFigure
         asset="architectureExhibit"
-        caption="Conceptual architecture — sector-specific gates and a single verification boundary; not a live deployment map."
+        caption="Abraxas verification architecture — sector-specific gates and a shared verification boundary."
       />
     </section>
   );
