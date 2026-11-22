@@ -18,9 +18,11 @@ const HEADLINE_LINES = PROTOCOL_HERO_TITLE.split(". ").map((part, i, arr) =>
 export function PremiumHomeHero({
   emblemActive = true,
   variant = "standalone",
+  cta,
 }: {
   emblemActive?: boolean;
   variant?: "standalone" | "carousel";
+  cta?: { label: string; href: string };
 }) {
   const heroClass =
     variant === "carousel"
@@ -47,13 +49,11 @@ export function PremiumHomeHero({
             ))}
           </h1>
           <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--3">{CINEMATIC_HOME_LEAD}</p>
-          {variant === "standalone" ? (
-            <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
-              <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
-                {CINEMATIC_HOME_CTA_PRIMARY}
-              </Link>
-            </div>
-          ) : null}
+          <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
+            <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={cta?.href ?? CINEMATIC_HOME_CTA_PRIMARY_HREF}>
+              {cta?.label ?? CINEMATIC_HOME_CTA_PRIMARY}
+            </Link>
+          </div>
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
         </div>
         <div className="abx-premium-hero__visual-wrap abx-premium-hero__reveal abx-premium-hero__reveal--2">

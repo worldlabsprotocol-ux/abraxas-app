@@ -39,6 +39,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Homepage and navigation regression tests
+        run: npx vitest run components/home/premium/PremiumHomeHeroCarousel.test.tsx lib/home/homepageSimplification.test.ts
       - name: Next.js build with in-process ESLint and type validation (blocking)
         run: npm run build
         env:

@@ -2056,3 +2056,72 @@
     transform: translateX(-50%) rotate(90deg);
   }
 }
+
+/* Homepage entry: one stable message, then the existing builder. */
+.abx-premium-home-intro .abx-premium-hero {
+  min-height: 0;
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+
+.abx-premium-home-intro .abx-premium-hero__layout--composed {
+  min-height: clamp(24rem, 46vh, 36rem);
+}
+
+.abx-premium-home-intro .abx-premium-hero__cta {
+  border-radius: 999px;
+  padding-inline: 1.5rem;
+}
+
+.abx-premium-home-intro__details {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+}
+
+.abx-premium-home-intro__details > summary {
+  width: fit-content;
+  padding: 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.abx-premium-home-intro__details > summary:hover,
+.abx-premium-home-intro__details > summary:focus-visible {
+  color: var(--text-primary);
+}
+
+.abx-premium-home-intro__details .abx-discovery {
+  min-height: 0;
+}
+
+.abx-premium-home-intro__diagram {
+  padding-block: 1rem;
+}
+
+.abx-premium-home__spine--sandbox-first {
+  padding-top: 0.5rem;
+}
+
+#start-sandbox {
+  scroll-margin-top: 5rem;
+}
+
+@media (max-width: 719px) {
+  .abx-premium-home-intro .abx-premium-hero {
+    padding-block: 1.25rem;
+  }
+
+  .abx-premium-home-intro .abx-premium-hero__layout--composed {
+    min-height: 0;
+  }
+
+  .abx-premium-home-intro .abx-premium-hero__visual-wrap {
+    max-width: 12rem;
+  }
+
+  .abx-premium-home-intro .abx-premium-hero__visual-enhanced,
+  .abx-premium-home-intro .abx-premium-hero__visual-stage {
+    min-height: 12rem;
+  }
+}

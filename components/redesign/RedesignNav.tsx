@@ -11,7 +11,6 @@ import { AbraxasGuideNavButton } from "@/components/product/AbraxasGuideDialog";
 import { usePathname } from "next/navigation";
 import {
   PUBLIC_FONT_SANS,
-  PUBLIC_NAV_PRIMARY_CTA,
   publicNavMenusForPath,
 } from "@/lib/design/publicSurface";
 import { useState, type CSSProperties } from "react";
@@ -112,20 +111,12 @@ export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
               <div key={menu.id}>
                 <p style={mobileSectionLabel}>{menu.label}</p>
                 {menu.links.map((link) => (
-                  <Link key={link.href} href={link.href} onClick={() => setOpen(false)} style={mobileSubLink}>
+                  <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined} onClick={() => setOpen(false)} style={pathname === link.href ? { ...mobileSubLink, color: "var(--text-primary)", background: "var(--surface-raised)" } : mobileSubLink}>
                     {link.label}
                   </Link>
                 ))}
               </div>
             ))}
-            <p style={mobileSectionLabel}>Product</p>
-            <Link href={PUBLIC_NAV_PRIMARY_CTA.href} onClick={() => setOpen(false)} style={mobileSubLink}>
-              {PUBLIC_NAV_PRIMARY_CTA.label}
-            </Link>
-            <p style={mobileSectionLabel}>Account</p>
-            <Link href="/developers/ephemeral-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Developer Workspace
-            </Link>
           </motion.div>
         )}
       </AnimatePresence>
@@ -140,6 +131,7 @@ export function RedesignNav(_props: { showHomeStartBuilding?: boolean }) {
           .rd-nav-menus-desktop { display: none; }
         }
         .rd-nav-root { position: sticky; flex-wrap: wrap; }
+        .rd-nav-section-menu__trigger[aria-current="page"] { color: var(--text-primary); }
         .rd-nav-primary-action--compact {
           display: none;
         }

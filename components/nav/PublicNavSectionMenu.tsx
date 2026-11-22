@@ -2,10 +2,13 @@
 // FILE: components/nav/PublicNavSectionMenu.tsx
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import type { PublicNavMenuGroup } from "@/lib/design/publicSurface";
 
 export function PublicNavSectionMenu({ menu }: { menu: PublicNavMenuGroup }) {
+  const pathname = usePathname();
+  const active = menu.links.some((link) => link.href === pathname || (link.href !== "/" && pathname?.startsWith(`${link.href}/`)));
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -34,6 +37,7 @@ export function PublicNavSectionMenu({ menu }: { menu: PublicNavMenuGroup }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-current={active ? "page" : undefined}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="public-nav-connect__trigger-label">{menu.label}</span>
@@ -49,6 +53,7 @@ export function PublicNavSectionMenu({ menu }: { menu: PublicNavMenuGroup }) {
                 <Link
                   href={link.href}
                   role="menuitem"
+                  aria-current={link.href === pathname ? "page" : undefined}
                   className="public-nav-connect__menu-item"
                   onClick={() => setOpen(false)}
                 >
