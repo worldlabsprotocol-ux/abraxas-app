@@ -2,8 +2,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   HOME_BUILDER_DISCOVERY_STORAGE_KEY,
+  HOME_BUILDER_DISCOVERY_DRAFT_KEY,
+  readHomeBuilderDiscoveryDraft,
   matchHomeBuilderPolicy,
   readHomeBuilderDiscoveryIntent,
+  writeHomeBuilderDiscoveryDraft,
   writeHomeBuilderDiscoveryIntent,
 } from "./homeBuilderDiscovery";
 
@@ -38,5 +41,19 @@ describe("homepage policy choice continuity", () => {
       updatedAt: new Date().toISOString(),
     }));
     expect(readHomeBuilderDiscoveryIntent()).toBeNull();
+  });
+
+  it("retains only a short-lived non-sensitive draft in this tab", () => {
+    writeHomeBuilderDiscoveryDraft({ step: "pack", platform: "website", policyPackId: "wallet_control" });
+    expect(readHomeBuilderDiscoveryDraft()).toEqual({ step: "pack", platform: "website", policyPackId: "wallet_control" });
+    expect(readHomeBuilderDiscoveryIntent()).toBeNull();
+    expect(window.localStorage.getItem(HOME_BUILDER_DISCOVERY_DRAFT_KEY)).toBeNull();
+
+    const stale = { step: "pack", platform: "website", policyPackId: "wallet_control", updatedAt: new Date(Date.now() - 61 * 60 * 1000).toISOString() };
+    window.sessionStorage.setItem(HOME_BUILDER_DISCOVERY_DRAFT_KEY, JSON.stringify(stale));
+    expect(readHomeBuilderDiscoveryDraft()).toBeNull();
+
+    window.sessionStorage.setItem(HOME_BUILDER_DISCOVERY_DRAFT_KEY, JSON.stringify({ ...stale, platform: "unknown", updatedAt: new Date().toISOString() }));
+    expect(readHomeBuilderDiscoveryDraft()).toBeNull();
   });
 });

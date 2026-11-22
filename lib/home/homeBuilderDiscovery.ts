@@ -27,7 +27,14 @@ function isIntegrationStackId(value: unknown): value is HomeBuilderIntegrationSt
 }
 
 export const HOME_BUILDER_DISCOVERY_STORAGE_KEY = "abx_home_builder_discovery_v1";
+export const HOME_BUILDER_DISCOVERY_DRAFT_KEY = "abx_home_builder_discovery_draft_v1";
 const DISCOVERY_INTENT_MAX_AGE_MS = 60 * 60 * 1000;
+
+export type HomeBuilderDiscoveryDraft = {
+  step: "platform" | "pack";
+  platform: HomeBuilderPlatformId | null;
+  policyPackId: PolicyPackId | null;
+};
 
 export const HOME_BUILDER_PLATFORMS: Array<{
   id: HomeBuilderPlatformId;
@@ -39,6 +46,50 @@ export const HOME_BUILDER_PLATFORMS: Array<{
   { id: "api", label: "API or backend", detail: "Server-side gates, webhooks, or protocol actions" },
   { id: "exploring", label: "Just exploring", detail: "See what Abraxas can verify before committing" },
 ];
+
+export function readHomeBuilderDiscoveryDraft(): HomeBuilderDiscoveryDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(HOME_BUILDER_DISCOVERY_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<HomeBuilderDiscoveryDraft> & { updatedAt?: unknown };
+    const updatedAt = typeof parsed.updatedAt === "string" ? Date.parse(parsed.updatedAt) : NaN;
+    if (!Number.isFinite(updatedAt) || updatedAt > Date.now() || Date.now() - updatedAt > DISCOVERY_INTENT_MAX_AGE_MS) return null;
+    const platform = HOME_BUILDER_PLATFORMS.some((item) => item.id === parsed.platform)
+      ? parsed.platform as HomeBuilderPlatformId : null;
+    if (!platform && parsed.step === "pack") return null;
+    return {
+      step: parsed.step === "pack" ? "pack" : "platform",
+      platform,
+      policyPackId: parsed.policyPackId && isPolicyPackId(parsed.policyPackId) ? parsed.policyPackId : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function writeHomeBuilderDiscoveryDraft(draft: HomeBuilderDiscoveryDraft): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(HOME_BUILDER_DISCOVERY_DRAFT_KEY, JSON.stringify({
+      step: draft.step,
+      platform: draft.platform,
+      policyPackId: draft.policyPackId,
+      updatedAt: new Date().toISOString(),
+    }));
+  } catch {
+    // The in-memory choice remains usable when browser storage is unavailable.
+  }
+}
+
+export function clearHomeBuilderDiscoveryDraft(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(HOME_BUILDER_DISCOVERY_DRAFT_KEY);
+  } catch {
+    // No stored draft exists when browser storage is unavailable.
+  }
+}
 
 export function readHomeBuilderDiscoveryIntent(): HomeBuilderDiscoveryIntent | null {
   if (typeof window === "undefined") return null;
