@@ -2120,7 +2120,8 @@
     max-width: 12rem;
   }
 
-  .abx-premium-home-intro .abx-premium-hero__visual-enhanced {
+  .abx-premium-home-intro .abx-premium-hero__visual-enhanced,
+  .abx-premium-home-intro .abx-premium-hero__visual-stage {
     min-height: 12rem;
   }
 }
