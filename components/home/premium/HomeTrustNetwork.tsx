@@ -60,8 +60,7 @@ export function HomeTrustNetwork() {
         Applications consume scoped decisions
       </h2>
       <p className="abx-v2-section-lead">
-        Receipts can reach apps and independent checkers. Your raw documents do not travel on the same paths. This diagram
-        uses simulated apps, not a live partner map.
+        Receipts can reach apps and independent checkers. Your raw documents do not travel on the same paths.
       </p>
 
       <div className="abx-premium-network__stage abx-premium-surface-open">

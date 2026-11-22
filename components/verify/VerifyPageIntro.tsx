@@ -48,7 +48,7 @@ export function VerifyPageIntro() {
         </Link>
       </p>
       <details className="abx-surface-protocol-visual abx-verify-diagram-ref">
-        <summary>Reference: receipt inspection map (not live status)</summary>
+        <summary>Explore receipt inspection</summary>
         <DecisionReceiptInspectionVisual />
       </details>
     </div>

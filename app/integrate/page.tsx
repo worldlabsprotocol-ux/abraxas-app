@@ -44,7 +44,7 @@ export default function IntegratePage() {
           <summary style={{ cursor: "pointer", color: "var(--text-primary)" }}>How Abraxas fits your stack</summary>
           <div style={{ marginTop: "0.75rem", lineHeight: 1.6 }}>
             <p>Abraxas supplies policy-bound decisions. Your application retains custody, permissions, and enforcement. A valid signature alone does not authorize an action.</p>
-            <p>See the reference harness for evidence reuse across two applications. It is not a production customer deployment.</p>
+            <p>See how the reference harness demonstrates evidence reuse across two applications.</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
               <Btn href="/proof" variant="secondary" size="sm">View reference proof</Btn>
               <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow guide</Btn>
