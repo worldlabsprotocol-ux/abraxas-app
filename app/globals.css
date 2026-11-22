@@ -220,7 +220,7 @@ details > summary::-webkit-details-marker {
   color: var(--text-primary);
   min-height: 100vh;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .abx-institutional-shell::before {

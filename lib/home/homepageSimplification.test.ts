@@ -42,7 +42,7 @@ describe("homepage simplification (#homepage-refinement)", () => {
     read("public/home/abraxas-protocol-architecture.png");
   });
 
-  it("places sandbox entry directly beneath hero carousel", () => {
+  it("places sandbox entry before secondary education", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("HomeProtocolSignalMarquee");
     expect(shell).not.toContain("<HomeProtocolInfrastructureSection");
@@ -52,7 +52,7 @@ describe("homepage simplification (#homepage-refinement)", () => {
     const marqueeIndex = body.indexOf("<HomeProtocolSignalMarquee");
     expect(unifiedIndex).toBeGreaterThan(heroIndex);
     expect(marqueeIndex).toBeGreaterThan(heroIndex);
-    expect(unifiedIndex).toBeGreaterThan(marqueeIndex);
+    expect(marqueeIndex).toBeGreaterThan(unifiedIndex);
   });
 
   it("continues the homepage builder without a Launchpad route jump", () => {
@@ -60,11 +60,12 @@ describe("homepage simplification (#homepage-refinement)", () => {
     expect(entry).toContain("HomeBeginnerIntegrationStudio beginnerStandaloneSurface");
     expect(entry).not.toContain('router.push("/developers/launchpad")');
   });
-  it("hero carousel composes emblem slide and architecture diagram slide", () => {
+  it("keeps the architecture available without an auto-advancing presentation", () => {
     const carousel = read("components/home/premium/PremiumHomeHeroCarousel.tsx");
     expect(carousel).toContain("PremiumHomeHero");
     expect(carousel).toContain("HomeTrustContinuousArchitectureImage");
-    expect(carousel).toContain("useReducedMotion");
+    expect(carousel).toContain("<details");
+    expect(carousel).not.toContain("setTimeout");
     read("components/home/HomeTrustContinuousArchitectureImage.tsx");
     expect(read("components/home/HomeTrustContinuousArchitectureImage.tsx")).toContain("LIVING_SPHERE_BRAND.nav.src");
   });
