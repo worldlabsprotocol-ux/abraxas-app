@@ -14,6 +14,7 @@ import { entitlementConsumerProgramId } from "./pda";
 import {
   buildConsumeVerifiedEntitlementInstruction,
   buildMintVerifiedEntitlementInstruction,
+  type EntitlementProgramIds,
 } from "./buildEntitlementInstructions";
 
 const MINT_VERIFIED_ENTITLEMENT = anchorGlobalDiscriminator("mint_verified_entitlement");
@@ -24,6 +25,7 @@ export type EntitlementMintTxExpectations = {
   registryAdmin: string;
   relyingPartyAdmin: string;
   receiptIdHash: Buffer;
+  programIds?: EntitlementProgramIds;
 };
 
 export type EntitlementConsumeTxExpectations = EntitlementMintTxExpectations;
@@ -120,6 +122,7 @@ function expectedMintAccountPubkeys(expected: EntitlementMintTxExpectations): Pu
     holder: new PublicKey(expected.holder),
     payer: new PublicKey(expected.holder),
     receiptIdHash: expected.receiptIdHash,
+    programIds: expected.programIds,
   });
   return ix.keys.map((k) => k.pubkey);
 }
@@ -131,6 +134,7 @@ function expectedConsumeAccountPubkeys(expected: EntitlementConsumeTxExpectation
     holder: new PublicKey(expected.holder),
     payer: new PublicKey(expected.holder),
     receiptIdHash: expected.receiptIdHash,
+    programIds: expected.programIds,
   });
   return ix.keys.map((k) => k.pubkey);
 }
@@ -156,7 +160,7 @@ export async function verifyMintEntitlementTransaction(
     return { ok: false, reason: "chain_transaction_holder_not_signer" };
   }
 
-  const programId = proofContinuityProgramId();
+  const programId = proofContinuityProgramId(expected.programIds?.proofContinuity);
   const instructions = collectInstructions(loaded.tx);
   const mintIndex = instructions.findIndex(
     (ix) =>
@@ -222,7 +226,7 @@ export async function verifyConsumeEntitlementTransaction(
     return { ok: false, reason: "chain_transaction_holder_not_signer" };
   }
 
-  const programId = entitlementConsumerProgramId();
+  const programId = entitlementConsumerProgramId(expected.programIds?.entitlementConsumer);
   const instructions = collectInstructions(loaded.tx);
   const consumeIndex = instructions.findIndex(
     (ix) =>

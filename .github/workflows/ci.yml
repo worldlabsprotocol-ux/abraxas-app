@@ -341,6 +341,12 @@ jobs:
         run: npm run check:toolchain-contract
       - name: Check entitlement program identity consistency
         run: node --test scripts/operations/check-devnet-program-identities.test.mjs
+      - name: Check entitlement identity propagation and verifier rejection
+        run: npx vitest run lib/solana/token2022Entitlement/buildEntitlementInstructions.test.ts lib/solana/token2022Entitlement/verifyEntitlementTransaction.test.ts lib/partner/integrationStudio/token2022Entitlement/connectedSandboxPrepareBinding.test.ts lib/partner/integrationStudio/token2022Entitlement/build985PreflightSemantics.test.ts lib/partner/integrationStudio/token2022Entitlement/connectedSandboxConfig.test.ts
+      - name: Check secure Devnet operator scripts
+        run: |
+          bash -n scripts/operations/create-devnet-program-signers.sh
+          if CI=1 bash scripts/operations/create-devnet-program-signers.sh; then exit 1; fi
       - name: Rebuild the reviewed ELF with pinned SBF tools
         working-directory: solana/abraxas-eligibility-gate
         run: |

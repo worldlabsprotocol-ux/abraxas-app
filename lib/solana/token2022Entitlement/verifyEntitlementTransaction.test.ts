@@ -133,6 +133,28 @@ describe("verify entitlement transactions", () => {
     expect(result).toMatchObject({ ok: false, reason: "chain_transaction_holder_not_signer" });
   });
 
+  it("rejects a historical mint under a different Devnet program identity", async () => {
+    const { tx } = mintFixture();
+    const connection = {
+      getSignatureStatus: vi.fn(async () => ({
+        value: { err: null, confirmationStatus: "finalized" },
+        context: { slot: 12 },
+      })),
+      getTransaction: vi.fn(async () => tx),
+    } as never;
+    const result = await verifyMintEntitlementTransaction(connection, "historical-sig", {
+      holder: holder.toBase58(),
+      registryAdmin: admin.toBase58(),
+      relyingPartyAdmin: relying.toBase58(),
+      receiptIdHash: receipt,
+      programIds: {
+        proofContinuity: PublicKey.unique(),
+        entitlementConsumer: PublicKey.unique(),
+      },
+    });
+    expect(result).toMatchObject({ ok: false, reason: "chain_transaction_missing_mint_instruction" });
+  });
+
   it("verifies mint when instruction, accounts and post-state match", async () => {
     const { ix, tx, registry } = mintFixture();
     const mintPk = ix.keys[6]!.pubkey;

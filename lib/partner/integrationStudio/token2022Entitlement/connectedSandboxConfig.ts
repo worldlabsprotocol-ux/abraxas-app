@@ -1,5 +1,7 @@
 import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
 import { ENTITLEMENT_CONSUMER_PROGRAM_ID } from "@/lib/solana/token2022Entitlement/constants";
+import devnetIdentityManifest from "@/solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json";
+import { PublicKey } from "@solana/web3.js";
 import {
   blockchainNativeRegistryAdmin,
   blockchainNativeStudioRpcUrl,
@@ -21,6 +23,43 @@ export type ConnectedSandboxPinnedConfig = {
 
 function pinnedClusterLabel(): string {
   return process.env.ABRAXAS_CONNECTED_SANDBOX_CLUSTER?.trim() || "pinned_sandbox";
+}
+
+const devnetIdentity: {
+  status: string;
+  genesis_hash: string;
+  proof_continuity_program_id: string | null;
+  entitlement_consumer_program_id: string | null;
+} = devnetIdentityManifest;
+
+/** Only a committed, reviewed Devnet identity pair can replace the historical local pins. */
+function validProgramId(value: string): boolean {
+  try {
+    return new PublicKey(value).toBase58() === value;
+  } catch {
+    return false;
+  }
+}
+
+export function connectedProgramIdsApproved(input: {
+  clusterLabel: string;
+  genesisHash: string | null;
+  proofId: string;
+  consumerId: string;
+}): boolean {
+  if (input.clusterLabel !== "solana_devnet") {
+    return input.proofId === PROOF_CONTINUITY_PROGRAM_ID
+      && input.consumerId === ENTITLEMENT_CONSUMER_PROGRAM_ID;
+  }
+  return devnetIdentity.status === "approved"
+    && typeof devnetIdentity.proof_continuity_program_id === "string"
+    && typeof devnetIdentity.entitlement_consumer_program_id === "string"
+    && input.genesisHash === devnetIdentity.genesis_hash
+    && input.proofId === devnetIdentity.proof_continuity_program_id
+    && input.consumerId === devnetIdentity.entitlement_consumer_program_id
+    && input.proofId !== input.consumerId
+    && validProgramId(input.proofId)
+    && validProgramId(input.consumerId);
 }
 
 export function entitlementRelyingPartyAdmin(): string | null {
@@ -74,7 +113,12 @@ export function readConnectedSandboxPinnedConfig(): ConnectedSandboxPinnedConfig
   const proofId = process.env.ABRAXAS_PROOF_CONTINUITY_PROGRAM_ID?.trim() || PROOF_CONTINUITY_PROGRAM_ID;
   const consumerId =
     process.env.ABRAXAS_ENTITLEMENT_CONSUMER_PROGRAM_ID?.trim() || ENTITLEMENT_CONSUMER_PROGRAM_ID;
-  if (proofId !== PROOF_CONTINUITY_PROGRAM_ID || consumerId !== ENTITLEMENT_CONSUMER_PROGRAM_ID) {
+  if (!connectedProgramIdsApproved({
+    clusterLabel: pinnedClusterLabel(),
+    genesisHash: connectedSandboxGenesisHash(),
+    proofId,
+    consumerId,
+  })) {
     return null;
   }
   return {

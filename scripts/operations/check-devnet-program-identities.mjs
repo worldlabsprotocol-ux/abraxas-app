@@ -14,8 +14,25 @@ export function extractIdentity(source, expression, location) {
   return match[1];
 }
 
+export function assertIdentityLayout({ name, status, anchorId, sourceId, clientId, manifestId }) {
+  if (anchorId !== sourceId) throw new Error(`${name} identity differs between Anchor and program source`);
+  if (status === "pending_public_ids" && sourceId !== clientId) {
+    throw new Error(`${name} unapproved identity differs from historical client pin`);
+  }
+  if (status === "approved"
+    && (typeof manifestId !== "string" || sourceId !== manifestId || sourceId === clientId)) {
+    throw new Error(`${name} approved Devnet identity is missing or differs from program source`);
+  }
+}
+
 export function checkSourceIdentities() {
   const anchor = read("solana/abraxas-eligibility-gate/Anchor.toml");
+  const manifest = JSON.parse(read("solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json"));
+  if (!["pending_public_ids", "approved"].includes(manifest.status)) throw new Error("Invalid Devnet identity status");
+  if (manifest.status === "pending_public_ids"
+    && (manifest.proof_continuity_program_id !== null || manifest.entitlement_consumer_program_id !== null)) {
+    throw new Error("Pending Devnet identity cannot contain partial program IDs");
+  }
   const programs = [
     {
       name: "proof continuity",
@@ -24,6 +41,7 @@ export function checkSourceIdentities() {
       client: "lib/solana/proofContinuity/constants.ts",
       clientName: "PROOF_CONTINUITY_PROGRAM_ID",
       signerEnv: "ABRAXAS_DEVNET_PROOF_CONTINUITY_KEYPAIR",
+      manifestName: "proof_continuity_program_id",
     },
     {
       name: "entitlement consumer",
@@ -32,6 +50,7 @@ export function checkSourceIdentities() {
       client: "lib/solana/token2022Entitlement/constants.ts",
       clientName: "ENTITLEMENT_CONSUMER_PROGRAM_ID",
       signerEnv: "ABRAXAS_DEVNET_ENTITLEMENT_CONSUMER_KEYPAIR",
+      manifestName: "entitlement_consumer_program_id",
     },
   ];
 
@@ -43,15 +62,14 @@ export function checkSourceIdentities() {
       new RegExp(`\\b${program.clientName}\\s*=\\s*"([^"]+)"`),
       program.client,
     );
-    if (anchorId !== sourceId || anchorId !== clientId) {
-      throw new Error(`${program.name} identity differs across Anchor, program source, and client`);
-    }
-    return { ...program, id: anchorId };
+    const manifestId = manifest[program.manifestName];
+    assertIdentityLayout({ name: program.name, status: manifest.status, anchorId, sourceId, clientId, manifestId });
+    return { ...program, id: anchorId, historicalId: clientId };
   });
   if (identities[0].id === identities[1].id) throw new Error("Both programs use the same identity");
   const kit = read("lib/partner/testnetGateDeploymentKit/contract.ts");
   const kitId = extractIdentity(kit, /abraxas_proof_continuity:\s*"([^"]+)"/, "deployment kit");
-  if (kitId !== identities[0].id) throw new Error("Deployment kit proof identity differs from program source");
+  if (kitId !== identities[0].historicalId) throw new Error("Historical deployment kit differs from client pin");
   return identities;
 }
 

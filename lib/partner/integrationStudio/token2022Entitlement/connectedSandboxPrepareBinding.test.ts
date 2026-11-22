@@ -21,6 +21,8 @@ const boundary = {
   cluster_label: "sandbox-test",
   registry_admin: PublicKey.unique().toBase58(),
   relying_party_admin: PublicKey.unique().toBase58(),
+  proof_continuity_program_id: PublicKey.unique().toBase58(),
+  entitlement_consumer_program_id: PublicKey.unique().toBase58(),
   mint_and_consume_actionable: true,
   registry_pda: "reg",
   entitlement_mint_config_pda: "mc",

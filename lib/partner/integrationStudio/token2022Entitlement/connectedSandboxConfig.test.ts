@@ -2,9 +2,12 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   connectedSandboxAttestationsReady,
   connectedSandboxGenesisHash,
+  connectedProgramIdsApproved,
   entitlementConsumerProgramSha256,
   proofContinuityProgramSha256,
 } from "./connectedSandboxConfig";
+import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
+import { ENTITLEMENT_CONSUMER_PROGRAM_ID } from "@/lib/solana/token2022Entitlement/constants";
 
 describe("connected sandbox operator attestations", () => {
   afterEach(() => {
@@ -22,5 +25,22 @@ describe("connected sandbox operator attestations", () => {
     expect(connectedSandboxGenesisHash()).toBe("genesis-1");
     expect(proofContinuityProgramSha256()).toBe("f".repeat(64));
     expect(entitlementConsumerProgramSha256()).toBe("e".repeat(64));
+  });
+
+  it("preserves historical pins and rejects Devnet IDs until the reviewed pair is committed", () => {
+    const historical = {
+      clusterLabel: "pinned_sandbox",
+      genesisHash: null,
+      proofId: PROOF_CONTINUITY_PROGRAM_ID,
+      consumerId: ENTITLEMENT_CONSUMER_PROGRAM_ID,
+    };
+    expect(connectedProgramIdsApproved(historical)).toBe(true);
+    expect(connectedProgramIdsApproved({ ...historical, consumerId: PROOF_CONTINUITY_PROGRAM_ID })).toBe(false);
+    expect(connectedProgramIdsApproved({
+      clusterLabel: "solana_devnet",
+      genesisHash: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+      proofId: PROOF_CONTINUITY_PROGRAM_ID,
+      consumerId: ENTITLEMENT_CONSUMER_PROGRAM_ID,
+    })).toBe(false);
   });
 });

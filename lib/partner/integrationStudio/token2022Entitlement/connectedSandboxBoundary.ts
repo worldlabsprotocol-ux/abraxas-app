@@ -1,6 +1,4 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { PROOF_CONTINUITY_PROGRAM_ID } from "@/lib/solana/proofContinuity/constants";
-import { ENTITLEMENT_CONSUMER_PROGRAM_ID } from "@/lib/solana/token2022Entitlement/constants";
 import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 import {
   findEntitlementMintConfigPda,
@@ -8,6 +6,7 @@ import {
 } from "@/lib/solana/token2022Entitlement/pda";
 import { findProofRegistryPda } from "@/lib/solana/proofContinuity/pda";
 import {
+  connectedProgramIdsApproved,
   connectedSandboxAttestationsReady,
   connectedSandboxGenesisHash,
   entitlementConsumerProgramSha256,
@@ -23,6 +22,8 @@ export type ConnectedSandboxBoundaryResult =
       cluster_label: string;
       registry_admin: string;
       relying_party_admin: string;
+      proof_continuity_program_id: string;
+      entitlement_consumer_program_id: string;
       mint_and_consume_actionable: boolean;
       registry_pda: string;
       entitlement_mint_config_pda: string;
@@ -72,10 +73,12 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
     };
   }
 
-  if (
-    pinned.proof_continuity_program_id !== PROOF_CONTINUITY_PROGRAM_ID
-    || pinned.entitlement_consumer_program_id !== ENTITLEMENT_CONSUMER_PROGRAM_ID
-  ) {
+  if (!connectedProgramIdsApproved({
+    clusterLabel: pinned.cluster_label,
+    genesisHash: pinned.genesis_hash,
+    proofId: pinned.proof_continuity_program_id,
+    consumerId: pinned.entitlement_consumer_program_id,
+  })) {
     return { ok: false, code: "untrusted_program_id", detail: "Pinned program IDs do not match allowlisted builds." };
   }
 
@@ -159,9 +162,11 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
   }
 
   const adminPk = new PublicKey(pinned.registry_admin);
-  const registry = findProofRegistryPda(adminPk);
-  const mintConfig = findEntitlementMintConfigPda(registry.address);
-  const trustedConfig = findTrustedRelyingPartyConfigPda(new PublicKey(pinned.relying_party_admin));
+  const proofId = new PublicKey(pinned.proof_continuity_program_id);
+  const consumerId = new PublicKey(pinned.entitlement_consumer_program_id);
+  const registry = findProofRegistryPda(adminPk, proofId);
+  const mintConfig = findEntitlementMintConfigPda(registry.address, proofId);
+  const trustedConfig = findTrustedRelyingPartyConfigPda(new PublicKey(pinned.relying_party_admin), consumerId);
 
   let registryInfo;
   let mintConfigInfo;
@@ -184,6 +189,8 @@ export async function evaluateConnectedSandboxBoundary(): Promise<ConnectedSandb
     cluster_label: pinned.cluster_label,
     registry_admin: pinned.registry_admin,
     relying_party_admin: pinned.relying_party_admin,
+    proof_continuity_program_id: pinned.proof_continuity_program_id,
+    entitlement_consumer_program_id: pinned.entitlement_consumer_program_id,
     registry_pda: registry.address.toBase58(),
     entitlement_mint_config_pda: mintConfig.address.toBase58(),
     trusted_config_pda: trustedConfig.address.toBase58(),

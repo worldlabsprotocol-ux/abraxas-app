@@ -24,20 +24,27 @@ import {
 const MINT_VERIFIED_ENTITLEMENT = anchorGlobalDiscriminator("mint_verified_entitlement");
 const CONSUME_VERIFIED_ENTITLEMENT = anchorGlobalDiscriminator("consume_verified_entitlement");
 
+export type EntitlementProgramIds = {
+  proofContinuity: PublicKey;
+  entitlementConsumer: PublicKey;
+};
+
 export function buildMintVerifiedEntitlementInstruction(input: {
   registryAdmin: PublicKey;
   holder: PublicKey;
   payer: PublicKey;
   receiptIdHash: Buffer;
+  programIds?: EntitlementProgramIds;
 }): TransactionInstruction {
   if (input.receiptIdHash.length !== 32) throw new Error("receipt_id_hash_invalid");
-  const registry = findProofRegistryPda(input.registryAdmin);
-  const sandbox = findSandboxBindingPda(registry.address, input.holder);
-  const commitment = findReceiptCommitmentPda(registry.address, input.receiptIdHash);
-  const mintConfig = findEntitlementMintConfigPda(registry.address);
-  const mint = findEntitlementMintPda(registry.address);
-  const mintAuthority = findEntitlementMintAuthorityPda(registry.address);
-  const issuanceLedger = findEntitlementIssuanceLedgerPda(registry.address, input.receiptIdHash);
+  const proofId = input.programIds?.proofContinuity;
+  const registry = findProofRegistryPda(input.registryAdmin, proofId);
+  const sandbox = findSandboxBindingPda(registry.address, input.holder, proofId);
+  const commitment = findReceiptCommitmentPda(registry.address, input.receiptIdHash, proofId);
+  const mintConfig = findEntitlementMintConfigPda(registry.address, proofId);
+  const mint = findEntitlementMintPda(registry.address, proofId);
+  const mintAuthority = findEntitlementMintAuthorityPda(registry.address, proofId);
+  const issuanceLedger = findEntitlementIssuanceLedgerPda(registry.address, input.receiptIdHash, proofId);
   const recipientTokenAccount = getAssociatedTokenAddressSync(
     mint.address,
     input.holder,
@@ -50,7 +57,7 @@ export function buildMintVerifiedEntitlementInstruction(input: {
   input.receiptIdHash.copy(data, 8);
 
   return new TransactionInstruction({
-    programId: proofContinuityProgramId(),
+    programId: proofContinuityProgramId(proofId),
     keys: [
       { pubkey: input.payer, isSigner: true, isWritable: true },
       { pubkey: input.holder, isSigner: true, isWritable: false },
@@ -76,15 +83,18 @@ export function buildConsumeVerifiedEntitlementInstruction(input: {
   holder: PublicKey;
   payer: PublicKey;
   receiptIdHash: Buffer;
+  programIds?: EntitlementProgramIds;
 }): TransactionInstruction {
   if (input.receiptIdHash.length !== 32) throw new Error("receipt_id_hash_invalid");
-  const registry = findProofRegistryPda(input.registryAdmin);
-  const commitment = findReceiptCommitmentPda(registry.address, input.receiptIdHash);
-  const mintConfig = findEntitlementMintConfigPda(registry.address);
-  const mint = findEntitlementMintPda(registry.address);
-  const issuanceLedger = findEntitlementIssuanceLedgerPda(registry.address, input.receiptIdHash);
-  const consumption = findEntitlementConsumptionPda(registry.address, input.receiptIdHash);
-  const trustedConfig = findTrustedRelyingPartyConfigPda(input.relyingPartyAdmin);
+  const proofId = input.programIds?.proofContinuity;
+  const consumerId = input.programIds?.entitlementConsumer;
+  const registry = findProofRegistryPda(input.registryAdmin, proofId);
+  const commitment = findReceiptCommitmentPda(registry.address, input.receiptIdHash, proofId);
+  const mintConfig = findEntitlementMintConfigPda(registry.address, proofId);
+  const mint = findEntitlementMintPda(registry.address, proofId);
+  const issuanceLedger = findEntitlementIssuanceLedgerPda(registry.address, input.receiptIdHash, proofId);
+  const consumption = findEntitlementConsumptionPda(registry.address, input.receiptIdHash, consumerId);
+  const trustedConfig = findTrustedRelyingPartyConfigPda(input.relyingPartyAdmin, consumerId);
   const recipientTokenAccount = getAssociatedTokenAddressSync(
     mint.address,
     input.holder,
@@ -97,11 +107,11 @@ export function buildConsumeVerifiedEntitlementInstruction(input: {
   input.receiptIdHash.copy(data, 8);
 
   return new TransactionInstruction({
-    programId: entitlementConsumerProgramId(),
+    programId: entitlementConsumerProgramId(consumerId),
     keys: [
       { pubkey: input.payer, isSigner: true, isWritable: true },
       { pubkey: input.holder, isSigner: true, isWritable: false },
-      { pubkey: proofContinuityProgramId(), isSigner: false, isWritable: false },
+      { pubkey: proofContinuityProgramId(proofId), isSigner: false, isWritable: false },
       { pubkey: trustedConfig.address, isSigner: false, isWritable: false },
       { pubkey: input.registryAdmin, isSigner: false, isWritable: false },
       { pubkey: registry.address, isSigner: false, isWritable: false },
@@ -123,13 +133,16 @@ export function resolveEntitlementPublicAccounts(input: {
   relyingPartyAdmin: PublicKey;
   holder: PublicKey;
   receiptIdHash: Buffer;
+  programIds?: EntitlementProgramIds;
 }) {
-  const registry = findProofRegistryPda(input.registryAdmin);
-  const commitment = findReceiptCommitmentPda(registry.address, input.receiptIdHash);
-  const mint = findEntitlementMintPda(registry.address);
-  const trustedConfig = findTrustedRelyingPartyConfigPda(input.relyingPartyAdmin);
-  const issuanceLedger = findEntitlementIssuanceLedgerPda(registry.address, input.receiptIdHash);
-  const consumption = findEntitlementConsumptionPda(registry.address, input.receiptIdHash);
+  const proofId = input.programIds?.proofContinuity;
+  const consumerId = input.programIds?.entitlementConsumer;
+  const registry = findProofRegistryPda(input.registryAdmin, proofId);
+  const commitment = findReceiptCommitmentPda(registry.address, input.receiptIdHash, proofId);
+  const mint = findEntitlementMintPda(registry.address, proofId);
+  const trustedConfig = findTrustedRelyingPartyConfigPda(input.relyingPartyAdmin, consumerId);
+  const issuanceLedger = findEntitlementIssuanceLedgerPda(registry.address, input.receiptIdHash, proofId);
+  const consumption = findEntitlementConsumptionPda(registry.address, input.receiptIdHash, consumerId);
   const ata = getAssociatedTokenAddressSync(mint.address, input.holder, false, TOKEN_2022_PROGRAM_ID);
   return {
     registry: registry.address.toBase58(),

@@ -6,6 +6,7 @@ import {
   buildConsumeVerifiedEntitlementInstruction,
   buildMintVerifiedEntitlementInstruction,
   resolveEntitlementPublicAccounts,
+  type EntitlementProgramIds,
 } from "@/lib/solana/token2022Entitlement/buildEntitlementInstructions";
 import { hashReceiptId, hashScopeId } from "@/lib/solana/proofContinuity/message";
 import {
@@ -25,7 +26,14 @@ import {
 import { writeCachedToken2022ConnectedConfirm } from "./connectedSandboxPrepareStore";
 import { readCurrentPreparedToken2022Confirm } from "./connectedSandboxConfirmCache";
 import { readConnectedSandboxPrepareRecord, requireConnectedSandboxPrepareStore } from "./connectedSandboxPrepareStore";
-import { evaluateConnectedSandboxBoundary } from "./connectedSandboxBoundary";
+import { evaluateConnectedSandboxBoundary, type ConnectedSandboxBoundaryResult } from "./connectedSandboxBoundary";
+
+function programIdsFor(boundary: Extract<ConnectedSandboxBoundaryResult, { ok: true }>): EntitlementProgramIds {
+  return {
+    proofContinuity: new PublicKey(boundary.proof_continuity_program_id),
+    entitlementConsumer: new PublicKey(boundary.entitlement_consumer_program_id),
+  };
+}
 
 export type ConnectedTxReady =
   | {
@@ -62,14 +70,15 @@ export type ConnectedConfirmResult =
 async function loadCommitmentForBinding(input: {
   connection: Connection;
   registryAdmin: PublicKey;
+  proofProgramId: PublicKey;
   receiptId: string;
   partnerId: string;
   policyId: string;
   applicationId: string;
 }): Promise<{ ok: true } | { ok: false; code: string }> {
   const receiptHash = hashReceiptId(input.receiptId);
-  const registry = findProofRegistryPda(input.registryAdmin);
-  const commitmentPk = findReceiptCommitmentPda(registry.address, receiptHash);
+  const registry = findProofRegistryPda(input.registryAdmin, input.proofProgramId);
+  const commitmentPk = findReceiptCommitmentPda(registry.address, receiptHash, input.proofProgramId);
   const info = await input.connection.getAccountInfo(commitmentPk.address, "confirmed");
   if (!info?.data) return { ok: false, code: "commitment_missing_on_chain" };
   const decoded = decodeReceiptCommitmentAccount(Buffer.from(info.data));
@@ -97,6 +106,7 @@ export async function buildConnectedSandboxMintTransaction(input: {
   const boundary = await evaluateConnectedSandboxBoundary();
   if (!boundary.ok) return { ok: false, code: boundary.code };
   if (!boundary.mint_and_consume_actionable) return { ok: false, code: "connected_execution_unavailable" };
+  const programIds = programIdsFor(boundary);
 
   const verified = verifyPrepareBindingToken(input.prepare_token, {
     application_id: input.application_id,
@@ -113,6 +123,7 @@ export async function buildConnectedSandboxMintTransaction(input: {
   const commitmentOk = await loadCommitmentForBinding({
     connection,
     registryAdmin: admin,
+    proofProgramId: programIds.proofContinuity,
     receiptId: verified.binding.receipt_id,
     partnerId: verified.binding.partner_id,
     policyId: verified.binding.policy_id,
@@ -128,6 +139,7 @@ export async function buildConnectedSandboxMintTransaction(input: {
       holder,
       payer: holder,
       receiptIdHash: receiptHash,
+      programIds,
     }),
   );
 
@@ -137,6 +149,7 @@ export async function buildConnectedSandboxMintTransaction(input: {
     relyingPartyAdmin,
     holder,
     receiptIdHash: receiptHash,
+    programIds,
   });
 
   const bound = await bindPreparedTransactionToPrepareToken({
@@ -171,6 +184,7 @@ export async function buildConnectedSandboxConsumeTransaction(input: {
   const boundary = await evaluateConnectedSandboxBoundary();
   if (!boundary.ok) return { ok: false, code: boundary.code };
   if (!boundary.mint_and_consume_actionable) return { ok: false, code: "connected_execution_unavailable" };
+  const programIds = programIdsFor(boundary);
 
   const verified = verifyPrepareBindingToken(input.prepare_token, {
     application_id: input.application_id,
@@ -188,6 +202,7 @@ export async function buildConnectedSandboxConsumeTransaction(input: {
   const commitmentOk = await loadCommitmentForBinding({
     connection,
     registryAdmin: admin,
+    proofProgramId: programIds.proofContinuity,
     receiptId: verified.binding.receipt_id,
     partnerId: verified.binding.partner_id,
     policyId: verified.binding.policy_id,
@@ -204,6 +219,7 @@ export async function buildConnectedSandboxConsumeTransaction(input: {
       holder,
       payer: holder,
       receiptIdHash: receiptHash,
+      programIds,
     }),
   );
 
@@ -229,6 +245,7 @@ export async function buildConnectedSandboxConsumeTransaction(input: {
       relyingPartyAdmin,
       holder,
       receiptIdHash: receiptHash,
+      programIds,
     }),
     rpc_url: boundary.rpc_url,
     cluster_label: boundary.cluster_label,
@@ -244,6 +261,7 @@ export async function confirmConnectedSandboxMint(input: {
 }): Promise<ConnectedConfirmResult> {
   const boundary = await evaluateConnectedSandboxBoundary();
   if (!boundary.ok) return { ok: false, code: boundary.code };
+  const programIds = programIdsFor(boundary);
 
   const verified = verifyPrepareBindingToken(input.prepare_token, {
     application_id: input.application_id,
@@ -287,6 +305,7 @@ export async function confirmConnectedSandboxMint(input: {
     registryAdmin: boundary.registry_admin,
     relyingPartyAdmin: boundary.relying_party_admin,
     receiptIdHash: receiptHash,
+    programIds,
   });
   if (!txProof.ok) return { ok: false, code: txProof.reason };
 
@@ -295,6 +314,7 @@ export async function confirmConnectedSandboxMint(input: {
     relyingPartyAdmin,
     holder,
     receiptIdHash: receiptHash,
+    programIds,
   });
 
   const preparedRecord = await readConnectedSandboxPrepareRecord(verified.binding.jti, "mint");
@@ -361,6 +381,7 @@ export async function confirmConnectedSandboxConsume(input: {
 }): Promise<ConnectedConfirmResult> {
   const boundary = await evaluateConnectedSandboxBoundary();
   if (!boundary.ok) return { ok: false, code: boundary.code };
+  const programIds = programIdsFor(boundary);
 
   const verified = verifyPrepareBindingToken(input.prepare_token, {
     application_id: input.application_id,
@@ -404,6 +425,7 @@ export async function confirmConnectedSandboxConsume(input: {
     registryAdmin: boundary.registry_admin,
     relyingPartyAdmin: boundary.relying_party_admin,
     receiptIdHash: receiptHash,
+    programIds,
   });
   if (!txProof.ok) return { ok: false, code: txProof.reason };
 
@@ -412,6 +434,7 @@ export async function confirmConnectedSandboxConsume(input: {
     relyingPartyAdmin,
     holder,
     receiptIdHash: receiptHash,
+    programIds,
   });
 
   const preparedRecord = await readConnectedSandboxPrepareRecord(verified.binding.jti, "consume");
