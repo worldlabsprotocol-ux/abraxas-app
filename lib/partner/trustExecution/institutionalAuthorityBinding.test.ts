@@ -3,6 +3,7 @@ import {
   agreeInstitutionalAuthority,
   challengeAgreesWithAuthority,
   institutionalAuthorityFromLaunchpad,
+  inspectInstitutionalAuthorityBinding,
   planInstitutionalAuthoritySync,
   type InstitutionalAuthorityRecord,
 } from "./institutionalAuthorityBinding";
@@ -62,6 +63,31 @@ describe("institutional authority binding", () => {
       source: authorized,
       sovereign: source({ sourceRevision: "2026-11-07 20:00:00+00" }),
     })).toMatchObject({ ok: true });
+  });
+
+  it("classifies a read-only operator comparison without treating conflicts as bindable", () => {
+    const authorized = source();
+    const inspect = (sovereign: (Omit<InstitutionalAuthorityRecord, "sourceRevision"> & {
+      sourceRevision: string | null;
+    }) | null, candidate: InstitutionalAuthorityRecord | null = authorized) =>
+      inspectInstitutionalAuthorityBinding({
+        authorizedApplicationId: authorized.applicationId,
+        source: candidate,
+        sovereign,
+      });
+    expect(inspect(null)).toMatchObject({ status: "bindable" });
+    expect(inspect({ ...authorized, sourceRevision: null })).toMatchObject({ status: "bindable" });
+    expect(inspect(authorized)).toMatchObject({ status: "already_bound" });
+    expect(inspect(source({ partnerId: "other-tenant" }))).toMatchObject({ status: "conflicting" });
+    expect(inspect(source({ applicationId: "00000000-0000-4000-8000-000000000099" })))
+      .toMatchObject({ status: "conflicting" });
+    expect(inspect(source({ policyId: "other-policy" }))).toMatchObject({ status: "conflicting" });
+    expect(inspect(source({ policyVersion: 2 }))).toMatchObject({ status: "stale" });
+    expect(inspect(source({ sourceRevision: "2026-11-06T20:00:00.000Z" })))
+      .toMatchObject({ status: "stale" });
+    expect(inspect(source({ status: "suspended" }))).toMatchObject({ status: "conflicting" });
+    expect(inspect(null, null)).toMatchObject({ status: "unavailable" });
+    expect(inspect(null, source({ status: "suspended" }))).toMatchObject({ status: "conflicting" });
   });
 
   it("rejects missing, conflicting, stale, and mismatched authority", () => {

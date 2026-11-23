@@ -1,9 +1,8 @@
 import "server-only";
 
-import { withSovereignStagingPgTransaction } from "@/lib/persistence/boundary/sovereignStagingPg.runtime";
+import { querySovereignStagingPg, withSovereignStagingPgTransaction } from "@/lib/persistence/boundary/sovereignStagingPg.runtime";
 import {
-  agreeInstitutionalAuthority,
-  planInstitutionalAuthoritySync,
+  inspectInstitutionalAuthorityBinding,
   type InstitutionalAuthorityCode,
   type InstitutionalAuthorityRecord,
 } from "./institutionalAuthorityBinding";
@@ -17,14 +16,33 @@ type BoundRow = {
   authority_source_revision: string | null;
 };
 
+/** Read by application ID, so a row owned by another tenant is visible as a conflict. */
+export async function readInstitutionalAuthorityBinding(applicationId: string): Promise<
+  (Omit<InstitutionalAuthorityRecord, "sourceRevision"> & { sourceRevision: string | null }) | null
+> {
+  const result = await querySovereignStagingPg<BoundRow>(
+    `select id, partner_id, policy_id, policy_version, status,
+            authority_source_revision::text as authority_source_revision
+       from public.partner_launchpad_applications where id = $1::uuid limit 1`,
+    [applicationId],
+  );
+  if ("error" in result) throw new Error("institutional_authority_store_unavailable");
+  const row = result.rows[0];
+  return row ? {
+    applicationId: row.id, partnerId: row.partner_id, policyId: row.policy_id,
+    policyVersion: row.policy_version, status: row.status,
+    sourceRevision: row.authority_source_revision, environment: "sandbox",
+  } : null;
+}
+
 /** Bind only an already authorized Launchpad source. Never replace conflicting authority. */
 export async function syncInstitutionalAuthority(input: {
   authorizedApplicationId: string;
   source: InstitutionalAuthorityRecord | null;
 }): Promise<{ ok: true } | { ok: false; code: InstitutionalAuthorityCode | "institutional_authority_store_unavailable" }> {
-  const planned = planInstitutionalAuthoritySync({ ...input, sovereign: null });
-  if (!planned.ok) return planned;
-  const source = planned.binding;
+  const initial = inspectInstitutionalAuthorityBinding({ ...input, sovereign: null });
+  if ("code" in initial) return { ok: false, code: initial.code };
+  const source = initial.binding;
   const result = await withSovereignStagingPgTransaction(async (client) => {
     // The source may be in this same database or in a separate Launchpad store.
     // A conflicting row is never overwritten, even if it has no revision yet.
@@ -45,26 +63,17 @@ export async function syncInstitutionalAuthority(input: {
     );
     const row = loaded.rows[0];
     if (!row) return { ok: false as const, code: "institutional_authority_missing" as const };
-    if (row.partner_id !== source.partnerId || row.policy_id !== source.policyId) {
-      return { ok: false as const, code: "institutional_authority_conflict" as const };
-    }
-    if (row.policy_version !== source.policyVersion) {
-      return { ok: false as const, code: "institutional_authority_stale" as const };
-    }
-    if (row.status !== "active") {
-      return { ok: false as const, code: "institutional_authority_mismatch" as const };
-    }
-    if (row.authority_source_revision) {
-      const agreed = agreeInstitutionalAuthority({
-        source,
-        sovereign: {
-          applicationId: row.id, partnerId: row.partner_id, policyId: row.policy_id,
-          policyVersion: row.policy_version, status: row.status,
-          sourceRevision: row.authority_source_revision, environment: "sandbox",
-        },
-      });
-      return agreed.ok ? { ok: true as const } : agreed;
-    }
+    const inspection = inspectInstitutionalAuthorityBinding({
+      authorizedApplicationId: source.applicationId,
+      source,
+      sovereign: {
+        applicationId: row.id, partnerId: row.partner_id, policyId: row.policy_id,
+        policyVersion: row.policy_version, status: row.status,
+        sourceRevision: row.authority_source_revision, environment: "sandbox",
+      },
+    });
+    if (inspection.status === "already_bound") return { ok: true as const };
+    if ("code" in inspection) return { ok: false as const, code: inspection.code };
     await client.query(
       `update public.partner_launchpad_applications
           set authority_source_revision = $2::timestamptz

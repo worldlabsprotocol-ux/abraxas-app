@@ -7,6 +7,7 @@ let writes = 0;
 vi.mock("@/lib/persistence/boundary/sovereignStagingPg.runtime", () => ({
   withSovereignStagingPgTransaction: async (run: (client: { query: typeof query }) => Promise<unknown>) =>
     ({ ok: true, value: await run({ query }) }),
+  querySovereignStagingPg: async () => ({ rows: existing ? [existing] : [] }),
 }));
 
 async function query(sql: string, values: unknown[]) {
@@ -28,7 +29,7 @@ async function query(sql: string, values: unknown[]) {
   return { rows: [] };
 }
 
-import { syncInstitutionalAuthority } from "./syncInstitutionalAuthority.server";
+import { readInstitutionalAuthorityBinding, syncInstitutionalAuthority } from "./syncInstitutionalAuthority.server";
 
 const source: InstitutionalAuthorityRecord = {
   applicationId: "00000000-0000-4000-8000-000000000001",
@@ -43,6 +44,17 @@ const source: InstitutionalAuthorityRecord = {
 beforeEach(() => { existing = null; writes = 0; });
 
 describe("sandbox authority provisioning", () => {
+  it("reads a cross-tenant row for the operator comparison without writing", async () => {
+    existing = {
+      id: "00000000-0000-4000-8000-000000000001",
+      partner_id: "other-tenant", policy_id: "policy-one", policy_version: 1,
+      status: "active", authority_source_revision: null,
+    };
+    expect(await readInstitutionalAuthorityBinding(source.applicationId))
+      .toMatchObject({ partnerId: "other-tenant" });
+    expect(writes).toBe(0);
+  });
+
   it("binds a new application exactly once and accepts an idempotent replay", async () => {
     expect(await syncInstitutionalAuthority({ authorizedApplicationId: source.applicationId, source })).toEqual({ ok: true });
     expect(await syncInstitutionalAuthority({ authorizedApplicationId: source.applicationId, source })).toEqual({ ok: true });
