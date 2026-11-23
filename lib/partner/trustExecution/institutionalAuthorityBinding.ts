@@ -22,6 +22,10 @@ export type InstitutionalAuthoritySync =
   | { ok: true; action: "bind" | "unchanged"; binding: InstitutionalAuthorityRecord }
   | { ok: false; code: InstitutionalAuthorityCode };
 
+export type InstitutionalAuthorityInspection =
+  | { status: "bindable" | "already_bound"; binding: InstitutionalAuthorityRecord }
+  | { status: "stale" | "conflicting" | "unavailable"; code: InstitutionalAuthorityCode };
+
 type LaunchpadAuthoritySource = {
   id?: string;
   partner_id?: string;
@@ -105,6 +109,42 @@ export function planInstitutionalAuthoritySync(input: {
   const agreed = agreeInstitutionalAuthority({ source: input.source, sovereign: input.sovereign });
   if (!agreed.ok) return agreed;
   return { ok: true, action: "unchanged", binding: agreed.binding };
+}
+
+/** Read-only decision shared by the operator dry run and the guarded binding transaction. */
+export function inspectInstitutionalAuthorityBinding(input: {
+  authorizedApplicationId: string;
+  source: InstitutionalAuthorityRecord | null;
+  sovereign: (Omit<InstitutionalAuthorityRecord, "sourceRevision"> & { sourceRevision: string | null }) | null;
+}): InstitutionalAuthorityInspection {
+  const source = input.source;
+  if (!source || revisionMillis(source.sourceRevision) === null) {
+    return { status: "unavailable", code: "institutional_authority_missing" };
+  }
+  if (source.applicationId !== input.authorizedApplicationId.trim() || source.status !== "active") {
+    return { status: "conflicting", code: "institutional_authority_mismatch" };
+  }
+  const target = input.sovereign;
+  if (!target) return { status: "bindable", binding: source };
+  if (target.applicationId !== source.applicationId || target.partnerId !== source.partnerId
+      || target.policyId !== source.policyId) {
+    return { status: "conflicting", code: "institutional_authority_conflict" };
+  }
+  if (target.policyVersion !== source.policyVersion) {
+    return { status: "stale", code: "institutional_authority_stale" };
+  }
+  if (target.status !== "active") {
+    return { status: "conflicting", code: "institutional_authority_mismatch" };
+  }
+  if (!target.sourceRevision) return { status: "bindable", binding: source };
+  const agreed = agreeInstitutionalAuthority({
+    source,
+    sovereign: { ...target, sourceRevision: target.sourceRevision },
+  });
+  if (agreed.ok) return { status: "already_bound", binding: source };
+  return agreed.code === "institutional_authority_stale"
+    ? { status: "stale", code: agreed.code }
+    : { status: "conflicting", code: agreed.code };
 }
 
 export function challengeAgreesWithAuthority(input: {

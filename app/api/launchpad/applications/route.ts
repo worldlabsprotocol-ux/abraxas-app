@@ -10,6 +10,9 @@ import {
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
 import { provisionLaunchpadSandbox } from "@/lib/partner/launchpad/provisionSandbox";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
+import { institutionalAuthorityFromLaunchpad } from "@/lib/partner/trustExecution/institutionalAuthorityBinding";
+import { syncInstitutionalAuthority } from "@/lib/partner/trustExecution/syncInstitutionalAuthority.server";
 import { buildLaunchpadWorkspaceView } from "@/lib/partner/launchpad/workspaceView.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import {
@@ -113,6 +116,24 @@ export async function POST(req: NextRequest) {
       status,
       result.code,
     );
+  }
+
+  // Provisioning is the authorized boundary for binding the persisted Launchpad
+  // application to trust execution. A replay repairs a partial prior attempt.
+  const sourceApplication = await getLaunchpadApplicationForPartner(
+    result.result.application_id,
+    result.result.partner_id,
+  );
+  const binding = await syncInstitutionalAuthority({
+    authorizedApplicationId: result.result.application_id,
+    source: institutionalAuthorityFromLaunchpad(sourceApplication),
+  });
+  if (!binding.ok) {
+    console.error("[launchpad/provision] sandbox authority binding failed", {
+      code: binding.code,
+      applicationId: result.result.application_id,
+    });
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503, binding.code);
   }
 
   const { api_key: _omitKey, ...safeApplication } = result.result;

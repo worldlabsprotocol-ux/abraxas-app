@@ -7,6 +7,7 @@ import pg from "pg";
 import { applySovereignSliceSchema } from "@/lib/persistence/boundary/sovereignSlice/bootstrap";
 import { resetSovereignStagingPgPoolForTests } from "@/lib/persistence/boundary/sovereignStagingPg";
 import { requireBoundInstitutionalAuthority } from "./institutionalAuthorityGate";
+import { syncInstitutionalAuthority } from "./syncInstitutionalAuthority.server";
 import {
   institutionalAuthorityFromLaunchpad,
   type InstitutionalAuthorityRecord,
@@ -133,6 +134,40 @@ describeProof("fresh sandbox trust-execution schema", () => {
          and column_name = 'authority_source_revision'`,
     );
     expect(revision.rowCount).toBe(1);
+  });
+
+  it("commits a missing binding, repairs an unversioned matching row, and refuses conflicts", async () => {
+    const newId = "00000000-0000-4000-8000-00000000a943";
+    const newSource = source({ applicationId: newId });
+    expect(await syncInstitutionalAuthority({ authorizedApplicationId: newId, source: newSource }))
+      .toEqual({ ok: true });
+    expect(await syncInstitutionalAuthority({ authorizedApplicationId: newId, source: newSource }))
+      .toEqual({ ok: true });
+    expect(await requireBoundInstitutionalAuthority({ authorizedApplicationId: newId, source: newSource }))
+      .toMatchObject({ ok: true });
+
+    await pool.query(
+      `update public.partner_launchpad_applications
+          set authority_source_revision = null where id = $1::uuid`,
+      [newId],
+    );
+    expect(await syncInstitutionalAuthority({ authorizedApplicationId: newId, source: newSource }))
+      .toEqual({ ok: true });
+    expect(await requireBoundInstitutionalAuthority({ authorizedApplicationId: newId, source: newSource }))
+      .toMatchObject({ ok: true });
+
+    await pool.query(
+      `update public.partner_launchpad_applications set policy_id = 'other-policy'
+        where id = $1::uuid`,
+      [newId],
+    );
+    expect(await syncInstitutionalAuthority({ authorizedApplicationId: newId, source: newSource }))
+      .toMatchObject({ ok: false, code: "institutional_authority_conflict" });
+    const persisted = await pool.query<{ policy_id: string }>(
+      `select policy_id from public.partner_launchpad_applications where id = $1::uuid`,
+      [newId],
+    );
+    expect(persisted.rows[0]?.policy_id).toBe("other-policy");
   });
 
   it("enforces nonce, authorization, and correlation uniqueness", async () => {
