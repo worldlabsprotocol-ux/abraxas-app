@@ -112,6 +112,10 @@ $signerPath = [IO.Path]::GetFullPath($SignerDirectory).TrimEnd('\')
 $backupPath = [IO.Path]::GetFullPath($BackupDirectory).TrimEnd('\')
 $signerRoot = [IO.Path]::GetPathRoot($signerPath)
 $backupRoot = [IO.Path]::GetPathRoot($backupPath)
+if (-not (Split-Path -Parent $signerPath).Equals($signerRoot, [StringComparison]::OrdinalIgnoreCase) -or
+    -not (Split-Path -Parent $backupPath).Equals($backupRoot, [StringComparison]::OrdinalIgnoreCase)) {
+  Fail 'Use dedicated top-level directories on each encrypted disk, outside cloud-synced folders.'
+}
 if ($signerRoot.Equals($backupRoot, [StringComparison]::OrdinalIgnoreCase)) {
   Fail 'The encrypted backup must be on a separate physical drive.'
 }
