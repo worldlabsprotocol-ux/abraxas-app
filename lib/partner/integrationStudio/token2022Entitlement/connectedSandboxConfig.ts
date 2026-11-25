@@ -62,6 +62,23 @@ export function connectedProgramIdsApproved(input: {
     && validProgramId(input.consumerId);
 }
 
+export function resolveConnectedProgramIds(input: {
+  clusterLabel: string;
+  configuredProofId?: string | null;
+  configuredConsumerId?: string | null;
+  manifest: typeof devnetIdentity;
+}): { proofId: string; consumerId: string } {
+  const approvedDevnet = input.clusterLabel === "solana_devnet" && input.manifest.status === "approved";
+  return {
+    proofId: input.configuredProofId?.trim()
+      || (approvedDevnet ? input.manifest.proof_continuity_program_id : null)
+      || PROOF_CONTINUITY_PROGRAM_ID,
+    consumerId: input.configuredConsumerId?.trim()
+      || (approvedDevnet ? input.manifest.entitlement_consumer_program_id : null)
+      || ENTITLEMENT_CONSUMER_PROGRAM_ID,
+  };
+}
+
 export function entitlementRelyingPartyAdmin(): string | null {
   return process.env.ABRAXAS_ENTITLEMENT_RELYING_PARTY_ADMIN?.trim() || null;
 }
@@ -110,9 +127,12 @@ export function readConnectedSandboxPinnedConfig(): ConnectedSandboxPinnedConfig
   const registryAdmin = blockchainNativeRegistryAdmin();
   const relyingPartyAdmin = entitlementRelyingPartyAdmin();
   if (!isBlockchainNativeStudioConfigured() || !rpc || !registryAdmin || !relyingPartyAdmin) return null;
-  const proofId = process.env.ABRAXAS_PROOF_CONTINUITY_PROGRAM_ID?.trim() || PROOF_CONTINUITY_PROGRAM_ID;
-  const consumerId =
-    process.env.ABRAXAS_ENTITLEMENT_CONSUMER_PROGRAM_ID?.trim() || ENTITLEMENT_CONSUMER_PROGRAM_ID;
+  const { proofId, consumerId } = resolveConnectedProgramIds({
+    clusterLabel: pinnedClusterLabel(),
+    configuredProofId: process.env.ABRAXAS_PROOF_CONTINUITY_PROGRAM_ID,
+    configuredConsumerId: process.env.ABRAXAS_ENTITLEMENT_CONSUMER_PROGRAM_ID,
+    manifest: devnetIdentity,
+  });
   if (!connectedProgramIdsApproved({
     clusterLabel: pinnedClusterLabel(),
     genesisHash: connectedSandboxGenesisHash(),
@@ -134,3 +154,4 @@ export function readConnectedSandboxPinnedConfig(): ConnectedSandboxPinnedConfig
     entitlement_consumer_program_sha256_hex: entitlementConsumerProgramSha256(),
   };
 }
+
