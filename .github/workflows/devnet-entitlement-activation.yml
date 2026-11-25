@@ -1,0 +1,207 @@
+name: Devnet entitlement activation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/devnet-entitlement-activation.yml'
+      - 'scripts/operations/*devnet-entitlement*'
+      - 'scripts/operations/bind-devnet-entitlement-ids*'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Read-only quote or founder-approved Devnet execution"
+        required: true
+        type: choice
+        options: [quote, execute]
+      approved_max_lamports:
+        description: "Founder-approved maximum Devnet lamports; execute only"
+        required: false
+        type: string
+      approval_reference:
+        description: "Reference to the founder deployment authorization; execute only"
+        required: false
+        type: string
+      founder_confirmation:
+        description: "Enter DEPLOY_ABRAXAS_DEVNET_PROGRAMS to confirm this bounded execution"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  activate:
+    if: github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && github.actor == 'worldlabsprotocol-ux')
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'execute' && 'devnet-activation' || 'devnet-quote' }}
+    env:
+      ABRAXAS_DEVNET_RPC_URL: https://api.devnet.solana.com
+      ABRAXAS_DEVNET_AUTHORITY: 3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.88.0'
+      - name: Validate explicit execution parameters
+        if: inputs.action == 'execute'
+        env:
+          MAX_LAMPORTS: ${{ inputs.approved_max_lamports }}
+          APPROVAL_REF: ${{ inputs.approval_reference }}
+          FOUNDER_CONFIRMATION: ${{ inputs.founder_confirmation }}
+        run: |
+          set -euo pipefail
+          [[ "$MAX_LAMPORTS" =~ ^[1-9][0-9]*$ ]] || exit 1
+          (( MAX_LAMPORTS <= 20000000000 )) || exit 1
+          [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._/-]{8,100}$ ]] || exit 1
+          [[ "$FOUNDER_CONFIRMATION" == 'DEPLOY_ABRAXAS_DEVNET_PROGRAMS' ]] || { echo 'Explicit founder confirmation is required'; exit 1; }
+          echo "Founder approval reference: $APPROVAL_REF"
+      - name: Install pinned Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.20/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      - name: Install repository dependencies
+        run: npm ci
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      - name: Check CLI supports public-key authority transfer
+        if: inputs.action == 'execute'
+        run: solana program set-upgrade-authority --help | grep -q -- '--skip-new-upgrade-authority-signer-check'
+      - name: Generate one-run program identities and payer
+        if: inputs.action == 'execute'
+        run: |
+          set -euo pipefail
+          umask 077
+          solana-keygen new --silent --no-bip39-passphrase -o "$RUNNER_TEMP/proof.json" >/dev/null 2>&1
+          solana-keygen new --silent --no-bip39-passphrase -o "$RUNNER_TEMP/consumer.json" >/dev/null 2>&1
+          solana-keygen new --silent --no-bip39-passphrase -o "$RUNNER_TEMP/payer.json" >/dev/null 2>&1
+          proof=$(solana-keygen pubkey "$RUNNER_TEMP/proof.json")
+          consumer=$(solana-keygen pubkey "$RUNNER_TEMP/consumer.json")
+          node scripts/operations/bind-devnet-entitlement-ids.mjs "$proof" "$consumer"
+          ABRAXAS_DEVNET_PROOF_CONTINUITY_KEYPAIR="$RUNNER_TEMP/proof.json" \
+            ABRAXAS_DEVNET_ENTITLEMENT_CONSUMER_KEYPAIR="$RUNNER_TEMP/consumer.json" \
+            node scripts/operations/check-devnet-program-identities.mjs
+          echo "Program IDs: $proof $consumer"
+      - name: Check identity binding tests
+        run: node --test scripts/operations/bind-devnet-entitlement-ids.test.mjs scripts/operations/devnet-entitlement-allocation.test.mjs scripts/operations/verify-devnet-entitlement-bytes.test.mjs scripts/operations/validate-devnet-entitlement-evidence.test.mjs
+      - name: Build both programs with pinned SBF tools
+        working-directory: solana/abraxas-eligibility-gate
+        run: |
+          set -euo pipefail
+          for program in abraxas-proof-continuity abraxas-proof-entitlement-consumer; do
+            PATH="$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH" \
+              cargo-build-sbf --tools-version v1.53 --no-rustup-override \
+              --manifest-path "programs/$program/Cargo.toml"
+          done
+      - name: Quote live Devnet rent and ceiling
+        run: node scripts/operations/quote-devnet-entitlement.mjs | tee "$RUNNER_TEMP/quote.json"
+      - name: Enforce approved ceiling and receive wallet-signed Devnet funding
+        if: inputs.action == 'execute'
+        env:
+          MAX_LAMPORTS: ${{ inputs.approved_max_lamports }}
+        run: |
+          set -euo pipefail
+          quote=$(node -e 'console.log(require(process.argv[1]).ceiling_lamports)' "$RUNNER_TEMP/quote.json")
+          (( quote <= MAX_LAMPORTS )) || { echo 'Quote exceeds founder approval'; exit 1; }
+          payer=$(solana-keygen pubkey "$RUNNER_TEMP/payer.json")
+          genesis=$(node -e 'console.log(require(process.argv[1]).genesis_hash)' "$RUNNER_TEMP/quote.json")
+          node scripts/operations/await-devnet-entitlement-funding.mjs \
+            "$payer" "$ABRAXAS_DEVNET_AUTHORITY" "$quote" "$MAX_LAMPORTS" "$genesis"
+      - name: Deploy and transfer authority, one program at a time
+        if: inputs.action == 'execute'
+        run: |
+          set -euo pipefail
+          for pair in 'abraxas_proof_continuity:proof' 'abraxas_proof_entitlement_consumer:consumer'; do
+            name=${pair%%:*}
+            signer=${pair##*:}
+            id=$(solana-keygen pubkey "$RUNNER_TEMP/$signer.json")
+            elf="solana/abraxas-eligibility-gate/target/deploy/$name.so"
+            max_len=$(node -e 'const q=require(process.argv[1]); const b=q.binaries.find(x=>x.name===process.argv[2]); if(!b) process.exit(1); console.log(b.allocation_bytes)' "$RUNNER_TEMP/quote.json" "$name")
+            [[ $(wc -c < "$elf") -lt "$max_len" ]] || { echo 'ELF has no growth margin'; exit 1; }
+            if solana --url "$ABRAXAS_DEVNET_RPC_URL" account "$id" >/dev/null 2>&1; then
+              echo "Program ID already occupied: $id"; exit 1
+            fi
+            solana --url "$ABRAXAS_DEVNET_RPC_URL" --keypair "$RUNNER_TEMP/payer.json" \
+              program deploy "$elf" --program-id "$RUNNER_TEMP/$signer.json" --max-len "$max_len"
+            solana --url "$ABRAXAS_DEVNET_RPC_URL" --keypair "$RUNNER_TEMP/payer.json" \
+              program set-upgrade-authority "$id" \
+              --new-upgrade-authority "$ABRAXAS_DEVNET_AUTHORITY" \
+              --skip-new-upgrade-authority-signer-check
+            node scripts/operations/verify-devnet-entitlement-deployment.mjs \
+              "$ABRAXAS_DEVNET_AUTHORITY" "$name"
+          done
+          node scripts/operations/verify-devnet-entitlement-deployment.mjs "$ABRAXAS_DEVNET_AUTHORITY" \
+            | tee "$RUNNER_TEMP/verification.json"
+      - name: Return unspent Devnet SOL to founder wallet
+        if: inputs.action == 'execute' && always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/payer.json" ]]; then
+            solana --url "$ABRAXAS_DEVNET_RPC_URL" --keypair "$RUNNER_TEMP/payer.json" \
+              transfer "$ABRAXAS_DEVNET_AUTHORITY" ALL --allow-unfunded-recipient \
+              || echo 'Unspent payer balance could not be returned; inspect the public payer address from this run.'
+          fi
+      - name: Stage public-only binding and on-chain evidence
+        if: inputs.action == 'execute' && success()
+        run: |
+          set -euo pipefail
+          public="$RUNNER_TEMP/devnet-public"
+          release="$public/solana/abraxas-eligibility-gate/release"
+          mkdir -p "$release" "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src" \
+            "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src"
+          cp solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json "$release/"
+          cp solana/abraxas-eligibility-gate/Anchor.toml "$public/solana/abraxas-eligibility-gate/"
+          cp solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/lib.rs \
+            "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/"
+          cp solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/lib.rs \
+            "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/"
+          cp "$RUNNER_TEMP/quote.json" "$release/devnet-entitlement-quote.json"
+          cp "$RUNNER_TEMP/verification.json" "$release/devnet-entitlement-verification.json"
+          node scripts/operations/validate-devnet-entitlement-evidence.mjs "$public"
+      - name: Preserve public binding and independent verification evidence
+        if: inputs.action == 'execute' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devnet-entitlement-public-evidence-${{ github.run_id }}
+          if-no-files-found: error
+          path: ${{ runner.temp }}/devnet-public
+  publish-public-binding:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'execute' && github.ref == 'refs/heads/main' && github.actor == 'worldlabsprotocol-ux'
+    needs: activate
+    runs-on: ubuntu-latest
+    environment: devnet-activation
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: devnet-entitlement-public-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/devnet-public
+      - name: Validate and persist public Devnet binding
+        run: |
+          set -euo pipefail
+          cp -R "$RUNNER_TEMP/devnet-public/." .
+          node -e 'import("./scripts/operations/check-devnet-program-identities.mjs").then(m => m.checkSourceIdentities())'
+          node scripts/operations/validate-devnet-entitlement-evidence.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add solana/abraxas-eligibility-gate/Anchor.toml \
+            solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/lib.rs \
+            solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/lib.rs \
+            solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json \
+            solana/abraxas-eligibility-gate/release/devnet-entitlement-quote.json \
+            solana/abraxas-eligibility-gate/release/devnet-entitlement-verification.json
+          git diff --cached --quiet && { echo 'Public binding is missing'; exit 1; }
+          git commit -m "Record independently verified Devnet entitlement program identities"
+          git push origin "HEAD:refs/heads/devnet/entitlement-activation-${{ github.run_id }}"
+          echo "Review public binding: https://github.com/${{ github.repository }}/compare/main...devnet/entitlement-activation-${{ github.run_id }}"
+
