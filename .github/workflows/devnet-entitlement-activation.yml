@@ -162,7 +162,7 @@ jobs:
             "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/"
           cp "$RUNNER_TEMP/quote.json" "$release/devnet-entitlement-quote.json"
           cp "$RUNNER_TEMP/verification.json" "$release/devnet-entitlement-verification.json"
-          node scripts/operations/validate-devnet-entitlement-evidence.mjs
+          node scripts/operations/validate-devnet-entitlement-evidence.mjs "$public"
       - name: Preserve public binding and independent verification evidence
         if: inputs.action == 'execute' && success()
         uses: actions/upload-artifact@v4
