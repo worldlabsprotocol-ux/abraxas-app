@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { verifyDeployedProgramBytes } from "./verify-devnet-entitlement-bytes.mjs";
+import { verifyDeployedProgramBytes, UPGRADEABLE_LOADER_ID } from "./verify-devnet-entitlement-bytes.mjs";
 
 const root = resolve(import.meta.dirname, "../..");
 const manifest = JSON.parse(readFileSync(resolve(root, "solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json")));
@@ -21,6 +21,8 @@ for (const [name, id] of [
   const info = await connection.getAccountInfo(program, "finalized");
   if (!info?.data || info.data.length !== 36) throw new Error(`${name} program account invalid`);
   const programDataAddress = new PublicKey(info.data.subarray(4, 36));
+  const [expectedProgramDataAddress] = PublicKey.findProgramAddressSync([program.toBuffer()], UPGRADEABLE_LOADER_ID);
+  if (!programDataAddress.equals(expectedProgramDataAddress)) throw new Error(`${name} ProgramData PDA mismatch`);
   const programData = await connection.getAccountInfo(programDataAddress, "finalized");
   const elf = readFileSync(resolve(root, `solana/abraxas-eligibility-gate/target/deploy/${name}.so`));
   results.push({ name, program_id: id, ...verifyDeployedProgramBytes({
