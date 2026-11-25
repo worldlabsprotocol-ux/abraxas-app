@@ -25,9 +25,13 @@ for (const [name, id] of [
   if (!programDataAddress.equals(expectedProgramDataAddress)) throw new Error(`${name} ProgramData PDA mismatch`);
   const programData = await connection.getAccountInfo(programDataAddress, "finalized");
   const elf = readFileSync(resolve(root, `solana/abraxas-eligibility-gate/target/deploy/${name}.so`));
+  const finalizedSignatures = (await connection.getSignaturesForAddress(programDataAddress, { limit: 20 }, "finalized"))
+    .filter((entry) => entry.err === null && entry.confirmationStatus === "finalized")
+    .map((entry) => ({ signature: entry.signature, slot: entry.slot }));
+  if (finalizedSignatures.length === 0) throw new Error(`${name} has no finalized ProgramData transaction evidence`);
   results.push({ name, program_id: id, ...verifyDeployedProgramBytes({
     name, programInfo: info, programDataInfo: programData, elf, expectedAuthority,
-  }) });
+  }), finalized_program_data_signatures: finalizedSignatures });
 }
 console.log(JSON.stringify({ genesis_hash: manifest.genesis_hash, programs: results }, null, 2));
 
