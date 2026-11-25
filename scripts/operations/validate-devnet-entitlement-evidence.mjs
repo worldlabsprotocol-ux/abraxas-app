@@ -7,13 +7,14 @@ import { fileURLToPath } from "node:url";
 const names = ["abraxas_proof_continuity", "abraxas_proof_entitlement_consumer"];
 const authority = "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd";
 const sha256 = /^[0-9a-f]{64}$/;
-const base58 = /^[1-9A-HJ-NP-Za-km-z]{32,88}$/;
+const publicId = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const signature = /^[1-9A-HJ-NP-Za-km-z]{80,88}$/;
 
 export function validateDevnetEntitlementEvidence({ manifest, quote, verification }) {
   if (manifest.status !== "approved" || manifest.genesis_hash !== quote.genesis_hash
       || manifest.genesis_hash !== verification.genesis_hash) throw new Error("Devnet genesis or approval mismatch");
   const ids = [manifest.proof_continuity_program_id, manifest.entitlement_consumer_program_id];
-  if (ids.some((id) => typeof id !== "string" || !base58.test(id)) || ids[0] === ids[1]) {
+  if (ids.some((id) => typeof id !== "string" || !publicId.test(id)) || ids[0] === ids[1]) {
     throw new Error("Invalid or duplicate public program IDs");
   }
   if (!Array.isArray(quote.binaries) || quote.binaries.length !== 2
@@ -30,7 +31,7 @@ export function validateDevnetEntitlementEvidence({ manifest, quote, verificatio
         || !Array.isArray(program.finalized_program_data_signatures)
         || program.finalized_program_data_signatures.length === 0
         || program.finalized_program_data_signatures.some((entry) =>
-          typeof entry.signature !== "string" || !base58.test(entry.signature)
+          typeof entry.signature !== "string" || !signature.test(entry.signature)
           || !Number.isSafeInteger(entry.slot) || entry.slot <= 0)) {
       throw new Error(`Invalid public deployment evidence for ${name}`);
     }
