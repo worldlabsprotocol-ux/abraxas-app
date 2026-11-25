@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { assertIdentityLayout, checkSignerCustody, checkSourceIdentities, extractIdentity } from "./check-devnet-program-identities.mjs";
+import "./bind-devnet-entitlement-ids.test.mjs";
 
 test("program source, Anchor config, client, and deployment kit agree", () => {
   const identities = checkSourceIdentities();
