@@ -315,6 +315,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.88.0"
+      - name: Regenerate partner ProgramTest evidence for bound identities
+        working-directory: solana/abraxas-eligibility-gate
+        run: cargo test -p abraxas-eligibility-gate-integration-tests --test partner_acceptance -- --test-threads=1
+      - name: Preserve regenerated local partner fixtures
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-partner-fixtures
+          path: examples/independent-solana-entitlement-partner/artifacts/*-journey.json
       - name: Solana eligibility gate ProgramTest
         working-directory: solana/abraxas-eligibility-gate
         run: cargo test --workspace -- --nocapture
