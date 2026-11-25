@@ -40,6 +40,23 @@ async function main() {
     const expectedPayer=tx.label==='return_unspent_holder' ? evidence.holder2 : evidence.test_admin;
     requireTrue(onchain.transaction.message.accountKeys[0].toBase58()===expectedPayer,
       `${tx.label} fee payer mismatch`);
+    const message=onchain.transaction.message;
+    const invoked=message.instructions.map(ix=>message.accountKeys[ix.programIdIndex].toBase58());
+    const consumerLabels=new Set(['consume_entitlement1','repeat_consume_rejected',
+      'wrong_holder_rejected','revoked_consume_rejected']);
+    const proofLabels=new Set(['initialize_registry','bind_holder1','initialize_mint',
+      'signed_receipt1','mint_entitlement1','bind_holder2','signed_receipt2',
+      'mint_entitlement2','revoke_receipt1','revoke_receipt2']);
+    if (consumerLabels.has(tx.label)) requireTrue(invoked.includes(CONSUMER.toBase58()),
+      `${tx.label} did not invoke the entitlement consumer`);
+    if (proofLabels.has(tx.label)) requireTrue(invoked.includes(PROOF.toBase58()),
+      `${tx.label} did not invoke proof continuity`);
+    if (tx.expected_failure) {
+      const failedIndex=onchain.meta.err?.InstructionError?.[0];
+      requireTrue(Number.isInteger(failedIndex) &&
+        invoked[failedIndex]===CONSUMER.toBase58(),
+        `${tx.label} failed outside the entitlement consumer`);
+    }
   }
   const labels=new Map(evidence.transactions.map(t=>[t.label,t]));
   for(const label of ['initialize_registry','bind_holder1','initialize_mint','initialize_relying_party',
