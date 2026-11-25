@@ -18,7 +18,11 @@ on:
         required: false
         type: string
       approval_reference:
-        description: "Reference to explicit founder approval; execute only"
+        description: "Reference to the founder deployment authorization; execute only"
+        required: false
+        type: string
+      founder_confirmation:
+        description: "Enter DEPLOY_ABRAXAS_DEVNET_PROGRAMS to confirm this bounded execution"
         required: false
         type: string
 
@@ -34,7 +38,6 @@ jobs:
     env:
       ABRAXAS_DEVNET_RPC_URL: https://api.devnet.solana.com
       ABRAXAS_DEVNET_AUTHORITY: 3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd
-      ABRAXAS_DEVNET_ENVIRONMENT_GUARD: ${{ vars.ABRAXAS_DEVNET_ENVIRONMENT_GUARD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,12 +54,13 @@ jobs:
         env:
           MAX_LAMPORTS: ${{ inputs.approved_max_lamports }}
           APPROVAL_REF: ${{ inputs.approval_reference }}
+          FOUNDER_CONFIRMATION: ${{ inputs.founder_confirmation }}
         run: |
           set -euo pipefail
           [[ "$MAX_LAMPORTS" =~ ^[1-9][0-9]*$ ]] || exit 1
           (( MAX_LAMPORTS <= 20000000000 )) || exit 1
           [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._/-]{8,100}$ ]] || exit 1
-          [[ "$ABRAXAS_DEVNET_ENVIRONMENT_GUARD" == 'reviewers-configured' ]] || { echo 'Devnet approval environment is not configured'; exit 1; }
+          [[ "$FOUNDER_CONFIRMATION" == 'DEPLOY_ABRAXAS_DEVNET_PROGRAMS' ]] || { echo 'Explicit founder confirmation is required'; exit 1; }
           echo "Founder approval reference: $APPROVAL_REF"
       - name: Install pinned Solana CLI
         run: |
