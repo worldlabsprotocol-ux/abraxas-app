@@ -89,7 +89,7 @@ jobs:
             node scripts/operations/check-devnet-program-identities.mjs
           echo "Program IDs: $proof $consumer"
       - name: Check identity binding tests
-        run: node --test scripts/operations/bind-devnet-entitlement-ids.test.mjs scripts/operations/devnet-entitlement-allocation.test.mjs scripts/operations/verify-devnet-entitlement-bytes.test.mjs
+        run: node --test scripts/operations/bind-devnet-entitlement-ids.test.mjs scripts/operations/devnet-entitlement-allocation.test.mjs scripts/operations/verify-devnet-entitlement-bytes.test.mjs scripts/operations/validate-devnet-entitlement-evidence.test.mjs
       - name: Build both programs with pinned SBF tools
         working-directory: solana/abraxas-eligibility-gate
         run: |
@@ -146,17 +146,62 @@ jobs:
               transfer "$ABRAXAS_DEVNET_AUTHORITY" ALL --allow-unfunded-recipient \
               || echo 'Unspent payer balance could not be returned; inspect the public payer address from this run.'
           fi
+      - name: Stage public-only binding and on-chain evidence
+        if: inputs.action == 'execute' && success()
+        run: |
+          set -euo pipefail
+          public="$RUNNER_TEMP/devnet-public"
+          release="$public/solana/abraxas-eligibility-gate/release"
+          mkdir -p "$release" "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src" \
+            "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src"
+          cp solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json "$release/"
+          cp solana/abraxas-eligibility-gate/Anchor.toml "$public/solana/abraxas-eligibility-gate/"
+          cp solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/lib.rs \
+            "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/"
+          cp solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/lib.rs \
+            "$public/solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/"
+          cp "$RUNNER_TEMP/quote.json" "$release/devnet-entitlement-quote.json"
+          cp "$RUNNER_TEMP/verification.json" "$release/devnet-entitlement-verification.json"
+          node scripts/operations/validate-devnet-entitlement-evidence.mjs
       - name: Preserve public binding and independent verification evidence
         if: inputs.action == 'execute' && success()
         uses: actions/upload-artifact@v4
         with:
           name: devnet-entitlement-public-evidence-${{ github.run_id }}
           if-no-files-found: error
-          path: |
-            solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json
-            solana/abraxas-eligibility-gate/Anchor.toml
-            solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/lib.rs
-            solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/lib.rs
-            ${{ runner.temp }}/quote.json
-            ${{ runner.temp }}/verification.json
+          path: ${{ runner.temp }}/devnet-public
+  publish-public-binding:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'execute' && github.ref == 'refs/heads/main' && github.actor == 'worldlabsprotocol-ux'
+    needs: activate
+    runs-on: ubuntu-latest
+    environment: devnet-activation
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: devnet-entitlement-public-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/devnet-public
+      - name: Validate and persist public Devnet binding
+        run: |
+          set -euo pipefail
+          cp -R "$RUNNER_TEMP/devnet-public/." .
+          node -e 'import("./scripts/operations/check-devnet-program-identities.mjs").then(m => m.checkSourceIdentities())'
+          node scripts/operations/validate-devnet-entitlement-evidence.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add solana/abraxas-eligibility-gate/Anchor.toml \
+            solana/abraxas-eligibility-gate/programs/abraxas-proof-continuity/src/lib.rs \
+            solana/abraxas-eligibility-gate/programs/abraxas-proof-entitlement-consumer/src/lib.rs \
+            solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json \
+            solana/abraxas-eligibility-gate/release/devnet-entitlement-quote.json \
+            solana/abraxas-eligibility-gate/release/devnet-entitlement-verification.json
+          git diff --cached --quiet && { echo 'Public binding is missing'; exit 1; }
+          git commit -m "Record independently verified Devnet entitlement program identities"
+          git push origin "HEAD:refs/heads/devnet/entitlement-activation-${{ github.run_id }}"
+          echo "Review public binding: https://github.com/${{ github.repository }}/compare/main...devnet/entitlement-activation-${{ github.run_id }}"
 
