@@ -116,7 +116,7 @@ jobs:
             signer=${pair##*:}
             id=$(solana-keygen pubkey "$RUNNER_TEMP/$signer.json")
             elf="solana/abraxas-eligibility-gate/target/deploy/$name.so"
-            max_len=$(( 2 * $(wc -c < "$elf") ))
+            max_len=$(wc -c < "$elf")
             if solana --url "$ABRAXAS_DEVNET_RPC_URL" account "$id" >/dev/null 2>&1; then
               echo "Program ID already occupied: $id"; exit 1
             fi
@@ -131,6 +131,14 @@ jobs:
           done
           node scripts/operations/verify-devnet-entitlement-deployment.mjs "$ABRAXAS_DEVNET_AUTHORITY" \
             | tee "$RUNNER_TEMP/verification.json"
+      - name: Return unspent Devnet SOL to founder wallet
+        if: inputs.action == 'execute' && always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/payer.json" ]]; then
+            solana --url "$ABRAXAS_DEVNET_RPC_URL" --keypair "$RUNNER_TEMP/payer.json" \
+              transfer "$ABRAXAS_DEVNET_AUTHORITY" ALL --allow-unfunded-recipient \
+              || echo 'Unspent payer balance could not be returned; inspect the public payer address from this run.'
+          fi
       - name: Preserve public binding and independent verification evidence
         if: inputs.action == 'execute' && success()
         uses: actions/upload-artifact@v4
