@@ -29,7 +29,8 @@ while (Date.now() < deadline) {
       && Number(instruction.parsed.info?.lamports) >= quote
       && Number(instruction.parsed.info?.lamports) <= ceiling);
     if (!transfer) continue;
-    if (await connection.getBalance(payer, "finalized") < quote) continue;
+    const balance = await connection.getBalance(payer, "finalized");
+    if (balance < quote || balance > ceiling) continue;
     console.log(`Authorized funding confirmed: ${signature}`);
     process.exit(0);
   }
