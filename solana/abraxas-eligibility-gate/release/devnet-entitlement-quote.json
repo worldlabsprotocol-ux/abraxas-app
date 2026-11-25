@@ -1,0 +1,27 @@
+{
+  "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "rpc": "https://api.devnet.solana.com",
+  "binaries": [
+    {
+      "name": "abraxas_proof_continuity",
+      "length": 421384,
+      "allocation_bytes": 487424,
+      "sha256": "3ffa7393ab712290d4cb1b0eab34d40fa209c67d8718de208d11da689215e368"
+    },
+    {
+      "name": "abraxas_proof_entitlement_consumer",
+      "length": 295688,
+      "allocation_bytes": 344064,
+      "sha256": "71e861219da9cfb1ce3fcc288014bdc24923f9e89967615565da51e4a730331e"
+    }
+  ],
+  "authority_wallet": "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd",
+  "authority_wallet_balance_lamports": 10000000000,
+  "authority_wallet_funding_shortfall_lamports": 0,
+  "rent_upper_lamports": 6791507880,
+  "fee_reserve_lamports": 100000000,
+  "safety_reserve_lamports": 1378301576,
+  "ceiling_lamports": 8269809456,
+  "ceiling_devnet_sol": 8.269809456,
+  "future_extension": "A larger future ELF requires an authorized, funded Solana program extension or CLI auto-extension before upgrade; re-quote and verify authority first."
+}
