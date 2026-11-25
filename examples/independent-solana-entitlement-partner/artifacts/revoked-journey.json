@@ -1,91 +1,91 @@
 {
   "build": "981",
   "environment": "local_program_test",
-  "proof_continuity_program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-  "entitlement_consumer_program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+  "proof_continuity_program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+  "entitlement_consumer_program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
   "token_program_id": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
   "execution_kind": "banks_client_transaction",
   "stages": [
     {
       "stage": "mint",
-      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
       "outcome": "success",
       "signers": [
-        "3P8v32AzB1j64kHp32mrJBSvLGk66EGRibmMpwB2WjRV"
+        "W6nXJMMabwuz5B9wFtcuBA216w71rvw5Z8nJQeuYvJk"
       ],
       "accounts": {},
       "notes": null
     },
     {
       "stage": "revoke",
-      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
       "outcome": "success",
       "signers": [
-        "7Ha2g3tAcCAkFk9XFp5roiXmUtLh27sa2uzn7tWD9Hhe"
+        "FaE5LhUSDdBhNjHiTGLKo13XjRqCsD5wq5gq4aPQ1mvD"
       ],
       "accounts": {},
       "notes": "issuer-signed status update"
     },
     {
       "stage": "consume",
-      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
       "outcome": "rejected",
       "signers": [
-        "3P8v32AzB1j64kHp32mrJBSvLGk66EGRibmMpwB2WjRV"
+        "W6nXJMMabwuz5B9wFtcuBA216w71rvw5Z8nJQeuYvJk"
       ],
       "accounts": {},
       "notes": "revoked proof — possession insufficient"
     }
   ],
   "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-  "registry": "UZgv68YhgiQYGVv1icCET2vdnCyv9FKEgAtYthMVG7u",
-  "trusted_config": "HcViTB2agCWFap8HL3hrdpCztdzrran7mFuXibEMJ9kE",
-  "commitment": "4z5oyewarPMmLGVuYw2NobMCYo1S5vnn8tcxHZJXqXre",
-  "entitlement_mint": "5F9P9GSBxQmsQjRyEtQRyjbhcjX8AK6kkWs3GWWNhceF",
-  "holder_wallet": "3P8v32AzB1j64kHp32mrJBSvLGk66EGRibmMpwB2WjRV",
+  "registry": "4DsHXkYDYZvikUGpAgVhDApdr7m96CspoPaqkcEtrWaB",
+  "trusted_config": "GMWi7XSwBA7ichXckwyX5YGcWbdAeVYzTs1jroRqYRwN",
+  "commitment": "8pCR3Hc5NPDqqSJr6J1v75GkJpAakTK47SMguocVE6ZR",
+  "entitlement_mint": "GnDoJdQHfMSvxnZtShCS52KLfTvhK1uE2dbSmpfaztK4",
+  "holder_wallet": "W6nXJMMabwuz5B9wFtcuBA216w71rvw5Z8nJQeuYvJk",
   "consumption_account": null,
   "token_balance": 1,
   "commitment_status": 1,
   "consumption_recorded": false,
   "independent_verification_ok": false,
-  "recorded_at_unix_ms": 1795066454556,
+  "recorded_at_unix_ms": 1795613320708,
   "partner_evidence": {
-    "registry_admin": "7Ha2g3tAcCAkFk9XFp5roiXmUtLh27sa2uzn7tWD9Hhe",
-    "relying_party_admin": "7Ha2g3tAcCAkFk9XFp5roiXmUtLh27sa2uzn7tWD9Hhe",
-    "observation_unix_timestamp": 1795066454,
+    "registry_admin": "FaE5LhUSDdBhNjHiTGLKo13XjRqCsD5wq5gq4aPQ1mvD",
+    "relying_party_admin": "FaE5LhUSDdBhNjHiTGLKo13XjRqCsD5wq5gq4aPQ1mvD",
+    "observation_unix_timestamp": 1795613320,
     "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-    "entitlement_mint": "5F9P9GSBxQmsQjRyEtQRyjbhcjX8AK6kkWs3GWWNhceF",
-    "holder_wallet": "3P8v32AzB1j64kHp32mrJBSvLGk66EGRibmMpwB2WjRV",
+    "entitlement_mint": "GnDoJdQHfMSvxnZtShCS52KLfTvhK1uE2dbSmpfaztK4",
+    "holder_wallet": "W6nXJMMabwuz5B9wFtcuBA216w71rvw5Z8nJQeuYvJk",
     "evidence_supply": "program_test_banks_client_capture",
     "registry": {
-      "pubkey": "UZgv68YhgiQYGVv1icCET2vdnCyv9FKEgAtYthMVG7u",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "v91UQgHKsfxdZMKlzkwkQUaMNwtm0iQc74OoF5eUSUiF8PxgQ7W5Vd/hNzoZDPkMW2kja5ie6wga5fHPub6YA9m5oSXGfCGiCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
+      "pubkey": "4DsHXkYDYZvikUGpAgVhDApdr7m96CspoPaqkcEtrWaB",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "v91UQgHKsfzYhpFCJqknibvmZskQRfGzhrnzbrTk92uPiSZxMF8aLki7aOiBkafuzLY2nu5eeMAa+4Xc5YIKUQP582eJstXUCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
     },
     "commitment": {
-      "pubkey": "4z5oyewarPMmLGVuYw2NobMCYo1S5vnn8tcxHZJXqXre",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "DDggWSHZ9ewHD6R7NuWit/f656RpGU0aVYZw9a7FQLxMeOarzOQOjBUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAECAAAAAAAAACNjGblvjvAtCAhaJn91puRS6cWyLeczTf/S6jxWqgRM/Q=="
+      "pubkey": "8pCR3Hc5NPDqqSJr6J1v75GkJpAakTK47SMguocVE6ZR",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "DDggWSHZ9ewv3uNO4EwZuFYq6VVtMDkXozySQ9WA66tvo4y8yYkZ0BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAECAAAAAAAAAAd0Ympa9OBuCSSa+FreZhBWfH1jAw2i6ARTp5s7wDPx/Q=="
     },
     "mint_config": {
-      "pubkey": "g1cjxqVwiMBBaiUxNvwh3MLhfTz5tQCHTbXvY4oyoYM",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "aP1AG5gizjcHD6R7NuWit/f656RpGU0aVYZw9a7FQLxMeOarzOQOjD8OWzhDhK4wRVqS1lQveSNAFqNs/xAQfhrWt3OMyLTM/gE="
+      "pubkey": "BDmZxEzopG3hwLLbc3ZfXY4Qke1Kcvdp7AStrJvmmnNo",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "aP1AG5gizjcv3uNO4EwZuFYq6VVtMDkXozySQ9WA66tvo4y8yYkZ0Op06VPsYaj3veRzAMp3oTIvulCDpxhJ5lEtiQm4FmK7/QE="
     },
     "issuance_ledger": {
-      "pubkey": "57xiRrmh6UVAJXwzPWWgfSyF5UAyx5UChEi7qFhocnfM",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "1JB9JEWzAY0HD6R7NuWit/f656RpGU0aVYZw9a7FQLxMeOarzOQOjBUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVI2MZuW+O8C0ICFomf3Wm5FLpxbIt5zNN/9LqPFaqBEz/"
+      "pubkey": "E1GuNBgwJShBAvEY2R7zCX7cWgA57vcdrJ7DktCxsZY",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "1JB9JEWzAY0v3uNO4EwZuFYq6VVtMDkXozySQ9WA66tvo4y8yYkZ0BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVB3Rialr04G4JJJr4Wt5mEFZ8fWMDDaLoBFOnmzvAM/H+"
     },
     "trusted_config": {
-      "pubkey": "HcViTB2agCWFap8HL3hrdpCztdzrran7mFuXibEMJ9kE",
-      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
-      "data_base64": "E36B3psXa0BdZMKlzkwkQUaMNwtm0iQc74OoF5eUSUiF8PxgQ7W5VV1kwqXOTCRBRow3C2bSJBzvg6gXl5RJSIXw/GBDtblVCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
+      "pubkey": "GMWi7XSwBA7ichXckwyX5YGcWbdAeVYzTs1jroRqYRwN",
+      "owner": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
+      "data_base64": "E36B3psXa0DYhpFCJqknibvmZskQRfGzhrnzbrTk92uPiSZxMF8aLtiGkUImqSeJu+ZmyRBF8bOGufNutOT3a4+JJnEwXxouCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
     },
     "holder_token_account": {
-      "pubkey": "3LMNtw2iL3CqeWeiMuF3ReujiEHFhohb1QBZDe4F9XPG",
+      "pubkey": "7ny2mrLPz5nqfUY1vGjybgh9htRrX9ALp6p69dMuVXCt",
       "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-      "data_base64": "Pw5bOEOErjBFWpLWVC95I0AWo2z/EBB+Gta3c4zItMwjYxm5b47wLQgIWiZ/dabkUunFsi3nM03/0uo8VqoETAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
+      "data_base64": "6nTpU+xhqPe95HMAynehMi+6UIOnGEnmUS2JCbgWYrsHdGJqWvTgbgkkmvha3mYQVnx9YwMNougEU6ebO8Az8QEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
     },
     "consumption": null
   }

@@ -1,114 +1,114 @@
 {
   "build": "981",
   "environment": "local_program_test",
-  "proof_continuity_program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-  "entitlement_consumer_program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+  "proof_continuity_program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+  "entitlement_consumer_program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
   "token_program_id": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
   "execution_kind": "banks_client_transaction",
   "stages": [
     {
       "stage": "register_proof_registry",
-      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
       "outcome": "success",
       "signers": [
-        "HzmEHysp1AaHYSuP2b99mGfY1apgLbiMQzhdD8CaJ5vg"
+        "ErXgsu7EV7yu7rdaeqWWgAbbbDuYxW83mmrGJ8uxABhY"
       ],
       "accounts": {},
       "notes": "ProofContinuityRegistry initialized"
     },
     {
       "stage": "initialize_partner_trusted_config",
-      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
       "outcome": "success",
       "signers": [
-        "DubNPTibJpSyuKpfCjvCYVzKP6CnszxBGZQ9mJbUMMSK"
+        "HpbcigyXAD4fjUdnXya3tSULpKhgzZ9yCTHnskAXEqfL"
       ],
       "accounts": {
-        "trusted_config": "JCa8o7RyqigEuZfrxwNf61tfR2s2ze6ktgE4icMKh3HY"
+        "trusted_config": "2iMAsSBvyDugnbmtfdaxsQwYnKM2YeJUmFKh2FxNF17K"
       },
       "notes": "Partner-owned relying-party configuration PDA"
     },
     {
       "stage": "mint_verified_entitlement",
-      "program_id": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
+      "program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
       "outcome": "success",
       "signers": [
-        "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST"
+        "5MZw2gtk9Do3cAvMxtxdzeWrs5UjR8FdbhFiRYJQQDH1"
       ],
       "accounts": {
-        "commitment": "ASxgaqxKNYytoR6imvjMbWzpxWDMk75F4sNZ742ZNA6u",
-        "mint": "6LzUmxJV2Y7ko1Dqev4sWAQjS7UdG8N2wgKWZZ7sU1gg"
+        "commitment": "BHGnSwq5VisquMfKmncUnBsjmQtB1r6yYL3vJTmU4WFE",
+        "mint": "AsqztXMqK8uVa8CJn1Q7bcp2zrR5jxJVUAwVyHZ3xrYv"
       },
       "notes": "Token-2022 non-transferable entitlement issued"
     },
     {
       "stage": "partner_consume_verified_entitlement",
-      "program_id": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
+      "program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
       "outcome": "success",
       "signers": [
-        "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST",
-        "HzmEHysp1AaHYSuP2b99mGfY1apgLbiMQzhdD8CaJ5vg"
+        "5MZw2gtk9Do3cAvMxtxdzeWrs5UjR8FdbhFiRYJQQDH1",
+        "ErXgsu7EV7yu7rdaeqWWgAbbbDuYxW83mmrGJ8uxABhY"
       ],
       "accounts": {
-        "consumption": "BMP4n1fNuwspFrsbH9zeHkUSa7RzMRi9PBNiZ28goK2V"
+        "consumption": "EdinvVyCToGjLVhcnMkTmNsm6wuQhMkcjquztz5S2uDp"
       },
       "notes": "On-chain consumption record created"
     }
   ],
   "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-  "registry": "ChMXtTrzyAtFFLBV2PvnJodnoAvBR8nmPvp3UWAow9Ab",
-  "trusted_config": "JCa8o7RyqigEuZfrxwNf61tfR2s2ze6ktgE4icMKh3HY",
-  "commitment": "ASxgaqxKNYytoR6imvjMbWzpxWDMk75F4sNZ742ZNA6u",
-  "entitlement_mint": "6LzUmxJV2Y7ko1Dqev4sWAQjS7UdG8N2wgKWZZ7sU1gg",
-  "holder_wallet": "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST",
-  "consumption_account": "BMP4n1fNuwspFrsbH9zeHkUSa7RzMRi9PBNiZ28goK2V",
+  "registry": "BYbmW3paMiREn1d8mjsQq4XQsszGijwjaQjXk89xDy2G",
+  "trusted_config": "2iMAsSBvyDugnbmtfdaxsQwYnKM2YeJUmFKh2FxNF17K",
+  "commitment": "BHGnSwq5VisquMfKmncUnBsjmQtB1r6yYL3vJTmU4WFE",
+  "entitlement_mint": "AsqztXMqK8uVa8CJn1Q7bcp2zrR5jxJVUAwVyHZ3xrYv",
+  "holder_wallet": "5MZw2gtk9Do3cAvMxtxdzeWrs5UjR8FdbhFiRYJQQDH1",
+  "consumption_account": "EdinvVyCToGjLVhcnMkTmNsm6wuQhMkcjquztz5S2uDp",
   "token_balance": 1,
   "commitment_status": 0,
   "consumption_recorded": true,
   "independent_verification_ok": true,
-  "recorded_at_unix_ms": 1795066454585,
+  "recorded_at_unix_ms": 1795613320304,
   "partner_evidence": {
-    "registry_admin": "HzmEHysp1AaHYSuP2b99mGfY1apgLbiMQzhdD8CaJ5vg",
-    "relying_party_admin": "DubNPTibJpSyuKpfCjvCYVzKP6CnszxBGZQ9mJbUMMSK",
-    "observation_unix_timestamp": 1795066454,
+    "registry_admin": "ErXgsu7EV7yu7rdaeqWWgAbbbDuYxW83mmrGJ8uxABhY",
+    "relying_party_admin": "HpbcigyXAD4fjUdnXya3tSULpKhgzZ9yCTHnskAXEqfL",
+    "observation_unix_timestamp": 1795613320,
     "receipt_id_hash_hex": "1515151515151515151515151515151515151515151515151515151515151515",
-    "entitlement_mint": "6LzUmxJV2Y7ko1Dqev4sWAQjS7UdG8N2wgKWZZ7sU1gg",
-    "holder_wallet": "2XeweHv58xLDg1tNQMP99kyMMkpyEcbemSkdRVqRR7ST",
+    "entitlement_mint": "AsqztXMqK8uVa8CJn1Q7bcp2zrR5jxJVUAwVyHZ3xrYv",
+    "holder_wallet": "5MZw2gtk9Do3cAvMxtxdzeWrs5UjR8FdbhFiRYJQQDH1",
     "evidence_supply": "program_test_banks_client_capture",
     "registry": {
-      "pubkey": "ChMXtTrzyAtFFLBV2PvnJodnoAvBR8nmPvp3UWAow9Ab",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "v91UQgHKsfz8hxtm4adGltIM+8oZtXVsSCqh17Z+hkntzrao0Xo0Ee/02ndafm9FvkYOyrx3Eg7UJt1Sgj7k6CQIMVDPAnZRCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
+      "pubkey": "BYbmW3paMiREn1d8mjsQq4XQsszGijwjaQjXk89xDy2G",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "v91UQgHKsfzN2BaUiboKwxDJ1vI5N5POCeN756mqqVbbT0flPSbiLyMWZxGx8k+dg5dSGYT15GHumjPin31rCZ4sQunBb7nOCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD7"
     },
     "commitment": {
-      "pubkey": "ASxgaqxKNYytoR6imvjMbWzpxWDMk75F4sNZ742ZNA6u",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "DDggWSHZ9eytxwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAABAAAAAAAAABa2AzKS5XNSiV5NJ0gzvCQXR24NofTRCyfZ5SFpIRDc/w=="
+      "pubkey": "BHGnSwq5VisquMfKmncUnBsjmQtB1r6yYL3vJTmU4WFE",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "DDggWSHZ9eycrS+RAT27n4ii+cEjq1SQGPGi6bPZLvNmzaqAw75KuRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8LCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0AGnEYAgAAAAABAAAAAAAAAECzmYWFMFgX05Msr1vEqcdWPPlqJzMFjjUvbUe0xfm4/g=="
     },
     "mint_config": {
-      "pubkey": "5UFvf2NGKUWTbz1qw8rWiqrZqCE2zPrA33SFXt9Xjpqs",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "aP1AG5gizjetxwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/E9pdioypM6v/eUM/vGCRQUVKHigMLsxFpCO5WGzpT8V/gE="
+      "pubkey": "BrLLaTFU7sLJf9JpvxTe3CWncgPrfkPPHQG31cvk67hB",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "aP1AG5gizjecrS+RAT27n4ii+cEjq1SQGPGi6bPZLvNmzaqAw75KuZK/oAXxB1l9WhOeA4n4i+HafgruvQpnnXhhnZ1nQXvX/wE="
     },
     "issuance_ledger": {
-      "pubkey": "BHFLsa3S1DBDtqvR4xnTMfpAQGMSDMbL3Nx7thBietai",
-      "owner": "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1",
-      "data_base64": "1JB9JEWzAY2txwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFrYDMpLlc1KJXk0nSDO8JBdHbg2h9NELJ9nlIWkhENz9"
+      "pubkey": "Fqh3pN6mS4QjJHVb39wtoS8x3g8hhvemoNa2AzTMG2qo",
+      "owner": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "data_base64": "1JB9JEWzAY2crS+RAT27n4ii+cEjq1SQGPGi6bPZLvNmzaqAw75KuRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVQLOZhYUwWBfTkyyvW8Spx1Y8+WonMwWONS9tR7TF+bj+"
     },
     "trusted_config": {
-      "pubkey": "JCa8o7RyqigEuZfrxwNf61tfR2s2ze6ktgE4icMKh3HY",
-      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
-      "data_base64": "E36B3psXa0C/xU5ZekHIjOZByPOa0PcKecDsDzwJ85Lm8Yr5HF3l3PyHG2bhp0aW0gz7yhm1dWxIKqHXtn6GSe3OtqjRejQRCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD/"
+      "pubkey": "2iMAsSBvyDugnbmtfdaxsQwYnKM2YeJUmFKh2FxNF17K",
+      "owner": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
+      "data_base64": "E36B3psXa0D57G3ZySEloXxp+V9YIzckFU3B70383uYn+Lqb0G1kt83YFpSJugrDEMnW8jk3k84J43vnqaqpVttPR+U9JuIvCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NAQAAAAAAAAD9"
     },
     "holder_token_account": {
-      "pubkey": "4u9eK61dWsYy17mcGjvh9zGzZuz9CJJGYZwCN1FAhMYE",
+      "pubkey": "EnDYUvue4xy2WyK1K2MrQetGk8LEeWvAZQ6eqRdfeAYJ",
       "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
-      "data_base64": "T2l2KjKkzq/95Qz+8YJFBRUoeKAwuzEWkI7lYbOlPxUWtgMykuVzUoleTSdIM7wkF0duDaH00Qsn2eUhaSEQ3AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
+      "data_base64": "kr+gBfEHWX1aE54DifiL4dp+Cu69CmedeGGdnWdBe9dAs5mFhTBYF9OTLK9bxKnHVjz5aiczBY41L21HtMX5uAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgcAAAANAAAA"
     },
     "consumption": {
-      "pubkey": "BMP4n1fNuwspFrsbH9zeHkUSa7RzMRi9PBNiZ28goK2V",
-      "owner": "CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T",
-      "data_base64": "vqpUcjK+qi+txwE4kSFv4v4Ra4v/O1qW9Mxz3hIgoRH/39n4mZ8n/BUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFrYDMpLlc1KJXk0nSDO8JBdHbg2h9NELJ9nlIWkhENwBVor+agAAAAABAAAAAAAAAP8="
+      "pubkey": "EdinvVyCToGjLVhcnMkTmNsm6wuQhMkcjquztz5S2uDp",
+      "owner": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
+      "data_base64": "vqpUcjK+qi+crS+RAT27n4ii+cEjq1SQGPGi6bPZLvNmzaqAw75KuRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVQLOZhYUwWBfTkyyvW8Spx1Y8+WonMwWONS9tR7TF+bgBiOIGawAAAAABAAAAAAAAAP0="
     }
   }
 }

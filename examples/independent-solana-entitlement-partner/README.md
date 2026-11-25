@@ -65,8 +65,8 @@ cargo run --bin partner-verify revoked
 
 | Role | Program ID |
 |------|------------|
-| Proof continuity | `FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1` |
-| Entitlement consumer | `CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T` |
+| Proof continuity | `CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F` |
+| Entitlement consumer | `9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s` |
 
 ## Scope boundary
 

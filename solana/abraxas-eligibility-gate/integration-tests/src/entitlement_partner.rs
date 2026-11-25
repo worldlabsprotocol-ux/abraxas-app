@@ -702,6 +702,25 @@ mod tests {
     }
 
     #[test]
+    fn former_program_owner_and_pda_do_not_verify_under_devnet_identity() {
+        let mut bundle = load_artifact(ARTIFACT_REL)
+            .expect("authorized artifact")
+            .partner_evidence
+            .expect("evidence");
+        bundle.registry.owner = "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1".into();
+        assert!(verify_independent_from_evidence(&bundle).is_err());
+
+        let mut bundle = load_artifact(ARTIFACT_REL)
+            .expect("authorized artifact")
+            .partner_evidence
+            .expect("evidence");
+        bundle.registry.pubkey = "FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1".into();
+        let report = verify_independent_from_evidence(&bundle).expect("structural report");
+        assert!(!report.canonical_pdas_ok);
+        assert!(!independent_passes_authorized_journey(&report));
+    }
+
+    #[test]
     fn fabricated_consistent_snapshots_still_not_authenticated_on_chain() {
         let mut bundle = load_artifact(ARTIFACT_REVOKE_REL)
             .expect("revoked artifact")
