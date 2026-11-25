@@ -34,6 +34,7 @@ jobs:
     env:
       ABRAXAS_DEVNET_RPC_URL: https://api.devnet.solana.com
       ABRAXAS_DEVNET_AUTHORITY: 3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd
+      ABRAXAS_DEVNET_ENVIRONMENT_GUARD: ${{ vars.ABRAXAS_DEVNET_ENVIRONMENT_GUARD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,6 +56,7 @@ jobs:
           [[ "$MAX_LAMPORTS" =~ ^[1-9][0-9]*$ ]] || exit 1
           (( MAX_LAMPORTS <= 20000000000 )) || exit 1
           [[ "$APPROVAL_REF" =~ ^[A-Za-z0-9._/-]{8,100}$ ]] || exit 1
+          [[ "$ABRAXAS_DEVNET_ENVIRONMENT_GUARD" == 'reviewers-configured' ]] || { echo 'Devnet approval environment is not configured'; exit 1; }
           echo "Founder approval reference: $APPROVAL_REF"
       - name: Install pinned Solana CLI
         run: |
@@ -83,7 +85,7 @@ jobs:
             node scripts/operations/check-devnet-program-identities.mjs
           echo "Program IDs: $proof $consumer"
       - name: Check identity binding tests
-        run: node --test scripts/operations/bind-devnet-entitlement-ids.test.mjs scripts/operations/verify-devnet-entitlement-bytes.test.mjs
+        run: node --test scripts/operations/bind-devnet-entitlement-ids.test.mjs scripts/operations/devnet-entitlement-allocation.test.mjs scripts/operations/verify-devnet-entitlement-bytes.test.mjs
       - name: Build both programs with pinned SBF tools
         working-directory: solana/abraxas-eligibility-gate
         run: |
@@ -116,7 +118,8 @@ jobs:
             signer=${pair##*:}
             id=$(solana-keygen pubkey "$RUNNER_TEMP/$signer.json")
             elf="solana/abraxas-eligibility-gate/target/deploy/$name.so"
-            max_len=$(wc -c < "$elf")
+            max_len=$(node -e 'const q=require(process.argv[1]); const b=q.binaries.find(x=>x.name===process.argv[2]); if(!b) process.exit(1); console.log(b.allocation_bytes)' "$RUNNER_TEMP/quote.json" "$name")
+            [[ $(wc -c < "$elf") -lt "$max_len" ]] || { echo 'ELF has no growth margin'; exit 1; }
             if solana --url "$ABRAXAS_DEVNET_RPC_URL" account "$id" >/dev/null 2>&1; then
               echo "Program ID already occupied: $id"; exit 1
             fi
