@@ -116,5 +116,5 @@ async function execute(plan) {
 }
 
 
-module.exports={execute};
+module.exports={execute,returnUnspent,retryRpc};
 
