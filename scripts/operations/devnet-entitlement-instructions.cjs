@@ -45,6 +45,14 @@ function canonical(receipt,payload,expires,version,nonce) {
     be64(expires),be64(version),be64(nonce)]);
 }
 function issuerIx(issuer,message) { return Ed25519Program.createInstructionWithPrivateKey({privateKey:issuer.secretKey,message}); }
+function issuerSignedIx(publicKey,signature,message) {
+  return Ed25519Program.createInstructionWithPublicKey({publicKey:publicKey.toBytes(),signature,message});
+}
+function statusMessage(receipt,payload,expires) {
+  return Buffer.concat([Buffer.from('ABRAXAS_PROOF_STATUS_V1'),
+    canonical(receipt,payload,expires,2,1).subarray(Buffer.byteLength('ABRAXAS_PROOF_CONTINUITY_V1')),
+    Buffer.from([1])]);
+}
 
 function registerIx(admin,a) { return ix(PROOF,'initialize_proof_registry',[
   meta(admin,true,true),meta(a.registry,false,true),meta(SYSTEM)],admin.toBuffer(),scope.partner,scope.policy,scope.application); }
@@ -71,5 +79,6 @@ function revokeIx(admin,a,receipt,payload,expires) { return ix(PROOF,'update_rec
   meta(admin,true),meta(a.registry),meta(a.commitment,false,true),meta(SYSVAR_INSTRUCTIONS_PUBKEY)],
   receipt,payload,Buffer.from([1]),u64(2),i64(expires)); }
 
-module.exports={ PROOF, CONSUMER, SYSTEM, scope, addresses, canonical, issuerIx, registerIx, sandboxIx, harnessIx, mintInitIx, trustedIx, mintIx, consumeIx, revokeIx };
+module.exports={ PROOF, CONSUMER, SYSTEM, scope, addresses, canonical, statusMessage,
+  issuerIx, issuerSignedIx, registerIx, sandboxIx, harnessIx, mintInitIx, trustedIx, mintIx, consumeIx, revokeIx };
 

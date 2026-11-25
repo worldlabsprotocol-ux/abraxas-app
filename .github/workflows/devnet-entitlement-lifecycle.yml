@@ -10,26 +10,19 @@ on:
       - 'scripts/operations/devnet-entitlement-quote.cjs'
       - 'scripts/operations/devnet-entitlement-execute.cjs'
       - 'scripts/operations/devnet-entitlement-execute.test.cjs'
+      - 'scripts/operations/devnet-entitlement-wallet-prepare.cjs'
+      - 'scripts/operations/devnet-entitlement-wallet-prepare.test.cjs'
+      - 'app/api/devnet-entitlement-test/**'
+      - 'app/developers/devnet-entitlement-test/**'
+      - 'components/developers/DevnetEntitlementTestClient.tsx'
       - 'scripts/operations/verify-devnet-entitlement-lifecycle.cjs'
   workflow_dispatch:
     inputs:
       action:
-        description: 'Read-only quote or separately authorized test execution'
+        description: 'Read-only quote only; funded ephemeral runner is disabled'
         required: true
         type: choice
-        options: [quote, execute]
-      approved_max_lamports:
-        description: 'Founder-approved test-SOL ceiling, execute only'
-        required: false
-        type: string
-      approval_reference:
-        description: 'Link to specific founder authorization on this repository'
-        required: false
-        type: string
-      founder_confirmation:
-        description: 'Enter EXECUTE_ABRAXAS_DEVNET_TEST, execute only'
-        required: false
-        type: string
+        options: [quote]
 
 permissions:
   contents: read
@@ -39,7 +32,7 @@ jobs:
     if: github.event_name == 'pull_request' || (github.ref == 'refs/heads/main' && github.actor == 'worldlabsprotocol-ux')
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'execute' && 'devnet-activation' || 'devnet-quote' }}
+    environment: devnet-quote
     env:
       ABRAXAS_DEVNET_RPC_URL: https://api.devnet.solana.com
     steps:
@@ -59,27 +52,11 @@ jobs:
           node --check scripts/operations/devnet-entitlement-quote.cjs
           node --check scripts/operations/devnet-entitlement-execute.cjs
           node --test scripts/operations/devnet-entitlement-execute.test.cjs
+          node --check scripts/operations/devnet-entitlement-wallet-prepare.cjs
+          node --test scripts/operations/devnet-entitlement-wallet-prepare.test.cjs
           node --check scripts/operations/verify-devnet-entitlement-lifecycle.cjs
           node scripts/operations/validate-devnet-entitlement-evidence.mjs .
       - name: Quote finalized Devnet rent without signing
         if: github.event_name == 'pull_request' || inputs.action == 'quote'
         run: node scripts/operations/devnet-entitlement-lifecycle.cjs quote
-      - name: Execute separately approved test journey
-        if: github.event_name == 'workflow_dispatch' && inputs.action == 'execute'
-        env:
-          APPROVED_MAX_LAMPORTS: ${{ inputs.approved_max_lamports }}
-          APPROVAL_REFERENCE: ${{ inputs.approval_reference }}
-          FOUNDER_CONFIRMATION: ${{ inputs.founder_confirmation }}
-          GITHUB_OUTPUT_EVIDENCE: ${{ runner.temp }}/devnet-entitlement-lifecycle-evidence.json
-        run: node scripts/operations/devnet-entitlement-lifecycle.cjs execute
-      - name: Independently verify finalized transactions and account state
-        if: github.event_name == 'workflow_dispatch' && inputs.action == 'execute' && success()
-        run: node scripts/operations/verify-devnet-entitlement-lifecycle.cjs "$RUNNER_TEMP/devnet-entitlement-lifecycle-evidence.json"
-      - name: Preserve public transaction evidence
-        if: github.event_name == 'workflow_dispatch' && inputs.action == 'execute' && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: devnet-entitlement-lifecycle-${{ github.run_id }}
-          if-no-files-found: warn
-          path: ${{ runner.temp }}/devnet-entitlement-lifecycle-evidence.json
 
