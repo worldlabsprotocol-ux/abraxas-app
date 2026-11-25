@@ -1,5 +1,6 @@
 const { createHash } = require('node:crypto');
-const { PublicKey, TransactionInstruction, Ed25519Program, SystemProgram } = require('@solana/web3.js');
+const { PublicKey, TransactionInstruction, Ed25519Program, SystemProgram,
+  SYSVAR_INSTRUCTIONS_PUBKEY } = require('@solana/web3.js');
 const { TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } = require('@solana/spl-token');
 const PROOF = new PublicKey('CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F');
 const CONSUMER = new PublicKey('9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s');
