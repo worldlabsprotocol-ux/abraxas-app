@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/devnet-entitlement-lifecycle.yml'
       - 'scripts/operations/devnet-entitlement-lifecycle.cjs'
+      - 'scripts/operations/devnet-entitlement-instructions.cjs'
+      - 'scripts/operations/devnet-entitlement-quote.cjs'
+      - 'scripts/operations/devnet-entitlement-execute.cjs'
       - 'scripts/operations/verify-devnet-entitlement-lifecycle.cjs'
   workflow_dispatch:
     inputs:
@@ -51,6 +54,9 @@ jobs:
       - name: Check runner syntax and public identity
         run: |
           node --check scripts/operations/devnet-entitlement-lifecycle.cjs
+          node --check scripts/operations/devnet-entitlement-instructions.cjs
+          node --check scripts/operations/devnet-entitlement-quote.cjs
+          node --check scripts/operations/devnet-entitlement-execute.cjs
           node --check scripts/operations/verify-devnet-entitlement-lifecycle.cjs
           node scripts/operations/validate-devnet-entitlement-evidence.mjs .
       - name: Quote finalized Devnet rent without signing
