@@ -9,20 +9,49 @@ const FOUNDER=new PublicKey('3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd');
 const MEMO=new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 const MAX_CEILING=100_000_000;
 const connection=new Connection(RPC,'finalized');
+const retryRpc=async(operation,attempts=24)=>{
+  for(let n=0;n<attempts;n++) {
+    try { return await operation(); }
+    catch(error) {
+      if(!/fetch failed|ECONNRESET|ETIMEDOUT|429|502|503|504/i.test(String(error)) || n===attempts-1) throw error;
+      await new Promise(resolve=>setTimeout(resolve,5000));
+    }
+  }
+};
 async function submit(label,payer,signers,instructions,expectedFailure=false) {
-  const {blockhash,lastValidBlockHeight}=await connection.getLatestBlockhash('finalized');
+  const {blockhash,lastValidBlockHeight}=await retryRpc(()=>connection.getLatestBlockhash('finalized'));
   const tx=new Transaction({feePayer:payer.publicKey,recentBlockhash:blockhash});
   tx.add(...instructions);
   tx.sign(payer,...signers.filter(s=>!s.publicKey.equals(payer.publicKey)));
-  const signature=await connection.sendRawTransaction(tx.serialize(),{skipPreflight:expectedFailure,maxRetries:5});
-  const confirmation=await connection.confirmTransaction({signature,blockhash,lastValidBlockHeight},'finalized');
-  const details=await connection.getTransaction(signature,{commitment:'finalized',maxSupportedTransactionVersion:0});
+  const raw=tx.serialize();
+  const signature=await retryRpc(()=>connection.sendRawTransaction(raw,{skipPreflight:expectedFailure,maxRetries:5}));
+  const confirmation=await retryRpc(()=>connection.confirmTransaction({signature,blockhash,lastValidBlockHeight},'finalized'));
+  const details=await retryRpc(()=>connection.getTransaction(signature,{commitment:'finalized',maxSupportedTransactionVersion:0}));
   if (!details || Boolean(details.meta?.err)!==expectedFailure || Boolean(confirmation.value.err)!==expectedFailure)
     throw Error(`${label} outcome mismatch: ${signature} ${JSON.stringify(details?.meta?.err)}`);
   console.log(`${label}: ${signature} finalized ${expectedFailure?'rejected':'accepted'}`);
   return {label,signature,slot:details.slot,expected_failure:expectedFailure,error:details.meta?.err??null};
 }
 function uniqueMemo() { return new TransactionInstruction({programId:MEMO,keys:[],data:randomBytes(8)}); }
+async function returnUnspent(source) {
+  const balance=await retryRpc(()=>connection.getBalance(source.publicKey,'finalized'),120);
+  if(balance<=20_000) return null;
+  const {blockhash,lastValidBlockHeight}=await retryRpc(()=>connection.getLatestBlockhash('finalized'),120);
+  const tx=new Transaction({feePayer:source.publicKey,recentBlockhash:blockhash});
+  tx.add(SystemProgram.transfer({fromPubkey:source.publicKey,toPubkey:FOUNDER,lamports:1}));
+  const fee=(await retryRpc(()=>connection.getFeeForMessage(tx.compileMessage(),'finalized'),120)).value;
+  if(!Number.isSafeInteger(fee) || fee<=0 || balance<=fee) throw Error('Unable to quote exact refund fee');
+  // A zero-balance system account can close. Leaving a tiny balance below rent exemption fails.
+  tx.instructions[0]=SystemProgram.transfer({fromPubkey:source.publicKey,toPubkey:FOUNDER,lamports:balance-fee});
+  tx.sign(source);
+  const signature=await retryRpc(()=>connection.sendRawTransaction(tx.serialize(),{maxRetries:5}),120);
+  const confirmation=await retryRpc(()=>connection.confirmTransaction({signature,blockhash,lastValidBlockHeight},'finalized'),120);
+  if(confirmation.value.err) throw Error(`Refund failed on chain: ${signature}`);
+  const details=await retryRpc(()=>connection.getTransaction(signature,{commitment:'finalized',maxSupportedTransactionVersion:0}),120);
+  if(!details || details.meta?.err) throw Error(`Refund not independently retrievable: ${signature}`);
+  console.log(`Returned unspent Devnet SOL from ${source.publicKey.toBase58()}: ${signature}`);
+  return {signature,slot:details.slot,expected_failure:false,error:null};
+}
 
 async function execute(plan) {
   const approved=Number(process.env.APPROVED_MAX_LAMPORTS);
@@ -75,10 +104,11 @@ async function execute(plan) {
     // Return liquid test SOL; rent remains locked in test-only accounts.
     for (const source of [otherHolder,payer]) {
       try {
-        const balance=await connection.getBalance(source.publicKey,'finalized');
-        if (balance>20_000) evidence.transactions.push(await submit(
-          `return_unspent_${source.publicKey.equals(payer.publicKey)?'payer':'holder'}`,
-          source,[],[SystemProgram.transfer({fromPubkey:source.publicKey,toPubkey:FOUNDER,lamports:balance-10_000})]));
+        const returned=await returnUnspent(source);
+        if(returned) {
+          returned.label=`return_unspent_${source.publicKey.equals(payer.publicKey)?'payer':'holder'}`;
+          evidence.transactions.push(returned);
+        }
       } catch(e) { console.error(`Unspent test SOL return needs operator attention for ${source.publicKey.toBase58()}: ${e.message}`); }
     }
     writeFileSync(output,JSON.stringify(evidence,null,2)+'\n',{mode:0o600});
@@ -86,5 +116,5 @@ async function execute(plan) {
 }
 
 
-module.exports={execute};
+module.exports={execute,returnUnspent,retryRpc};
 

@@ -9,6 +9,7 @@ on:
       - 'scripts/operations/devnet-entitlement-instructions.cjs'
       - 'scripts/operations/devnet-entitlement-quote.cjs'
       - 'scripts/operations/devnet-entitlement-execute.cjs'
+      - 'scripts/operations/devnet-entitlement-execute.test.cjs'
       - 'scripts/operations/verify-devnet-entitlement-lifecycle.cjs'
   workflow_dispatch:
     inputs:
@@ -57,6 +58,7 @@ jobs:
           node --check scripts/operations/devnet-entitlement-instructions.cjs
           node --check scripts/operations/devnet-entitlement-quote.cjs
           node --check scripts/operations/devnet-entitlement-execute.cjs
+          node --test scripts/operations/devnet-entitlement-execute.test.cjs
           node --check scripts/operations/verify-devnet-entitlement-lifecycle.cjs
           node scripts/operations/validate-devnet-entitlement-evidence.mjs .
       - name: Quote finalized Devnet rent without signing
