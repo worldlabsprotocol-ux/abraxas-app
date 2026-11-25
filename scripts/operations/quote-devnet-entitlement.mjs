@@ -1,5 +1,6 @@
 // Read-only Devnet ceiling from actual built ELF lengths and live rent responses.
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { Connection } from "@solana/web3.js";
 
@@ -10,8 +11,11 @@ const connection = new Connection(rpc, "confirmed");
 const genesis = await connection.getGenesisHash();
 if (genesis !== manifest.genesis_hash) throw new Error("RPC genesis differs from approved Devnet genesis");
 
-const lengths = ["abraxas_proof_continuity", "abraxas_proof_entitlement_consumer"].map((name) =>
-  statSync(resolve(root, `solana/abraxas-eligibility-gate/target/deploy/${name}.so`)).size);
+const binaries = ["abraxas_proof_continuity", "abraxas_proof_entitlement_consumer"].map((name) => {
+  const elf = readFileSync(resolve(root, `solana/abraxas-eligibility-gate/target/deploy/${name}.so`));
+  return { name, length: elf.length, sha256: createHash("sha256").update(elf).digest("hex") };
+});
+const lengths = binaries.map(({ length }) => length);
 if (lengths.some((size) => size < 100_000 || size > 5_000_000)) throw new Error("Unexpected ELF length");
 let rent = 0;
 let peakBufferRent = 0;
@@ -34,7 +38,7 @@ const feeReserve = 100_000_000; // 0.1 Devnet SOL, including retries.
 const safetyReserve = Math.ceil((rent + feeReserve) * 0.2);
 const ceilingLamports = rent + feeReserve + safetyReserve;
 console.log(JSON.stringify({
-  genesis_hash: genesis, rpc, elf_lengths: lengths,
+  genesis_hash: genesis, rpc, binaries,
   rent_upper_lamports: rent, fee_reserve_lamports: feeReserve,
   safety_reserve_lamports: safetyReserve, ceiling_lamports: ceilingLamports,
   ceiling_devnet_sol: ceilingLamports / 1_000_000_000,
