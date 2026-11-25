@@ -14,7 +14,7 @@ const fixture = () => ({
   verification: { genesis_hash: "devnet", programs: names.map((name, index) => ({ name,
     program_id: index === 0 ? proof : consumer, elf_sha256: String(index + 1).repeat(64),
     upgrade_authority: authority, deployed_slot: 12,
-    finalized_program_data_signatures: [{ signature: proof, slot: 12 }] })) },
+    finalized_program_data_signatures: [{ signature: "3".repeat(87), slot: 12 }] })) },
 });
 
 test("accepts a complete public binding record", () => {
