@@ -83,7 +83,7 @@ export function DevnetEntitlementTestClient() {
         const messageAction = action === "signed_receipt" ? "message_receipt" : "message_revoke";
         const message = await prepare(messageAction);
         if (!message.message) throw Error("Missing authorization message");
-        issuerSignature = btoa(String.fromCharCode(...await wallet.signMessage(decode(message.message))));
+        issuerSignature = btoa(String.fromCharCode(...Array.from(await wallet.signMessage(decode(message.message)))));
       }
       const prepared = await prepare(action, issuerSignature);
       if (!prepared.transaction || !prepared.blockhash || !prepared.lastValidBlockHeight)
@@ -128,3 +128,4 @@ export function DevnetEntitlementTestClient() {
     <p>Local transaction history is for navigation only. It does not establish independent verification or current authorization.</p>
   </main>;
 }
+
