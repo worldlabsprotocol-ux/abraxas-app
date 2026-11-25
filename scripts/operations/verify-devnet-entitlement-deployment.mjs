@@ -1,8 +1,8 @@
 // Independent RPC check: loader ownership, ProgramData authority and exact ELF bytes.
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Connection, PublicKey, BPF_LOADER_UPGRADEABLE_PROGRAM_ID } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { verifyDeployedProgramBytes } from "./verify-devnet-entitlement-bytes.mjs";
 
 const root = resolve(import.meta.dirname, "../..");
 const manifest = JSON.parse(readFileSync(resolve(root, "solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json")));
@@ -19,22 +19,13 @@ for (const [name, id] of [
   if (onlyProgram && name !== onlyProgram) continue;
   const program = new PublicKey(id);
   const info = await connection.getAccountInfo(program, "finalized");
-  if (!info?.owner.equals(BPF_LOADER_UPGRADEABLE_PROGRAM_ID) || !info.executable
-      || info.data.length !== 36 || info.data.readUInt32LE(0) !== 2) throw new Error(`${name} program account invalid`);
+  if (!info?.data || info.data.length !== 36) throw new Error(`${name} program account invalid`);
   const programDataAddress = new PublicKey(info.data.subarray(4, 36));
   const programData = await connection.getAccountInfo(programDataAddress, "finalized");
-  if (!programData?.owner.equals(BPF_LOADER_UPGRADEABLE_PROGRAM_ID)
-      || programData.data.readUInt32LE(0) !== 3 || programData.data[12] !== 1
-      || !new PublicKey(programData.data.subarray(13, 45)).equals(expectedAuthority)) {
-    throw new Error(`${name} upgrade authority or ProgramData invalid`);
-  }
   const elf = readFileSync(resolve(root, `solana/abraxas-eligibility-gate/target/deploy/${name}.so`));
-  if (programData.data.length < 45 + elf.length || !programData.data.subarray(45, 45 + elf.length).equals(elf)) {
-    throw new Error(`${name} deployed bytecode differs from compiled ELF`);
-  }
-  results.push({ name, program_id: id, program_data: programDataAddress.toBase58(),
-    upgrade_authority: expectedAuthority.toBase58(), elf_sha256: createHash("sha256").update(elf).digest("hex"),
-    deployed_slot: Number(programData.data.readBigUInt64LE(4)) });
+  results.push({ name, program_id: id, ...verifyDeployedProgramBytes({
+    name, programInfo: info, programDataInfo: programData, elf, expectedAuthority,
+  }) });
 }
 console.log(JSON.stringify({ genesis_hash: manifest.genesis_hash, programs: results }, null, 2));
 
