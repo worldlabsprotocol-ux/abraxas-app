@@ -10,7 +10,7 @@ use abraxas_proof_continuity::{
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, TokenAccount, TokenInterface};
 
-declare_id!("CQykNfMtvoV4NV6fR3cJDB5dp5ZS7oeKh8whVwpZZc8T");
+declare_id!("9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s");
 
 pub const RELYING_PARTY_CONFIG_SEED: &[u8] = b"relying_party_config";
 pub const ENTITLEMENT_CONSUMPTION_SEED: &[u8] = b"entitlement_consumption";

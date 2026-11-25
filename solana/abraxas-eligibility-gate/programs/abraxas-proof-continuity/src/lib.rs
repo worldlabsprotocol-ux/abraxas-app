@@ -24,7 +24,7 @@ pub fn entitlement_mint_account_len() -> usize {
     .unwrap_or(278)
 }
 
-declare_id!("FtDugarhArqNTeuGzvQhFV9wQAxTFn8bifhPrCH4dhd1");
+declare_id!("CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F");
 
 pub const REGISTRY_SEED: &[u8] = b"proof_registry";
 pub const COMMITMENT_SEED: &[u8] = b"receipt_commitment";

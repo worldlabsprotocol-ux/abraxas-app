@@ -1,0 +1,41 @@
+{
+  "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "programs": [
+    {
+      "name": "abraxas_proof_continuity",
+      "program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+      "program_data": "9vbxrevy3ZAvaetVdJtXcDRELjnNsGSUv66cc1PxzaDv",
+      "upgrade_authority": "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd",
+      "elf_sha256": "3ffa7393ab712290d4cb1b0eab34d40fa209c67d8718de208d11da689215e368",
+      "deployed_slot": 526159980,
+      "finalized_program_data_signatures": [
+        {
+          "signature": "2EZHy2dNnjFtre1PnJp6EnZfRYh7WYwXE3JpFJkEU3aP3rEaY6RmRqAK5Awz5kaKgXodes3TSGB8261TiaFx8kgV",
+          "slot": 526159986
+        },
+        {
+          "signature": "2Lb8ASaeXwh38khZkoiGbgv6mRdQuYxkhA1PKB7Cd46t8NsdUAL6yas4ukvDviyPbjrbRcuGXFBACLULpBLb9EDy",
+          "slot": 526159980
+        }
+      ]
+    },
+    {
+      "name": "abraxas_proof_entitlement_consumer",
+      "program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s",
+      "program_data": "ABBdS5YUAureTLLvwjQLwJPETt2gigDHFDBswYNqWaie",
+      "upgrade_authority": "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd",
+      "elf_sha256": "71e861219da9cfb1ce3fcc288014bdc24923f9e89967615565da51e4a730331e",
+      "deployed_slot": 526160072,
+      "finalized_program_data_signatures": [
+        {
+          "signature": "44hz86fnof9EuUDFU4aKd1a1vJmjSemzPXRtb4yGB1stw5vKrfxNixPxAb6Jo7HDM6RfzQV5vrZqoEjh5rVPj4qL",
+          "slot": 526160079
+        },
+        {
+          "signature": "3cqKgkNydYxsAbKdMqZp9LsCyCzehGW5mwXDhiQyMvVnyiA1VZtAUHSnerSqwRhq8FebqmJuuPC3XQtGaXkFUcEs",
+          "slot": 526160072
+        }
+      ]
+    }
+  ]
+}

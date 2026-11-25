@@ -1,6 +1,6 @@
 {
-  "status": "pending_public_ids",
+  "status": "approved",
   "genesis_hash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
-  "proof_continuity_program_id": null,
-  "entitlement_consumer_program_id": null
+  "proof_continuity_program_id": "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F",
+  "entitlement_consumer_program_id": "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s"
 }
