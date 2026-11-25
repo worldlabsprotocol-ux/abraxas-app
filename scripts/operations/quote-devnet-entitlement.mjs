@@ -14,13 +14,18 @@ const lengths = ["abraxas_proof_continuity", "abraxas_proof_entitlement_consumer
   statSync(resolve(root, `solana/abraxas-eligibility-gate/target/deploy/${name}.so`)).size);
 if (lengths.some((size) => size < 100_000 || size > 5_000_000)) throw new Error("Unexpected ELF length");
 let rent = 0;
+let peakBufferRent = 0;
 for (const size of lengths) {
   // Upgradeable loader: program metadata, ProgramData, and temporary buffer.
-  // Reserve double the current binary length for future program growth.
+  // The first deployment allocates the current ELF length. Later upgrades can
+  // extend the account with separate authority and funding approval.
   rent += await connection.getMinimumBalanceForRentExemption(36);
-  rent += await connection.getMinimumBalanceForRentExemption(45 + size * 2);
-  rent += await connection.getMinimumBalanceForRentExemption(37 + size);
+  rent += await connection.getMinimumBalanceForRentExemption(45 + size);
+  peakBufferRent = Math.max(peakBufferRent, await connection.getMinimumBalanceForRentExemption(37 + size));
 }
+// Deployments are sequential; the loader returns buffer lamports to the payer
+// on successful deploy. Reserve the larger temporary buffer once.
+rent += peakBufferRent;
 // Conservative upper reserve for registry, relying-party config, Token-2022 mint,
 // holder ATA, and the first entitlement lifecycle. Actual account allocations
 // are checked against the approved ceiling again at execution time.
