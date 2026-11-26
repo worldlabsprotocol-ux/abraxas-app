@@ -16,6 +16,7 @@ on:
       - 'app/api/devnet-entitlement-test/**'
       - 'app/developers/devnet-entitlement-test/**'
       - 'components/developers/DevnetEntitlementTestClient.tsx'
+      - 'components/developers/DevnetEntitlementTestClient.test.tsx'
       - 'scripts/operations/verify-devnet-entitlement-lifecycle.cjs'
   workflow_dispatch:
     inputs:
@@ -60,4 +61,6 @@ jobs:
       - name: Quote finalized Devnet rent without signing
         if: github.event_name == 'pull_request' || inputs.action == 'quote'
         run: node scripts/operations/devnet-entitlement-lifecycle.cjs quote
+      - name: Check Phantom connection lifecycle without signing
+        run: npx vitest run components/developers/DevnetEntitlementTestClient.test.tsx
 

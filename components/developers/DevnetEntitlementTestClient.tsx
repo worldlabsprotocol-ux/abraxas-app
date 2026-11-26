@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, Keypair, Message, Transaction } from "@solana/web3.js";
 import steps from "../../scripts/operations/devnet-entitlement-wallet-steps.json";
 
@@ -24,7 +23,6 @@ const lamports = (value: number) => `${(value / 1_000_000_000).toFixed(9)} Devne
 
 export function DevnetEntitlementTestClient() {
   const wallet = useWallet();
-  const modal = useWalletModal();
   const [receipt1, setReceipt1] = useState("");
   const [payload1, setPayload1] = useState("");
   const [receipt2, setReceipt2] = useState("");
@@ -40,6 +38,7 @@ export function DevnetEntitlementTestClient() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [verification, setVerification] = useState(false);
+  const [connectionRequested, setConnectionRequested] = useState(false);
   const walletReady = wallet.publicKey?.toBase58() === FOUNDER && Boolean(wallet.signMessage && wallet.signTransaction);
   const next = steps[evidence.length];
   const connection = new Connection(RPC, "finalized");
@@ -71,6 +70,34 @@ export function DevnetEntitlementTestClient() {
       JSON.stringify({ wallet: FOUNDER, receipt1, receipt2, payload1, payload2, expires, evidence, pending }));
   }, [receipt1, receipt2, payload1, payload2, expires, evidence, pending]);
   useEffect(() => { setApproved(false); setReview(null); setWrongSigner(null); }, [wallet.publicKey?.toBase58()]);
+  useEffect(() => {
+    if (!connectionRequested || wallet.wallet?.adapter.name !== "Phantom") return;
+    setConnectionRequested(false);
+    if (wallet.connected || wallet.connecting) return;
+    void wallet.connect().catch(error => {
+      const message = error instanceof Error ? error.message : "Wallet connection failed";
+      setNotice(/reject|declin|cancel/i.test(message)
+        ? "Phantom connection was declined. Select Connect Phantom to try again."
+        : `Phantom connection failed: ${message}`);
+    });
+  }, [connectionRequested, wallet.wallet, wallet.connected, wallet.connecting, wallet.connect]);
+
+  function connectPhantom() {
+    setNotice("");
+    const phantom = wallet.wallets.find(item => item.adapter.name === "Phantom");
+    if (!phantom) { setNotice("Phantom is unavailable in this browser."); return; }
+    setConnectionRequested(true);
+    if (wallet.wallet?.adapter.name !== "Phantom") wallet.select(phantom.adapter.name);
+  }
+  async function disconnectPhantom() {
+    setConnectionRequested(false);
+    try {
+      await wallet.disconnect();
+      setNotice("Wallet disconnected. Connect Phantom to resume with the same approved address.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Wallet disconnect failed");
+    }
+  }
 
   function packet() {
     return { admin: FOUNDER, receipt1, payload1, receipt2, payload2, expires, evidence };
@@ -204,7 +231,8 @@ export function DevnetEntitlementTestClient() {
     <p>Operator test only. The founder wallet pays Devnet fees directly. No SOL is sent to a temporary runner wallet. Each on-chain action requires a separate Phantom confirmation.</p>
     <p>Cluster: Solana Devnet · Wallet: {wallet.publicKey?.toBase58() || "not connected"}</p>
     <p>Execution: {executionEnabled ? "available after separate authorization" : "disabled"} · Approved whole-journey ceiling: {ceiling === null ? "none" : lamports(ceiling)}</p>
-    {!wallet.connected && <button onClick={() => modal.setVisible(true)}>Connect Phantom</button>}
+    {!wallet.connected && <button onClick={connectPhantom}>Connect Phantom</button>}
+    {wallet.connected && <button onClick={() => void disconnectPhantom()}>Disconnect wallet</button>}
     {wallet.connected && !walletReady && <p>Connect the approved founder wallet with message and transaction signing support.</p>}
     {!receipt1 && <button disabled={!walletReady || !executionEnabled} onClick={start}>Prepare isolated test</button>}
     {receipt1 && <>
