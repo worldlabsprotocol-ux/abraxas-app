@@ -3,129 +3,234 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Connection, Transaction } from "@solana/web3.js";
+import { Connection, Keypair, Transaction } from "@solana/web3.js";
+import steps from "../../scripts/operations/devnet-entitlement-wallet-steps.json";
 
 const FOUNDER = "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd";
-const RPC = "https://api.devnet.solana.com";
+const PROOF = "CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F";
+const CONSUMER = "9gaEjncEjJYq7YVKELNWmegL4dCgtkVqHeaRFCLBr92s";
 const GENESIS = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
-const ACTIONS = [
-  "initialize_registry", "bind_holder", "initialize_mint", "initialize_relying_party",
-  "signed_receipt", "mint_entitlement", "consume_entitlement", "repeat_consume",
-  "revoke_receipt", "revoked_consume",
-] as const;
-type Action = typeof ACTIONS[number];
-type Evidence = { action: Action; signature: string; slot: number; rejected: boolean };
-type Prepared = { transaction?: string; message?: string; blockhash?: string; lastValidBlockHeight?: number; error?: string };
+const RPC = "https://api.devnet.solana.com";
+const STORAGE = "abraxas-devnet-wallet-test-v2";
+type Evidence = { id: string; signature: string; slot: number; rejected: boolean; wrongHolder?: string };
+type Pending = { id: string; signature: string; blockhash: string; lastValidBlockHeight: number; wrongHolder?: string };
+type Prepared = { transaction?: string; message?: string; blockhash?: string; lastValidBlockHeight?: number;
+  error?: string; spentLamports?: number; maxDebitLamports?: number; remainingAfterMaxLamports?: number;
+  effects?: string; expectedFailure?: boolean; stepId?: string };
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
 const decode = (base64: string) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+const short = (value: string) => `${value.slice(0, 6)}…${value.slice(-6)}`;
+const lamports = (value: number) => `${(value / 1_000_000_000).toFixed(9)} Devnet SOL`;
 
 export function DevnetEntitlementTestClient() {
   const wallet = useWallet();
   const modal = useWalletModal();
-  const [receipt, setReceipt] = useState("");
-  const [payload, setPayload] = useState("");
+  const [receipt1, setReceipt1] = useState("");
+  const [payload1, setPayload1] = useState("");
+  const [receipt2, setReceipt2] = useState("");
+  const [payload2, setPayload2] = useState("");
   const [expires, setExpires] = useState(0);
+  const [evidence, setEvidence] = useState<Evidence[]>([]);
+  const [pending, setPending] = useState<Pending | null>(null);
   const [approved, setApproved] = useState(false);
   const [executionEnabled, setExecutionEnabled] = useState(false);
   const [ceiling, setCeiling] = useState<number | null>(null);
+  const [review, setReview] = useState<Prepared | null>(null);
+  const [wrongSigner, setWrongSigner] = useState<Keypair | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const [evidence, setEvidence] = useState<Evidence[]>([]);
+  const [verification, setVerification] = useState(false);
   const walletReady = wallet.publicKey?.toBase58() === FOUNDER && Boolean(wallet.signMessage && wallet.signTransaction);
+  const next = steps[evidence.length];
   const connection = new Connection(RPC, "finalized");
 
   useEffect(() => {
     void fetch("/api/devnet-entitlement-test/prepare", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "preflight", admin: FOUNDER }) })
       .then(async response => { if (!response.ok) throw Error("Devnet preflight failed"); return response.json(); })
-      .then(result => { setExecutionEnabled(result.executionEnabled === true); setCeiling(result.quote?.ceiling_lamports ?? null); })
-      .catch(() => setNotice("Devnet preflight unavailable. No transactions can be prepared."));
+      .then(result => { setExecutionEnabled(result.executionEnabled === true);
+        setCeiling(result.approvedCeilingLamports ?? null); })
+      .catch(() => setNotice("Devnet preflight unavailable. Execution remains disabled."));
   }, []);
   useEffect(() => {
-    // Public test identifiers only. A refresh never restores wallet authorization.
+    // These are public test identifiers and transaction IDs, never wallet authorization.
     try {
-      const saved = JSON.parse(sessionStorage.getItem("abraxas-devnet-wallet-test-v1") || "null");
-      if (saved && saved.wallet === FOUNDER && /^[0-9a-f]{64}$/.test(saved.receipt) &&
-          /^[0-9a-f]{64}$/.test(saved.payload) && Number.isSafeInteger(saved.expires)) {
-        setReceipt(saved.receipt); setPayload(saved.payload); setExpires(saved.expires);
-        setEvidence(Array.isArray(saved.evidence) ? saved.evidence : []);
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE) || "null");
+      if (saved?.wallet === FOUNDER && /^[0-9a-f]{64}$/.test(saved.receipt1) &&
+          /^[0-9a-f]{64}$/.test(saved.receipt2) && /^[0-9a-f]{64}$/.test(saved.payload1) &&
+          /^[0-9a-f]{64}$/.test(saved.payload2) && Number.isSafeInteger(saved.expires) &&
+          Array.isArray(saved.evidence) && saved.evidence.length <= steps.length) {
+        setReceipt1(saved.receipt1); setReceipt2(saved.receipt2);
+        setPayload1(saved.payload1); setPayload2(saved.payload2); setExpires(saved.expires);
+        setEvidence(saved.evidence); setPending(saved.pending || null);
       }
-    } catch { /* A corrupt local draft grants no authority. */ }
+    } catch { /* Corrupt local progress never authorizes a signature. */ }
   }, []);
   useEffect(() => {
-    if (receipt && payload) sessionStorage.setItem("abraxas-devnet-wallet-test-v1",
-      JSON.stringify({ wallet: FOUNDER, receipt, payload, expires, evidence }));
-  }, [receipt, payload, expires, evidence]);
+    if (receipt1 && receipt2) sessionStorage.setItem(STORAGE,
+      JSON.stringify({ wallet: FOUNDER, receipt1, receipt2, payload1, payload2, expires, evidence, pending }));
+  }, [receipt1, receipt2, payload1, payload2, expires, evidence, pending]);
+  useEffect(() => { setApproved(false); setReview(null); setWrongSigner(null); }, [wallet.publicKey?.toBase58()]);
 
-  async function prepare(action: string, issuerSignature?: string): Promise<Prepared> {
+  function packet() {
+    return { admin: FOUNDER, receipt1, payload1, receipt2, payload2, expires, evidence };
+  }
+  async function prepare(action: string, stepId: string, issuerSignature?: string,
+    wrongHolder?: string): Promise<Prepared> {
     const response = await fetch("/api/devnet-entitlement-test/prepare", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, admin: FOUNDER, receipt, payload, expires, issuerSignature }),
+      body: JSON.stringify({ ...packet(), action, stepId, issuerSignature, wrongHolder }),
     });
     const result = await response.json() as Prepared;
-    if (!response.ok || result.error) throw Error(result.error || "Transaction preparation failed");
+    if (!response.ok || result.error) throw Error(result.error || "Preparation failed");
     return result;
   }
   function start() {
-    const nextReceipt = hex(crypto.getRandomValues(new Uint8Array(32)));
-    const nextPayload = hex(crypto.getRandomValues(new Uint8Array(32)));
-    setReceipt(nextReceipt); setPayload(nextPayload);
+    if (evidence.length || pending) return;
+    setReceipt1(hex(crypto.getRandomValues(new Uint8Array(32))));
+    setPayload1(hex(crypto.getRandomValues(new Uint8Array(32))));
+    setReceipt2(hex(crypto.getRandomValues(new Uint8Array(32))));
+    setPayload2(hex(crypto.getRandomValues(new Uint8Array(32))));
     setExpires(Math.floor(Date.now() / 1000) + 25 * 60);
-    setEvidence([]); setApproved(false); setNotice("New isolated test prepared. Review and authorize each wallet action separately.");
+    setReview(null); setApproved(false); setVerification(false);
+    setNotice("Two isolated receipts prepared. Review each step before signing.");
   }
-  async function run(action: Action) {
-    if (!walletReady || !approved || !executionEnabled || !wallet.signTransaction || !wallet.signMessage) return;
-    setBusy(true); setNotice(`Preparing ${action} on Solana Devnet…`);
+  async function reviewNext() {
+    if (!next || !walletReady || !executionEnabled || pending) return;
+    setBusy(true); setNotice("Checking finalized progress and the remaining approved cost allowance…");
+    try {
+      if (await connection.getGenesisHash() !== GENESIS) throw Error("RPC is not Solana Devnet");
+      const signer = next.action === "wrong_holder" ? Keypair.generate() : null;
+      const result = await prepare("review", next.id, undefined, signer?.publicKey.toBase58());
+      if (result.stepId !== next.id || !Number.isSafeInteger(result.maxDebitLamports))
+        throw Error("Incomplete cost review");
+      setWrongSigner(signer); setReview(result); setNotice("Review the maximum cost and on-chain effect before signing.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Review failed"); }
+    finally { setBusy(false); }
+  }
+  async function recheck(item: Pending) {
+    setBusy(true);
+    try {
+      const observed = await connection.getTransaction(item.signature,
+        { commitment: "finalized", maxSupportedTransactionVersion: 0 });
+      if (!observed) {
+        if (await connection.getBlockHeight("finalized") > item.lastValidBlockHeight) {
+          setPending(null); setReview(null);
+          setNotice("Transaction expired without a finalized result. Review this step again before signing.");
+        } else setNotice("Transaction has not finalized. Recheck before attempting another signature.");
+        return;
+      }
+      const step = steps[evidence.length];
+      if (!step || step.id !== item.id) throw Error("Pending step does not match the journey");
+      const rejected = Boolean(step.rejected);
+      if (Boolean(observed.meta?.err) !== rejected) throw Error("Finalized outcome did not match the required result");
+      if (rejected) {
+        const message = observed.transaction.message;
+        const failed = observed.meta?.err && typeof observed.meta.err === "object" &&
+          "InstructionError" in observed.meta.err ?
+          observed.meta.err.InstructionError[0] : -1;
+        if (!Number.isInteger(failed) || failed < 0 || failed >= message.instructions.length ||
+            message.accountKeys[message.instructions[failed].programIdIndex].toBase58() !== CONSUMER)
+          throw Error("Negative probe failed outside the entitlement consumer");
+      }
+      setEvidence(previous => [...previous, { id: item.id, signature: item.signature, slot: observed.slot,
+        rejected, ...(item.wrongHolder ? { wrongHolder: item.wrongHolder } : {}) }]);
+      setPending(null); setReview(null); setWrongSigner(null); setApproved(false);
+      setNotice(`${item.id.replaceAll("_", " ")}: finalized ${rejected ? "consumer rejection" : "success"}. Next step is available.`);
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Finalized result unavailable"); }
+    finally { setBusy(false); }
+  }
+  async function signAndSubmit() {
+    if (!next || !review || review.stepId !== next.id || !walletReady || !approved || !executionEnabled ||
+        !wallet.signTransaction || !wallet.signMessage || pending) return;
+    setBusy(true); setNotice("Preparing the reviewed Devnet action…");
     try {
       if (await connection.getGenesisHash() !== GENESIS) throw Error("RPC is not Solana Devnet");
       let issuerSignature: string | undefined;
-      if (action === "signed_receipt" || action === "revoke_receipt") {
-        const messageAction = action === "signed_receipt" ? "message_receipt" : "message_revoke";
-        const message = await prepare(messageAction);
+      if (next.action === "signed_receipt" || next.action === "revoke_receipt") {
+        const message = await prepare("message", next.id);
         if (!message.message) throw Error("Missing authorization message");
         issuerSignature = btoa(String.fromCharCode(...Array.from(await wallet.signMessage(decode(message.message)))));
       }
-      const prepared = await prepare(action, issuerSignature);
-      if (!prepared.transaction || !prepared.blockhash || !prepared.lastValidBlockHeight)
-        throw Error("Missing prepared transaction");
+      const wrongHolder = wrongSigner?.publicKey.toBase58();
+      if (next.action === "wrong_holder" && !wrongSigner) throw Error("Missing unfunded negative-probe signer");
+      const prepared = await prepare("transaction", next.id, issuerSignature, wrongHolder);
+      if (!prepared.transaction || !prepared.blockhash || !prepared.lastValidBlockHeight ||
+          prepared.stepId !== next.id || (prepared.maxDebitLamports ?? Infinity) > (review.maxDebitLamports ?? -1))
+        throw Error("Transaction quote changed. Review the step again before signing.");
       const transaction = Transaction.from(decode(prepared.transaction));
-      if (transaction.feePayer?.toBase58() !== FOUNDER) throw Error("Unexpected transaction payer");
+      if (transaction.feePayer?.toBase58() !== FOUNDER) throw Error("Unexpected fee payer");
+      if (wrongSigner) transaction.partialSign(wrongSigner); // No SOL is ever sent to this temporary signer.
       const signed = await wallet.signTransaction(transaction);
-      if (!signed.verifySignatures()) throw Error("Wallet signature was not valid");
-      const rejected = action === "repeat_consume" || action === "revoked_consume";
-      const signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: rejected, maxRetries: 5 });
-      const confirmation = await connection.confirmTransaction({ signature,
-        blockhash: prepared.blockhash, lastValidBlockHeight: prepared.lastValidBlockHeight }, "finalized");
-      const observed = await connection.getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 });
-      if (!observed || Boolean(observed.meta?.err) !== rejected || Boolean(confirmation.value.err) !== rejected)
-        throw Error(`Finalized outcome did not match expected ${rejected ? "rejection" : "success"}: ${signature}`);
-      setEvidence(previous => [...previous, { action, signature, slot: observed.slot, rejected }]);
-      setNotice(`${action}: finalized ${rejected ? "rejection" : "success"}. Verify the account state independently before treating the lifecycle as complete.`);
+      if (!signed.verifySignatures()) throw Error("Wallet signatures were not valid");
+      const signature = await connection.sendRawTransaction(signed.serialize(),
+        { skipPreflight: Boolean(next.rejected), maxRetries: 5 });
+      const item = { id: next.id, signature, blockhash: prepared.blockhash,
+        lastValidBlockHeight: prepared.lastValidBlockHeight, ...(wrongHolder ? { wrongHolder } : {}) };
+      setPending(item); setNotice(`Submitted ${short(signature)}. Recheck its finalized result before continuing.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Wallet action failed");
+      const message = error instanceof Error ? error.message : "Wallet action failed";
+      setNotice(/reject|declin|cancel/i.test(message) ? "Wallet request rejected. Review and try this step again." : message);
     } finally { setBusy(false); }
+  }
+  function publicEvidence() {
+    return { schema: "abraxas-devnet-entitlement-wallet-v2", genesis: GENESIS,
+      programs: [PROOF, CONSUMER], test_admin: FOUNDER, holder2: FOUNDER,
+      receipt1, payload1, receipt2, payload2, expires_at: expires,
+      transactions: evidence.map((item, index) => ({ label: steps[index].id, signature: item.signature,
+        slot: item.slot, expected_failure: item.rejected,
+        ...(item.wrongHolder ? { wrongHolder: item.wrongHolder } : {}) })) };
+  }
+  async function verifyFinal() {
+    setBusy(true); setVerification(false); setNotice("Checking finalized transactions and account state independently…");
+    try {
+      const response = await fetch("/api/devnet-entitlement-test/verify", { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify(publicEvidence()) });
+      const result = await response.json();
+      if (!response.ok || result.verified !== true) throw Error(result.error || "Independent verification failed");
+      setVerification(true); setNotice("Independent finalized-RPC verification passed for this test-only journey.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Verification unavailable"); }
+    finally { setBusy(false); }
+  }
+  function downloadEvidence() {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(publicEvidence(), null, 2)], { type: "application/json" }));
+    const link = document.createElement("a"); link.href = url; link.download = "abraxas-devnet-entitlement-evidence.json";
+    link.click(); URL.revokeObjectURL(url);
   }
 
   return <main style={{ maxWidth: 760, margin: "3rem auto", padding: "1.5rem", color: "white" }}>
     <h1>Devnet entitlement test</h1>
-    <p>Operator test only. The connected founder wallet pays Devnet fees directly. No SOL is sent to a temporary runner wallet. Each action requires a separate Phantom confirmation.</p>
+    <p>Operator test only. The founder wallet pays Devnet fees directly. No SOL is sent to a temporary runner wallet. Each on-chain action requires a separate Phantom confirmation.</p>
     <p>Cluster: Solana Devnet · Wallet: {wallet.publicKey?.toBase58() || "not connected"}</p>
-    <p>Read-only funding ceiling: {ceiling === null ? "not verified" : `${ceiling.toLocaleString()} lamports`} · Execution: {executionEnabled ? "enabled for authorized operator test" : "disabled"}</p>
-    {!wallet.connected && <button onClick={() => modal.setVisible(true)}>Connect wallet</button>}
+    <p>Execution: {executionEnabled ? "available after separate authorization" : "disabled"} · Approved whole-journey ceiling: {ceiling === null ? "none" : lamports(ceiling)}</p>
+    {!wallet.connected && <button onClick={() => modal.setVisible(true)}>Connect Phantom</button>}
     {wallet.connected && !walletReady && <p>Connect the approved founder wallet with message and transaction signing support.</p>}
-    <button disabled={!walletReady || busy} onClick={start}>Create isolated test</button>
-    {receipt && <>
-      <p>Receipt: {receipt} · Expires: {new Date(expires * 1000).toLocaleString()}</p>
-      <label><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} /> I authorize individual test-only Devnet transactions from this wallet.</label>
-      <ol>{ACTIONS.map(action => <li key={action} style={{ margin: "0.75rem 0" }}>
-        <button disabled={!walletReady || !approved || !executionEnabled || busy || expires < Math.floor(Date.now()/1000)+60}
-          onClick={() => void run(action)}>{action.replaceAll("_", " ")}</button>
-      </li>)}</ol>
+    {!receipt1 && <button disabled={!walletReady || !executionEnabled} onClick={start}>Prepare isolated test</button>}
+    {receipt1 && <>
+      <p>Test receipts: {short(receipt1)} and {short(receipt2)} · Expires: {new Date(expires * 1000).toLocaleString()}</p>
+      <p>Finalized steps: {evidence.length} of {steps.length}. Only the next step can be prepared.</p>
+      {pending && <div><p>Submitted {short(pending.signature)}. Its finalized outcome must be checked before continuing.</p>
+        <button disabled={busy} onClick={() => void recheck(pending)}>Recheck transaction</button></div>}
+      {next && !pending && <section style={{ border: "1px solid #666", borderRadius: 12, padding: 16 }}>
+        <h2>Next: {next.id.replaceAll("_", " ")}</h2><p>{next.effect}</p>
+        {expires < Math.floor(Date.now()/1000)+60 && <p>Receipts expired. Stop; do not restart or send funds. Existing SOL remains in your wallet.</p>}
+        <button disabled={!walletReady || !executionEnabled || busy || expires < Math.floor(Date.now()/1000)+60}
+          onClick={() => void reviewNext()}>Review next action</button>
+        {review?.stepId === next.id && <div>
+          <p>Expected effect: {review.effects}</p>
+          <p>Maximum next debit, including fee, rent and safety buffer: {lamports(review.maxDebitLamports ?? 0)}</p>
+          <p>Already spent in this journey: {lamports(review.spentLamports ?? 0)} · Remaining after maximum debit: {lamports(review.remainingAfterMaxLamports ?? 0)}</p>
+          <p>{next.rejected ? "This transaction must be rejected by the entitlement consumer; its fee is still charged." : "This transaction changes test-only Devnet accounts."}</p>
+          <label><input type="checkbox" checked={approved} onChange={event => setApproved(event.target.checked)} /> I reviewed this action and its maximum Devnet cost.</label>
+          <button disabled={!approved || !walletReady || busy} onClick={() => void signAndSubmit()}>Sign this action in Phantom</button>
+        </div>}
+      </section>}
+      {!next && <div><button disabled={busy} onClick={() => void verifyFinal()}>Independently verify finalized evidence</button>
+        {verification && <button onClick={downloadEvidence}>Download public evidence</button>}</div>}
     </>}
     {notice && <p role="status">{notice}</p>}
     <h2>Finalized transactions</h2>
-    <ul>{evidence.map(item => <li key={item.signature}>{item.action}: <a href={`https://explorer.solana.com/tx/${item.signature}?cluster=devnet`}>{item.signature}</a> · {item.rejected ? "rejected" : "accepted"}</li>)}</ul>
-    <p>Local transaction history is for navigation only. It does not establish independent verification or current authorization.</p>
+    <ol>{evidence.map(item => <li key={item.signature}>{item.id.replaceAll("_", " ")}: <a href={`https://explorer.solana.com/tx/${item.signature}?cluster=devnet`}>{short(item.signature)}</a> · {item.rejected ? "consumer rejected" : "accepted"}</li>)}</ol>
+    <p>Local progress is only for navigation. Independent verification checks finalized Devnet transactions and account state.</p>
   </main>;
 }
-

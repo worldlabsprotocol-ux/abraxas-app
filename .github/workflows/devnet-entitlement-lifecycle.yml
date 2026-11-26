@@ -12,6 +12,7 @@ on:
       - 'scripts/operations/devnet-entitlement-execute.test.cjs'
       - 'scripts/operations/devnet-entitlement-wallet-prepare.cjs'
       - 'scripts/operations/devnet-entitlement-wallet-prepare.test.cjs'
+      - 'scripts/operations/devnet-entitlement-wallet-steps.json'
       - 'app/api/devnet-entitlement-test/**'
       - 'app/developers/devnet-entitlement-test/**'
       - 'components/developers/DevnetEntitlementTestClient.tsx'
