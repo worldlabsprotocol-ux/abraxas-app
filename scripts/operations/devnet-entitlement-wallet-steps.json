@@ -1,0 +1,16 @@
+[
+  {"id":"initialize_registry","action":"initialize_registry","receipt":1,"effect":"Create a test-only proof registry; founder wallet becomes its administrator and issuer.","rent":["registry"]},
+  {"id":"bind_holder","action":"bind_holder","receipt":1,"effect":"Bind the founder wallet as the test holder.","rent":["sandbox"]},
+  {"id":"initialize_mint","action":"initialize_mint","receipt":1,"effect":"Create the test-only Token-2022 entitlement mint and configuration.","rent":["mint_config","mint"]},
+  {"id":"initialize_relying_party","action":"initialize_relying_party","receipt":1,"effect":"Create the test-only relying-party configuration.","rent":["trusted_config"]},
+  {"id":"signed_receipt1","action":"signed_receipt","receipt":1,"effect":"Sign and issue the first policy-bound test receipt.","rent":["execution_ledger","commitment"]},
+  {"id":"mint_entitlement1","action":"mint_entitlement","receipt":1,"effect":"Mint one non-transferable entitlement to the founder wallet.","rent":["issuance_ledger","holder_ata_upper"]},
+  {"id":"consume_entitlement1","action":"consume_entitlement","receipt":1,"effect":"Consume the first entitlement once.","rent":["consumption"]},
+  {"id":"repeat_consume_rejected","action":"repeat_consume","receipt":1,"effect":"Attempt replay; the consumer must reject it. Transaction fee still applies.","rent":[],"rejected":true},
+  {"id":"signed_receipt2","action":"signed_receipt","receipt":2,"effect":"Sign and issue a second test receipt for a revocation probe.","rent":["commitment"]},
+  {"id":"mint_entitlement2","action":"mint_entitlement","receipt":2,"effect":"Mint the second entitlement to the same founder wallet.","rent":["issuance_ledger"]},
+  {"id":"wrong_holder_rejected","action":"wrong_holder","receipt":2,"effect":"Attempt use with an unfunded, unrelated signer; the consumer must reject it. Transaction fee still applies.","rent":[],"rejected":true},
+  {"id":"revoke_receipt2","action":"revoke_receipt","receipt":2,"effect":"Revoke the second receipt before authorized consumption.","rent":[]},
+  {"id":"revoked_consume_rejected","action":"revoked_consume","receipt":2,"effect":"Attempt to use the revoked receipt; the consumer must reject it. Transaction fee still applies.","rent":[],"rejected":true},
+  {"id":"revoke_receipt1","action":"revoke_receipt","receipt":1,"effect":"Revoke the first receipt and close the test journey.","rent":[]}
+]
