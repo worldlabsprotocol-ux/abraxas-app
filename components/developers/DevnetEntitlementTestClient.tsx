@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Connection, Keypair, Transaction } from "@solana/web3.js";
+import { Connection, Keypair, Message, Transaction } from "@solana/web3.js";
 import steps from "../../scripts/operations/devnet-entitlement-wallet-steps.json";
 
 const FOUNDER = "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd";
@@ -126,9 +126,10 @@ export function DevnetEntitlementTestClient() {
       if (Boolean(observed.meta?.err) !== rejected) throw Error("Finalized outcome did not match the required result");
       if (rejected) {
         const message = observed.transaction.message;
-        const failed = observed.meta?.err && typeof observed.meta.err === "object" &&
-          "InstructionError" in observed.meta.err ?
-          observed.meta.err.InstructionError[0] : -1;
+        const instructionError = observed.meta?.err && typeof observed.meta.err === "object" &&
+          "InstructionError" in observed.meta.err ? observed.meta.err.InstructionError : null;
+        const failed = Array.isArray(instructionError) ? instructionError[0] : -1;
+        if (!(message instanceof Message)) throw Error("Unexpected versioned negative probe transaction");
         if (!Number.isInteger(failed) || failed < 0 || failed >= message.instructions.length ||
             message.accountKeys[message.instructions[failed].programIdIndex].toBase58() !== CONSUMER)
           throw Error("Negative probe failed outside the entitlement consumer");
