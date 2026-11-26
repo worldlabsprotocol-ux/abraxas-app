@@ -25,14 +25,15 @@ function approvedCeiling() {
     return null;
   return value;
 }
-function fields(input,receiptNumber) {
+function fields(input,receiptNumber,allowExpired=false) {
   if(input.admin!==FOUNDER.toBase58()) throw Error('Unapproved Devnet test wallet');
   const id=input[`receipt${receiptNumber}`], digest=input[`payload${receiptNumber}`];
   const receipt=typeof id==='string'&&HEX32.test(id)?Buffer.from(id,'hex'):null;
   const payload=typeof digest==='string'&&HEX32.test(digest)?Buffer.from(digest,'hex'):null;
   const expires=Number(input.expires);
   if(!receipt||!payload||!Number.isSafeInteger(expires)||
-     expires<Math.floor(Date.now()/1000)+60||expires>Math.floor(Date.now()/1000)+1800)
+     (!allowExpired&&expires<Math.floor(Date.now()/1000)+60)||
+     expires>Math.floor(Date.now()/1000)+1800)
     throw Error('Invalid or stale test receipt fields');
   return {receipt,payload,expires,a:x.addresses(FOUNDER,FOUNDER,receipt)};
 }
@@ -48,8 +49,8 @@ function expectedProgram(action) {
   return ['initialize_relying_party','consume_entitlement','repeat_consume','wrong_holder','revoked_consume']
     .includes(action)?x.CONSUMER:x.PROOF;
 }
-function expectedAccount(step,input) {
-  const f=fields(input,step.receipt);
+function expectedAccount(step,input,allowExpired=false) {
+  const f=fields(input,step.receipt,allowExpired);
   if(step.action==='initialize_registry'||step.action==='bind_holder') return f.a.registry;
   if(step.action==='initialize_mint') return f.a.mint;
   if(step.action==='initialize_relying_party') return f.a.trusted;
@@ -58,7 +59,7 @@ function expectedAccount(step,input) {
     return f.a.ata;
   return f.a.commitment;
 }
-async function verifyPrefix(input,rpc,stepIndex) {
+async function verifyPrefix(input,rpc,stepIndex,allowExpired=false) {
   const evidence=input.evidence;
   if(!Array.isArray(evidence)||evidence.length!==stepIndex) throw Error('Incomplete journey evidence');
   let spent=0,previousSlot=0;
@@ -75,7 +76,7 @@ async function verifyPrefix(input,rpc,stepIndex) {
     previousSlot=tx.slot;
     const message=tx.transaction.message,keys=message.accountKeys;
     if(keys[0].toBase58()!==FOUNDER.toBase58()||
-       !keys.some(k=>k.equals(expectedAccount(expected,input)))) throw Error('Prior step account binding mismatch');
+       !keys.some(k=>k.equals(expectedAccount(expected,input,allowExpired)))) throw Error('Prior step account binding mismatch');
     const invoked=message.instructions.map(ix=>keys[ix.programIdIndex].toBase58());
     if(!invoked.includes(expectedProgram(expected.action).toBase58())) throw Error('Prior step program mismatch');
     if(expected.rejected) {
@@ -103,6 +104,18 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
     quote:cap===null?null:await quoteProvider(),approvedCeilingLamports:cap};
   if(cap===null) throw Error('Devnet execution has not been authorized');
   if(await rpc.getGenesisHash()!==GENESIS) throw Error('Wrong Solana cluster');
+  if(input.action==='recover') {
+    if(input.stepId!=='signed_receipt1'||!Array.isArray(input.evidence)||input.evidence.length!==4||
+       Number(input.expires)>=Math.floor(Date.now()/1000)+60)
+      throw Error('Only an expired, unissued first receipt can be recovered');
+    const first=fields(input,1,true),second=fields(input,2,true);
+    const spent=await verifyPrefix(input,rpc,4,true);
+    if(spent>=cap) throw Error('Approved journey spending ceiling exhausted');
+    const unissued=await rpc.getMultipleAccountsInfo(
+      [first.a.ledger,first.a.commitment,second.a.commitment],'finalized');
+    if(unissued.some(Boolean)) throw Error('Receipt or execution ledger already exists; do not replace its identity');
+    return {recoverable:true,spentLamports:spent,stepId:'signed_receipt1'};
+  }
   const stepIndex=STEPS.findIndex(step=>step.id===input.stepId);
   if(stepIndex<0) throw Error('Unsupported journey step');
   const step=STEPS[stepIndex],f=fields(input,step.receipt);
