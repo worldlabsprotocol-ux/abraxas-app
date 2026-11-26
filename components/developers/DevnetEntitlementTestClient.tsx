@@ -42,6 +42,7 @@ export function DevnetEntitlementTestClient() {
   const [connectionRequested, setConnectionRequested] = useState(false);
   const [messageCheck, setMessageCheck] = useState<Uint8Array | null>(null);
   const [messageCheckPassed, setMessageCheckPassed] = useState(false);
+  const [priorProgress, setPriorProgress] = useState("");
   const walletReady = wallet.publicKey?.toBase58() === FOUNDER && Boolean(wallet.signMessage && wallet.signTransaction);
   const next = steps[evidence.length];
   const connection = new Connection(RPC, "finalized");
@@ -145,6 +146,40 @@ export function DevnetEntitlementTestClient() {
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Receipt recovery could not be verified");
     } finally { setBusy(false); }
+  }
+  async function restorePriorProgress() {
+    if (!walletReady || busy || receipt1 || evidence.length || !priorProgress) return;
+    setBusy(true);
+    try {
+      const saved = JSON.parse(priorProgress);
+      if (saved?.wallet !== FOUNDER || !/^[0-9a-f]{64}$/.test(saved.receipt1) ||
+          !/^[0-9a-f]{64}$/.test(saved.receipt2) || !/^[0-9a-f]{64}$/.test(saved.payload1) ||
+          !/^[0-9a-f]{64}$/.test(saved.payload2) || !Number.isSafeInteger(saved.expires) ||
+          saved.expires >= Math.floor(Date.now() / 1000) + 60 ||
+          !Array.isArray(saved.evidence) || saved.evidence.length !== 4 || saved.pending)
+        throw Error("Prior progress is incomplete or still current");
+      const response = await fetch("/api/devnet-entitlement-test/prepare", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ admin: FOUNDER, receipt1: saved.receipt1, payload1: saved.payload1,
+          receipt2: saved.receipt2, payload2: saved.payload2, expires: saved.expires,
+          evidence: saved.evidence, action: "recover", stepId: "signed_receipt1" }),
+      });
+      const result = await response.json() as Prepared;
+      if (!response.ok || result.recoverable !== true || result.stepId !== "signed_receipt1")
+        throw Error(result.error || "The four finalized steps could not be revalidated");
+      setEvidence(saved.evidence.map((item: Evidence, index: number) => ({
+        id: steps[index].id, signature: item.signature, slot: item.slot, rejected: false,
+      })));
+      setReceipt1(hex(crypto.getRandomValues(new Uint8Array(32))));
+      setPayload1(hex(crypto.getRandomValues(new Uint8Array(32))));
+      setReceipt2(hex(crypto.getRandomValues(new Uint8Array(32))));
+      setPayload2(hex(crypto.getRandomValues(new Uint8Array(32))));
+      setExpires(Math.floor(Date.now() / 1000) + 25 * 60);
+      setPriorProgress(""); setReview(null); setApproved(false);
+      setMessageCheck(null); setMessageCheckPassed(false);
+      setNotice("Four finalized steps and absent receipt issuance were verified. Fresh unissued receipt IDs are ready. No transaction was submitted.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Prior progress could not be restored"); }
+    finally { setBusy(false); }
   }
   async function reviewNext() {
     if (!next || !walletReady || !executionEnabled || pending) return;
@@ -297,6 +332,13 @@ export function DevnetEntitlementTestClient() {
     {wallet.connected && <button onClick={() => void disconnectPhantom()}>Disconnect wallet</button>}
     {wallet.connected && !walletReady && <p>Connect the approved founder wallet with message and transaction signing support.</p>}
     {!receipt1 && <button disabled={!walletReady || !executionEnabled} onClick={start}>Prepare isolated test</button>}
+    {!receipt1 && <div>
+      <p>Already completed the first four Devnet steps in another Preview? Restore their public test progress. The server rechecks every finalized transaction before resuming.</p>
+      <textarea aria-label="Prior public test progress" value={priorProgress}
+        onChange={event => setPriorProgress(event.target.value)} rows={3} style={{ width: "100%" }} />
+      <button disabled={!walletReady || busy || !priorProgress}
+        onClick={() => void restorePriorProgress()}>Recheck and restore four finalized steps</button>
+    </div>}
     {receipt1 && <>
       <p>Test receipts: {short(receipt1)} and {short(receipt2)} · Expires: {new Date(expires * 1000).toLocaleString()}</p>
       <p>Finalized steps: {evidence.length} of {steps.length}. Only the next step can be prepared.</p>
