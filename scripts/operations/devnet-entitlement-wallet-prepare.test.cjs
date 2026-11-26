@@ -98,11 +98,21 @@ test('expired unissued receipts can be replaced only after four finalized steps 
       postBalances:[49_000_000-i*1_000_000]},transaction:{message}});
     evidence.push({id:STEPS[i].id,signature,slot:i+1});
   }
+  disabled();
+  const current={...f,evidence,action:'compatibility_message',stepId:'signed_receipt1'};
+  const messageOnly=await prepare(current,liveRpc);
+  assert.equal(Buffer.from(messageOnly.message,'base64').length,211);
+  assert.equal(messageOnly.transaction,undefined);
+  await assert.rejects(prepare({...current,action:'transaction'},liveRpc),/not been authorized/);
+  await assert.rejects(prepare({...current,evidence:evidence.slice(1)},liveRpc),/four finalized/);
+  await assert.rejects(prepare(current,{...liveRpc,getMultipleAccountsInfo:async()=>[null,Buffer.alloc(1),null]}),
+    /ledger already exists/);
+  await assert.rejects(prepare({...current,expires:1},liveRpc),/Invalid or stale/);
   const expired={...f,expires:1,evidence,action:'recover',stepId:'signed_receipt1'};
   const result=await prepare(expired,liveRpc);
   assert.equal(result.recoverable,true);
   assert.equal(result.spentLamports,4_000_000);
-  await assert.rejects(prepare({...expired,evidence:evidence.slice(1)},liveRpc),/Only an expired/);
+  await assert.rejects(prepare({...expired,evidence:evidence.slice(1)},liveRpc),/four finalized/);
   await assert.rejects(prepare(expired,{...liveRpc,getMultipleAccountsInfo:async()=>[Buffer.alloc(1),null,null]}),
     /ledger already exists/);
   await assert.rejects(prepare({...expired,receipt1:Keypair.generate().publicKey.toBase58()},liveRpc),

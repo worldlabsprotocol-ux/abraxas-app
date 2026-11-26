@@ -161,10 +161,10 @@ export function DevnetEntitlementTestClient() {
   }
   async function inspectMessageOnly() {
     if (evidence.length !== 4 || next?.id !== "signed_receipt1" || pending || !walletReady ||
-        !executionEnabled || expires < Math.floor(Date.now() / 1000) + 60) return;
+        expires < Math.floor(Date.now() / 1000) + 60) return;
     setBusy(true); setMessageCheck(null); setMessageCheckPassed(false);
     try {
-      const result = await prepare("message", next.id);
+      const result = await prepare("compatibility_message", next.id);
       if (!result.message || !wallet.publicKey || wallet.publicKey.toBase58() !== FOUNDER)
         throw Error("Approved issuer message is unavailable");
       const bytes = decode(result.message);
@@ -176,11 +176,11 @@ export function DevnetEntitlementTestClient() {
   }
   async function signMessageOnly() {
     if (!messageCheck || evidence.length !== 4 || next?.id !== "signed_receipt1" || pending ||
-        !walletReady || !executionEnabled || expires < Math.floor(Date.now() / 1000) + 60) return;
+        !walletReady || expires < Math.floor(Date.now() / 1000) + 60) return;
     setBusy(true); setMessageCheckPassed(false);
     try {
       // Recheck server-authoritative bytes immediately before signing; this path never prepares a transaction.
-      const result = await prepare("message", next.id);
+      const result = await prepare("compatibility_message", next.id);
       const bytes = result.message ? decode(result.message) : null;
       if (!bytes || bytes.length !== messageCheck.length || bytes.some((byte, index) => byte !== messageCheck[index]))
         throw Error("Receipt message changed. Inspect it again before signing");
@@ -306,20 +306,20 @@ export function DevnetEntitlementTestClient() {
         <h2>Next: {next.id.replaceAll("_", " ")}</h2><p>{next.effect}</p>
         {evidence.length === 4 && next.id === "signed_receipt1" && <div>
           <p>Step 5 transaction execution is paused. This separate check requests only an issuer message signature.</p>
-          <button disabled={busy || !walletReady || !executionEnabled || expires < Math.floor(Date.now()/1000)+60}
+          <button disabled={busy || !walletReady || expires < Math.floor(Date.now()/1000)+60}
             onClick={() => void inspectMessageOnly()}>Inspect message-only compatibility check</button>
           {messageCheck && <div>
             <p>Purpose: authorize the first test-only Devnet receipt. Canonical message: {messageCheck.length} bytes, displayed by Phantom as hex.</p>
             <p>Signing wallet: {wallet.publicKey?.toBase58()}</p>
             <p>No transaction preparation, transaction signature, submission or SOL debit follows this check.</p>
-            <button disabled={busy || !walletReady || !executionEnabled || expires < Math.floor(Date.now()/1000)+60}
+            <button disabled={busy || !walletReady || expires < Math.floor(Date.now()/1000)+60}
               onClick={() => void signMessageOnly()}>Sign receipt message only</button>
           </div>}
           {messageCheckPassed && <p>Exact-byte Ed25519 signature verified locally. Step 5 transaction remains paused.</p>}
         </div>}
         {expires < Math.floor(Date.now()/1000)+60 && <p>Receipts expired. Do not sign or restart from Step 1.</p>}
         {expires < Math.floor(Date.now()/1000)+60 && evidence.length === 4 && next.id === "signed_receipt1" &&
-          <button disabled={busy || !walletReady || !executionEnabled}
+          <button disabled={busy || !walletReady}
             onClick={() => void recoverExpiredReceipts()}>Recheck four steps and prepare fresh receipts</button>}
         <button disabled={!walletReady || !executionEnabled || busy || expires < Math.floor(Date.now()/1000)+60}
           onClick={() => void reviewNext()}>Review next action</button>

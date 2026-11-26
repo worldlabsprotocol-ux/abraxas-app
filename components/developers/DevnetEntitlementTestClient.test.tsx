@@ -91,7 +91,7 @@ describe("Devnet Phantom connection", () => {
     const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
       const input = JSON.parse(init.body);
       return { ok: true, json: async () => input.action === "preflight"
-        ? { executionEnabled: true, approvedCeilingLamports: 50_000_000 }
+        ? { executionEnabled: false, approvedCeilingLamports: null }
         : { message: btoa(String.fromCharCode(...new Uint8Array(211))) } };
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -105,7 +105,7 @@ describe("Devnet Phantom connection", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign receipt message only" }));
     await waitFor(() => expect(signMessage).toHaveBeenCalledTimes(1));
     expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body).action))
-      .toEqual(["preflight", "message", "message"]);
+      .toEqual(["preflight", "compatibility_message", "compatibility_message"]);
     expect(screen.getByText(/Phantom message request was declined/)).toBeInTheDocument();
     delete (window as Window & { phantom?: unknown }).phantom;
   });

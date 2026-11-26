@@ -102,19 +102,24 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
   const cap=approvedCeiling();
   if(input.action==='preflight') return {executionEnabled:cap!==null,
     quote:cap===null?null:await quoteProvider(),approvedCeilingLamports:cap};
-  if(cap===null) throw Error('Devnet execution has not been authorized');
+  const readOnlyCheck=input.action==='recover'||input.action==='compatibility_message';
+  if(cap===null&&!readOnlyCheck) throw Error('Devnet execution has not been authorized');
   if(await rpc.getGenesisHash()!==GENESIS) throw Error('Wrong Solana cluster');
-  if(input.action==='recover') {
-    if(input.stepId!=='signed_receipt1'||!Array.isArray(input.evidence)||input.evidence.length!==4||
-       Number(input.expires)>=Math.floor(Date.now()/1000)+60)
+  if(readOnlyCheck) {
+    if(input.stepId!=='signed_receipt1'||!Array.isArray(input.evidence)||input.evidence.length!==4)
+      throw Error('Message-only check requires the four finalized steps');
+    if(input.action==='recover'&&Number(input.expires)>=Math.floor(Date.now()/1000)+60)
       throw Error('Only an expired, unissued first receipt can be recovered');
-    const first=fields(input,1,true),second=fields(input,2,true);
+    const first=fields(input,1,input.action==='recover');
+    const second=fields(input,2,input.action==='recover');
     const spent=await verifyPrefix(input,rpc,4,true);
-    if(spent>=cap) throw Error('Approved journey spending ceiling exhausted');
+    if(spent>=(cap??MAX_CEILING)) throw Error('Journey spending ceiling exhausted');
     const unissued=await rpc.getMultipleAccountsInfo(
       [first.a.ledger,first.a.commitment,second.a.commitment],'finalized');
     if(unissued.some(Boolean)) throw Error('Receipt or execution ledger already exists; do not replace its identity');
-    return {recoverable:true,spentLamports:spent,stepId:'signed_receipt1'};
+    if(input.action==='recover') return {recoverable:true,spentLamports:spent,stepId:'signed_receipt1'};
+    return {message:x.canonical(first.receipt,first.payload,first.expires,1,1).toString('base64'),
+      stepId:'signed_receipt1'};
   }
   const stepIndex=STEPS.findIndex(step=>step.id===input.stepId);
   if(stepIndex<0) throw Error('Unsupported journey step');
