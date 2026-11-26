@@ -71,4 +71,42 @@ describe("Devnet Phantom connection", () => {
     fireEvent.click(screen.getByRole("button", { name: "Connect Phantom" }));
     await waitFor(() => expect(bridge.connect).toHaveBeenCalledTimes(2));
   });
+
+  it("keeps the Step 5 compatibility request message-only even when Phantom rejects it", async () => {
+    bridge.selected = true;
+    bridge.connected = true;
+    bridge.publicKey = new PublicKey(founder);
+    sessionStorage.setItem("abraxas-devnet-wallet-test-v2", JSON.stringify({
+      wallet: founder, receipt1: "a".repeat(64), receipt2: "b".repeat(64),
+      payload1: "c".repeat(64), payload2: "d".repeat(64),
+      expires: Math.floor(Date.now() / 1000) + 1200,
+      evidence: ["registry", "holder", "mint", "relying_party"].map((id, index) => ({
+        id, signature: String(index), slot: index, rejected: false,
+      })), pending: null,
+    }));
+    const signMessage = vi.fn(async () => { throw Error("Phantom rejected the message"); });
+    Object.defineProperty(window, "phantom", { configurable: true, value: {
+      solana: { isPhantom: true, publicKey: new PublicKey(founder), signMessage },
+    } });
+    const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
+      const input = JSON.parse(init.body);
+      return { ok: true, json: async () => input.action === "preflight"
+        ? { executionEnabled: true, approvedCeilingLamports: 50_000_000 }
+        : { message: btoa(String.fromCharCode(...new Uint8Array(211))) } };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DevnetEntitlementTestClient />);
+    const inspect = await screen.findByRole("button", { name: "Inspect message-only compatibility check" });
+    await waitFor(() => expect(inspect).toBeEnabled());
+    fireEvent.click(inspect);
+    expect(await screen.findByText(/Canonical message: 211 bytes/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`Signing wallet: ${founder}`))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Sign receipt message only" }));
+    await waitFor(() => expect(signMessage).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body).action))
+      .toEqual(["preflight", "message", "message"]);
+    expect(screen.getByText(/Phantom message request was declined/)).toBeInTheDocument();
+    delete (window as Window & { phantom?: unknown }).phantom;
+  });
 });
