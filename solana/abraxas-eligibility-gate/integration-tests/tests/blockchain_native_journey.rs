@@ -158,6 +158,56 @@ async fn execute_harness_run(
     send(ctx, vec![ed25519_ix(issuer, &message), ix], &[holder]).await
 }
 
+async fn execute_native(
+    ctx: &mut ProgramTestContext,
+    registry: Pubkey,
+    sandbox: Pubkey,
+    holder: &Keypair,
+    issuer_account: Pubkey,
+    signers: &[&Keypair],
+    receipt: [u8; 32],
+    payload: [u8; 32],
+    expiry: i64,
+    nonce: u64,
+) -> Result<(), BanksClientError> {
+    let (ledger, _) = ledger_pda(&sandbox);
+    let (commitment, _) = commitment_pda(&registry, &receipt);
+    let ix = Instruction {
+        program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::ExecuteHarnessRunNative {
+            payer: ctx.payer.pubkey(), holder: holder.pubkey(), issuer: issuer_account,
+            registry, sandbox, ledger, commitment, system_program: system_program::id(),
+        }.to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::ExecuteHarnessRunNative {
+            execution_nonce: nonce, receipt_id_hash: receipt, payload_hash: payload,
+            expires_at: expiry, status_version: 1,
+        }.data(),
+    };
+    send(ctx, vec![ix], signers).await
+}
+
+async fn revoke_native(
+    ctx: &mut ProgramTestContext,
+    registry: Pubkey,
+    receipt: [u8; 32],
+    payload: [u8; 32],
+    expiry: i64,
+    version: u64,
+    issuer_account: Pubkey,
+    signer: &Keypair,
+) -> Result<(), BanksClientError> {
+    let (commitment, _) = commitment_pda(&registry, &receipt);
+    send(ctx, vec![Instruction { program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::UpdateReceiptStatusNative {
+            issuer: issuer_account, registry, commitment,
+        }.to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::UpdateReceiptStatusNative {
+            receipt_id_hash: receipt, payload_hash: payload, status: 1,
+            status_version: version, expires_at: expiry,
+        }.data(),
+    }], &[signer]).await
+}
+
 async fn send(
     ctx: &mut ProgramTestContext,
     ixs: Vec<Instruction>,
@@ -348,4 +398,58 @@ async fn blockchain_native_launchpad_local_journey() {
         .await
         .is_err()
     );
+}
+
+#[tokio::test]
+async fn native_issuer_is_distinct_from_payer_and_holder_and_fails_closed() {
+    let mut ctx = ProgramTest::new("abraxas_proof_continuity", PROOF_ID, processor!(proof_process))
+        .start_with_context().await;
+    let admin = ctx.payer.insecure_clone();
+    let issuer = Keypair::new();
+    let holder = Keypair::new();
+    let stranger = Keypair::new();
+    let (registry, _) = registry_pda(&admin.pubkey());
+    send(&mut ctx, vec![Instruction { program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::InitializeProofRegistry {
+            admin: admin.pubkey(), registry, system_program: system_program::id(),
+        }.to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::InitializeProofRegistry {
+            trusted_issuer_pubkey: issuer.pubkey().to_bytes(), partner_hash: h32(1),
+            policy_hash: h32(2), application_hash: h32(3),
+        }.data(),
+    }], &[]).await.unwrap();
+    send(&mut ctx, vec![system_instruction::transfer(&admin.pubkey(), &holder.pubkey(),
+        2_000_000_000)], &[]).await.unwrap();
+    let (sandbox, _) = sandbox_pda(&registry, &holder.pubkey());
+    send(&mut ctx, vec![Instruction { program_id: PROOF_ID,
+        accounts: abraxas_proof_continuity::accounts::RegisterSandboxBinding {
+            holder: holder.pubkey(), registry, sandbox, system_program: system_program::id(),
+        }.to_account_metas(None),
+        data: abraxas_proof_continuity::instruction::RegisterSandboxBinding {}.data(),
+    }], &[&holder]).await.unwrap();
+    let expiry = 9_000_000_000;
+    // The fee payer and holder cannot substitute for the registered issuer.
+    assert!(execute_native(&mut ctx, registry, sandbox, &holder, admin.pubkey(),
+        &[&holder], h32(40), h32(41), expiry, 1).await.is_err());
+    assert!(execute_native(&mut ctx, registry, sandbox, &holder, stranger.pubkey(),
+        &[&holder, &stranger], h32(40), h32(41), expiry, 1).await.is_err());
+    assert!(execute_native(&mut ctx, registry, sandbox, &holder, issuer.pubkey(),
+        &[&holder, &issuer], h32(40), h32(41), 1, 1).await.is_err());
+    execute_native(&mut ctx, registry, sandbox, &holder, issuer.pubkey(),
+        &[&holder, &issuer], h32(40), h32(41), expiry, 1).await.unwrap();
+    // A changed payload cannot reuse the committed receipt or execution nonce.
+    assert!(execute_native(&mut ctx, registry, sandbox, &holder, issuer.pubkey(),
+        &[&holder, &issuer], h32(40), h32(42), expiry, 2).await.is_err());
+    assert!(execute_native(&mut ctx, registry, sandbox, &holder, issuer.pubkey(),
+        &[&holder, &issuer], h32(43), h32(41), expiry, 1).await.is_err());
+    assert!(revoke_native(&mut ctx, registry, h32(40), h32(41), expiry, 2,
+        holder.pubkey(), &holder).await.is_err());
+    assert!(revoke_native(&mut ctx, registry, h32(40), h32(42), expiry, 2,
+        issuer.pubkey(), &issuer).await.is_err());
+    assert!(revoke_native(&mut ctx, registry, h32(40), h32(41), expiry + 1, 2,
+        issuer.pubkey(), &issuer).await.is_err());
+    revoke_native(&mut ctx, registry, h32(40), h32(41), expiry, 2,
+        issuer.pubkey(), &issuer).await.unwrap();
+    assert!(revoke_native(&mut ctx, registry, h32(40), h32(41), expiry, 2,
+        issuer.pubkey(), &issuer).await.is_err());
 }

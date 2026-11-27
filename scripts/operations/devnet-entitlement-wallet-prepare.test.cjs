@@ -3,7 +3,8 @@ const assert=require('node:assert/strict');
 const {randomBytes}=require('node:crypto');
 const {Keypair,Transaction,PublicKey}=require('@solana/web3.js');
 const {prepare,STEPS,verifyPrefix}=require('./devnet-entitlement-wallet-prepare.cjs');
-const {walletEvidence,verifyEvidence}=require('./verify-devnet-entitlement-lifecycle.cjs');
+const {walletEvidence,verifyEvidence,requireNativeIssuerInstruction}=require('./verify-devnet-entitlement-lifecycle.cjs');
+const ix=require('./devnet-entitlement-instructions.cjs');
 
 const FOUNDER='3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd';
 const PROOF='CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F';
@@ -137,6 +138,54 @@ test('expired unissued receipts can be replaced only after four finalized steps 
   await assert.rejects(prepare({...expired,receipt1:Keypair.generate().publicKey.toBase58()},liveRpc),
     /Invalid or stale/);
   disabled();
+});
+test('native issuer transaction binds the registered issuer, exact receipt and policy without a message signature',async()=>{
+  enabled(); process.env.ABRAXAS_DEVNET_NATIVE_ISSUER_ENABLED='true';
+  process.env.ABRAXAS_DEVNET_NATIVE_ISSUER_APPROVAL_REFERENCE=
+    'https://github.com/worldlabsprotocol-ux/abraxas-app/pull/1004#issuecomment-987654';
+  try {
+    const f=input(), observed=new Map(), evidence=[];
+    const liveRpc={...rpc,getTransaction:async signature=>observed.get(signature)};
+    for(let i=0;i<4;i++) {
+      const prepared=await prepare({...f,evidence,action:'transaction',stepId:STEPS[i].id},liveRpc);
+      const message=Transaction.from(Buffer.from(prepared.transaction,'base64')).compileMessage();
+      const signature=Keypair.generate().publicKey.toBase58().repeat(2);
+      observed.set(signature,{slot:i+1,meta:{err:null,preBalances:[50_000_000],postBalances:[49_000_000]},transaction:{message}});
+      evidence.push({id:STEPS[i].id,signature,slot:i+1});
+    }
+    assert.equal((await prepare({...f,action:'preflight'},liveRpc,async()=>({}))).nativeIssuerReady,true);
+    await assert.rejects(prepare({...f,evidence,action:'message',stepId:'signed_receipt1'},liveRpc),
+      /transaction signature only/);
+    const prepared=await prepare({...f,evidence,action:'transaction',stepId:'signed_receipt1'},liveRpc);
+    const tx=Transaction.from(Buffer.from(prepared.transaction,'base64'));
+    assert.equal(tx.instructions.length,1);
+    const expected=ix.harnessNativeIx(new PublicKey(FOUNDER),new PublicKey(FOUNDER),new PublicKey(FOUNDER),
+      ix.addresses(new PublicKey(FOUNDER),new PublicKey(FOUNDER),Buffer.from(f.receipt1,'hex')),
+      Buffer.from(f.receipt1,'hex'),Buffer.from(f.payload1,'hex'),f.expires);
+    assert.deepEqual(tx.instructions[0].data,expected.data);
+    assert.equal(tx.instructions[0].keys[2].isSigner,true);
+    assert.equal(tx.instructions[0].keys[2].pubkey.toBase58(),FOUNDER);
+    assert.equal(tx.instructions[0].keys[4].pubkey.toBase58(),expected.keys[4].pubkey.toBase58());
+    assert.equal(tx.instructions.some(item=>item.programId.toBase58()==='Ed25519SigVerify111111111111111111111111111'),false);
+  } finally { delete process.env.ABRAXAS_DEVNET_NATIVE_ISSUER_ENABLED;
+    delete process.env.ABRAXAS_DEVNET_NATIVE_ISSUER_APPROVAL_REFERENCE; disabled(); }
+});
+test('independent native verifier rejects altered receipts and wrong signer',()=>{
+  const f=input(), founder=new PublicKey(FOUNDER), receipt=Buffer.from(f.receipt1,'hex');
+  const accounts=ix.addresses(founder,founder,receipt);
+  const instruction=ix.harnessNativeIx(founder,founder,founder,accounts,receipt,
+    Buffer.from(f.payload1,'hex'),f.expires);
+  const tx=new Transaction({feePayer:founder,recentBlockhash:'11111111111111111111111111111111'}).add(instruction);
+  const message=tx.compileMessage();
+  const step=STEPS.find(s=>s.id==='signed_receipt1');
+  assert.doesNotThrow(()=>requireNativeIssuerInstruction(message,step,{
+    test_admin:FOUNDER,receipt1:f.receipt1,payload1:f.payload1,expires_at:f.expires}));
+  assert.throws(()=>requireNativeIssuerInstruction(message,step,{
+    test_admin:FOUNDER,receipt1:f.receipt1,payload1:randomBytes(32).toString('hex'),expires_at:f.expires}),
+    /exact receipt binding mismatch/);
+  assert.throws(()=>requireNativeIssuerInstruction(message,step,{
+    test_admin:Keypair.generate().publicKey.toBase58(),receipt1:f.receipt1,payload1:f.payload1,expires_at:f.expires}),
+    /signature missing/);
 });
 test('independent wallet evidence requires two distinct receipts and the complete sequence',async()=>{
   const f=input();
