@@ -102,9 +102,15 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
   const cap=approvedCeiling();
   if(input.action==='preflight') return {executionEnabled:cap!==null,
     quote:cap===null?null:await quoteProvider(),approvedCeilingLamports:cap};
-  const readOnlyCheck=input.action==='recover'||input.action==='compatibility_message';
+  const readOnlyCheck=input.action==='recover'||input.action==='compatibility_message'||
+    input.action==='message_only_probe';
   if(cap===null&&!readOnlyCheck) throw Error('Devnet execution has not been authorized');
   if(await rpc.getGenesisHash()!==GENESIS) throw Error('Wrong Solana cluster');
+  if(input.action==='message_only_probe') {
+    // Canonical format with invalid expiry, version, and nonce: never an issuable receipt.
+    const message=x.canonical(randomBytes(32),randomBytes(32),0,0,0);
+    return {message:message.toString('base64'),stepId:'message_only_probe',expires:0};
+  }
   if(readOnlyCheck) {
     if(input.stepId!=='signed_receipt1'||!Array.isArray(input.evidence)||input.evidence.length!==4)
       throw Error('Message-only check requires the four finalized steps');

@@ -36,6 +36,25 @@ test('execution and issuer messages stay disabled without a separate cap',async(
   await assert.rejects(prepare({...f,action:'transaction',stepId:STEPS[0].id},rpc),/not been authorized/);
   disabled();
 });
+test('standalone compatibility probe is canonical, expired, and cannot prepare a transaction',async()=>{
+  disabled();
+  const probe=await prepare({admin:FOUNDER,action:'message_only_probe'},rpc);
+  const bytes=Buffer.from(probe.message,'base64');
+  assert.equal(bytes.length,211);
+  assert.equal(probe.expires,0);
+  assert.equal(probe.stepId,'message_only_probe');
+  assert.equal(probe.transaction,undefined);
+  assert.equal(bytes.subarray(0,Buffer.byteLength('ABRAXAS_PROOF_CONTINUITY_V1')).toString(),
+    'ABRAXAS_PROOF_CONTINUITY_V1');
+  assert.equal(bytes.readBigUInt64BE(187),0n);
+  assert.equal(bytes.readBigUInt64BE(195),0n);
+  assert.equal(bytes.readBigUInt64BE(203),0n);
+  await assert.rejects(prepare({admin:FOUNDER,action:'message_only_probe'},
+    {...rpc,getGenesisHash:async()=>'wrong'}),/Wrong Solana cluster/);
+  await assert.rejects(prepare({admin:Keypair.generate().publicKey.toBase58(),action:'message_only_probe'},rpc),
+    /Unapproved/);
+  disabled();
+});
 test('wrong wallet, stale receipt, wrong genesis, and skipped step fail closed',async()=>{
   enabled();
   const f=input();
