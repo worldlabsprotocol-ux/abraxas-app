@@ -7,8 +7,7 @@ export function GET() {
   const enabled = process.env.VERCEL_ENV === "preview" &&
     process.env.ABRAXAS_DEVNET_PROOF_UPGRADE_ENABLED === "true" &&
     process.env.ABRAXAS_DEVNET_PROOF_UPGRADE_MAX_LAMPORTS === "2500000000" &&
-    /^https:\/\/github\.com\/worldlabsprotocol-ux\/abraxas-app\/(pull|issues)\/\d+#issuecomment-\d+$/.test(reference) &&
-    reference !== "https://github.com/worldlabsprotocol-ux/abraxas-app/pull/1001#issuecomment-7203755892";
+    /^https:\/\/github\.com\/worldlabsprotocol-ux\/abraxas-app\/pull\/1003#issuecomment-\d+$/.test(reference);
   return NextResponse.json({ enabled, maxLamports: enabled ? 2_500_000_000 : 0,
     approvalReference: enabled ? reference : null }, { headers: { "Cache-Control": "no-store" } });
 }

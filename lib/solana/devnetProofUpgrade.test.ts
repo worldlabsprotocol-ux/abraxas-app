@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { BEFORE_SHA256, CANDIDATE_LENGTH, closeBuffer, createBuffer, DEVNET_GENESIS,
-  enforceBudget, FOUNDER, hash, inspectCandidate, inspectProgram, LOADER, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS,
+  enforceBudget, FOUNDER, hash, inspectBuffer, inspectCandidate, inspectProgram, LOADER, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS,
   programDataAddress, PROOF_PROGRAM, upgrade, writeBuffer, WRITE_CHUNK } from "./devnetProofUpgrade";
 
 const buffer = Keypair.generate().publicKey;
@@ -70,5 +70,17 @@ describe("finalized upgrade preflight", () => {
   it("rejects a different candidate binary even at the correct length", async () => {
     await expect(inspectCandidate(new Uint8Array(CANDIDATE_LENGTH), CANDIDATE_LENGTH + 1)).rejects.toThrow("ELF");
     await expect(inspectCandidate(new Uint8Array(8), CANDIDATE_LENGTH + 1)).rejects.toThrow("ELF");
+  });
+
+  it("will not repeat a conflicting or foreign-authorized buffer write", async () => {
+    const elf = new Uint8Array(CANDIDATE_LENGTH).fill(1);
+    const data = Buffer.alloc(37 + elf.length);
+    data.writeUInt32LE(1, 0); data[4] = 1; FOUNDER.toBuffer().copy(data, 5);
+    const rpc = { getAccountInfo: vi.fn(async () => ({ owner: LOADER, data, lamports: 2_310_409_400 })) };
+    expect((await inspectBuffer(rpc as never, buffer, elf)).nextOffset).toBe(0);
+    data[37] = 2;
+    await expect(inspectBuffer(rpc as never, buffer, elf)).rejects.toThrow("Conflicting buffer bytes");
+    data[37] = 0; Keypair.generate().publicKey.toBuffer().copy(data, 5);
+    await expect(inspectBuffer(rpc as never, buffer, elf)).rejects.toThrow("authority mismatch");
   });
 });

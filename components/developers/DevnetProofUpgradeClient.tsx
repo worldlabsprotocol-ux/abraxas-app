@@ -53,16 +53,19 @@ export function DevnetProofUpgradeClient() {
   const walletReady = wallet.publicKey?.equals(FOUNDER) && Boolean(wallet.signTransaction);
 
   useEffect(() => {
+    setTerminal(Boolean(localStorage.getItem(TERMINAL)));
     const saved = localStorage.getItem(STORAGE);
     if (saved) try { const p = JSON.parse(saved) as Progress;
       if (new PublicKey(p.buffer) && Number.isSafeInteger(p.initialBalance) &&
           Array.isArray(p.signatures) && typeof p.creationSignature === "string") setProgress(p);
-    } catch { localStorage.removeItem(STORAGE); }
-    setTerminal(Boolean(localStorage.getItem(TERMINAL)));
+      else throw Error("Incomplete progress record");
+    } catch { setTerminal(true); setStatus("Stored public upgrade progress is malformed; stop and reconcile finalized RPC state"); }
     const pending = localStorage.getItem(PENDING_BUFFER);
-    if (pending) try { setRecoveryBuffer(JSON.parse(pending).address); } catch { setStatus("Pending buffer record is malformed; stop and inspect RPC state"); }
+    if (pending) try { setRecoveryBuffer(JSON.parse(pending).address); }
+      catch { setTerminal(true); setStatus("Pending buffer record is malformed; stop and inspect RPC state"); }
     const action = localStorage.getItem(PENDING_ACTION);
-    if (action) try { setPendingAction(JSON.parse(action)); } catch { setStatus("Pending transaction record is malformed; stop and inspect RPC state"); }
+    if (action) try { setPendingAction(JSON.parse(action)); }
+      catch { setTerminal(true); setStatus("Pending transaction record is malformed; stop and inspect RPC state"); }
     void fetch("/api/devnet-proof-upgrade/authorization", { cache: "no-store" })
       .then(r => r.json()).then(x => { setEnabled(x.enabled === true && x.maxLamports === MAX_LAMPORTS);
         setApproval(x.approvalReference || null); }).catch(() => setEnabled(false));
@@ -349,9 +352,11 @@ export function DevnetProofUpgradeClient() {
     {wallet.connected && <button onClick={() => void wallet.disconnect()}>Disconnect wallet</button>}
     {progress && <p>Buffer: {progress.buffer} · Finalized actions: {progress.signatures.length}. Refresh resumes only from finalized RPC state.</p>}
     {terminal && <p>This approved upgrade attempt is complete or closed. A new attempt requires a separately authorized recovery procedure.</p>}
-    {!progress && recoveryBuffer && <section><p>Pending buffer address: {recoveryBuffer}. No secret key is stored. Recover only after finalized RPC confirms it.</p>
-      <button disabled={!candidateReady || busy || Boolean(pendingAction)} onClick={() => void recoverFinalizedBuffer()}>Recover finalized buffer</button>
-      <button disabled={busy} onClick={() => void discardExpiredUnsubmittedBuffer()}>Check expiry and discard only if unsubmitted</button></section>}
+    {!progress && <section><label>Recover an existing public buffer address
+      <input value={recoveryBuffer} onChange={e => setRecoveryBuffer(e.target.value.trim())} placeholder="Public buffer address" /></label>
+      <p>No private key is stored. Recovery requires finalized buffer authority, exact candidate bytes, and founder-paid creation evidence.</p>
+      <button disabled={!candidateReady || busy || !recoveryBuffer || Boolean(pendingAction)} onClick={() => void recoverFinalizedBuffer()}>Recover finalized buffer</button>
+      {recoveryBuffer && <button disabled={busy} onClick={() => void discardExpiredUnsubmittedBuffer()}>Check expiry and discard only if unsubmitted</button>}</section>}
     {pendingAction && <p>Uncertain {pendingAction.action} transaction. No new signature is allowed until its blockhash expires and finalized RPC state is reconciled.
       <button disabled={!candidateReady || busy} onClick={() => void resolveInterruptedAction()}>Resolve interrupted action</button></p>}
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
