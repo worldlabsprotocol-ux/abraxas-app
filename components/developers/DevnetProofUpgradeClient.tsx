@@ -5,19 +5,34 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { BEFORE_LENGTH, BEFORE_SHA256, CANDIDATE_LENGTH, CANDIDATE_SHA256, closeBuffer,
   createBuffer, DEVNET_GENESIS, enforceBudget, FOUNDER, hash, inspectBuffer, inspectCandidate,
-  inspectProgram, MAX_LAMPORTS, PROOF_PROGRAM, upgrade, writeBuffer, WRITE_CHUNK } from "@/lib/solana/devnetProofUpgrade";
+  inspectProgram, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS, PROOF_PROGRAM, upgrade, writeBuffer, WRITE_CHUNK } from "@/lib/solana/devnetProofUpgrade";
 
 const RPC = new Connection("https://api.devnet.solana.com", "finalized");
 const STORAGE = "abraxas-devnet-proof-upgrade-v1";
 const PENDING_BUFFER = "abraxas-devnet-proof-upgrade-pending-buffer-v1";
+const PENDING_ACTION = "abraxas-devnet-proof-upgrade-pending-action-v1";
+const TERMINAL = "abraxas-devnet-proof-upgrade-terminal-v1";
 const PRESERVED = [
   "2FbFNQxiszgaVVyh22HPHSuAHRDPkwEr3rWzvLA6AMS9",
   "42XYEo4FSi99KE2QoCvdbB3GV7MshzjWgohowEM5m3aZ",
   "HkxkdRXD7vZewsyJgEMDnpheQJ2TEpE2WUBUyu396ReB",
   "5AsV7zezn7AQa2nFMFZ8jan5MUCKY7Ck24ZMQUjk9NyG",
 ];
+const FOUR_FINALIZED_SIGNATURES = [
+  "5R4cRxdbTTGP8qx7E9hR4yefFPAdPz7GmxA2EA9MkS6buUJh47n5v2r2aXuEnzKZ4cN8owBF5Ujucr6DWvCS33nL",
+  "5BUXiiZBGdo6kn5NWL9yVL5QChs3AwPjbE6YnnFsiWg8kUAmmARTdmLL5DcnbFKujsvtZ6a4WKDmtsWUqDNJ7ZGA",
+  "5ZJcJzfSgyNEHyrdWScg8E43V1YKuzQC1HKgf7YACkygRRJ5Jg1eEbryL1UaVznzCoZRVaEzetwQpZqDsqn4uwXt",
+  "24ENh5KkoC7UpaHkGjMBEGNBhgR1gsnTbT2JzrB2QgZYyqiTGxVEPqZ6PsGCFDyZKezJ3SdhWvySxPogGqrhC2RW",
+];
+const EFFECT = {
+  create: "Create one temporary loader buffer; founder pays refundable rent and the one-time buffer key signs only its creation.",
+  write: "Write one bounded chunk of the approved ELF to the founder-authorized buffer.",
+  upgrade: "Replace Proof Continuity bytecode, return buffer rent to the founder, and retain the founder as upgrade authority.",
+  close: "Close the temporary buffer before upgrade and return its remaining rent to the founder; deployed program remains unchanged.",
+};
 type Progress = { buffer: string; initialBalance: number; signatures: string[]; creationSignature: string };
 type Review = { action: "create" | "write" | "upgrade" | "close"; fee: number; debit: number; offset?: number };
+type PendingAction = { action: Review["action"]; buffer: string; lastValidBlockHeight: number; offset?: number };
 
 export function DevnetProofUpgradeClient() {
   const wallet = useWallet();
@@ -27,22 +42,27 @@ export function DevnetProofUpgradeClient() {
   const [candidateReady, setCandidateReady] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [recoveryBuffer, setRecoveryBuffer] = useState("");
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [bufferKeypair, setBufferKeypair] = useState<Keypair | null>(null);
   const [review, setReview] = useState<Review | null>(null);
   const [status, setStatus] = useState("Select the reviewed ELF for a read-only preflight.");
   const [busy, setBusy] = useState(false);
   const [complete, setComplete] = useState(false);
+  const [terminal, setTerminal] = useState(false);
   const [connectRequested, setConnectRequested] = useState(false);
   const walletReady = wallet.publicKey?.equals(FOUNDER) && Boolean(wallet.signTransaction);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(STORAGE);
+    const saved = localStorage.getItem(STORAGE);
     if (saved) try { const p = JSON.parse(saved) as Progress;
       if (new PublicKey(p.buffer) && Number.isSafeInteger(p.initialBalance) &&
           Array.isArray(p.signatures) && typeof p.creationSignature === "string") setProgress(p);
-    } catch { sessionStorage.removeItem(STORAGE); }
-    const pending = sessionStorage.getItem(PENDING_BUFFER);
+    } catch { localStorage.removeItem(STORAGE); }
+    setTerminal(Boolean(localStorage.getItem(TERMINAL)));
+    const pending = localStorage.getItem(PENDING_BUFFER);
     if (pending) try { setRecoveryBuffer(JSON.parse(pending).address); } catch { setStatus("Pending buffer record is malformed; stop and inspect RPC state"); }
+    const action = localStorage.getItem(PENDING_ACTION);
+    if (action) try { setPendingAction(JSON.parse(action)); } catch { setStatus("Pending transaction record is malformed; stop and inspect RPC state"); }
     void fetch("/api/devnet-proof-upgrade/authorization", { cache: "no-store" })
       .then(r => r.json()).then(x => { setEnabled(x.enabled === true && x.maxLamports === MAX_LAMPORTS);
         setApproval(x.approvalReference || null); }).catch(() => setEnabled(false));
@@ -68,7 +88,18 @@ export function DevnetProofUpgradeClient() {
     setReview(null); setCandidateReady(false); setCandidate(null); if (!file) return;
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const before = await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH);
+      let before;
+      try { before = await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH); }
+      catch (error) {
+        // A page or RPC failure after a finalized upgrade must not suggest replay.
+        const deployed = await inspectProgram(RPC, CANDIDATE_SHA256, CANDIDATE_LENGTH).catch(() => null);
+        if (!deployed) throw error;
+        await inspectCandidate(bytes, deployed.allocation);
+        await preservedAccounts();
+        localStorage.setItem(TERMINAL, "upgraded"); setTerminal(true); setComplete(true);
+        setStatus("Candidate is already finalized on Devnet with founder authority; existing lifecycle accounts remain intact. No transaction is needed.");
+        return;
+      }
       await inspectCandidate(bytes, before.allocation);
       await preservedAccounts();
       const rent = await RPC.getMinimumBalanceForRentExemption(37 + bytes.length, "finalized");
@@ -108,7 +139,7 @@ export function DevnetProofUpgradeClient() {
         throw Error("Buffer creation payer or finalized status mismatch");
       const next = { buffer: buffer.toBase58(), creationSignature, initialBalance: tx.meta.preBalances[0],
         signatures: finalized.map(x => x.signature) };
-      sessionStorage.setItem(STORAGE, JSON.stringify(next)); sessionStorage.removeItem(PENDING_BUFFER);
+      localStorage.setItem(STORAGE, JSON.stringify(next)); localStorage.removeItem(PENDING_BUFFER);
       setProgress(next); setRecoveryBuffer(""); setStatus(`Recovered ${finalized.length} finalized buffer actions through Devnet RPC.`);
     } catch (error) { setStatus(`Recovery stopped: ${String(error)}`); }
     finally { setBusy(false); }
@@ -117,7 +148,7 @@ export function DevnetProofUpgradeClient() {
   async function discardExpiredUnsubmittedBuffer() {
     setBusy(true);
     try {
-      const pending = JSON.parse(sessionStorage.getItem(PENDING_BUFFER) || "null") as
+      const pending = JSON.parse(localStorage.getItem(PENDING_BUFFER) || "null") as
         { address: string; lastValidBlockHeight: number } | null;
       if (!pending || pending.address !== recoveryBuffer || !Number.isSafeInteger(pending.lastValidBlockHeight))
         throw Error("Pending buffer record is incomplete");
@@ -127,22 +158,61 @@ export function DevnetProofUpgradeClient() {
       if (await RPC.getAccountInfo(address, "finalized") ||
           (await RPC.getSignaturesForAddress(address, { limit: 1 }, "finalized")).length)
         throw Error("Buffer may have finalized; recover it instead");
-      sessionStorage.removeItem(PENDING_BUFFER); setRecoveryBuffer(""); setBufferKeypair(null);
+      localStorage.removeItem(PENDING_BUFFER); setRecoveryBuffer(""); setBufferKeypair(null);
       setStatus("Expired unsubmitted buffer address cleared; no account or transaction exists at finalized commitment.");
     } catch (error) { setStatus(`Discard stopped: ${String(error)}`); }
     finally { setBusy(false); }
   }
 
+  async function resolveInterruptedAction() {
+    if (!pendingAction || !candidate) return;
+    setBusy(true);
+    try {
+      if (await RPC.getGenesisHash() !== DEVNET_GENESIS ||
+          await RPC.getBlockHeight("finalized") <= pendingAction.lastValidBlockHeight)
+        throw Error("Wrong cluster or transaction blockhash still live");
+      const buffer = new PublicKey(pendingAction.buffer);
+      if (pendingAction.action === "create") {
+        const exists = await RPC.getAccountInfo(buffer, "finalized");
+        if (exists) {
+          await recoverFinalizedBuffer();
+          if (!localStorage.getItem(STORAGE)) throw Error("Buffer exists but recovery was not proven");
+        }
+      } else if (pendingAction.action === "write") {
+        const state = await inspectBuffer(RPC, buffer, candidate);
+        if (state.nextOffset !== pendingAction.offset && state.nextOffset !== pendingAction.offset! + WRITE_CHUNK &&
+            !state.complete) throw Error("Buffer bytes changed unexpectedly");
+      } else if (pendingAction.action === "upgrade") {
+        const upgraded = await inspectProgram(RPC, CANDIDATE_SHA256, CANDIDATE_LENGTH).catch(() => null);
+        if (upgraded) { await preservedAccounts(); localStorage.setItem(TERMINAL, "upgraded"); setTerminal(true); setComplete(true); }
+        else await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH);
+      } else {
+        const account = await RPC.getAccountInfo(buffer, "finalized");
+        if (!account) { localStorage.removeItem(STORAGE); setProgress(null);
+          localStorage.setItem(TERMINAL, "closed"); setTerminal(true); }
+        else await inspectBuffer(RPC, buffer, candidate);
+      }
+      localStorage.removeItem(PENDING_ACTION); setPendingAction(null);
+      setStatus("Interrupted action resolved from finalized RPC after blockhash expiry. Review the next action afresh.");
+    } catch (error) { setStatus(`Interrupted action unresolved: ${String(error)}`); }
+    finally { setBusy(false); }
+  }
+
   async function preservedAccounts() {
+    const signatures = await Promise.all(FOUR_FINALIZED_SIGNATURES.map(signature =>
+      RPC.getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 })));
+    if (signatures.some(x => !x?.meta || x.meta.err)) throw Error("One of the four prior lifecycle transactions is not finalized successfully");
     const infos = await RPC.getMultipleAccountsInfo(PRESERVED.map(x => new PublicKey(x)), "finalized");
     if (infos.some(x => !x || x.data.length === 0)) throw Error("One of the four finalized lifecycle accounts is missing");
     return Promise.all(infos.map(async x => ({ owner: x!.owner.toBase58(), digest: await hash(x!.data) })));
   }
 
   async function prepare(action: Review["action"]) {
-    if (!candidate || !candidateReady || !walletReady || !enabled || busy) return;
+    if (!candidate || !candidateReady || !walletReady || !enabled || busy || pendingAction || terminal) return;
     setBusy(true); setReview(null);
     try {
+      if (localStorage.getItem(TERMINAL) || localStorage.getItem(PENDING_ACTION) ||
+          (!progress && localStorage.getItem(STORAGE))) throw Error("Another tab or an interrupted action owns this approval; reload and reconcile state");
       if (await RPC.getGenesisHash() !== DEVNET_GENESIS) throw Error("Wrong Devnet genesis");
       await inspectCandidate(candidate, (await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH)).allocation);
       let instructions: TransactionInstruction[]; let debit = 0; let offset: number | undefined;
@@ -169,6 +239,10 @@ export function DevnetProofUpgradeClient() {
       const balance = await RPC.getBalance(FOUNDER, "finalized");
       const spent = progress ? Math.max(0, progress.initialBalance - balance) : 0;
       if (progress && balance > progress.initialBalance) throw Error("Founder balance increased; reconcile funding history before continuing");
+      const actions = progress ? (await RPC.getSignaturesForAddress(new PublicKey(progress.buffer), { limit: 1000 }, "finalized")).length : 0;
+      const lockedRent = progress ? await RPC.getMinimumBalanceForRentExemption(37 + CANDIDATE_LENGTH, "finalized") : debit;
+      if (actions >= MAX_ACTIONS || lockedRent + (actions + 1) * MAX_FEE_PER_ACTION > MAX_LAMPORTS)
+        throw Error("Conservative on-chain action-count budget exhausted");
       enforceBudget(spent, debit, fee);
       if (balance < debit + fee + 50_000_000) throw Error("Insufficient Devnet SOL including 0.05 SOL safety reserve");
       setReview({ action, fee, debit, offset });
@@ -178,9 +252,14 @@ export function DevnetProofUpgradeClient() {
   }
 
   async function signReviewed() {
-    if (!review || !enabled || !walletReady || !wallet.signTransaction || !candidate || busy) return;
+    if (!review || !enabled || !walletReady || !wallet.signTransaction || !candidate || busy || pendingAction || terminal) return;
+    const signTransaction = wallet.signTransaction;
+    if (!navigator.locks) { setStatus("This browser cannot lock concurrent upgrade tabs; use a browser with Web Locks support"); return; }
+    await navigator.locks.request("abraxas-devnet-proof-upgrade", { mode: "exclusive" }, async () => {
     setBusy(true); const approved = review; setReview(null);
     try {
+      if (localStorage.getItem(TERMINAL) || localStorage.getItem(PENDING_ACTION) ||
+          (!progress && localStorage.getItem(STORAGE))) throw Error("Another tab or interrupted action owns this approval; reload and reconcile state");
       // Reconstruct every instruction from finalized state; never sign a cached blockhash.
       const before = await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH);
       await inspectCandidate(candidate, before.allocation);
@@ -209,12 +288,19 @@ export function DevnetProofUpgradeClient() {
       if (fee === null || fee > approved.fee) throw Error("Fee quote changed; review again");
       const balance = await RPC.getBalance(FOUNDER, "finalized");
       if (progress && balance > progress.initialBalance) throw Error("Funding history changed; review again");
+      const actions = progress ? (await RPC.getSignaturesForAddress(new PublicKey(progress.buffer), { limit: 1000 }, "finalized")).length : 0;
+      const lockedRent = progress ? await RPC.getMinimumBalanceForRentExemption(37 + CANDIDATE_LENGTH, "finalized") : approved.debit;
+      if (actions >= MAX_ACTIONS || lockedRent + (actions + 1) * MAX_FEE_PER_ACTION > MAX_LAMPORTS)
+        throw Error("Conservative on-chain action-count budget exhausted");
       enforceBudget(progress ? progress.initialBalance - balance : 0, approved.debit, fee);
       if (signer) tx.partialSign(signer);
-      const signed = await wallet.signTransaction(tx);
+      const signed = await signTransaction(tx);
       if (!signed.verifySignatures()) throw Error("Founder's or buffer's signature missing");
-      if (signer) { sessionStorage.setItem(PENDING_BUFFER, JSON.stringify({ address: signer.publicKey.toBase58(), lastValidBlockHeight }));
+      if (signer) { localStorage.setItem(PENDING_BUFFER, JSON.stringify({ address: signer.publicKey.toBase58(), lastValidBlockHeight }));
         setRecoveryBuffer(signer.publicKey.toBase58()); }
+      const pending = { action: approved.action, buffer: signer?.publicKey.toBase58() || progress!.buffer,
+        lastValidBlockHeight, offset: approved.offset };
+      localStorage.setItem(PENDING_ACTION, JSON.stringify(pending)); setPendingAction(pending);
       const signature = await RPC.sendRawTransaction(signed.serialize(), { skipPreflight: false, maxRetries: 0 });
       await RPC.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "finalized");
       const finalized = await RPC.getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 });
@@ -223,22 +309,30 @@ export function DevnetProofUpgradeClient() {
         const baseline = finalized.meta!.preBalances[0];
         const next = { buffer: signer!.publicKey.toBase58(), initialBalance: baseline,
           creationSignature: signature, signatures: [signature] };
-        sessionStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next); setBufferKeypair(null);
-        sessionStorage.removeItem(PENDING_BUFFER); setRecoveryBuffer("");
+        localStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next); setBufferKeypair(null);
+        localStorage.removeItem(PENDING_BUFFER); setRecoveryBuffer("");
       } else if (approved.action === "upgrade") {
         await inspectProgram(RPC, CANDIDATE_SHA256, CANDIDATE_LENGTH);
         const afterAccounts = await preservedAccounts();
         if (JSON.stringify(beforeAccounts) !== JSON.stringify(afterAccounts)) throw Error("Finalized lifecycle account state changed; inspect before continuing");
-        setComplete(true);
+        localStorage.setItem(TERMINAL, "upgraded"); setTerminal(true); setComplete(true);
       } else if (approved.action === "close") {
-        sessionStorage.removeItem(STORAGE); setProgress(null);
+        localStorage.removeItem(STORAGE); setProgress(null);
+        localStorage.setItem(TERMINAL, "closed"); setTerminal(true);
       } else if (progress) {
         const next = { ...progress, signatures: [...progress.signatures, signature] };
-        sessionStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next);
+        localStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next);
       }
+      localStorage.removeItem(PENDING_ACTION); setPendingAction(null);
       setStatus(`Finalized ${approved.action}: ${signature}. Independent RPC state was rechecked.`);
-    } catch (error) { setStatus(`Stopped: ${String(error)}. Inspect finalized RPC state before retrying.`); }
+    } catch (error) {
+      const message = String(error);
+      setStatus(!localStorage.getItem(PENDING_ACTION) && /reject|declin|cancel/i.test(message)
+        ? "Phantom declined this action. Nothing was submitted; review it again when ready."
+        : `Stopped: ${message}. Reconcile finalized RPC state before retrying.`);
+    }
     finally { setBusy(false); }
+    });
   }
 
   return <main style={{ maxWidth: 850, margin: "3rem auto", padding: "1rem" }}>
@@ -254,16 +348,19 @@ export function DevnetProofUpgradeClient() {
     {!wallet.connected && <button onClick={connectPhantom}>Connect Phantom</button>}
     {wallet.connected && <button onClick={() => void wallet.disconnect()}>Disconnect wallet</button>}
     {progress && <p>Buffer: {progress.buffer} · Finalized actions: {progress.signatures.length}. Refresh resumes only from finalized RPC state.</p>}
+    {terminal && <p>This approved upgrade attempt is complete or closed. A new attempt requires a separately authorized recovery procedure.</p>}
     {!progress && recoveryBuffer && <section><p>Pending buffer address: {recoveryBuffer}. No secret key is stored. Recover only after finalized RPC confirms it.</p>
-      <button disabled={!candidateReady || busy} onClick={() => void recoverFinalizedBuffer()}>Recover finalized buffer</button>
+      <button disabled={!candidateReady || busy || Boolean(pendingAction)} onClick={() => void recoverFinalizedBuffer()}>Recover finalized buffer</button>
       <button disabled={busy} onClick={() => void discardExpiredUnsubmittedBuffer()}>Check expiry and discard only if unsubmitted</button></section>}
+    {pendingAction && <p>Uncertain {pendingAction.action} transaction. No new signature is allowed until its blockhash expires and finalized RPC state is reconciled.
+      <button disabled={!candidateReady || busy} onClick={() => void resolveInterruptedAction()}>Resolve interrupted action</button></p>}
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-      <button disabled={!enabled || !candidateReady || !walletReady || busy || Boolean(progress)} onClick={() => void prepare("create")}>Review buffer initialization</button>
-      <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress} onClick={() => void prepare("write")}>Review next buffer write</button>
-      <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress} onClick={() => void prepare("upgrade")}>Review separate upgrade</button>
-      <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress} onClick={() => void prepare("close")}>Review pre-upgrade buffer close</button>
+      <button disabled={!enabled || !candidateReady || !walletReady || busy || Boolean(progress) || Boolean(pendingAction) || terminal} onClick={() => void prepare("create")}>Review buffer initialization</button>
+      <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepare("write")}>Review next buffer write</button>
+      <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepare("upgrade")}>Review separate upgrade</button>
+      <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepare("close")}>Review pre-upgrade buffer close</button>
     </div>
-    {review && <section><h2>Sign only this reviewed action</h2><p>{review.action}: rent debit {review.debit} lamports; quoted fee {review.fee} lamports. {review.offset !== undefined ? `Write offset ${review.offset}.` : ""}</p>
+    {review && <section><h2>Sign only this reviewed action</h2><p>{review.action}: rent debit {review.debit} lamports; quoted fee {review.fee} lamports. {review.offset !== undefined ? `Write offset ${review.offset}.` : ""}</p><p>{EFFECT[review.action as keyof typeof EFFECT]} Fee payer and upgrade authority: {FOUNDER.toBase58()}.</p>
       <button disabled={busy || !enabled || !walletReady} onClick={() => void signReviewed()}>Confirm this transaction in Phantom</button>
       <button onClick={() => setReview(null)}>Cancel</button></section>}
     {complete && <p>Finalized candidate bytecode, founder authority, and all four existing lifecycle accounts verified through Devnet RPC.</p>}

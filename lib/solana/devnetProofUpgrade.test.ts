@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { BEFORE_SHA256, CANDIDATE_LENGTH, closeBuffer, createBuffer, DEVNET_GENESIS,
-  enforceBudget, FOUNDER, hash, inspectCandidate, inspectProgram, LOADER, MAX_LAMPORTS,
+  enforceBudget, FOUNDER, hash, inspectCandidate, inspectProgram, LOADER, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS,
   programDataAddress, PROOF_PROGRAM, upgrade, writeBuffer, WRITE_CHUNK } from "./devnetProofUpgrade";
 
 const buffer = Keypair.generate().publicKey;
@@ -40,6 +40,9 @@ describe("founder-signed upgradeable-loader instructions", () => {
     expect(() => enforceBudget(100_000_000, 2_329_916_600, 10_000)).not.toThrow();
     expect(() => enforceBudget(200_000_000, 2_329_916_600, 10_000)).toThrow();
     expect(() => enforceBudget(-1, 0, 0)).toThrow();
+    expect(() => enforceBudget(0, 0, MAX_FEE_PER_ACTION + 1)).toThrow();
+    expect(MAX_ACTIONS).toBeGreaterThan(Math.ceil(CANDIDATE_LENGTH / WRITE_CHUNK) + 1);
+    expect(2_310_409_400 + MAX_ACTIONS * MAX_FEE_PER_ACTION).toBeLessThan(MAX_LAMPORTS);
     expect(MAX_LAMPORTS).toBe(2_500_000_000);
   });
 });

@@ -1,4 +1,5 @@
 import { Connection, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, SYSVAR_RENT_PUBKEY, TransactionInstruction } from "@solana/web3.js";
+import { Buffer } from "buffer";
 
 export const DEVNET_GENESIS = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
 export const PROOF_PROGRAM = new PublicKey("CpTXbbnM6crXj1b6WKwuk87bBTYjJWeGRePcJGXS526F");
@@ -9,6 +10,8 @@ export const BEFORE_SHA256 = "3ffa7393ab712290d4cb1b0eab34d40fa209c67d8718de208d
 export const CANDIDATE_LENGTH = 454_640;
 export const CANDIDATE_SHA256 = "a7cde22bc6bbcd6f702af89c75491958c619fe763b1df889026e2bf14d0822be";
 export const MAX_LAMPORTS = 2_500_000_000;
+export const MAX_ACTIONS = 600;
+export const MAX_FEE_PER_ACTION = 100_000;
 export const BUFFER_METADATA_LENGTH = 37;
 export const PROGRAM_DATA_METADATA_LENGTH = 45;
 export const WRITE_CHUNK = 800;
@@ -87,5 +90,6 @@ export async function inspectBuffer(rpc: Connection, buffer: PublicKey, elf: Uin
 
 export function enforceBudget(spent: number, debit: number, fee: number) {
   if (![spent, debit, fee].every(Number.isSafeInteger) || spent < 0 || debit < 0 || fee < 0 ||
-      spent + debit + fee > MAX_LAMPORTS) throw Error("2.5 Devnet SOL total authorization ceiling exceeded");
+      fee > MAX_FEE_PER_ACTION || spent + debit + fee > MAX_LAMPORTS)
+    throw Error("2.5 Devnet SOL total authorization ceiling exceeded");
 }

@@ -28,7 +28,7 @@ jobs:
       - name: TypeScript validation (blocking)
         run: npm run validate:typescript
       - name: Founder wallet upgrade instruction and preflight tests
-        run: npx vitest run lib/solana/devnetProofUpgrade.test.ts
+        run: npx vitest run lib/solana/devnetProofUpgrade.test.ts app/api/devnet-proof-upgrade/authorization/route.test.ts
 
   eslint-validation:
     name: eslint-validation
