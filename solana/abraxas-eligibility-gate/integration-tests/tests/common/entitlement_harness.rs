@@ -222,8 +222,11 @@ pub async fn refresh_blockhash(ctx: &mut ProgramTestContext) {
 }
 
 pub async fn start() -> ProgramTestContext {
-    let mut program_test =
-        ProgramTest::new("abraxas_proof_continuity", PROOF_ID, processor!(proof_process));
+    let mut program_test = if std::env::var_os("ABRAXAS_PROOF_SBF").is_some() {
+        ProgramTest::new("abraxas_proof_continuity", PROOF_ID, None)
+    } else {
+        ProgramTest::new("abraxas_proof_continuity", PROOF_ID, processor!(proof_process))
+    };
     program_test.add_program(
         "spl_token_2022",
         spl_token_2022::id(),
