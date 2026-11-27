@@ -27,6 +27,8 @@ jobs:
         run: npm ci
       - name: TypeScript validation (blocking)
         run: npm run validate:typescript
+      - name: Founder wallet upgrade instruction and preflight tests
+        run: npx vitest run lib/solana/devnetProofUpgrade.test.ts
 
   eslint-validation:
     name: eslint-validation
@@ -385,9 +387,8 @@ jobs:
       - name: Execute entitlement mint security cases against compiled SBF
         working-directory: solana/abraxas-eligibility-gate
         env:
-          ABRAXAS_PROOF_SBF: "1"
-          BPF_OUT_DIR: ${{ github.workspace }}/solana/abraxas-eligibility-gate/target/deploy
-        run: cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture
+          ABRAXAS_PROOF_SBF: ${{ github.workspace }}/solana/abraxas-eligibility-gate/target/deploy
+        run: cargo test -p abraxas-eligibility-gate-integration-tests --test tokenization_entitlement -- --nocapture --test-threads=1
       - name: Upload entitlement deployment candidates
         uses: actions/upload-artifact@v4
         with:

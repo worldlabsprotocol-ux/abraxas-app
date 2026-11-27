@@ -222,8 +222,14 @@ pub async fn refresh_blockhash(ctx: &mut ProgramTestContext) {
 }
 
 pub async fn start() -> ProgramTestContext {
-    let mut program_test = if std::env::var_os("ABRAXAS_PROOF_SBF").is_some() {
-        ProgramTest::new("abraxas_proof_continuity", PROOF_ID, None)
+    let mut program_test = if let Some(directory) = std::env::var_os("ABRAXAS_PROOF_SBF") {
+        // ProgramTest prefers BPF_OUT_DIR for every add_program call. Limit it to
+        // this program so Token-2022 and ATA continue using their host processors.
+        // The CI invocation runs one test thread because this env var is global.
+        std::env::set_var("BPF_OUT_DIR", directory);
+        let test = ProgramTest::new("abraxas_proof_continuity", PROOF_ID, None);
+        std::env::remove_var("BPF_OUT_DIR");
+        test
     } else {
         ProgramTest::new("abraxas_proof_continuity", PROOF_ID, processor!(proof_process))
     };
