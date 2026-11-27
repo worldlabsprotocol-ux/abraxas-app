@@ -981,7 +981,7 @@ pub struct MintVerifiedEntitlement<'info> {
     )]
     pub recipient_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
-        init_if_needed,
+        init,
         payer = payer,
         space = 8 + EntitlementIssuanceLedger::INIT_SPACE,
         seeds = [
