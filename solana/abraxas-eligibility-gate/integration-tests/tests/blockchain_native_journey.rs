@@ -450,6 +450,6 @@ async fn native_issuer_is_distinct_from_payer_and_holder_and_fails_closed() {
         issuer.pubkey(), &issuer).await.is_err());
     revoke_native(&mut ctx, registry, h32(40), h32(41), expiry, 2,
         issuer.pubkey(), &issuer).await.unwrap();
-    assert!(revoke_native(&mut ctx, registry, h32(40), h32(41), expiry, 2,
+    assert!(revoke_native(&mut ctx, registry, h32(40), h32(41), expiry - 1, 2,
         issuer.pubkey(), &issuer).await.is_err());
 }
