@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { PublicKey } from "@solana/web3.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DevnetEntitlementTestClient } from "./DevnetEntitlementTestClient";
 
 const founder = "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd";
@@ -43,6 +43,7 @@ beforeEach(() => {
     json: async () => ({ executionEnabled: false, approvedCeilingLamports: null }),
   })));
 });
+afterEach(() => cleanup());
 
 describe("Devnet Phantom connection", () => {
   it("connects after selection, supports disconnect and explicit reconnect without enabling execution", async () => {
