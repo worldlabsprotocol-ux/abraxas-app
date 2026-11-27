@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { PublicKey } from "@solana/web3.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DevnetEntitlementTestClient } from "./DevnetEntitlementTestClient";
 
 const founder = "3cKi3oxEoFDZ7corbQ1Uk21gxqdgPu3LpH4MN313EnRd";
@@ -43,6 +43,7 @@ beforeEach(() => {
     json: async () => ({ executionEnabled: false, approvedCeilingLamports: null }),
   })));
 });
+afterEach(() => cleanup());
 
 describe("Devnet Phantom connection", () => {
   it("connects after selection, supports disconnect and explicit reconnect without enabling execution", async () => {
@@ -70,5 +71,71 @@ describe("Devnet Phantom connection", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Connect Phantom" }));
     await waitFor(() => expect(bridge.connect).toHaveBeenCalledTimes(2));
+  });
+
+  it("keeps the Step 5 compatibility request message-only even when Phantom rejects it", async () => {
+    bridge.selected = true;
+    bridge.connected = true;
+    bridge.publicKey = new PublicKey(founder);
+    sessionStorage.setItem("abraxas-devnet-wallet-test-v2", JSON.stringify({
+      wallet: founder, receipt1: "a".repeat(64), receipt2: "b".repeat(64),
+      payload1: "c".repeat(64), payload2: "d".repeat(64),
+      expires: Math.floor(Date.now() / 1000) + 1200,
+      evidence: ["registry", "holder", "mint", "relying_party"].map((id, index) => ({
+        id, signature: String(index), slot: index, rejected: false,
+      })), pending: null,
+    }));
+    const signMessage = vi.fn(async () => { throw Error("Phantom rejected the message"); });
+    Object.defineProperty(window, "phantom", { configurable: true, value: {
+      solana: { isPhantom: true, publicKey: new PublicKey(founder), signMessage },
+    } });
+    const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
+      const input = JSON.parse(init.body);
+      return { ok: true, json: async () => input.action === "preflight"
+        ? { executionEnabled: false, approvedCeilingLamports: null }
+        : { message: btoa(String.fromCharCode(...new Uint8Array(211))) } };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DevnetEntitlementTestClient />);
+    const inspect = await screen.findByRole("button", { name: "Inspect message-only compatibility check" });
+    await waitFor(() => expect(inspect).toBeEnabled());
+    fireEvent.click(inspect);
+    expect(await screen.findByText(/Canonical message: 211 bytes/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`Signing wallet: ${founder}`))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Sign receipt message only" }));
+    await waitFor(() => expect(signMessage).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body).action))
+      .toEqual(["preflight", "compatibility_message", "compatibility_message"]);
+    expect(screen.getByText(/Phantom message request was declined/)).toBeInTheDocument();
+    delete (window as Window & { phantom?: unknown }).phantom;
+  });
+
+  it("restores only server-revalidated four-step progress without enabling execution", async () => {
+    bridge.selected = true;
+    bridge.connected = true;
+    bridge.publicKey = new PublicKey(founder);
+    const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
+      const input = JSON.parse(init.body);
+      return { ok: true, json: async () => input.action === "preflight"
+        ? { executionEnabled: false, approvedCeilingLamports: null }
+        : { recoverable: true, stepId: "signed_receipt1" } };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("crypto", { getRandomValues: (bytes: Uint8Array) => bytes.fill(5) });
+    render(<DevnetEntitlementTestClient />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Prior public test progress" }), { target: {
+      value: JSON.stringify({ wallet: founder, receipt1: "a".repeat(64), receipt2: "b".repeat(64),
+        payload1: "c".repeat(64), payload2: "d".repeat(64), expires: 1, pending: null,
+        evidence: ["initialize_registry", "bind_holder", "initialize_mint", "initialize_relying_party"]
+          .map((id, slot) => ({ id, signature: String(slot), slot: slot + 1, rejected: false })) }),
+    } });
+    fireEvent.click(screen.getByRole("button", { name: "Recheck and restore four finalized steps" }));
+    expect(await screen.findByText(/Four finalized steps and absent receipt issuance were verified/)).toBeInTheDocument();
+    expect(screen.getByText(/Finalized steps:/).parentElement).toHaveTextContent("4 of 14");
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(init.body).action))
+      .toEqual(["preflight", "recover"]);
+    expect(screen.getByRole("button", { name: "Inspect message-only compatibility check" })).toBeEnabled();
+    vi.unstubAllGlobals();
   });
 });
