@@ -186,6 +186,20 @@ test('independent native verifier rejects altered receipts and wrong signer',()=
   assert.throws(()=>requireNativeIssuerInstruction(message,step,{
     test_admin:Keypair.generate().publicKey.toBase58(),receipt1:f.receipt1,payload1:f.payload1,expires_at:f.expires}),
     /signature missing/);
+  const swappedRegistry=ix.harnessNativeIx(founder,founder,founder,accounts,receipt,
+    Buffer.from(f.payload1,'hex'),f.expires);
+  swappedRegistry.keys[3].pubkey=Keypair.generate().publicKey;
+  assert.throws(()=>requireNativeIssuerInstruction(new Transaction({feePayer:founder,
+    recentBlockhash:'11111111111111111111111111111111'}).add(swappedRegistry).compileMessage(),step,{
+    test_admin:FOUNDER,receipt1:f.receipt1,payload1:f.payload1,expires_at:f.expires}),
+    /exact receipt binding mismatch/);
+  const otherProgram=ix.harnessNativeIx(founder,founder,founder,accounts,receipt,
+    Buffer.from(f.payload1,'hex'),f.expires);
+  otherProgram.programId=new PublicKey(CONSUMER);
+  assert.throws(()=>requireNativeIssuerInstruction(new Transaction({feePayer:founder,
+    recentBlockhash:'11111111111111111111111111111111'}).add(otherProgram).compileMessage(),step,{
+    test_admin:FOUNDER,receipt1:f.receipt1,payload1:f.payload1,expires_at:f.expires}),
+    /exact receipt binding mismatch/);
 });
 test('independent wallet evidence requires two distinct receipts and the complete sequence',async()=>{
   const f=input();
