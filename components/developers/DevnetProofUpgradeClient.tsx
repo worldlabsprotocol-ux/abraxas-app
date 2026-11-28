@@ -5,7 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import { BEFORE_LENGTH, BEFORE_SHA256, CANDIDATE_LENGTH, CANDIDATE_SHA256, closeBuffer,
-  createBuffer, DEVNET_GENESIS, enforceBudget, FOUNDER, hash, inspectBuffer, inspectCandidate,
+  createBuffer, DEVNET_GENESIS, enforceBudget, FOUNDER, hash, inspectBuffer, inspectCandidate, assertBatchRecovery,
   inspectProgram, LEGACY_TRANSACTION_LIMIT, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS, PROOF_PROGRAM,
   upgrade, writeBatch, writeBuffer, WRITE_BATCH, WRITE_CHUNK } from "@/lib/solana/devnetProofUpgrade";
 
@@ -34,8 +34,6 @@ const EFFECT = {
   upgrade: "Replace Proof Continuity bytecode, return buffer rent to the founder, and retain the founder as upgrade authority.",
   close: "Close the temporary buffer before upgrade and return its remaining rent to the founder; deployed program remains unchanged.",
 };
-const onlyZeroBytes = (bytes: Uint8Array, start: number, end: number) =>
-  bytes.subarray(start, end).every(byte => byte === 0);
 type Progress = { buffer: string; initialBalance: number; signatures: string[]; creationSignature: string };
 type Review = { action: "create" | "write" | "batch" | "upgrade" | "close"; fee: number; debit: number; offset?: number; endOffset?: number; count?: number };
 type PendingAction = { action: Review["action"]; buffer: string; lastValidBlockHeight: number; offset?: number; endOffset?: number };
@@ -205,15 +203,8 @@ export function DevnetProofUpgradeClient() {
           if (!localStorage.getItem(STORAGE)) throw Error("Buffer exists but recovery was not proven");
         }
       } else if (pendingAction.action === "batch") {
-        if (!Number.isSafeInteger(pendingAction.offset) || !Number.isSafeInteger(pendingAction.endOffset) ||
-            pendingAction.endOffset! <= pendingAction.offset! ||
-            pendingAction.endOffset! > CANDIDATE_LENGTH) throw Error("Pending batch range is malformed");
         const state = await inspectBuffer(RPC, buffer, candidate);
-        if (state.nextOffset < pendingAction.offset! ||
-            (state.nextOffset > pendingAction.endOffset! &&
-              !onlyZeroBytes(candidate, pendingAction.endOffset!, state.nextOffset)) ||
-            (state.nextOffset !== CANDIDATE_LENGTH && state.nextOffset % WRITE_CHUNK !== 0))
-          throw Error("Finalized buffer does not match a prefix of the signed batch");
+        assertBatchRecovery(candidate, pendingAction.offset!, pendingAction.endOffset!, state.nextOffset);
         if (!progress || progress.buffer !== buffer.toBase58()) throw Error("Missing founder-paid buffer history");
         const history = await RPC.getSignaturesForAddress(buffer, { limit: 1000 }, "finalized");
         if (history.length === 1000 || history.some(x => x.confirmationStatus !== "finalized"))
@@ -465,9 +456,7 @@ export function DevnetProofUpgradeClient() {
           currentProgress = next;
         }
         const checked = await inspectBuffer(RPC, buffer, candidate);
-        if (checked.nextOffset < endOffset && !checked.complete) throw Error("Finalized buffer is behind the reviewed batch");
-        if (checked.nextOffset > endOffset && !onlyZeroBytes(candidate, endOffset, checked.nextOffset))
-          throw Error("Unexpected nonzero bytes beyond the reviewed batch");
+        assertBatchRecovery(candidate, state.nextOffset, endOffset, checked.nextOffset, true);
         localStorage.removeItem(PENDING_ACTION); setPendingAction(null);
         setStatus(`Finalized ${signed.length} writes through Devnet RPC; next offset ${endOffset}. Review another bounded batch.`);
       } catch (error) {
