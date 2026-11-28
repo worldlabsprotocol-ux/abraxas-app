@@ -75,6 +75,17 @@ export function writeBatch(buffer: PublicKey, elf: Uint8Array, offset: number) {
   return writes;
 }
 
+export function assertBatchRecovery(elf: Uint8Array, start: number, end: number, next: number,
+  requireComplete = false) {
+  if (elf.length !== CANDIDATE_LENGTH || ![start, end, next].every(Number.isSafeInteger) ||
+      start < 0 || start % WRITE_CHUNK !== 0 || end <= start || end > elf.length ||
+      end - start > WRITE_BATCH * WRITE_CHUNK || next < start || next > elf.length ||
+      (next !== elf.length && next % WRITE_CHUNK !== 0) ||
+      (requireComplete && next < end) ||
+      (next > end && elf.subarray(end, next).some(byte => byte !== 0)))
+    throw Error("Finalized buffer is not an authentic prefix of the reviewed batch");
+}
+
 export function upgrade(buffer: PublicKey) {
   return ix(3, [account(programDataAddress(), true), account(PROOF_PROGRAM, true), account(buffer, true),
     account(FOUNDER, true), account(SYSVAR_RENT_PUBKEY), account(SYSVAR_CLOCK_PUBKEY), account(FOUNDER, false, true)]);
