@@ -79,15 +79,26 @@ export function DevnetProofUpgradeClient() {
   }, []);
   useEffect(() => { setReview(null); }, [wallet.publicKey?.toBase58()]);
   useEffect(() => {
-    if (!connectRequested || wallet.wallet?.adapter.name !== "Phantom" || wallet.connected || wallet.connecting) return;
-    void wallet.connect().catch(error => setStatus(`Phantom connection failed: ${String(error)}`))
-      .finally(() => setConnectRequested(false));
+    if (!connectRequested || wallet.wallet?.adapter.name !== "Phantom") return;
+    setConnectRequested(false);
+    if (wallet.connected) return;
+    if (wallet.connecting) {
+      setStatus("Phantom connection is already in progress. Finish or cancel the wallet request, then try again.");
+      return;
+    }
+    void wallet.connect().catch(error => {
+      const message = error instanceof Error ? error.message : String(error);
+      setStatus(/reject|declin|cancel/i.test(message)
+        ? "Phantom connection was declined. Select Connect Phantom to try again."
+        : `Phantom connection failed: ${message}`);
+    });
   }, [connectRequested, wallet.wallet, wallet.connected, wallet.connecting, wallet.connect]);
 
   function connectPhantom() {
-    setConnectRequested(true);
+    setStatus("Opening Phantom connection request…");
     const phantom = wallet.wallets.find(x => x.adapter.name === "Phantom");
-    if (!phantom) { setStatus("Phantom extension was not detected"); setConnectRequested(false); return; }
+    if (!phantom) { setStatus("Phantom extension was not detected"); return; }
+    setConnectRequested(true);
     if (wallet.wallet?.adapter.name !== "Phantom") wallet.select(phantom.adapter.name);
   }
 
@@ -528,3 +539,4 @@ export function DevnetProofUpgradeClient() {
     {complete && <p>Finalized candidate bytecode, founder authority, and all four existing lifecycle accounts verified through Devnet RPC.</p>}
   </main>;
 }
+
