@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 
 const reference = "https://github.com/worldlabsprotocol-ux/abraxas-app/pull/1003#issuecomment-1234567890";
+const commit = "73063d01c952e54e28cdb6c93ddf0d0b8b356b87";
 afterEach(() => vi.unstubAllEnvs());
 
 describe("Proof Continuity upgrade gate", () => {
@@ -10,11 +11,17 @@ describe("Proof Continuity upgrade gate", () => {
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_ENABLED", "true");
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_MAX_LAMPORTS", "2500000000");
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVAL_REFERENCE", reference);
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/devnet-step5-phantom-signing");
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", commit);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVED_COMMIT_SHA", commit);
     expect((await GET().json()).enabled).toBe(false);
   });
 
   it("requires a fresh approval reference and exact cap in Preview", async () => {
     vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/devnet-step5-phantom-signing");
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", commit);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVED_COMMIT_SHA", commit);
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_ENABLED", "true");
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_MAX_LAMPORTS", "2500000000");
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVAL_REFERENCE",
@@ -23,6 +30,9 @@ describe("Proof Continuity upgrade gate", () => {
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVAL_REFERENCE", reference);
     expect((await GET().json()).enabled).toBe(true);
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_MAX_LAMPORTS", "2500000001");
+    expect((await GET().json()).enabled).toBe(false);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_MAX_LAMPORTS", "2500000000");
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "a".repeat(40));
     expect((await GET().json()).enabled).toBe(false);
   });
 });
