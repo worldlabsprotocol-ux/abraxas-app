@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { Buffer } from "buffer";
 import { BEFORE_LENGTH, BEFORE_SHA256, CANDIDATE_LENGTH, CANDIDATE_SHA256, closeBuffer,
   createBuffer, DEVNET_GENESIS, enforceBudget, FOUNDER, hash, inspectBuffer, inspectCandidate,
-  inspectProgram, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS, PROOF_PROGRAM, upgrade, writeBuffer, WRITE_CHUNK } from "@/lib/solana/devnetProofUpgrade";
+  inspectProgram, LEGACY_TRANSACTION_LIMIT, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS, PROOF_PROGRAM,
+  upgrade, writeBatch, writeBuffer, WRITE_BATCH, WRITE_CHUNK } from "@/lib/solana/devnetProofUpgrade";
 
 const RPC = new Connection("https://api.devnet.solana.com", "finalized");
+const MEMO = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 const STORAGE = "abraxas-devnet-proof-upgrade-v1";
 const PENDING_BUFFER = "abraxas-devnet-proof-upgrade-pending-buffer-v1";
 const PENDING_ACTION = "abraxas-devnet-proof-upgrade-pending-action-v1";
@@ -27,16 +30,21 @@ const FOUR_FINALIZED_SIGNATURES = [
 const EFFECT = {
   create: "Create one temporary loader buffer; founder pays refundable rent and the one-time buffer key signs only its creation.",
   write: "Write one bounded chunk of the approved ELF to the founder-authorized buffer.",
+  batch: "Sign a bounded batch of independent ELF writes; each must finalize before the next batch.",
   upgrade: "Replace Proof Continuity bytecode, return buffer rent to the founder, and retain the founder as upgrade authority.",
   close: "Close the temporary buffer before upgrade and return its remaining rent to the founder; deployed program remains unchanged.",
 };
+const onlyZeroBytes = (bytes: Uint8Array, start: number, end: number) =>
+  bytes.subarray(start, end).every(byte => byte === 0);
 type Progress = { buffer: string; initialBalance: number; signatures: string[]; creationSignature: string };
-type Review = { action: "create" | "write" | "upgrade" | "close"; fee: number; debit: number; offset?: number };
-type PendingAction = { action: Review["action"]; buffer: string; lastValidBlockHeight: number; offset?: number };
+type Review = { action: "create" | "write" | "batch" | "upgrade" | "close"; fee: number; debit: number; offset?: number; endOffset?: number; count?: number };
+type PendingAction = { action: Review["action"]; buffer: string; lastValidBlockHeight: number; offset?: number; endOffset?: number };
 
 export function DevnetProofUpgradeClient() {
   const wallet = useWallet();
   const [enabled, setEnabled] = useState(false);
+  const [probeEnabled, setProbeEnabled] = useState(false);
+  const [probeApproval, setProbeApproval] = useState<string | null>(null);
   const [approval, setApproval] = useState<string | null>(null);
   const [candidate, setCandidate] = useState<Uint8Array | null>(null);
   const [candidateReady, setCandidateReady] = useState(false);
@@ -68,7 +76,8 @@ export function DevnetProofUpgradeClient() {
       catch { setTerminal(true); setStatus("Pending transaction record is malformed; stop and inspect RPC state"); }
     void fetch("/api/devnet-proof-upgrade/authorization", { cache: "no-store" })
       .then(r => r.json()).then(x => { setEnabled(x.enabled === true && x.maxLamports === MAX_LAMPORTS);
-        setApproval(x.approvalReference || null); }).catch(() => setEnabled(false));
+        setApproval(x.approvalReference || null); setProbeEnabled(x.probeEnabled === true);
+        setProbeApproval(x.probeApprovalReference || null); }).catch(() => { setEnabled(false); setProbeEnabled(false); });
   }, []);
   useEffect(() => { setReview(null); }, [wallet.publicKey?.toBase58()]);
   useEffect(() => {
@@ -127,6 +136,20 @@ export function DevnetProofUpgradeClient() {
     return { buffer, state, initialBalance };
   }
 
+  async function quoteWriteBatch(buffer: PublicKey, bytes: Uint8Array, offset: number, blockhash: string) {
+    const planned = writeBatch(buffer, bytes, offset);
+    const transactions = planned.map(({ instruction }) =>
+      new Transaction({ feePayer: FOUNDER, recentBlockhash: blockhash }).add(instruction));
+    const fees = await Promise.all(transactions.map(async tx => {
+      const size = tx.serialize({ requireAllSignatures: false, verifySignatures: false }).length;
+      if (size > LEGACY_TRANSACTION_LIMIT) throw Error(`Buffer write exceeds legacy transaction limit: ${size}`);
+      const fee = (await RPC.getFeeForMessage(tx.compileMessage(), "finalized")).value;
+      if (fee === null || fee > MAX_FEE_PER_ACTION) throw Error("Batch fee unavailable or above per-action limit");
+      return fee;
+    }));
+    return { planned, transactions, fee: fees.reduce((sum, value) => sum + value, 0) };
+  }
+
   async function recoverFinalizedBuffer() {
     if (!candidate || !candidateReady || progress) return;
     setBusy(true);
@@ -181,6 +204,23 @@ export function DevnetProofUpgradeClient() {
           await recoverFinalizedBuffer();
           if (!localStorage.getItem(STORAGE)) throw Error("Buffer exists but recovery was not proven");
         }
+      } else if (pendingAction.action === "batch") {
+        if (!Number.isSafeInteger(pendingAction.offset) || !Number.isSafeInteger(pendingAction.endOffset) ||
+            pendingAction.endOffset! <= pendingAction.offset! ||
+            pendingAction.endOffset! > CANDIDATE_LENGTH) throw Error("Pending batch range is malformed");
+        const state = await inspectBuffer(RPC, buffer, candidate);
+        if (state.nextOffset < pendingAction.offset! ||
+            (state.nextOffset > pendingAction.endOffset! &&
+              !onlyZeroBytes(candidate, pendingAction.endOffset!, state.nextOffset)) ||
+            (state.nextOffset !== CANDIDATE_LENGTH && state.nextOffset % WRITE_CHUNK !== 0))
+          throw Error("Finalized buffer does not match a prefix of the signed batch");
+        if (!progress || progress.buffer !== buffer.toBase58()) throw Error("Missing founder-paid buffer history");
+        const history = await RPC.getSignaturesForAddress(buffer, { limit: 1000 }, "finalized");
+        if (history.length === 1000 || history.some(x => x.confirmationStatus !== "finalized"))
+          throw Error("Complete finalized batch history unavailable");
+        const next = { ...progress, signatures: history.reverse().filter(x => !x.err).map(x => x.signature) };
+        if (next.signatures[0] !== progress.creationSignature) throw Error("Buffer creation history changed");
+        localStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next);
       } else if (pendingAction.action === "write") {
         const state = await inspectBuffer(RPC, buffer, candidate);
         if (state.nextOffset !== pendingAction.offset && state.nextOffset !== pendingAction.offset! + WRITE_CHUNK &&
@@ -210,7 +250,7 @@ export function DevnetProofUpgradeClient() {
     return Promise.all(infos.map(async x => ({ owner: x!.owner.toBase58(), digest: await hash(x!.data) })));
   }
 
-  async function prepare(action: Review["action"]) {
+  async function prepare(action: Exclude<Review["action"], "batch">) {
     if (!candidate || !candidateReady || !walletReady || !enabled || busy || pendingAction || terminal) return;
     setBusy(true); setReview(null);
     try {
@@ -254,8 +294,38 @@ export function DevnetProofUpgradeClient() {
     finally { setBusy(false); }
   }
 
+  async function prepareBatch() {
+    if (!candidate || !candidateReady || !walletReady || !wallet.signAllTransactions ||
+        !enabled || !progress || busy || pendingAction || terminal) return;
+    setBusy(true); setReview(null);
+    try {
+      if (localStorage.getItem(TERMINAL) || localStorage.getItem(PENDING_ACTION))
+        throw Error("Another tab or interrupted batch owns this approval");
+      const before = await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH);
+      await inspectCandidate(candidate, before.allocation);
+      const { buffer, state } = await currentBuffer();
+      if (state.complete) throw Error("All buffer bytes are finalized");
+      const { blockhash } = await RPC.getLatestBlockhash("finalized");
+      const quote = await quoteWriteBatch(buffer, candidate, state.nextOffset, blockhash);
+      const balance = await RPC.getBalance(FOUNDER, "finalized");
+      if (balance > progress.initialBalance) throw Error("Funding history changed; reconcile before signing");
+      const actions = (await RPC.getSignaturesForAddress(buffer, { limit: 1000 }, "finalized")).length;
+      const rent = await RPC.getMinimumBalanceForRentExemption(37 + CANDIDATE_LENGTH, "finalized");
+      if (actions + quote.planned.length > MAX_ACTIONS ||
+          rent + (actions + quote.planned.length) * MAX_FEE_PER_ACTION > MAX_LAMPORTS)
+        throw Error("Conservative whole-journey budget exhausted");
+      enforceBudget(progress.initialBalance - balance, 0, quote.fee);
+      if (balance < quote.fee + 50_000_000) throw Error("Insufficient Devnet SOL including safety reserve");
+      const endOffset = Math.min(CANDIDATE_LENGTH, state.nextOffset + quote.planned.length * WRITE_CHUNK);
+      setReview({ action: "batch", fee: quote.fee, debit: 0, offset: state.nextOffset,
+        endOffset, count: quote.planned.length });
+      setStatus(`Review ${quote.planned.length} independently signed writes, byte range ${state.nextOffset}–${endOffset - 1}, total quoted fees ${quote.fee} lamports. Phantom may show one batch approval; its actual behavior remains unverified.`);
+    } catch (error) { setStatus(String(error)); }
+    finally { setBusy(false); }
+  }
+
   async function signReviewed() {
-    if (!review || !enabled || !walletReady || !wallet.signTransaction || !candidate || busy || pendingAction || terminal) return;
+    if (!review || review.action === "batch" || !enabled || !walletReady || !wallet.signTransaction || !candidate || busy || pendingAction || terminal) return;
     const signTransaction = wallet.signTransaction;
     if (!navigator.locks) { setStatus("This browser cannot lock concurrent upgrade tabs; use a browser with Web Locks support"); return; }
     await navigator.locks.request("abraxas-devnet-proof-upgrade", { mode: "exclusive" }, async () => {
@@ -338,18 +408,107 @@ export function DevnetProofUpgradeClient() {
     });
   }
 
+  async function signReviewedBatch() {
+    if (review?.action !== "batch" || !candidate || !progress || !enabled || !walletReady ||
+        !wallet.signAllTransactions || busy || pendingAction || terminal) return;
+    if (!navigator.locks) { setStatus("Concurrent-tab locking is unavailable"); return; }
+    await navigator.locks.request("abraxas-devnet-proof-upgrade", { mode: "exclusive" }, async () => {
+      setBusy(true); const approved = review; setReview(null);
+      try {
+        if (localStorage.getItem(TERMINAL) || localStorage.getItem(PENDING_ACTION))
+          throw Error("Another tab or interrupted batch owns this approval");
+        const before = await inspectProgram(RPC, BEFORE_SHA256, BEFORE_LENGTH);
+        await inspectCandidate(candidate, before.allocation);
+        const { buffer, state } = await currentBuffer();
+        if (state.complete || state.nextOffset !== approved.offset) throw Error("Buffer progressed; review again");
+        const { blockhash, lastValidBlockHeight } = await RPC.getLatestBlockhash("finalized");
+        const quote = await quoteWriteBatch(buffer, candidate, state.nextOffset, blockhash);
+        const endOffset = Math.min(CANDIDATE_LENGTH, state.nextOffset + quote.planned.length * WRITE_CHUNK);
+        if (quote.planned.length !== approved.count || endOffset !== approved.endOffset || quote.fee > approved.fee)
+          throw Error("Batch contents or fee changed; review again");
+        const balance = await RPC.getBalance(FOUNDER, "finalized");
+        if (balance > progress.initialBalance) throw Error("Funding history changed; review again");
+        const actions = (await RPC.getSignaturesForAddress(buffer, { limit: 1000 }, "finalized")).length;
+        const rent = await RPC.getMinimumBalanceForRentExemption(37 + CANDIDATE_LENGTH, "finalized");
+        if (actions + quote.planned.length > MAX_ACTIONS ||
+            rent + (actions + quote.planned.length) * MAX_FEE_PER_ACTION > MAX_LAMPORTS)
+          throw Error("Conservative whole-journey budget exhausted");
+        enforceBudget(progress.initialBalance - balance, 0, quote.fee);
+        if (balance < quote.fee + 50_000_000) throw Error("Insufficient Devnet SOL including safety reserve");
+        // Every returned transaction must be byte-for-byte the reviewed message, signed
+        // by the founder. No transaction is submitted until the entire batch passes.
+        const signed = await wallet.signAllTransactions(quote.transactions);
+        if (signed.length !== quote.transactions.length) throw Error("Wallet returned an incomplete batch");
+        signed.forEach((tx, index) => {
+          if (!tx.serializeMessage().equals(quote.transactions[index].serializeMessage()) || !tx.verifySignatures())
+            throw Error(`Batch transaction ${index} was altered or lacks founder authorization`);
+        });
+        const pending: PendingAction = { action: "batch", buffer: buffer.toBase58(),
+          lastValidBlockHeight, offset: state.nextOffset, endOffset };
+        localStorage.setItem(PENDING_ACTION, JSON.stringify(pending)); setPendingAction(pending);
+        let currentProgress: Progress = progress;
+        for (let index = 0; index < signed.length; index++) {
+          const signature = await RPC.sendRawTransaction(signed[index].serialize(), { skipPreflight: false, maxRetries: 0 });
+          await RPC.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "finalized");
+          const finalized = await RPC.getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 });
+          if (!finalized || finalized.meta?.err) throw Error(`Write ${index} did not finalize successfully: ${signature}`);
+          const checked = await inspectBuffer(RPC, buffer, candidate);
+          const expected = Math.min(CANDIDATE_LENGTH, state.nextOffset + (index + 1) * WRITE_CHUNK);
+          if (checked.nextOffset < expected && !checked.complete) throw Error(`Finalized buffer offset differs after write ${index}`);
+          if (checked.nextOffset > expected && !onlyZeroBytes(candidate, expected, checked.nextOffset))
+            throw Error(`Unexpected nonzero gap after write ${index}`);
+          const next = { ...currentProgress, signatures: [...currentProgress.signatures, signature] };
+          localStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next);
+          currentProgress = next;
+        }
+        localStorage.removeItem(PENDING_ACTION); setPendingAction(null);
+        setStatus(`Finalized ${signed.length} writes through Devnet RPC; next offset ${endOffset}. Review another bounded batch.`);
+      } catch (error) {
+        const message = String(error);
+        setStatus(!localStorage.getItem(PENDING_ACTION) && /reject|declin|cancel/i.test(message)
+          ? "Phantom declined the batch. Nothing was submitted; review it again when ready."
+          : `Batch stopped: ${message}. Reconcile finalized RPC after blockhash expiry before retrying.`);
+      } finally { setBusy(false); }
+    });
+  }
+
+  async function testBatchSigningOnly() {
+    if (!probeEnabled || !wallet.publicKey?.equals(FOUNDER) || !wallet.signAllTransactions || busy) return;
+    setBusy(true);
+    try {
+      if (await RPC.getGenesisHash() !== DEVNET_GENESIS) throw Error("Wrong Devnet genesis");
+      const { blockhash } = await RPC.getLatestBlockhash("finalized");
+      const transactions = Array.from({ length: WRITE_BATCH }, (_, index) =>
+        new Transaction({ feePayer: FOUNDER, recentBlockhash: blockhash }).add(
+          new TransactionInstruction({ programId: MEMO, keys: [],
+            data: Buffer.from(new TextEncoder().encode(`Abraxas Devnet batch-sign probe ${index + 1}/${WRITE_BATCH}; never submit`)) })));
+      const signed = await wallet.signAllTransactions(transactions);
+      if (signed.length !== transactions.length || signed.some((tx, index) =>
+        !tx.serializeMessage().equals(transactions[index].serializeMessage()) || !tx.verifySignatures()))
+        throw Error("Phantom returned missing or changed signatures");
+      // Signed transactions exist only in this call. There is intentionally no RPC send,
+      // transaction serialization to storage, or downstream execution callback.
+      setStatus(`Phantom signed ${WRITE_BATCH} distinct Devnet memo transactions in one request; signatures verified locally. No transaction was submitted or stored.`);
+    } catch (error) { setStatus(`Batch-sign probe stopped: ${String(error)}. No transaction was submitted.`); }
+    finally { setBusy(false); }
+  }
+
   return <main style={{ maxWidth: 850, margin: "3rem auto", padding: "1rem" }}>
     <h1>Proof Continuity Devnet upgrade</h1>
     <p>Founder wallet: {FOUNDER.toBase58()} · Program: {PROOF_PROGRAM.toBase58()}</p>
     <p>Execution: {enabled ? "separately authorized Devnet Preview" : "disabled"} · Ceiling: {MAX_LAMPORTS} lamports</p>
     {approval && <p>Approval: <a href={approval}>Founder authorization</a></p>}
+    <p>Batch-sign acceptance: {probeEnabled ? "separately authorized, signing only" : "disabled"}. This probe never submits transactions and does not enable the upgrade.</p>
+    {probeApproval && <p>Probe approval: <a href={probeApproval}>Founder authorization</a></p>}
     <p>Current: {BEFORE_SHA256} · Candidate: {CANDIDATE_SHA256}</p>
-    <p>Review the exact {CANDIDATE_LENGTH}-byte CI ELF. The founder upgrade authority remains in Phantom. A one-time buffer address key exists only in this tab until initialization; the buffer authority is the founder wallet. Creation, each bounded write, upgrade, and any pre-upgrade close require separate signatures.</p>
+    <p>Review the exact {CANDIDATE_LENGTH}-byte CI ELF. The founder upgrade authority remains in Phantom. A one-time buffer address key exists only in this tab until initialization; the buffer authority is the founder wallet. Bounded batches may group {WRITE_BATCH} independently verified writes per Phantom request. Buffer creation, final upgrade and any pre-upgrade close remain separate approvals.</p>
     <input type="file" accept=".so" onChange={e => void selectElf(e.target.files?.[0])} />
     <p>{status}</p>
     <p>Wallet: {wallet.publicKey?.toBase58() || "not connected"}</p>
     {!wallet.connected && <button onClick={connectPhantom}>Connect Phantom</button>}
     {wallet.connected && <button onClick={() => void wallet.disconnect()}>Disconnect wallet</button>}
+    <button disabled={!probeEnabled || !wallet.publicKey?.equals(FOUNDER) || !wallet.signAllTransactions || busy}
+      onClick={() => void testBatchSigningOnly()}>Test {WRITE_BATCH}-transaction Phantom batch signing only — no submission</button>
     {progress && <p>Buffer: {progress.buffer} · Finalized actions: {progress.signatures.length}. Refresh resumes only from finalized RPC state.</p>}
     {terminal && <p>This approved upgrade attempt is complete or closed. A new attempt requires a separately authorized recovery procedure.</p>}
     {!progress && <section><label>Recover an existing public buffer address
@@ -362,11 +521,12 @@ export function DevnetProofUpgradeClient() {
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       <button disabled={!enabled || !candidateReady || !walletReady || busy || Boolean(progress) || Boolean(pendingAction) || terminal} onClick={() => void prepare("create")}>Review buffer initialization</button>
       <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepare("write")}>Review next buffer write</button>
+      <button disabled={!enabled || !candidateReady || !walletReady || !wallet.signAllTransactions || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepareBatch()}>Review next bounded batch</button>
       <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepare("upgrade")}>Review separate upgrade</button>
       <button disabled={!enabled || !candidateReady || !walletReady || busy || !progress || Boolean(pendingAction) || terminal} onClick={() => void prepare("close")}>Review pre-upgrade buffer close</button>
     </div>
-    {review && <section><h2>Sign only this reviewed action</h2><p>{review.action}: rent debit {review.debit} lamports; quoted fee {review.fee} lamports. {review.offset !== undefined ? `Write offset ${review.offset}.` : ""}</p><p>{EFFECT[review.action as keyof typeof EFFECT]} Fee payer and upgrade authority: {FOUNDER.toBase58()}.</p>
-      <button disabled={busy || !enabled || !walletReady} onClick={() => void signReviewed()}>Confirm this transaction in Phantom</button>
+    {review && <section><h2>Sign only this reviewed action</h2><p>{review.action}: rent debit {review.debit} lamports; quoted fee {review.fee} lamports. {review.offset !== undefined ? `Byte range ${review.offset}–${(review.endOffset ?? Math.min(CANDIDATE_LENGTH, review.offset + WRITE_CHUNK)) - 1}.` : ""} {review.count ? `${review.count} separate transactions.` : ""}</p><p>{EFFECT[review.action]} Fee payer and upgrade authority: {FOUNDER.toBase58()}.</p>
+      <button disabled={busy || !enabled || !walletReady} onClick={() => void (review.action === "batch" ? signReviewedBatch() : signReviewed())}>Confirm {review.action === "batch" ? "bounded batch" : "this transaction"} in Phantom</button>
       <button onClick={() => setReview(null)}>Cancel</button></section>}
     {complete && <p>Finalized candidate bytecode, founder authority, and all four existing lifecycle accounts verified through Devnet RPC.</p>}
   </main>;
