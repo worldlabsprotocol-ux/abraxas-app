@@ -402,6 +402,7 @@ export function DevnetProofUpgradeClient() {
   async function signReviewedBatch() {
     if (review?.action !== "batch" || !candidate || !progress || !enabled || !walletReady ||
         !wallet.signAllTransactions || busy || pendingAction || terminal) return;
+    const signAllTransactions = wallet.signAllTransactions;
     if (!navigator.locks) { setStatus("Concurrent-tab locking is unavailable"); return; }
     await navigator.locks.request("abraxas-devnet-proof-upgrade", { mode: "exclusive" }, async () => {
       setBusy(true); const approved = review; setReview(null);
@@ -428,7 +429,7 @@ export function DevnetProofUpgradeClient() {
         if (balance < quote.fee + 50_000_000) throw Error("Insufficient Devnet SOL including safety reserve");
         // Every returned transaction must be byte-for-byte the reviewed message, signed
         // by the founder. No transaction is submitted until the entire batch passes.
-        const signed = await wallet.signAllTransactions(quote.transactions);
+        const signed = await signAllTransactions(quote.transactions);
         if (signed.length !== quote.transactions.length) throw Error("Wallet returned an incomplete batch");
         signed.forEach((tx, index) => {
           if (!tx.serializeMessage().equals(quote.transactions[index].serializeMessage()) || !tx.verifySignatures())
