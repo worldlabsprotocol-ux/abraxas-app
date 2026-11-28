@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { BEFORE_SHA256, CANDIDATE_LENGTH, closeBuffer, createBuffer, DEVNET_GENESIS,
   enforceBudget, FOUNDER, hash, inspectBuffer, inspectCandidate, inspectProgram, LOADER, MAX_ACTIONS, MAX_FEE_PER_ACTION, MAX_LAMPORTS,
-  programDataAddress, PROOF_PROGRAM, upgrade, writeBuffer, WRITE_CHUNK } from "./devnetProofUpgrade";
+  programDataAddress, PROOF_PROGRAM, upgrade, writeBatch, writeBuffer, WRITE_BATCH, WRITE_CHUNK,
+  LEGACY_TRANSACTION_LIMIT } from "./devnetProofUpgrade";
 
 const buffer = Keypair.generate().publicKey;
 
@@ -24,6 +25,22 @@ describe("founder-signed upgradeable-loader instructions", () => {
     expect(ix.keys[1].pubkey.equals(FOUNDER) && ix.keys[1].isSigner).toBe(true);
     expect(() => writeBuffer(buffer, CANDIDATE_LENGTH, new Uint8Array(1))).toThrow();
     expect(() => writeBuffer(buffer, 0, new Uint8Array(WRITE_CHUNK + 1))).toThrow();
+  });
+
+  it("packs each full write below the legacy limit and bounds the reviewed batch", () => {
+    const elf = new Uint8Array(CANDIDATE_LENGTH);
+    const batch = writeBatch(buffer, elf, 0);
+    expect(batch).toHaveLength(WRITE_BATCH);
+    expect(batch.map(x => x.offset)).toEqual(Array.from({ length: WRITE_BATCH }, (_, n) => n * WRITE_CHUNK));
+    for (const { instruction } of batch) {
+      const tx = new Transaction({ feePayer: FOUNDER, recentBlockhash: Keypair.generate().publicKey.toBase58() })
+        .add(instruction);
+      expect(tx.serialize({ requireAllSignatures: false, verifySignatures: false }).length)
+        .toBeLessThanOrEqual(LEGACY_TRANSACTION_LIMIT);
+    }
+    const tail = writeBatch(buffer, elf, Math.floor((elf.length - 1) / WRITE_CHUNK) * WRITE_CHUNK);
+    expect(tail).toHaveLength(1);
+    expect(() => writeBatch(buffer, elf, 1)).toThrow("Invalid batch start");
   });
 
   it("requires separate founder signatures for upgrade or recovery close", () => {
