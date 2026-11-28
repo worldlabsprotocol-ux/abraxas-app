@@ -14,7 +14,10 @@ describe("Proof Continuity upgrade gate", () => {
     vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/devnet-step5-phantom-signing");
     vi.stubEnv("VERCEL_GIT_COMMIT_SHA", commit);
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVED_COMMIT_SHA", commit);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_BATCH_PROBE_ENABLED", "true");
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_BATCH_PROBE_APPROVAL_REFERENCE", reference);
     expect((await GET().json()).enabled).toBe(false);
+    expect((await GET().json()).probeEnabled).toBe(false);
   });
 
   it("requires a fresh approval reference and exact cap in Preview", async () => {
@@ -34,5 +37,23 @@ describe("Proof Continuity upgrade gate", () => {
     vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_MAX_LAMPORTS", "2500000000");
     vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "a".repeat(40));
     expect((await GET().json()).enabled).toBe(false);
+  });
+
+  it("keeps the signing-only probe separate from transaction execution", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/devnet-step5-phantom-signing");
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", commit);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_APPROVED_COMMIT_SHA", commit);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_BATCH_PROBE_ENABLED", "true");
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_BATCH_PROBE_APPROVAL_REFERENCE", reference);
+    const result = await GET().json();
+    expect(result.probeEnabled).toBe(true);
+    expect(result.enabled).toBe(false);
+    expect(result.maxLamports).toBe(0);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_BATCH_PROBE_APPROVAL_REFERENCE", "invalid");
+    expect((await GET().json()).probeEnabled).toBe(false);
+    vi.stubEnv("ABRAXAS_DEVNET_PROOF_UPGRADE_BATCH_PROBE_APPROVAL_REFERENCE", reference);
+    vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "a".repeat(40));
+    expect((await GET().json()).probeEnabled).toBe(false);
   });
 });
