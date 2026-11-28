@@ -14,7 +14,7 @@ const RPC = "https://api.devnet.solana.com";
 const STORAGE = "abraxas-devnet-wallet-test-v2";
 type Evidence = { id: string; signature: string; slot: number; rejected: boolean; wrongHolder?: string };
 type Pending = { id: string; signature: string; blockhash: string; lastValidBlockHeight: number; wrongHolder?: string };
-type Prepared = { transaction?: string; message?: string; blockhash?: string; lastValidBlockHeight?: number;
+type Prepared = { transaction?: string; message?: string; expires?: number; blockhash?: string; lastValidBlockHeight?: number;
   error?: string; spentLamports?: number; maxDebitLamports?: number; remainingAfterMaxLamports?: number;
   effects?: string; expectedFailure?: boolean; stepId?: string; recoverable?: boolean };
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
@@ -33,6 +33,7 @@ export function DevnetEntitlementTestClient() {
   const [pending, setPending] = useState<Pending | null>(null);
   const [approved, setApproved] = useState(false);
   const [executionEnabled, setExecutionEnabled] = useState(false);
+  const [nativeIssuerReady, setNativeIssuerReady] = useState(false);
   const [ceiling, setCeiling] = useState<number | null>(null);
   const [review, setReview] = useState<Prepared | null>(null);
   const [wrongSigner, setWrongSigner] = useState<Keypair | null>(null);
@@ -43,7 +44,9 @@ export function DevnetEntitlementTestClient() {
   const [messageCheck, setMessageCheck] = useState<Uint8Array | null>(null);
   const [messageCheckPassed, setMessageCheckPassed] = useState(false);
   const [priorProgress, setPriorProgress] = useState("");
-  const walletReady = wallet.publicKey?.toBase58() === FOUNDER && Boolean(wallet.signMessage && wallet.signTransaction);
+  const messageWalletReady = wallet.publicKey?.toBase58() === FOUNDER && Boolean(wallet.signMessage);
+  const walletReady = wallet.publicKey?.toBase58() === FOUNDER && Boolean(wallet.signTransaction) &&
+    (nativeIssuerReady || Boolean(wallet.signMessage));
   const next = steps[evidence.length];
   const connection = new Connection(RPC, "finalized");
 
@@ -52,6 +55,7 @@ export function DevnetEntitlementTestClient() {
       body: JSON.stringify({ action: "preflight", admin: FOUNDER }) })
       .then(async response => { if (!response.ok) throw Error("Devnet preflight failed"); return response.json(); })
       .then(result => { setExecutionEnabled(result.executionEnabled === true);
+        setNativeIssuerReady(result.nativeIssuerReady === true);
         setCeiling(result.approvedCeilingLamports ?? null); })
       .catch(() => setNotice("Devnet preflight unavailable. Execution remains disabled."));
   }, []);
@@ -195,12 +199,12 @@ export function DevnetEntitlementTestClient() {
     finally { setBusy(false); }
   }
   async function inspectMessageOnly() {
-    if (evidence.length !== 4 || next?.id !== "signed_receipt1" || pending || !walletReady ||
-        expires < Math.floor(Date.now() / 1000) + 60) return;
+    if (!messageWalletReady) return;
     setBusy(true); setMessageCheck(null); setMessageCheckPassed(false);
     try {
-      const result = await prepare("compatibility_message", next.id);
-      if (!result.message || !wallet.publicKey || wallet.publicKey.toBase58() !== FOUNDER)
+      const result = await prepare("message_only_probe", "message_only_probe");
+      if (!result.message || result.stepId !== "message_only_probe" || result.expires !== 0 ||
+          !wallet.publicKey || wallet.publicKey.toBase58() !== FOUNDER)
         throw Error("Approved issuer message is unavailable");
       const bytes = decode(result.message);
       if (bytes.length !== 211) throw Error("Unexpected canonical receipt message length");
@@ -210,20 +214,14 @@ export function DevnetEntitlementTestClient() {
     finally { setBusy(false); }
   }
   async function signMessageOnly() {
-    if (!messageCheck || evidence.length !== 4 || next?.id !== "signed_receipt1" || pending ||
-        !walletReady || expires < Math.floor(Date.now() / 1000) + 60) return;
+    if (!messageCheck || !messageWalletReady) return;
     setBusy(true); setMessageCheckPassed(false);
     try {
-      // Recheck server-authoritative bytes immediately before signing; this path never prepares a transaction.
-      const result = await prepare("compatibility_message", next.id);
-      const bytes = result.message ? decode(result.message) : null;
-      if (!bytes || bytes.length !== messageCheck.length || bytes.some((byte, index) => byte !== messageCheck[index]))
-        throw Error("Receipt message changed. Inspect it again before signing");
       if (!wallet.publicKey || wallet.publicKey.toBase58() !== FOUNDER)
         throw Error("Approved issuer wallet disconnected");
-      await signPhantomIssuerMessage(bytes, wallet.publicKey, injectedPhantom());
+      await signPhantomIssuerMessage(messageCheck, wallet.publicKey, injectedPhantom());
       setMessageCheckPassed(true);
-      setNotice("Phantom signed the exact canonical receipt bytes and local Ed25519 verification passed. No transaction was prepared or submitted.");
+      setNotice("Phantom signed the exact canonical-format probe bytes and local Ed25519 verification passed. No transaction was prepared or submitted.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Message signature failed";
       setNotice(/reject|declin|cancel/i.test(message) ? "Phantom message request was declined. No transaction was prepared." : message);
@@ -263,13 +261,13 @@ export function DevnetEntitlementTestClient() {
     finally { setBusy(false); }
   }
   async function signAndSubmit() {
-    if (!next || next.id === "signed_receipt1" || !review || review.stepId !== next.id || !walletReady || !approved || !executionEnabled ||
-        !wallet.signTransaction || !wallet.signMessage || pending) return;
+    if (!next || (next.id === "signed_receipt1" && !nativeIssuerReady) || !review || review.stepId !== next.id || !walletReady || !approved || !executionEnabled ||
+        !wallet.signTransaction || pending) return;
     setBusy(true); setNotice("Preparing the reviewed Devnet action…");
     try {
       if (await connection.getGenesisHash() !== GENESIS) throw Error("RPC is not Solana Devnet");
       let issuerSignature: string | undefined;
-      if (next.action === "signed_receipt" || next.action === "revoke_receipt") {
+      if (!nativeIssuerReady && (next.action === "signed_receipt" || next.action === "revoke_receipt")) {
         const message = await prepare("message", next.id);
         if (!message.message) throw Error("Missing authorization message");
         if (!wallet.publicKey) throw Error("Approved issuer wallet disconnected");
@@ -331,6 +329,18 @@ export function DevnetEntitlementTestClient() {
     {!wallet.connected && <button onClick={connectPhantom}>Connect Phantom</button>}
     {wallet.connected && <button onClick={() => void disconnectPhantom()}>Disconnect wallet</button>}
     {wallet.connected && !walletReady && <p>Connect the approved founder wallet with message and transaction signing support.</p>}
+    <section style={{ border: "1px solid #666", borderRadius: 12, padding: 16 }}>
+      <h2>Phantom message-only compatibility check</h2>
+      <p>This checks the exact 211-byte receipt format with an expired, non-issuable probe. It cannot authorize a valid receipt or submit a transaction.</p>
+      <button disabled={busy || !messageWalletReady} onClick={() => void inspectMessageOnly()}>Inspect message-only compatibility check</button>
+      {messageCheck && <div>
+        <p>Purpose: test Phantom signing for the canonical receipt format. Message: {messageCheck.length} bytes, displayed by Phantom as hex.</p>
+        <p>Signing wallet: {wallet.publicKey?.toBase58()}</p>
+        <p>Probe expiration, version and nonce: 0. No transaction preparation, transaction signature, submission or SOL debit follows this check.</p>
+        <button disabled={busy || !messageWalletReady} onClick={() => void signMessageOnly()}>Sign receipt message only</button>
+      </div>}
+      {messageCheckPassed && <p>Exact-byte Ed25519 signature verified locally. No receipt was issued.</p>}
+    </section>
     {!receipt1 && <button disabled={!walletReady || !executionEnabled} onClick={start}>Prepare isolated test</button>}
     {!receipt1 && <div>
       <p>Already completed the first four Devnet steps in another Preview? Restore their public test progress. The server rechecks every finalized transaction before resuming.</p>
@@ -346,19 +356,8 @@ export function DevnetEntitlementTestClient() {
         <button disabled={busy} onClick={() => void recheck(pending)}>Recheck transaction</button></div>}
       {next && !pending && <section style={{ border: "1px solid #666", borderRadius: 12, padding: 16 }}>
         <h2>Next: {next.id.replaceAll("_", " ")}</h2><p>{next.effect}</p>
-        {evidence.length === 4 && next.id === "signed_receipt1" && <div>
-          <p>Step 5 transaction execution is paused. This separate check requests only an issuer message signature.</p>
-          <button disabled={busy || !walletReady || expires < Math.floor(Date.now()/1000)+60}
-            onClick={() => void inspectMessageOnly()}>Inspect message-only compatibility check</button>
-          {messageCheck && <div>
-            <p>Purpose: authorize the first test-only Devnet receipt. Canonical message: {messageCheck.length} bytes, displayed by Phantom as hex.</p>
-            <p>Signing wallet: {wallet.publicKey?.toBase58()}</p>
-            <p>No transaction preparation, transaction signature, submission or SOL debit follows this check.</p>
-            <button disabled={busy || !walletReady || expires < Math.floor(Date.now()/1000)+60}
-              onClick={() => void signMessageOnly()}>Sign receipt message only</button>
-          </div>}
-          {messageCheckPassed && <p>Exact-byte Ed25519 signature verified locally. Step 5 transaction remains paused.</p>}
-        </div>}
+        {evidence.length === 4 && next.id === "signed_receipt1" && !nativeIssuerReady &&
+          <p>Step 5 transaction execution is paused. Use the separate message-only check above.</p>}
         {expires < Math.floor(Date.now()/1000)+60 && <p>Receipts expired. Do not sign or restart from Step 1.</p>}
         {expires < Math.floor(Date.now()/1000)+60 && evidence.length === 4 && next.id === "signed_receipt1" &&
           <button disabled={busy || !walletReady}
@@ -371,7 +370,7 @@ export function DevnetEntitlementTestClient() {
           <p>Already spent in this journey: {lamports(review.spentLamports ?? 0)} · Remaining after maximum debit: {lamports(review.remainingAfterMaxLamports ?? 0)}</p>
           <p>{next.rejected ? "This transaction must be rejected by the entitlement consumer; its fee is still charged." : "This transaction changes test-only Devnet accounts."}</p>
           <label><input type="checkbox" checked={approved} onChange={event => setApproved(event.target.checked)} /> I reviewed this action and its maximum Devnet cost.</label>
-          <button disabled={!approved || !walletReady || busy || expires < Math.floor(Date.now()/1000)+60 || next.id === "signed_receipt1"}
+          <button disabled={!approved || !walletReady || busy || expires < Math.floor(Date.now()/1000)+60 || (next.id === "signed_receipt1" && !nativeIssuerReady)}
             onClick={() => void signAndSubmit()}>Sign this action in Phantom</button>
         </div>}
       </section>}

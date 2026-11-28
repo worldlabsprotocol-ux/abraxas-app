@@ -15,6 +15,13 @@ const MAX_CEILING=50_000_000;
 const PER_STEP_BUFFER=100_000;
 const connection=new Connection(RPC,'finalized');
 const memo=()=>new TransactionInstruction({programId:MEMO,keys:[],data:randomBytes(8)});
+const nativeIssuerReady=()=>{
+  const reference=process.env.ABRAXAS_DEVNET_NATIVE_ISSUER_APPROVAL_REFERENCE||'';
+  return process.env.ABRAXAS_DEVNET_NATIVE_ISSUER_ENABLED==='true' &&
+    /^https:\/\/github\.com\/worldlabsprotocol-ux\/abraxas-app\/(pull|issues)\/\d+#issuecomment-\d+$/.test(reference) &&
+    reference!==process.env.ABRAXAS_DEVNET_WALLET_TEST_APPROVAL_REFERENCE &&
+    reference!=='https://github.com/worldlabsprotocol-ux/abraxas-app/pull/1001#issuecomment-7203755892';
+};
 
 function approvedCeiling() {
   const value=Number(process.env.ABRAXAS_DEVNET_WALLET_TEST_MAX_LAMPORTS);
@@ -101,10 +108,17 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
     throw Error('Unapproved Devnet test wallet');
   const cap=approvedCeiling();
   if(input.action==='preflight') return {executionEnabled:cap!==null,
+    nativeIssuerReady:cap!==null&&nativeIssuerReady(),
     quote:cap===null?null:await quoteProvider(),approvedCeilingLamports:cap};
-  const readOnlyCheck=input.action==='recover'||input.action==='compatibility_message';
+  const readOnlyCheck=input.action==='recover'||input.action==='compatibility_message'||
+    input.action==='message_only_probe';
   if(cap===null&&!readOnlyCheck) throw Error('Devnet execution has not been authorized');
   if(await rpc.getGenesisHash()!==GENESIS) throw Error('Wrong Solana cluster');
+  if(input.action==='message_only_probe') {
+    // Canonical format with invalid expiry, version, and nonce: never an issuable receipt.
+    const message=x.canonical(randomBytes(32),randomBytes(32),0,0,0);
+    return {message:message.toString('base64'),stepId:'message_only_probe',expires:0};
+  }
   if(readOnlyCheck) {
     if(input.stepId!=='signed_receipt1'||!Array.isArray(input.evidence)||input.evidence.length!==4)
       throw Error('Message-only check requires the four finalized steps');
@@ -129,6 +143,7 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
   if(spent>=cap) throw Error('Approved journey spending ceiling exhausted');
   if(input.action==='message') {
     if(!['signed_receipt','revoke_receipt'].includes(step.action)) throw Error('Step requires no message');
+    if(nativeIssuerReady()) throw Error('Native issuer authorization requires the transaction signature only');
     const bytes=step.action==='signed_receipt'?
       x.canonical(f.receipt,f.payload,f.expires,1,1):x.statusMessage(f.receipt,f.payload,f.expires);
     return {message:bytes.toString('base64')};
@@ -141,8 +156,10 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
     case 'bind_holder': instructions=[x.sandboxIx(FOUNDER,f.a)]; break;
     case 'initialize_mint': instructions=[x.mintInitIx(FOUNDER,f.a)]; break;
     case 'initialize_relying_party': instructions=[x.trustedIx(FOUNDER,f.a)]; break;
-    case 'signed_receipt': instructions=[signedIssuerInstruction(input,x.canonical(f.receipt,f.payload,f.expires,1,1),review),
-      x.harnessIx(FOUNDER,FOUNDER,f.a,f.receipt,f.payload,f.expires)]; break;
+    case 'signed_receipt': instructions=nativeIssuerReady()?
+      [x.harnessNativeIx(FOUNDER,FOUNDER,FOUNDER,f.a,f.receipt,f.payload,f.expires)]:
+      [signedIssuerInstruction(input,x.canonical(f.receipt,f.payload,f.expires,1,1),review),
+        x.harnessIx(FOUNDER,FOUNDER,f.a,f.receipt,f.payload,f.expires)]; break;
     case 'mint_entitlement': instructions=[x.mintIx(FOUNDER,FOUNDER,f.a,f.receipt)]; break;
     case 'consume_entitlement': instructions=[x.consumeIx(FOUNDER,FOUNDER,f.a,f.receipt)]; break;
     case 'repeat_consume':
@@ -152,8 +169,10 @@ async function prepare(input,rpc=connection,quoteProvider=quote) {
       if(wrong.equals(FOUNDER)) throw Error('Wrong-holder probe must use another signer');
       instructions=[memo(),x.consumeIx(FOUNDER,wrong,f.a,f.receipt)]; break;
     }
-    case 'revoke_receipt': instructions=[signedIssuerInstruction(input,x.statusMessage(f.receipt,f.payload,f.expires),review),
-      x.revokeIx(FOUNDER,f.a,f.receipt,f.payload,f.expires)]; break;
+    case 'revoke_receipt': instructions=nativeIssuerReady()?
+      [x.revokeNativeIx(FOUNDER,f.a,f.receipt,f.payload,f.expires)]:
+      [signedIssuerInstruction(input,x.statusMessage(f.receipt,f.payload,f.expires),review),
+        x.revokeIx(FOUNDER,f.a,f.receipt,f.payload,f.expires)]; break;
     default: throw Error('Unsupported journey step');
   }
   const {blockhash,lastValidBlockHeight}=await rpc.getLatestBlockhash('finalized');

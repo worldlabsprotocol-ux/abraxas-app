@@ -62,6 +62,10 @@ function harnessIx(payer,holder,a,receipt,payload,expires) { return ix(PROOF,'ex
   meta(payer,true,true),meta(holder,true),meta(a.registry),meta(a.sandbox),meta(a.ledger,false,true),
   meta(a.commitment,false,true),meta(SYSVAR_INSTRUCTIONS_PUBKEY),meta(SYSTEM)],
   u64(1),receipt,payload,i64(expires),u64(1)); }
+function harnessNativeIx(payer,holder,issuer,a,receipt,payload,expires) { return ix(PROOF,'execute_harness_run_native',[
+  meta(payer,true,true),meta(holder,true),meta(issuer,true),meta(a.registry),meta(a.sandbox),
+  meta(a.ledger,false,true),meta(a.commitment,false,true),meta(SYSTEM)],
+  u64(1),receipt,payload,i64(expires),u64(1)); }
 function mintInitIx(admin,a) { return ix(PROOF,'initialize_entitlement_mint',[
   meta(admin,true,true),meta(a.registry),meta(a.mintConfig,false,true),meta(a.mint,false,true),
   meta(a.mintAuthority),meta(TOKEN_2022_PROGRAM_ID),meta(SYSTEM)]); }
@@ -78,7 +82,11 @@ function consumeIx(payer,holder,a,receipt) { return ix(CONSUMER,'consume_verifie
 function revokeIx(admin,a,receipt,payload,expires) { return ix(PROOF,'update_receipt_status',[
   meta(admin,true),meta(a.registry),meta(a.commitment,false,true),meta(SYSVAR_INSTRUCTIONS_PUBKEY)],
   receipt,payload,Buffer.from([1]),u64(2),i64(expires)); }
+function revokeNativeIx(issuer,a,receipt,payload,expires) { return ix(PROOF,'update_receipt_status_native',[
+  meta(issuer,true),meta(a.registry),meta(a.commitment,false,true)],
+  receipt,payload,Buffer.from([1]),u64(2),i64(expires)); }
 
 module.exports={ PROOF, CONSUMER, SYSTEM, scope, addresses, canonical, statusMessage,
-  issuerIx, issuerSignedIx, registerIx, sandboxIx, harnessIx, mintInitIx, trustedIx, mintIx, consumeIx, revokeIx };
+  issuerIx, issuerSignedIx, registerIx, sandboxIx, harnessIx, harnessNativeIx,
+  mintInitIx, trustedIx, mintIx, consumeIx, revokeIx, revokeNativeIx };
 

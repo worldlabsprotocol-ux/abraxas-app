@@ -222,8 +222,19 @@ pub async fn refresh_blockhash(ctx: &mut ProgramTestContext) {
 }
 
 pub async fn start() -> ProgramTestContext {
-    let mut program_test =
-        ProgramTest::new("abraxas_proof_continuity", PROOF_ID, processor!(proof_process));
+    let mut program_test = if let Some(directory) = std::env::var_os("ABRAXAS_PROOF_SBF") {
+        // Load the compiled proof program first, then return to host processors
+        // for Token-2022, ATA, and the consumer. ProgramTest's preference is
+        // stored in the instance; removing BPF_OUT_DIR alone is insufficient.
+        // The CI invocation runs one test thread because this env var is global.
+        std::env::set_var("BPF_OUT_DIR", directory);
+        let mut test = ProgramTest::new("abraxas_proof_continuity", PROOF_ID, None);
+        test.prefer_bpf(false);
+        std::env::remove_var("BPF_OUT_DIR");
+        test
+    } else {
+        ProgramTest::new("abraxas_proof_continuity", PROOF_ID, processor!(proof_process))
+    };
     program_test.add_program(
         "spl_token_2022",
         spl_token_2022::id(),

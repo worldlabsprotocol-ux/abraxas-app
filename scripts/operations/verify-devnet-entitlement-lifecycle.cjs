@@ -1,10 +1,10 @@
 // Separate, read-only finalized-RPC verification of the public test evidence.
 const { readFileSync } = require('node:fs');
 const { createHash } = require('node:crypto');
-const { Connection, PublicKey } = require('@solana/web3.js');
+const { Connection, PublicKey, Transaction } = require('@solana/web3.js');
 const { getAccount, getMint, getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, ExtensionType, getExtensionData } = require('@solana/spl-token');
-const { addresses, scope }=require('./devnet-entitlement-instructions.cjs');
+const { addresses, scope, harnessNativeIx, revokeNativeIx }=require('./devnet-entitlement-instructions.cjs');
 const { assertNetworkAndPrograms }=require('./devnet-entitlement-quote.cjs');
 const walletSteps=require('./devnet-entitlement-wallet-steps.json');
 const identity = require('../../solana/abraxas-eligibility-gate/release/devnet-entitlement-identity.json');
@@ -44,6 +44,23 @@ function walletEvidence(evidence) {
       consumption1:key(a1.consumption),consumption2:key(a2.consumption),
       ata1:key(a1.ata),ata2:key(a2.ata)}};
 }
+function requireNativeIssuerInstruction(message, step, evidence) {
+  const issuer = new PublicKey(evidence.test_admin);
+  const receipt = Buffer.from(evidence[`receipt${step.receipt}`], 'hex');
+  const payload = Buffer.from(evidence[`payload${step.receipt}`], 'hex');
+  const accounts = addresses(issuer, issuer, receipt);
+  const expected = step.action === 'signed_receipt' ?
+    harnessNativeIx(issuer, issuer, issuer, accounts, receipt, payload, evidence.expires_at) :
+    revokeNativeIx(issuer, accounts, receipt, payload, evidence.expires_at);
+  const signerKeys = message.accountKeys.slice(0, message.header.numRequiredSignatures);
+  requireTrue(signerKeys.some(key => key.equals(issuer)), 'Native issuer transaction signature missing');
+  const matching = Transaction.populate(message).instructions.filter(ix => ix.programId.equals(PROOF) &&
+    ix.data.equals(expected.data) && ix.keys.length === expected.keys.length &&
+    ix.keys.every((key, n) => key.pubkey.equals(expected.keys[n].pubkey) &&
+      (!expected.keys[n].isSigner || key.isSigner) &&
+      (!expected.keys[n].isWritable || key.isWritable)));
+  requireTrue(matching.length === 1, 'Native issuer instruction or exact receipt binding mismatch');
+}
 async function verifyEvidence(rawEvidence,rpc=connection,programCheck=assertNetworkAndPrograms) {
   const isWallet=rawEvidence?.schema==='abraxas-devnet-entitlement-wallet-v2';
   const evidence=isWallet?walletEvidence(rawEvidence):rawEvidence;
@@ -82,9 +99,10 @@ async function verifyEvidence(rawEvidence,rpc=connection,programCheck=assertNetw
           evidence.accounts[`ata${step.receipt}`]:evidence.accounts[`commitment${step.receipt}`];
       requireTrue(message.accountKeys.some(key=>key.toBase58()===expected),
         `${tx.label} expected account binding missing`);
-      if(step.action==='signed_receipt'||step.action==='revoke_receipt')
-        requireTrue(invoked.includes('Ed25519SigVerify111111111111111111111111111'),
-          `${tx.label} missing issuer signature verification instruction`);
+      if(step.action==='signed_receipt'||step.action==='revoke_receipt') {
+        if(!invoked.includes('Ed25519SigVerify111111111111111111111111111'))
+          requireNativeIssuerInstruction(message,step,evidence);
+      }
     }
     const consumerLabels=new Set(['consume_entitlement1','repeat_consume_rejected',
       'wrong_holder_rejected','revoked_consume_rejected']);
@@ -191,5 +209,5 @@ if(require.main===module) {
   verifyEvidence(evidence).then(result=>console.log(JSON.stringify(result,null,2)))
     .catch(e=>{console.error(e.message);process.exitCode=1;});
 }
-module.exports={verifyEvidence,walletEvidence};
+module.exports={verifyEvidence,walletEvidence,requireNativeIssuerInstruction};
 
