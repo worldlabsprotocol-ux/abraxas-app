@@ -446,21 +446,28 @@ export function DevnetProofUpgradeClient() {
         const pending: PendingAction = { action: "batch", buffer: buffer.toBase58(),
           lastValidBlockHeight, offset: state.nextOffset, endOffset };
         localStorage.setItem(PENDING_ACTION, JSON.stringify(pending)); setPendingAction(pending);
-        let currentProgress: Progress = progress;
+        const submitted: string[] = [];
         for (let index = 0; index < signed.length; index++) {
           const signature = await RPC.sendRawTransaction(signed[index].serialize(), { skipPreflight: false, maxRetries: 0 });
-          await RPC.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "finalized");
+          submitted.push(signature);
+          const confirmed = await RPC.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+          if (confirmed.value.err) throw Error(`Write ${index} failed at confirmed commitment: ${signature}`);
+        }
+        let currentProgress: Progress = progress;
+        for (let index = 0; index < submitted.length; index++) {
+          const signature = submitted[index];
+          const confirmation = await RPC.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "finalized");
+          if (confirmation.value.err) throw Error(`Write ${index} failed at finalized commitment: ${signature}`);
           const finalized = await RPC.getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 });
           if (!finalized || finalized.meta?.err) throw Error(`Write ${index} did not finalize successfully: ${signature}`);
-          const checked = await inspectBuffer(RPC, buffer, candidate);
-          const expected = Math.min(CANDIDATE_LENGTH, state.nextOffset + (index + 1) * WRITE_CHUNK);
-          if (checked.nextOffset < expected && !checked.complete) throw Error(`Finalized buffer offset differs after write ${index}`);
-          if (checked.nextOffset > expected && !onlyZeroBytes(candidate, expected, checked.nextOffset))
-            throw Error(`Unexpected nonzero gap after write ${index}`);
           const next = { ...currentProgress, signatures: [...currentProgress.signatures, signature] };
           localStorage.setItem(STORAGE, JSON.stringify(next)); setProgress(next);
           currentProgress = next;
         }
+        const checked = await inspectBuffer(RPC, buffer, candidate);
+        if (checked.nextOffset < endOffset && !checked.complete) throw Error("Finalized buffer is behind the reviewed batch");
+        if (checked.nextOffset > endOffset && !onlyZeroBytes(candidate, endOffset, checked.nextOffset))
+          throw Error("Unexpected nonzero bytes beyond the reviewed batch");
         localStorage.removeItem(PENDING_ACTION); setPendingAction(null);
         setStatus(`Finalized ${signed.length} writes through Devnet RPC; next offset ${endOffset}. Review another bounded batch.`);
       } catch (error) {
