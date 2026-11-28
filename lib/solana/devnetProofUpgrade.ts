@@ -14,7 +14,11 @@ export const MAX_ACTIONS = 600;
 export const MAX_FEE_PER_ACTION = 100_000;
 export const BUFFER_METADATA_LENGTH = 37;
 export const PROGRAM_DATA_METADATA_LENGTH = 45;
-export const WRITE_CHUNK = 800;
+export const WRITE_CHUNK = 960;
+// Keep each legacy transaction below 1,232 bytes. Phantom signs at most this many
+// independent writes in one reviewed request; the loader still executes each separately.
+export const WRITE_BATCH = 8;
+export const LEGACY_TRANSACTION_LIMIT = 1_232;
 
 const account = (pubkey: PublicKey, isWritable = false, isSigner = false) => ({ pubkey, isWritable, isSigner });
 const bytes4 = (n: number) => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, n, true); return b; };
@@ -60,6 +64,15 @@ export function writeBuffer(buffer: PublicKey, offset: number, chunk: Uint8Array
       chunk.length < 1 || chunk.length > WRITE_CHUNK) throw Error("Invalid bounded buffer write");
   return ix(1, [account(buffer, true), account(FOUNDER, false, true)],
     concat(bytes4(offset), bytes8(chunk.length), chunk));
+}
+
+export function writeBatch(buffer: PublicKey, elf: Uint8Array, offset: number) {
+  if (elf.length !== CANDIDATE_LENGTH || !Number.isSafeInteger(offset) || offset < 0 ||
+      offset >= elf.length || offset % WRITE_CHUNK !== 0) throw Error("Invalid batch start");
+  const writes = [];
+  for (let at = offset; at < elf.length && writes.length < WRITE_BATCH; at += WRITE_CHUNK)
+    writes.push({ offset: at, instruction: writeBuffer(buffer, at, elf.subarray(at, at + WRITE_CHUNK)) });
+  return writes;
 }
 
 export function upgrade(buffer: PublicKey) {
